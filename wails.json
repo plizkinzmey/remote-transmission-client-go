@@ -1,0 +1,24 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "transmission-client-go",
+  "outputfilename": "transmission-client-go",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "plizkinzmey",
+    "email": "plizkinzmey@icloud.com"
+  },
+  "info": {
+    "productName": "Transmission Client",
+    "comments": "Transmission Desktop Client"
+  },
+  "windows": {
+    "webviewIsTransparent": false,
+    "backgroundColor": "#fff"
+  },
+  "mac": {
+    "windowIsTranslucent": false
+  }
+}

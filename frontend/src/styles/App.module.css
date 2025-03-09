@@ -1,0 +1,64 @@
+.appContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f8f9fa;
+}
+
+/* Удаляем кастомный заголовок, так как теперь используем нативный */
+.content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  -webkit-app-region: no-drag;
+}
+
+.controlPanel {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.searchContainer {
+  flex: 1;
+  max-width: 400px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.searchInput {
+  padding: 8px 12px;
+  border: 1px solid #e1e1e1;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  background: white;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.torrentList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.noTorrents {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+  user-select: none;
+}

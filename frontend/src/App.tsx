@@ -1,79 +1,12 @@
 import { useState, useEffect } from 'react';
-import styled from '@emotion/styled';
 import { Button } from './components/Button';
 import { TorrentItem } from './components/TorrentItem';
 import { Settings } from './components/Settings';
 import { AddTorrent } from './components/AddTorrent';
+import styles from './styles/App.module.css';
 import './App.css';
 
 import { GetTorrents, AddTorrent as AddTorrentAPI, RemoveTorrent, Initialize } from '../wailsjs/go/main/App';
-
-const AppContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  -webkit-app-region: drag;
-  background: #f8f9fa;
-`;
-
-const TitleBar = styled.div`
-  height: 38px;
-  background: #1a1a1a;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  -webkit-app-region: drag;
-`;
-
-const TitleText = styled.div`
-  color: white;
-  font-size: 14px;
-`;
-
-const Content = styled.div`
-  flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-  -webkit-app-region: no-drag;
-`;
-
-const Header = styled.div`
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 12px;
-  align-items: center;
-`;
-
-const SearchInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #e1e1e1;
-  border-radius: 6px;
-  font-size: 14px;
-  width: 100%;
-  background: white;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const TorrentList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const NoTorrents = styled.div`
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 16px;
-`;
 
 interface Torrent {
   ID: number;
@@ -150,29 +83,31 @@ function App() {
   );
 
   if (!isInitialized) {
-    return <div>Connecting to Transmission...</div>;
+    return <div className={styles.noSelect}>Connecting to Transmission...</div>;
   }
 
   return (
-    <AppContainer>
-      <TitleBar>
-        <TitleText>Transmission Client</TitleText>
-      </TitleBar>
-      
-      <Content>
-        <Header>
-          <SearchInput
-            type="text"
-            placeholder="Search torrents..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button onClick={() => setShowSettings(true)}>Settings</Button>
-          <Button onClick={refreshTorrents}>Refresh</Button>
-          <Button onClick={() => setShowAddTorrent(true)}>Add Torrent</Button>
-        </Header>
+    <div className={styles.appContainer}>
+      <div className={styles.content}>
+        <div className={styles.controlPanel}>
+          <div className={styles.searchContainer}>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Search torrents..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className={styles.actions}>
+            <Button onClick={() => setShowSettings(true)}>Settings</Button>
+            <Button onClick={refreshTorrents}>Refresh</Button>
+            <Button onClick={() => setShowAddTorrent(true)}>Add Torrent</Button>
+          </div>
+        </div>
 
-        <TorrentList>
+        <div className={styles.torrentList}>
           {filteredTorrents.length > 0 ? (
             filteredTorrents.map((torrent) => (
               <TorrentItem
@@ -185,11 +120,11 @@ function App() {
               />
             ))
           ) : (
-            <NoTorrents>
+            <div className={styles.noTorrents}>
               {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
-            </NoTorrents>
+            </div>
           )}
-        </TorrentList>
+        </div>
 
         {showSettings && (
           <Settings
@@ -204,8 +139,8 @@ function App() {
             onClose={() => setShowAddTorrent(false)}
           />
         )}
-      </Content>
-    </AppContainer>
+      </div>
+    </div>
   );
 }
 

@@ -16,9 +16,17 @@
   },
   "windows": {
     "webviewIsTransparent": false,
-    "backgroundColor": "#fff"
+    "backgroundColor": "#fff",
+    "resizable": true,
+    "minWidth": 800,
+    "minHeight": 600,
+    "frameless": false
   },
   "mac": {
-    "windowIsTranslucent": false
+    "windowIsTranslucent": false,
+    "resizable": true,
+    "minWidth": 800,
+    "minHeight": 600,
+    "frameless": false
   }
 }

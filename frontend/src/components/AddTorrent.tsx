@@ -13,11 +13,32 @@ const Modal = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   background: white;
-  padding: 24px;
+  padding: 0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   width: 500px;
   z-index: 1000;
+`;
+
+const ModalHeader = styled.div`
+  background: #1a1a1a;
+  padding: 12px 16px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  -webkit-app-region: drag;
+  user-select: none;
+
+  h2 {
+    color: white;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+  }
+`;
+
+const ModalContent = styled.div`
+  padding: 24px;
+  -webkit-app-region: no-drag;
 `;
 
 const Overlay = styled.div`
@@ -71,24 +92,28 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({ onAdd, onClose }) => {
     <>
       <Overlay onClick={onClose} />
       <Modal>
-        <h2>Add Torrent</h2>
-        <Form onSubmit={handleSubmit}>
-          <Input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter torrent URL or magnet link"
-            autoFocus
-          />
-          <ButtonGroup>
-            <Button type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!url.trim()}>
-              Add
-            </Button>
-          </ButtonGroup>
-        </Form>
+        <ModalHeader>
+          <h2>Add Torrent</h2>
+        </ModalHeader>
+        <ModalContent>
+          <Form onSubmit={handleSubmit}>
+            <Input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter torrent URL or magnet link"
+              autoFocus
+            />
+            <ButtonGroup>
+              <Button type="button" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!url.trim()}>
+                Add
+              </Button>
+            </ButtonGroup>
+          </Form>
+        </ModalContent>
       </Modal>
     </>
   );

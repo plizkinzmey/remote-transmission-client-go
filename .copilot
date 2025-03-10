@@ -1,0 +1,75 @@
+# GitHub Copilot Instructions
+
+[English](#english) | [Русский](#русский)
+
+---
+# English
+
+## Project Structure
+This is a Transmission BitTorrent client built with:
+- Backend: Go + Wails v2
+- Frontend: React + TypeScript
+- Architecture: Clean Architecture pattern
+
+### Key Components:
+1. `internal/` - Backend implementation
+   - `domain/` - Core business logic and interfaces
+   - `application/` - Use cases and services
+   - `infrastructure/` - External services integration
+
+2. `frontend/` - React TypeScript UI
+   - `src/components/` - React components
+   - `src/styles/` - CSS modules
+
+## Common Tasks
+
+### Adding New Features
+1. For backend features:
+   - Add domain entities in `internal/domain/`
+   - Implement services in `internal/application/`
+   - Add infrastructure code in `internal/infrastructure/`
+
+2. For frontend features:
+   - Create components in `frontend/src/components/`
+   - Add styles in `frontend/src/styles/`
+   - Update App.tsx for routing/integration
+
+### Testing
+- Backend: Add tests alongside the implementation files
+- Frontend: Use React Testing Library for component tests
+
+---
+# Русский
+
+## Структура проекта
+Это клиент Transmission BitTorrent, построенный на:
+- Backend: Go + Wails v2
+- Frontend: React + TypeScript
+- Архитектура: Clean Architecture
+
+### Ключевые компоненты:
+1. `internal/` - Реализация бэкенда
+   - `domain/` - Основная бизнес-логика и интерфейсы
+   - `application/` - Сценарии использования и сервисы
+   - `infrastructure/` - Интеграция с внешними сервисами
+
+2. `frontend/` - React TypeScript UI
+   - `src/components/` - React компоненты
+   - `src/styles/` - CSS модули
+
+## Частые задачи
+
+### Добавление новых функций
+1. Для бэкенд функций:
+   - Добавьте сущности домена в `internal/domain/`
+   - Реализуйте сервисы в `internal/application/`
+   - Добавьте инфраструктурный код в `internal/infrastructure/`
+
+2. Для frontend функций:
+   - Создайте компоненты в `frontend/src/components/`
+   - Добавьте стили в `frontend/src/styles/`
+   - Обновите App.tsx для маршрутизации/интеграции
+
+### Тестирование
+- Backend: Добавляйте тесты рядом с файлами реализации
+- Frontend: Используйте React Testing Library для тестов компонентов

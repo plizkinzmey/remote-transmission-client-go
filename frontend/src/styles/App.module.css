@@ -62,3 +62,13 @@
   font-size: 16px;
   user-select: none;
 }
+
+.errorMessage {
+  padding: 12px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background-color: #fdedec;
+  color: #e74c3c;
+  font-size: 14px;
+  border-left: 4px solid #e74c3c;
+}

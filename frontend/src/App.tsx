@@ -6,7 +6,7 @@ import { AddTorrent } from './components/AddTorrent';
 import styles from './styles/App.module.css';
 import './App.css';
 
-import { GetTorrents, AddTorrent as AddTorrentAPI, RemoveTorrent, Initialize } from '../wailsjs/go/main/App';
+import { GetTorrents, AddTorrent as AddTorrentAPI, RemoveTorrent, Initialize, LoadConfig } from '../wailsjs/go/main/App';
 
 interface Torrent {
   ID: number;
@@ -15,26 +15,48 @@ interface Torrent {
   Progress: number;
 }
 
+interface Config {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+}
+
 function App() {
   const [torrents, setTorrents] = useState<Torrent[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddTorrent, setShowAddTorrent] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        await Initialize(JSON.stringify({
-          host: 'http://localhost',
-          port: 9091,
-          username: '',
-          password: ''
-        }));
-        setIsInitialized(true);
-        refreshTorrents();
+        // Загружаем сохраненные настройки
+        const savedConfig = await LoadConfig();
+        
+        if (savedConfig) {
+          try {
+            // Если есть сохраненные настройки, используем их
+            await Initialize(JSON.stringify(savedConfig));
+            setIsInitialized(true);
+            refreshTorrents();
+          } catch (initError) {
+            console.error('Failed to connect with saved settings:', initError);
+            setError(`Connection failed: ${initError}. Please check your settings.`);
+            // Показываем окно настроек при ошибке инициализации
+            setShowSettings(true);
+          }
+        } else {
+          // Если настроек нет, показываем окно настроек
+          setShowSettings(true);
+        }
       } catch (error) {
-        console.error('Failed to initialize:', error);
+        console.error('Failed to load config:', error);
+        setError(`Failed to load configuration: ${error}`);
+        // В случае ошибки тоже показываем окно настроек
+        setShowSettings(true);
       }
     };
 
@@ -45,8 +67,11 @@ function App() {
     try {
       const response = await GetTorrents();
       setTorrents(response);
+      // Если получение данных успешно, сбрасываем ошибки
+      setError(null);
     } catch (error) {
       console.error('Failed to fetch torrents:', error);
+      setError(`Failed to fetch torrents: ${error}`);
     }
   };
 
@@ -56,6 +81,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error('Failed to add torrent:', error);
+      setError(`Failed to add torrent: ${error}`);
     }
   };
 
@@ -65,16 +91,21 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error('Failed to remove torrent:', error);
+      setError(`Failed to remove torrent: ${error}`);
     }
   };
 
-  const handleSettingsSave = async (settings: any) => {
+  const handleSettingsSave = async (settings: Config) => {
     try {
       await Initialize(JSON.stringify(settings));
       setShowSettings(false);
+      setIsInitialized(true);
+      setError(null); // Сбрасываем ошибки при успешном сохранении настроек
       refreshTorrents();
     } catch (error) {
       console.error('Failed to update settings:', error);
+      setError(`Failed to connect with new settings: ${error}`);
+      // Оставляем окно настроек открытым в случае ошибки
     }
   };
 
@@ -82,7 +113,7 @@ function App() {
     torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isInitialized) {
+  if (!isInitialized && !showSettings) {
     return <div className={styles.noSelect}>Connecting to Transmission...</div>;
   }
 
@@ -107,6 +138,12 @@ function App() {
           </div>
         </div>
 
+        {error && (
+          <div className={styles.errorMessage}>
+            {error}
+          </div>
+        )}
+
         <div className={styles.torrentList}>
           {filteredTorrents.length > 0 ? (
             filteredTorrents.map((torrent) => (
@@ -129,7 +166,12 @@ function App() {
         {showSettings && (
           <Settings
             onSave={handleSettingsSave}
-            onClose={() => setShowSettings(false)}
+            onClose={() => {
+              // Закрываем окно настроек только если уже есть инициализация
+              if (isInitialized) {
+                setShowSettings(false);
+              }
+            }}
           />
         )}
 

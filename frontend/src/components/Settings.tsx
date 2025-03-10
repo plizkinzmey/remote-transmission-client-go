@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Button } from './Button';
+import { LoadConfig, TestConnection } from '../../wailsjs/go/main/App';
 
 interface SettingsProps {
   onSave: (settings: {
@@ -10,13 +11,10 @@ interface SettingsProps {
     password: string;
   }) => void;
   onClose: () => void;
-  initialValues?: {
-    host: string;
-    port: number;
-    username: string;
-    password: string;
-  };
 }
+
+// Создаем тип-псевдоним для статуса соединения
+type ConnectionStatusType = 'success' | 'error' | 'none';
 
 const Modal = styled.div`
   position: fixed;
@@ -36,7 +34,6 @@ const ModalHeader = styled.div`
   padding: 12px 16px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
-  -webkit-app-region: drag;
   user-select: none;
 
   h2 {
@@ -49,7 +46,6 @@ const ModalHeader = styled.div`
 
 const ModalContent = styled.div`
   padding: 24px;
-  -webkit-app-region: no-drag;
 `;
 
 const Overlay = styled.div`
@@ -98,22 +94,87 @@ const ButtonGroup = styled.div`
   margin-top: 16px;
 `;
 
+// Улучшаем стили для сообщений о статусе соединения
+const StatusMessage = styled.div<{ status: ConnectionStatusType }>`
+  padding: 8px;
+  margin-top: 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: ${props => getStatusColor(props.status, 'text')};
+  background-color: ${props => getStatusColor(props.status, 'bg')};
+  display: ${props => props.status === 'none' ? 'none' : 'block'};
+`;
+
+// Вспомогательная функция для определения цветов статуса
+function getStatusColor(status: ConnectionStatusType, type: 'text' | 'bg'): string {
+  if (status === 'success') {
+    return type === 'text' ? '#27ae60' : '#e8f8f5';
+  }
+  if (status === 'error') {
+    return type === 'text' ? '#e74c3c' : '#fdedec';
+  }
+  return 'transparent';
+}
+
+const defaultSettings = {
+  host: 'localhost',
+  port: 9091,
+  username: '',
+  password: '',
+};
+
 export const Settings: React.FC<SettingsProps> = ({
   onSave,
   onClose,
-  initialValues = {
-    host: 'http://localhost',
-    port: 9091,
-    username: '',
-    password: '',
-  },
 }) => {
-  const [settings, setSettings] = useState(initialValues);
+  const [settings, setSettings] = useState(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusType>('none');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  useEffect(() => {
+    const loadSavedSettings = async () => {
+      try {
+        const savedConfig = await LoadConfig();
+        if (savedConfig) {
+          setSettings(savedConfig);
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedSettings();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(settings);
   };
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    setConnectionStatus('none');
+    setStatusMessage('');
+
+    try {
+      await TestConnection(JSON.stringify(settings));
+      setConnectionStatus('success');
+      setStatusMessage('Connection successful!');
+    } catch (error) {
+      setConnectionStatus('error');
+      setStatusMessage(`Connection failed: ${error}`);
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <>
@@ -132,7 +193,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 onChange={(e) =>
                   setSettings({ ...settings, host: e.target.value })
                 }
-                placeholder="http://localhost"
+                placeholder="localhost"
               />
             </FormGroup>
             <FormGroup>
@@ -166,9 +227,21 @@ export const Settings: React.FC<SettingsProps> = ({
                 }
               />
             </FormGroup>
+
+            <StatusMessage status={connectionStatus}>
+              {statusMessage}
+            </StatusMessage>
+
             <ButtonGroup>
               <Button type="button" onClick={onClose}>
                 Cancel
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleTestConnection}
+                disabled={isTestingConnection}
+              >
+                {isTestingConnection ? 'Testing...' : 'Test Connection'}
               </Button>
               <Button type="submit">Save</Button>
             </ButtonGroup>

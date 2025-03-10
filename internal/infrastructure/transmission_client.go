@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"fmt"
+	"strings"
 	"transmission-client-go/internal/domain"
 
 	"github.com/hekmon/transmissionrpc/v2"
@@ -21,9 +22,15 @@ type TransmissionClient struct {
 }
 
 func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, error) {
-	client, err := transmissionrpc.New(config.Host, config.Username, config.Password,
+	// Убираем протокол из хоста, если он есть
+	host := config.Host
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.TrimPrefix(host, "https://")
+
+	client, err := transmissionrpc.New(host, config.Username, config.Password,
 		&transmissionrpc.AdvancedConfig{
-			Port: uint16(config.Port),
+			Port:  uint16(config.Port),
+			HTTPS: strings.HasPrefix(config.Host, "https://"),
 		})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transmission client: %w", err)

@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"transmission-client-go/internal/application"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
@@ -13,8 +11,9 @@ import (
 
 // App struct
 type App struct {
-	ctx     context.Context
-	service *application.TorrentService
+	ctx          context.Context
+	service      *application.TorrentService
+	configService *infrastructure.ConfigService
 }
 
 // Error constants
@@ -24,12 +23,21 @@ const (
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		configService: infrastructure.NewConfigService(),
+	}
 }
 
 // startup is called when the app starts. The context is saved
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	
+	// Попробуем автоматически инициализировать с сохраненными настройками
+	config, err := a.LoadConfig()
+	if err == nil && config != nil {
+		jsonConfig, _ := json.Marshal(config)
+		_ = a.Initialize(string(jsonConfig))
+	}
 }
 
 // Initialize initializes the transmission client with the given configuration
@@ -39,12 +47,12 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
-	// Save the configuration
-	if err := a.SaveConfig(&config); err != nil {
+	// Сохраняем конфигурацию
+	if err := a.configService.SaveConfig(&config); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Create a client with the configuration
+	// Создаем клиент с конфигурацией
 	client, err := infrastructure.NewTransmissionClient(infrastructure.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
@@ -59,65 +67,12 @@ func (a *App) Initialize(configJson string) error {
 	return nil
 }
 
-// LoadConfig loads the saved configuration if it exists
+// LoadConfig загружает сохраненную конфигурацию если она существует
 func (a *App) LoadConfig() (*domain.Config, error) {
-	configPath, err := a.getConfigPath()
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil // Config does not exist
-		}
-		return nil, fmt.Errorf("failed to read config: %w", err)
-	}
-
-	var config domain.Config
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config: %w", err)
-	}
-
-	return &config, nil
+	return a.configService.LoadConfig()
 }
 
-// SaveConfig saves the configuration to disk
-func (a *App) SaveConfig(config *domain.Config) error {
-	configPath, err := a.getConfigPath()
-	if err != nil {
-		return err
-	}
-
-	// Create the config directory if it does not exist
-	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	data, err := json.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(configPath, data, 0600); err != nil {
-		return fmt.Errorf("failed to write config: %w", err)
-	}
-
-	return nil
-}
-
-// getConfigPath returns the path to the config file
-func (a *App) getConfigPath() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get config directory: %w", err)
-	}
-
-	return filepath.Join(configDir, "transmission-client", "config.json"), nil
-}
-
-// GetTorrents returns all torrents
+// GetTorrents возвращает все торренты
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
 		return nil, fmt.Errorf(ErrServiceNotInitialized)
@@ -125,7 +80,7 @@ func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	return a.service.GetAllTorrents()
 }
 
-// AddTorrent adds a new torrent by URL
+// AddTorrent добавляет новый торрент по URL
 func (a *App) AddTorrent(url string) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -133,7 +88,7 @@ func (a *App) AddTorrent(url string) error {
 	return a.service.AddTorrent(url)
 }
 
-// RemoveTorrent removes a torrent by ID
+// RemoveTorrent удаляет торрент по ID
 func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -141,7 +96,7 @@ func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	return a.service.RemoveTorrent(id, deleteData)
 }
 
-// TestConnection tests the connection to the Transmission server
+// TestConnection проверяет соединение с сервером Transmission
 func (a *App) TestConnection(configJson string) error {
 	var config domain.Config
 	if err := json.Unmarshal([]byte(configJson), &config); err != nil {
@@ -158,7 +113,7 @@ func (a *App) TestConnection(configJson string) error {
 		return err
 	}
 
-	// Try to get torrents as a connection test
+	// Пробуем получить торренты как тест соединения
 	_, err = client.GetAll()
 	return err
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './Button';
 import { DeleteConfirmation } from './DeleteConfirmation';
 import {
@@ -21,6 +21,19 @@ interface TorrentItemProps {
   onStop: (id: number) => void;
 }
 
+const getStatusClassName = (status: string) => {
+  switch (status) {
+    case 'downloading':
+      return styles.statusDownloading;
+    case 'seeding':
+      return styles.statusSeeding;
+    case 'completed':
+      return styles.statusCompleted;
+    default:
+      return styles.statusStopped;
+  }
+};
+
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
@@ -34,32 +47,33 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 }) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastAction, setLastAction] = useState<'start' | 'stop' | null>(null);
+  const [lastStatus, setLastStatus] = useState(status);
 
-  const getStatusClassName = (status: string) => {
-    switch (status) {
-      case 'downloading':
-        return styles.statusDownloading;
-      case 'seeding':
-        return styles.statusSeeding;
-      case 'completed':
-        return styles.statusCompleted;
-      default:
-        return styles.statusStopped;
+  // Отслеживаем изменение статуса торрента
+  useEffect(() => {
+    if (isLoading && lastStatus !== status) {
+      // Статус изменился после выполнения действия
+      if (
+        (lastAction === 'start' && (status === 'downloading' || status === 'seeding')) ||
+        (lastAction === 'stop' && status === 'stopped')
+      ) {
+        setIsLoading(false);
+        setLastAction(null);
+      }
     }
-  };
+    setLastStatus(status);
+  }, [status, lastAction, lastStatus, isLoading]);
 
   const handleAction = (action: 'start' | 'stop') => {
     if (isLoading) return;
     
     setIsLoading(true);
-    try {
-      if (action === 'start') {
-        onStart(id);
-      } else {
-        onStop(id);
-      }
-    } finally {
-      setTimeout(() => setIsLoading(false), 500);
+    setLastAction(action);
+    if (action === 'start') {
+      onStart(id);
+    } else {
+      onStop(id);
     }
   };
 

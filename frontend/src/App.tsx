@@ -51,6 +51,35 @@ function App() {
   const maxReconnectAttempts = 3;
   const [isBulkLoading, setIsBulkLoading] = useState(false);
 
+  const [lastBulkAction, setLastBulkAction] = useState<'start' | 'stop' | null>(null);
+  const [lastTorrentStates, setLastTorrentStates] = useState<Map<number, string>>(new Map());
+
+  // Отслеживаем изменение состояний торрентов для массовых действий
+  useEffect(() => {
+    if (!isBulkLoading || !lastBulkAction) return;
+
+    const selectedTorrentsArray = Array.from(selectedTorrents);
+    const allTorrentsChanged = selectedTorrentsArray.every(id => {
+      const torrent = torrents.find(t => t.ID === id);
+      const previousState = lastTorrentStates.get(id);
+      
+      if (!torrent || !previousState) return false;
+
+      if (lastBulkAction === 'start') {
+        return previousState !== torrent.Status && 
+               (torrent.Status === 'downloading' || torrent.Status === 'seeding');
+      } else {
+        return previousState !== torrent.Status && torrent.Status === 'stopped';
+      }
+    });
+
+    if (allTorrentsChanged) {
+      setIsBulkLoading(false);
+      setLastBulkAction(null);
+      setLastTorrentStates(new Map());
+    }
+  }, [torrents, selectedTorrents, isBulkLoading, lastBulkAction, lastTorrentStates]);
+
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
       // Если все выбраны - снимаем выделение
@@ -219,30 +248,52 @@ function App() {
   const handleStartSelected = async () => {
     if (isBulkLoading || !hasSelectedTorrents) return;
     
+    // Сохраняем текущие состояния выбранных торрентов
+    const states = new Map(
+      torrents
+        .filter(t => selectedTorrents.has(t.ID))
+        .map(t => [t.ID, t.Status])
+    );
+    
     setIsBulkLoading(true);
+    setLastBulkAction('start');
+    setLastTorrentStates(states);
+    
     try {
       await StartTorrents(Array.from(selectedTorrents));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to start torrents:', error);
       setError(`Failed to start torrents: ${error}`);
-    } finally {
       setIsBulkLoading(false);
+      setLastBulkAction(null);
+      setLastTorrentStates(new Map());
     }
   };
 
   const handleStopSelected = async () => {
     if (isBulkLoading || !hasSelectedTorrents) return;
 
+    // Сохраняем текущие состояния выбранных торрентов
+    const states = new Map(
+      torrents
+        .filter(t => selectedTorrents.has(t.ID))
+        .map(t => [t.ID, t.Status])
+    );
+    
     setIsBulkLoading(true);
+    setLastBulkAction('stop');
+    setLastTorrentStates(states);
+
     try {
       await StopTorrents(Array.from(selectedTorrents));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to stop torrents:', error);
       setError(`Failed to stop torrents: ${error}`);
-    } finally {
       setIsBulkLoading(false);
+      setLastBulkAction(null);
+      setLastTorrentStates(new Map());
     }
   };
 

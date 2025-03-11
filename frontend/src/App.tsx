@@ -6,7 +6,16 @@ import { AddTorrent } from './components/AddTorrent';
 import styles from './styles/App.module.css';
 import './App.css';
 
-import { GetTorrents, AddTorrent as AddTorrentAPI, AddTorrentFile, RemoveTorrent, Initialize, LoadConfig } from '../wailsjs/go/main/App';
+import { 
+  GetTorrents, 
+  AddTorrent as AddTorrentAPI, 
+  AddTorrentFile, 
+  RemoveTorrent, 
+  Initialize, 
+  LoadConfig,
+  StartTorrents,
+  StopTorrents
+} from '../wailsjs/go/main/App';
 
 interface Torrent {
   ID: number;
@@ -24,6 +33,7 @@ interface Config {
 
 function App() {
   const [torrents, setTorrents] = useState<Torrent[]>([]);
+  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddTorrent, setShowAddTorrent] = useState(false);
@@ -32,6 +42,16 @@ function App() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 3;
+
+  const handleSelectAll = () => {
+    if (selectedTorrents.size === filteredTorrents.length) {
+      // Если все выбраны - снимаем выделение
+      setSelectedTorrents(new Set());
+    } else {
+      // Иначе выбираем все
+      setSelectedTorrents(new Set(filteredTorrents.map(t => t.ID)));
+    }
+  };
 
   // Функция переподключения к серверу
   const reconnect = async () => {
@@ -176,13 +196,63 @@ function App() {
     }
   };
 
+  const handleTorrentSelect = (id: number) => {
+    setSelectedTorrents(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleStartSelected = async () => {
+    try {
+      await StartTorrents(Array.from(selectedTorrents));
+      refreshTorrents();
+    } catch (error) {
+      console.error('Failed to start torrents:', error);
+      setError(`Failed to start torrents: ${error}`);
+    }
+  };
+
+  const handleStopSelected = async () => {
+    try {
+      await StopTorrents(Array.from(selectedTorrents));
+      refreshTorrents();
+    } catch (error) {
+      console.error('Failed to stop torrents:', error);
+      setError(`Failed to stop torrents: ${error}`);
+    }
+  };
+
+  const handleStartTorrent = async (id: number) => {
+    try {
+      await StartTorrents([id]);
+      refreshTorrents();
+    } catch (error) {
+      console.error('Failed to start torrent:', error);
+      setError(`Failed to start torrent: ${error}`);
+    }
+  };
+
+  const handleStopTorrent = async (id: number) => {
+    try {
+      await StopTorrents([id]);
+      refreshTorrents();
+    } catch (error) {
+      console.error('Failed to stop torrent:', error);
+      setError(`Failed to stop torrent: ${error}`);
+    }
+  };
+
   const filteredTorrents = torrents.filter(torrent =>
     torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!isInitialized && !showSettings) {
-    return <div className={styles.noSelect}>Connecting to Transmission...</div>;
-  }
+  const hasSelectedTorrents = selectedTorrents.size > 0;
 
   return (
     <div className={styles.appContainer}>
@@ -201,13 +271,43 @@ function App() {
           <div className={styles.actions}>
             <Button onClick={() => setShowSettings(true)}>Settings</Button>
             <Button onClick={() => setShowAddTorrent(true)}>Add Torrent</Button>
-            {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>
         </div>
 
         {error && (
           <div className={styles.errorMessage}>
             {error}
+          </div>
+        )}
+
+        {filteredTorrents.length > 0 && (
+          <div className={styles.bulkActions}>
+            <div className={styles.selectAllContainer}>
+              <input
+                type="checkbox"
+                className={styles.selectAllCheckbox}
+                checked={selectedTorrents.size > 0 && selectedTorrents.size === filteredTorrents.length}
+                onChange={handleSelectAll}
+              />
+              <span className={styles.selectAllLabel}>
+                Select All ({selectedTorrents.size}/{filteredTorrents.length})
+              </span>
+            </div>
+            <div className={styles.bulkActionButtons}>
+              <Button 
+                onClick={handleStartSelected}
+                disabled={!hasSelectedTorrents}
+              >
+                Start Selected
+              </Button>
+              <Button 
+                onClick={handleStopSelected}
+                disabled={!hasSelectedTorrents}
+              >
+                Stop Selected
+              </Button>
+            </div>
+            {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>
         )}
 
@@ -220,7 +320,11 @@ function App() {
                 name={torrent.Name}
                 status={torrent.Status}
                 progress={torrent.Progress}
+                selected={selectedTorrents.has(torrent.ID)}
+                onSelect={handleTorrentSelect}
                 onRemove={handleRemoveTorrent}
+                onStart={handleStartTorrent}
+                onStop={handleStopTorrent}
               />
             ))
           ) : (

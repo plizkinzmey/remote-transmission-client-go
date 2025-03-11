@@ -109,6 +109,22 @@ func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	return a.service.RemoveTorrent(id, deleteData)
 }
 
+// StartTorrents запускает выбранные торренты
+func (a *App) StartTorrents(ids []int64) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.StartTorrents(ids)
+}
+
+// StopTorrents останавливает выбранные торренты
+func (a *App) StopTorrents(ids []int64) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.StopTorrents(ids)
+}
+
 // TestConnection проверяет соединение с сервером Transmission
 func (a *App) TestConnection(configJson string) error {
 	var config domain.Config

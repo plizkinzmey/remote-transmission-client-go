@@ -3,10 +3,10 @@ package domain
 type TorrentStatus string
 
 const (
-	StatusStopped      TorrentStatus = "stopped"
-	StatusDownloading  TorrentStatus = "downloading"
-	StatusSeeding      TorrentStatus = "seeding"
-	StatusCompleted    TorrentStatus = "completed"
+	StatusStopped     TorrentStatus = "stopped"
+	StatusDownloading TorrentStatus = "downloading"
+	StatusSeeding     TorrentStatus = "seeding"
+	StatusCompleted   TorrentStatus = "completed"
 )
 
 type Torrent struct {
@@ -22,4 +22,6 @@ type TorrentRepository interface {
 	Add(url string) error
 	AddFile(filepath string) error
 	Remove(id int64, deleteData bool) error
+	Start(ids []int64) error
+	Stop(ids []int64) error
 }

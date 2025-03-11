@@ -29,3 +29,11 @@ func (s *TorrentService) AddTorrentFile(filepath string) error {
 func (s *TorrentService) RemoveTorrent(id int64, deleteData bool) error {
 	return s.repo.Remove(id, deleteData)
 }
+
+func (s *TorrentService) StartTorrents(ids []int64) error {
+	return s.repo.Start(ids)
+}
+
+func (s *TorrentService) StopTorrents(ids []int64) error {
+	return s.repo.Stop(ids)
+}

@@ -8,7 +8,11 @@ interface TorrentItemProps {
   name: string;
   status: string;
   progress: number;
+  selected: boolean;
+  onSelect: (id: number) => void;
   onRemove: (id: number, deleteData: boolean) => void;
+  onStart: (id: number) => void;
+  onStop: (id: number) => void;
 }
 
 export const TorrentItem: React.FC<TorrentItemProps> = ({
@@ -16,7 +20,11 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   name,
   status,
   progress,
+  selected,
+  onSelect,
   onRemove,
+  onStart,
+  onStop,
 }) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
@@ -33,9 +41,19 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
   };
 
+  const isRunning = status === 'downloading' || status === 'seeding';
+
   return (
     <>
       <div className={styles.container}>
+        <label className={styles.checkbox}>
+          <input 
+            type="checkbox" 
+            checked={selected}
+            onChange={() => onSelect(id)}
+            aria-label={`Select torrent ${name}`}
+          />
+        </label>
         <div className={styles.info}>
           <h3 className={styles.name} title={name}>
             {name}
@@ -46,7 +64,12 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               {progress.toFixed(1)}%
             </span>
           </div>
-          <div className={styles.progress}>
+          <div className={styles.progressContainer}>
+            <progress 
+              className={styles.progress}
+              value={progress} 
+              max={100}
+            />
             <div 
               className={styles.progressBar} 
               style={{ width: `${progress}%` }}
@@ -54,7 +77,27 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </div>
         </div>
         <div className={styles.actions}>
-          <Button onClick={() => setShowDeleteConfirmation(true)}>Remove</Button>
+          {isRunning ? (
+            <Button 
+              onClick={() => onStop(id)}
+              aria-label={`Pause torrent ${name}`}
+            >
+              Pause
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => onStart(id)}
+              aria-label={`Start torrent ${name}`}
+            >
+              Start
+            </Button>
+          )}
+          <Button 
+            onClick={() => setShowDeleteConfirmation(true)}
+            aria-label={`Remove torrent ${name}`}
+          >
+            Remove
+          </Button>
         </div>
       </div>
 

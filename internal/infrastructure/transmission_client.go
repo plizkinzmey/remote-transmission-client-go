@@ -86,6 +86,22 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	return result, nil
 }
 
+func (c *TransmissionClient) Start(ids []int64) error {
+	err := c.client.TorrentStartIDs(c.ctx, ids)
+	if err != nil {
+		return fmt.Errorf("failed to start torrents: %w", err)
+	}
+	return nil
+}
+
+func (c *TransmissionClient) Stop(ids []int64) error {
+	err := c.client.TorrentStopIDs(c.ctx, ids)
+	if err != nil {
+		return fmt.Errorf("failed to stop torrents: %w", err)
+	}
+	return nil
+}
+
 func (c *TransmissionClient) Add(url string) error {
 	if strings.HasPrefix(url, "data:") {
 		// Если это base64-закодированный файл

@@ -49,14 +49,22 @@ function App() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 3;
-  const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+  // Меняем isBulkLoading на объект состояний для каждой операции
+  const [bulkOperations, setBulkOperations] = useState<{
+    start: boolean;
+    stop: boolean;
+  }>({
+    start: false,
+    stop: false
+  });
 
   const [lastBulkAction, setLastBulkAction] = useState<'start' | 'stop' | null>(null);
   const [lastTorrentStates, setLastTorrentStates] = useState<Map<number, string>>(new Map());
 
   // Отслеживаем изменение состояний торрентов для массовых действий
   useEffect(() => {
-    if (!isBulkLoading || !lastBulkAction) return;
+    if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop)) return;
 
     const selectedTorrentsArray = Array.from(selectedTorrents);
     const allTorrentsChanged = selectedTorrentsArray.every(id => {
@@ -74,11 +82,14 @@ function App() {
     });
 
     if (allTorrentsChanged) {
-      setIsBulkLoading(false);
+      setBulkOperations(prev => ({
+        ...prev,
+        [lastBulkAction]: false
+      }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
-  }, [torrents, selectedTorrents, isBulkLoading, lastBulkAction, lastTorrentStates]);
+  }, [torrents, selectedTorrents, bulkOperations, lastBulkAction, lastTorrentStates]);
 
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
@@ -246,16 +257,15 @@ function App() {
   };
 
   const handleStartSelected = async () => {
-    if (isBulkLoading || !hasSelectedTorrents) return;
+    if (bulkOperations.start || !hasSelectedTorrents) return;
     
-    // Сохраняем текущие состояния выбранных торрентов
     const states = new Map(
       torrents
         .filter(t => selectedTorrents.has(t.ID))
         .map(t => [t.ID, t.Status])
     );
     
-    setIsBulkLoading(true);
+    setBulkOperations(prev => ({ ...prev, start: true }));
     setLastBulkAction('start');
     setLastTorrentStates(states);
     
@@ -265,23 +275,22 @@ function App() {
     } catch (error) {
       console.error('Failed to start torrents:', error);
       setError(`Failed to start torrents: ${error}`);
-      setIsBulkLoading(false);
+      setBulkOperations(prev => ({ ...prev, start: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
   };
 
   const handleStopSelected = async () => {
-    if (isBulkLoading || !hasSelectedTorrents) return;
+    if (bulkOperations.stop || !hasSelectedTorrents) return;
 
-    // Сохраняем текущие состояния выбранных торрентов
     const states = new Map(
       torrents
         .filter(t => selectedTorrents.has(t.ID))
         .map(t => [t.ID, t.Status])
     );
     
-    setIsBulkLoading(true);
+    setBulkOperations(prev => ({ ...prev, stop: true }));
     setLastBulkAction('stop');
     setLastTorrentStates(states);
 
@@ -291,7 +300,7 @@ function App() {
     } catch (error) {
       console.error('Failed to stop torrents:', error);
       setError(`Failed to stop torrents: ${error}`);
-      setIsBulkLoading(false);
+      setBulkOperations(prev => ({ ...prev, stop: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
@@ -375,34 +384,32 @@ function App() {
               </span>
             </div>
             <div className={styles.bulkActionButtons}>
-              {isBulkLoading ? (
-                <Button 
-                  variant="icon"
-                  disabled
-                  loading
-                >
+              <Button 
+                variant="icon"
+                onClick={handleStartSelected}
+                disabled={!hasSelectedTorrents || bulkOperations.start}
+                loading={bulkOperations.start}
+                aria-label="Start selected torrents"
+              >
+                {bulkOperations.start ? (
                   <ArrowPathIcon className="loading-spinner" />
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    variant="icon"
-                    onClick={handleStartSelected}
-                    disabled={!hasSelectedTorrents}
-                    aria-label="Start selected torrents"
-                  >
-                    <PlayIcon />
-                  </Button>
-                  <Button 
-                    variant="icon"
-                    onClick={handleStopSelected}
-                    disabled={!hasSelectedTorrents}
-                    aria-label="Stop selected torrents"
-                  >
-                    <PauseIcon />
-                  </Button>
-                </>
-              )}
+                ) : (
+                  <PlayIcon />
+                )}
+              </Button>
+              <Button 
+                variant="icon"
+                onClick={handleStopSelected}
+                disabled={!hasSelectedTorrents || bulkOperations.stop}
+                loading={bulkOperations.stop}
+                aria-label="Stop selected torrents"
+              >
+                {bulkOperations.stop ? (
+                  <ArrowPathIcon className="loading-spinner" />
+                ) : (
+                  <PauseIcon />
+                )}
+              </Button>
             </div>
             {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>

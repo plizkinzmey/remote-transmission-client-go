@@ -52,14 +52,28 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 
   // Отслеживаем изменение статуса торрента
   useEffect(() => {
-    if (isLoading && lastStatus !== status) {
-      // Статус изменился после выполнения действия
-      if (
-        (lastAction === 'start' && (status === 'downloading' || status === 'seeding')) ||
-        (lastAction === 'stop' && status === 'stopped')
-      ) {
+    if (isLoading && lastAction) {
+      // Проверяем, можно ли выполнить действие
+      const canPerformAction = 
+        (lastAction === 'start' && status === 'stopped') ||
+        (lastAction === 'stop' && (status === 'downloading' || status === 'seeding'));
+
+      // Если действие невозможно выполнить (торрент уже в нужном состоянии)
+      if (!canPerformAction) {
         setIsLoading(false);
         setLastAction(null);
+        return;
+      }
+
+      // Если статус изменился после выполнения действия
+      if (lastStatus !== status) {
+        if (
+          (lastAction === 'start' && (status === 'downloading' || status === 'seeding')) ||
+          (lastAction === 'stop' && status === 'stopped')
+        ) {
+          setIsLoading(false);
+          setLastAction(null);
+        }
       }
     }
     setLastStatus(status);
@@ -68,6 +82,15 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const handleAction = (action: 'start' | 'stop') => {
     if (isLoading) return;
     
+    // Проверяем, нужно ли выполнять действие
+    const isAlreadyInTargetState = 
+      (action === 'start' && (status === 'downloading' || status === 'seeding')) ||
+      (action === 'stop' && status === 'stopped');
+
+    if (isAlreadyInTargetState) {
+      return; // Не выполняем действие, если торрент уже в целевом состоянии
+    }
+
     setIsLoading(true);
     setLastAction(action);
     if (action === 'start') {

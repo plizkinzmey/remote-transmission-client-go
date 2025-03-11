@@ -62,17 +62,50 @@ function App() {
   const [lastBulkAction, setLastBulkAction] = useState<'start' | 'stop' | null>(null);
   const [lastTorrentStates, setLastTorrentStates] = useState<Map<number, string>>(new Map());
 
-  // Отслеживаем изменение состояний торрентов для массовых действий
+  // Обновляем useEffect для массовых операций
   useEffect(() => {
     if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop)) return;
 
     const selectedTorrentsArray = Array.from(selectedTorrents);
+    
+    // Проверяем, есть ли торренты, которые можно обработать
+    const hasTorrentsToProcess = selectedTorrentsArray.some(id => {
+      const torrent = torrents.find(t => t.ID === id);
+      if (!torrent) return false;
+
+      if (lastBulkAction === 'start') {
+        return torrent.Status === 'stopped';
+      } else {
+        return torrent.Status === 'downloading' || torrent.Status === 'seeding';
+      }
+    });
+
+    // Если нет торрентов для обработки, отменяем операцию
+    if (!hasTorrentsToProcess) {
+      setBulkOperations(prev => ({
+        ...prev,
+        [lastBulkAction]: false
+      }));
+      setLastBulkAction(null);
+      setLastTorrentStates(new Map());
+      return;
+    }
+
+    // Проверяем изменение состояний торрентов
     const allTorrentsChanged = selectedTorrentsArray.every(id => {
       const torrent = torrents.find(t => t.ID === id);
       const previousState = lastTorrentStates.get(id);
       
       if (!torrent || !previousState) return false;
 
+      // Торрент уже был в целевом состоянии
+      const wasAlreadyInTargetState = 
+        (lastBulkAction === 'start' && (previousState === 'downloading' || previousState === 'seeding')) ||
+        (lastBulkAction === 'stop' && previousState === 'stopped');
+
+      if (wasAlreadyInTargetState) return true;
+
+      // Проверяем, изменилось ли состояние на целевое
       if (lastBulkAction === 'start') {
         return previousState !== torrent.Status && 
                (torrent.Status === 'downloading' || torrent.Status === 'seeding');
@@ -258,6 +291,12 @@ function App() {
 
   const handleStartSelected = async () => {
     if (bulkOperations.start || !hasSelectedTorrents) return;
+
+    // Проверяем, есть ли торренты, которые можно запустить
+    const torrentsToStart = torrents
+      .filter(t => selectedTorrents.has(t.ID) && t.Status === 'stopped');
+
+    if (torrentsToStart.length === 0) return;
     
     const states = new Map(
       torrents
@@ -270,7 +309,7 @@ function App() {
     setLastTorrentStates(states);
     
     try {
-      await StartTorrents(Array.from(selectedTorrents));
+      await StartTorrents(torrentsToStart.map(t => t.ID));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to start torrents:', error);
@@ -284,6 +323,13 @@ function App() {
   const handleStopSelected = async () => {
     if (bulkOperations.stop || !hasSelectedTorrents) return;
 
+    // Проверяем, есть ли торренты, которые можно остановить
+    const torrentsToStop = torrents
+      .filter(t => selectedTorrents.has(t.ID) && 
+                  (t.Status === 'downloading' || t.Status === 'seeding'));
+
+    if (torrentsToStop.length === 0) return;
+
     const states = new Map(
       torrents
         .filter(t => selectedTorrents.has(t.ID))
@@ -295,7 +341,7 @@ function App() {
     setLastTorrentStates(states);
 
     try {
-      await StopTorrents(Array.from(selectedTorrents));
+      await StopTorrents(torrentsToStop.map(t => t.ID));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to stop torrents:', error);

@@ -29,6 +29,58 @@ function App() {
   const [showAddTorrent, setShowAddTorrent] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const maxReconnectAttempts = 3;
+
+  // Функция переподключения к серверу
+  const reconnect = async () => {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      setError('Maximum reconnection attempts reached. Please check your connection settings.');
+      setIsReconnecting(false);
+      return;
+    }
+
+    setIsReconnecting(true);
+    try {
+      const savedConfig = await LoadConfig();
+      if (savedConfig) {
+        await Initialize(JSON.stringify(savedConfig));
+        setError(null);
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        return true;
+      }
+    } catch (error) {
+      console.error('Reconnection attempt failed:', error);
+      setReconnectAttempts(prev => prev + 1);
+      return false;
+    }
+  };
+
+  // Функция обновления списка торрентов
+  const refreshTorrents = async () => {
+    try {
+      const response = await GetTorrents();
+      setTorrents(response);
+      
+      // Сбрасываем ошибки и счетчик попыток переподключения при успешном запросе
+      setError(null);
+      setReconnectAttempts(0);
+      setIsReconnecting(false);
+    } catch (error) {
+      console.error('Failed to fetch torrents:', error);
+      
+      // Если это ошибка соединения, пытаемся переподключиться
+      if (!isReconnecting) {
+        setError(`Connection lost. Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+        const reconnected = await reconnect();
+        if (!reconnected) {
+          setError(`Failed to reconnect. Retrying in 3 seconds... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -41,21 +93,18 @@ function App() {
             // Если есть сохраненные настройки, используем их
             await Initialize(JSON.stringify(savedConfig));
             setIsInitialized(true);
-            refreshTorrents();
+            refreshTorrents(); // Первоначальная загрузка
           } catch (initError) {
             console.error('Failed to connect with saved settings:', initError);
             setError(`Connection failed: ${initError}. Please check your settings.`);
-            // Показываем окно настроек при ошибке инициализации
             setShowSettings(true);
           }
         } else {
-          // Если настроек нет, показываем окно настроек
           setShowSettings(true);
         }
       } catch (error) {
         console.error('Failed to load config:', error);
         setError(`Failed to load configuration: ${error}`);
-        // В случае ошибки тоже показываем окно настроек
         setShowSettings(true);
       }
     };
@@ -63,17 +112,25 @@ function App() {
     initializeApp();
   }, []);
 
-  const refreshTorrents = async () => {
-    try {
-      const response = await GetTorrents();
-      setTorrents(response);
-      // Если получение данных успешно, сбрасываем ошибки
-      setError(null);
-    } catch (error) {
-      console.error('Failed to fetch torrents:', error);
-      setError(`Failed to fetch torrents: ${error}`);
+  // Эффект для автоматического обновления списка торрентов
+  useEffect(() => {
+    let intervalId: number;
+
+    if (isInitialized) {
+      // Запускаем первоначальное обновление
+      refreshTorrents();
+
+      // Устанавливаем интервал обновления каждые 3 секунды
+      intervalId = window.setInterval(refreshTorrents, 3000);
     }
-  };
+
+    // Очистка при размонтировании
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [isInitialized]);
 
   const handleAddTorrent = async (url: string) => {
     try {
@@ -143,8 +200,8 @@ function App() {
           
           <div className={styles.actions}>
             <Button onClick={() => setShowSettings(true)}>Settings</Button>
-            <Button onClick={refreshTorrents}>Refresh</Button>
             <Button onClick={() => setShowAddTorrent(true)}>Add Torrent</Button>
+            {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>
         </div>
 
@@ -177,7 +234,6 @@ function App() {
           <Settings
             onSave={handleSettingsSave}
             onClose={() => {
-              // Закрываем окно настроек только если уже есть инициализация
               if (isInitialized) {
                 setShowSettings(false);
               }

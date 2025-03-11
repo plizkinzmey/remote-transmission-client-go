@@ -6,7 +6,7 @@ import { AddTorrent } from './components/AddTorrent';
 import styles from './styles/App.module.css';
 import './App.css';
 
-import { GetTorrents, AddTorrent as AddTorrentAPI, RemoveTorrent, Initialize, LoadConfig } from '../wailsjs/go/main/App';
+import { GetTorrents, AddTorrent as AddTorrentAPI, AddTorrentFile, RemoveTorrent, Initialize, LoadConfig } from '../wailsjs/go/main/App';
 
 interface Torrent {
   ID: number;
@@ -82,6 +82,16 @@ function App() {
     } catch (error) {
       console.error('Failed to add torrent:', error);
       setError(`Failed to add torrent: ${error}`);
+    }
+  };
+
+  const handleAddTorrentFile = async (base64Content: string) => {
+    try {
+      await AddTorrentFile(base64Content);
+      refreshTorrents();
+    } catch (error) {
+      console.error('Failed to add torrent file:', error);
+      setError(`Failed to add torrent file: ${error}`);
     }
   };
 
@@ -178,6 +188,7 @@ function App() {
         {showAddTorrent && (
           <AddTorrent
             onAdd={handleAddTorrent}
+            onAddFile={handleAddTorrentFile}
             onClose={() => setShowAddTorrent(false)}
           />
         )}

@@ -20,5 +20,6 @@ type Torrent struct {
 type TorrentRepository interface {
 	GetAll() ([]Torrent, error)
 	Add(url string) error
+	AddFile(filepath string) error
 	Remove(id int64, deleteData bool) error
 }

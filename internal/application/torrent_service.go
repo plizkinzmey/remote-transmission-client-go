@@ -22,6 +22,10 @@ func (s *TorrentService) AddTorrent(url string) error {
 	return s.repo.Add(url)
 }
 
+func (s *TorrentService) AddTorrentFile(filepath string) error {
+	return s.repo.AddFile(filepath)
+}
+
 func (s *TorrentService) RemoveTorrent(id int64, deleteData bool) error {
 	return s.repo.Remove(id, deleteData)
 }

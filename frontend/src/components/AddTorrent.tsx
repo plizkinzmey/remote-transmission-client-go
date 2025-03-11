@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import { Button } from './Button';
 
 interface AddTorrentProps {
   onAdd: (url: string) => void;
+  onAddFile: (filepath: string) => void;
   onClose: () => void;
 }
 
@@ -70,6 +71,51 @@ const Input = styled.input`
   }
 `;
 
+const Tabs = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e1e1e1;
+  margin-bottom: 16px;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 8px 16px;
+  background: ${props => props.active ? '#f5f5f5' : 'transparent'};
+  border: none;
+  border-bottom: 2px solid ${props => props.active ? '#3498db' : 'transparent'};
+  cursor: pointer;
+  font-size: 14px;
+  color: ${props => props.active ? '#2c3e50' : '#95a5a6'};
+  
+  &:hover {
+    color: #2c3e50;
+  }
+`;
+
+const FileUploadArea = styled.div`
+  border: 2px dashed #bdc3c7;
+  border-radius: 4px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: #3498db;
+    background-color: #f7f9fc;
+  }
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const FileName = styled.div`
+  margin-top: 12px;
+  font-size: 14px;
+  color: #2c3e50;
+  word-break: break-all;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -77,15 +123,58 @@ const ButtonGroup = styled.div`
   margin-top: 16px;
 `;
 
-export const AddTorrent: React.FC<AddTorrentProps> = ({ onAdd, onClose }) => {
+type TabType = 'url' | 'file';
+
+export const AddTorrent: React.FC<AddTorrentProps> = ({ onAdd, onAddFile, onClose }) => {
+  const [activeTab, setActiveTab] = useState<TabType>('url');
   const [url, setUrl] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = React.createRef<HTMLInputElement>();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url.trim()) {
+    
+    if (activeTab === 'url' && url.trim()) {
       onAdd(url.trim());
       onClose();
+    } else if (activeTab === 'file' && file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        // Передаем base64-содержимое файла для добавления
+        // На бэкенде нужно будет конвертировать его обратно в файл
+        onAddFile(base64.split(',')[1]); // Убираем префикс data:application/x-bittorrent;base64,
+        onClose();
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.name.endsWith('.torrent')) {
+        setFile(droppedFile);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   return (
@@ -97,18 +186,58 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({ onAdd, onClose }) => {
         </ModalHeader>
         <ModalContent>
           <Form onSubmit={handleSubmit}>
-            <Input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter torrent URL or magnet link"
-              autoFocus
-            />
+            <Tabs>
+              <Tab 
+                active={activeTab === 'url'} 
+                onClick={() => setActiveTab('url')}
+                type="button"
+              >
+                URL / Magnet
+              </Tab>
+              <Tab 
+                active={activeTab === 'file'} 
+                onClick={() => setActiveTab('file')}
+                type="button"
+              >
+                Torrent File
+              </Tab>
+            </Tabs>
+
+            {activeTab === 'url' ? (
+              <Input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Enter torrent URL or magnet link"
+                autoFocus
+              />
+            ) : (
+              <>
+                <FileUploadArea 
+                  onClick={handleFileClick}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                >
+                  <p>Click or drop .torrent file here</p>
+                  {file && <FileName>{file.name}</FileName>}
+                </FileUploadArea>
+                <FileInput 
+                  type="file" 
+                  ref={fileInputRef}
+                  accept=".torrent"
+                  onChange={handleFileChange} 
+                />
+              </>
+            )}
+            
             <ButtonGroup>
               <Button type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!url.trim()}>
+              <Button 
+                type="submit" 
+                disabled={(activeTab === 'url' && !url.trim()) || (activeTab === 'file' && !file)}
+              >
                 Add
               </Button>
             </ButtonGroup>

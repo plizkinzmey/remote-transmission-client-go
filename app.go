@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"transmission-client-go/internal/application"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
@@ -86,6 +87,18 @@ func (a *App) AddTorrent(url string) error {
 		return fmt.Errorf(ErrServiceNotInitialized)
 	}
 	return a.service.AddTorrent(url)
+}
+
+// AddTorrentFile добавляет торрент из баз64-закодированного файла
+func (a *App) AddTorrentFile(base64Content string) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	// Добавляем префикс data URL, если его нет
+	if !strings.HasPrefix(base64Content, "data:") {
+		base64Content = "data:application/x-bittorrent;base64," + base64Content
+	}
+	return a.service.AddTorrent(base64Content)
 }
 
 // RemoveTorrent удаляет торрент по ID

@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { Button } from './Button';
 import { DeleteConfirmation } from './DeleteConfirmation';
+import {
+  PlayIcon,
+  PauseIcon,
+  TrashIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
 import styles from '../styles/TorrentItem.module.css';
 
 interface TorrentItemProps {
@@ -27,6 +33,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   onStop,
 }) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getStatusClassName = (status: string) => {
     switch (status) {
@@ -41,7 +48,58 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
   };
 
+  const handleAction = (action: 'start' | 'stop') => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      if (action === 'start') {
+        onStart(id);
+      } else {
+        onStop(id);
+      }
+    } finally {
+      setTimeout(() => setIsLoading(false), 500);
+    }
+  };
+
   const isRunning = status === 'downloading' || status === 'seeding';
+
+  const renderActionButton = () => {
+    if (isLoading) {
+      return (
+        <Button 
+          variant="icon"
+          disabled
+          loading
+        >
+          <ArrowPathIcon className="loading-spinner" />
+        </Button>
+      );
+    }
+
+    if (isRunning) {
+      return (
+        <Button 
+          variant="icon"
+          onClick={() => handleAction('stop')}
+          aria-label={`Pause torrent ${name}`}
+        >
+          <PauseIcon />
+        </Button>
+      );
+    }
+
+    return (
+      <Button 
+        variant="icon"
+        onClick={() => handleAction('start')}
+        aria-label={`Start torrent ${name}`}
+      >
+        <PlayIcon />
+      </Button>
+    );
+  };
 
   return (
     <>
@@ -77,26 +135,13 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </div>
         </div>
         <div className={styles.actions}>
-          {isRunning ? (
-            <Button 
-              onClick={() => onStop(id)}
-              aria-label={`Pause torrent ${name}`}
-            >
-              Pause
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => onStart(id)}
-              aria-label={`Start torrent ${name}`}
-            >
-              Start
-            </Button>
-          )}
+          {renderActionButton()}
           <Button 
+            variant="icon"
             onClick={() => setShowDeleteConfirmation(true)}
             aria-label={`Remove torrent ${name}`}
           >
-            Remove
+            <TrashIcon />
           </Button>
         </div>
       </div>

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Button } from './Button';
-import { LoadConfig, TestConnection } from '../../wailsjs/go/main/App';
+import { TestConnection, LoadConfig } from '../../wailsjs/go/main/App';
 
 interface SettingsProps {
   onSave: (settings: {
@@ -123,10 +123,7 @@ const defaultSettings = {
   password: '',
 };
 
-export const Settings: React.FC<SettingsProps> = ({
-  onSave,
-  onClose,
-}) => {
+export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   const [settings, setSettings] = useState(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -156,17 +153,13 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleTestConnection = async () => {
-    setIsTestingConnection(true);
-    setConnectionStatus('none');
-    setStatusMessage('');
-
     try {
       await TestConnection(JSON.stringify(settings));
       setConnectionStatus('success');
       setStatusMessage('Connection successful!');
     } catch (error) {
       setConnectionStatus('error');
-      setStatusMessage(`Connection failed: ${error}`);
+      setStatusMessage(`Connection failed: ${error instanceof Error ? error.message : error}`);
     } finally {
       setIsTestingConnection(false);
     }

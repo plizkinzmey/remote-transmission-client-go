@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import { Button } from './Button';
+import { 
+  XMarkIcon, 
+  ExclamationTriangleIcon,
+  TrashIcon
+} from '@heroicons/react/24/outline';
 
 interface DeleteConfirmationProps {
   torrentName: string;
@@ -37,9 +42,25 @@ const ModalHeader = styled.div`
   }
 `;
 
-const ModalContent = styled.div`
+const WarningIcon = styled(ExclamationTriangleIcon)`
+  width: 32px;
+  height: 32px;
+  color: #e74c3c;
+  margin-bottom: 16px;
+`;
+
+const Message = styled.p`
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #2c3e50;
+  text-align: center;
+`;
+
+const DialogContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 24px;
-  -webkit-app-region: no-drag;
 `;
 
 const Overlay = styled.div`
@@ -50,12 +71,6 @@ const Overlay = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
-`;
-
-const Message = styled.p`
-  margin: 0 0 20px 0;
-  font-size: 14px;
-  color: #2c3e50;
 `;
 
 const CheckboxContainer = styled.div`
@@ -79,13 +94,7 @@ const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-`;
-
-const DeleteButton = styled(Button)`
-  background-color: #e74c3c;
-  &:hover {
-    background-color: #c0392b;
-  }
+  align-items: center;
 `;
 
 export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
@@ -101,8 +110,16 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
       <Modal>
         <ModalHeader>
           <h2>Delete Torrent</h2>
+          <Button 
+            variant="icon" 
+            onClick={onCancel}
+            aria-label="Close dialog"
+          >
+            <XMarkIcon />
+          </Button>
         </ModalHeader>
-        <ModalContent>
+        <DialogContent>
+          <WarningIcon />
           <Message>
             Are you sure you want to delete torrent "{torrentName}"?
           </Message>
@@ -118,12 +135,18 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
             </CheckboxLabel>
           </CheckboxContainer>
           <ButtonGroup>
-            <Button onClick={onCancel}>Cancel</Button>
-            <DeleteButton onClick={() => onConfirm(deleteData)}>
+            <Button onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => onConfirm(deleteData)}
+              variant="danger"
+            >
+              <TrashIcon />
               Delete
-            </DeleteButton>
+            </Button>
           </ButtonGroup>
-        </ModalContent>
+        </DialogContent>
       </Modal>
     </>
   );

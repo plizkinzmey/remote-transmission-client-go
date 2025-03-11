@@ -3,6 +3,13 @@ import { Button } from './components/Button';
 import { TorrentItem } from './components/TorrentItem';
 import { Settings } from './components/Settings';
 import { AddTorrent } from './components/AddTorrent';
+import {
+  Cog6ToothIcon,
+  PlusCircleIcon,
+  PlayIcon,
+  PauseIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
 import styles from './styles/App.module.css';
 import './App.css';
 
@@ -42,6 +49,7 @@ function App() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 3;
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
 
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
@@ -209,22 +217,32 @@ function App() {
   };
 
   const handleStartSelected = async () => {
+    if (isBulkLoading || !hasSelectedTorrents) return;
+    
+    setIsBulkLoading(true);
     try {
       await StartTorrents(Array.from(selectedTorrents));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to start torrents:', error);
       setError(`Failed to start torrents: ${error}`);
+    } finally {
+      setIsBulkLoading(false);
     }
   };
 
   const handleStopSelected = async () => {
+    if (isBulkLoading || !hasSelectedTorrents) return;
+
+    setIsBulkLoading(true);
     try {
       await StopTorrents(Array.from(selectedTorrents));
       refreshTorrents();
     } catch (error) {
       console.error('Failed to stop torrents:', error);
       setError(`Failed to stop torrents: ${error}`);
+    } finally {
+      setIsBulkLoading(false);
     }
   };
 
@@ -269,8 +287,20 @@ function App() {
           </div>
           
           <div className={styles.actions}>
-            <Button onClick={() => setShowSettings(true)}>Settings</Button>
-            <Button onClick={() => setShowAddTorrent(true)}>Add Torrent</Button>
+            <Button 
+              variant="icon"
+              onClick={() => setShowSettings(true)}
+              aria-label="Settings"
+            >
+              <Cog6ToothIcon />
+            </Button>
+            <Button 
+              variant="icon"
+              onClick={() => setShowAddTorrent(true)}
+              aria-label="Add torrent"
+            >
+              <PlusCircleIcon />
+            </Button>
           </div>
         </div>
 
@@ -294,18 +324,34 @@ function App() {
               </span>
             </div>
             <div className={styles.bulkActionButtons}>
-              <Button 
-                onClick={handleStartSelected}
-                disabled={!hasSelectedTorrents}
-              >
-                Start Selected
-              </Button>
-              <Button 
-                onClick={handleStopSelected}
-                disabled={!hasSelectedTorrents}
-              >
-                Stop Selected
-              </Button>
+              {isBulkLoading ? (
+                <Button 
+                  variant="icon"
+                  disabled
+                  loading
+                >
+                  <ArrowPathIcon className="loading-spinner" />
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    variant="icon"
+                    onClick={handleStartSelected}
+                    disabled={!hasSelectedTorrents}
+                    aria-label="Start selected torrents"
+                  >
+                    <PlayIcon />
+                  </Button>
+                  <Button 
+                    variant="icon"
+                    onClick={handleStopSelected}
+                    disabled={!hasSelectedTorrents}
+                    aria-label="Stop selected torrents"
+                  >
+                    <PauseIcon />
+                  </Button>
+                </>
+              )}
             </div>
             {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>

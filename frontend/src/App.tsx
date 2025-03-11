@@ -152,9 +152,9 @@ function App() {
     }
   };
 
-  const handleRemoveTorrent = async (id: number) => {
+  const handleRemoveTorrent = async (id: number, deleteData: boolean) => {
     try {
-      await RemoveTorrent(id, false);
+      await RemoveTorrent(id, deleteData);
       refreshTorrents();
     } catch (error) {
       console.error('Failed to remove torrent:', error);

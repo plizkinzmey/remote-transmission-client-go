@@ -1,0 +1,19 @@
+.torrentListContainer {
+  flex: 1;
+  padding: 0 20px 20px;
+  margin-top: -10px;
+}
+
+.torrentList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.noTorrents {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+  user-select: none;
+}

@@ -1,6 +1,6 @@
 import { TorrentItem } from "./TorrentItem";
 import { useLocalization } from "../contexts/LocalizationContext";
-import styles from "../styles/App.module.css";
+import styles from "../styles/TorrentList.module.css";
 
 // Интерфейс для торрента
 export interface TorrentData {

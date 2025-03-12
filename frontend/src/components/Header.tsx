@@ -7,7 +7,7 @@ import {
   PauseIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import styles from "../styles/App.module.css";
+import styles from "../styles/Header.module.css";
 
 interface HeaderProps {
   searchTerm: string;

@@ -51,13 +51,12 @@
   background-color: #f0f0f0;
   border-radius: 12px;
   padding: 2px 8px;
-  min-width: 40px;
+  min-width: 120px;
   text-align: center;
 }
 
 .ratio {
   font-size: 12px;
-  font-weight: bold;
   color: #2c3e50;
 }
 
@@ -66,6 +65,7 @@
   align-items: center;
   gap: 12px;
   user-select: none;
+  margin-bottom: 4px;
 }
 
 .status {
@@ -129,6 +129,7 @@
 .progressText {
   font-size: 12px;
   color: #666;
+  flex: 1;
 }
 
 /* Стили для детальной информации о торренте */
@@ -138,23 +139,17 @@
   color: #666;
 }
 
-/* Новые стили для организации информации в колонки */
-.infoColumns {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.infoColumn {
-  flex: 1;
-}
-
+/* Перенастройка стиля строки информации для одной линии */
 .infoRow {
-  margin-bottom: 4px;
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .infoRow span {
   display: inline-block;
+  white-space: nowrap;
 }
 
 .progressContainer {
@@ -162,7 +157,7 @@
   width: 100%;
   height: 4px;
   margin-top: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .progressElement {

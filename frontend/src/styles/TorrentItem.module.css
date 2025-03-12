@@ -64,11 +64,13 @@
   align-items: center;
   gap: 12px;
   user-select: none;
-  margin-bottom: 2px; /* Уменьшаем отступ до прогресс бара */
+  margin: 0; /* Убираем отступы */
+  padding: 0; /* Убираем паддинги */
   text-align: left;
   font-size: 13px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+
 .statusDownloading {
   color: #3498db;
   font-weight: 500;
@@ -97,8 +99,8 @@
   position: relative;
   width: 100%;
   height: 8px;
-  margin-top: 2px; /* Уменьшаем отступ от статуса */
-  margin-bottom: 8px;
+  margin: 4px 0; /* Устанавливаем одинаковые отступы сверху и снизу */
+  padding: 0;
 }
 .progressElement {
   position: absolute;

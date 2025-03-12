@@ -70,12 +70,13 @@ func (c *TransmissionClient) getTorrentSizes(t transmissionrpc.Torrent) (total u
 	total = uint64(0)
 	downloaded = uint64(0)
 
+	// Transmission возвращает размеры в битах, конвертируем их в байты
 	if t.SizeWhenDone != nil {
-		total = uint64(*t.SizeWhenDone)
+		total = uint64(*t.SizeWhenDone / 8)
 	}
 
 	if t.HaveValid != nil {
-		downloaded = uint64(*t.HaveValid)
+		downloaded = uint64(*t.HaveValid / 8)
 	}
 
 	return total, downloaded
@@ -125,16 +126,19 @@ func formatBytes(bytes uint64) string {
 		return fmt.Sprintf("%d B", bytes)
 	}
 
-	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
 	exp := int(math.Log(float64(bytes)) / math.Log(float64(unit)))
 	if exp >= len(units) {
 		exp = len(units) - 1
 	}
 
 	size := float64(bytes) / math.Pow(float64(unit), float64(exp))
+
+	// Округляем до 2 знаков после запятой для более точного отображения
 	return fmt.Sprintf("%.2f %s", size, units[exp])
 }
 
+// Добавляем поле DownloadedEver в запрос
 func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
 		"id", "name", "status", "percentDone",
@@ -162,7 +166,8 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 			sizeFormatted = formatBytes(totalSize)
 		}
 
-		uploadedFormatted := formatBytes(uint64(uploadedBytes))
+		// Также конвертируем uploadedBytes из бит в байты
+		uploadedFormatted := formatBytes(uint64(uploadedBytes / 8))
 
 		result[i] = domain.Torrent{
 			ID:                *t.ID,

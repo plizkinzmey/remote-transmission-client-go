@@ -133,38 +133,38 @@ func formatBytes(bytes int64) string {
 
 func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
-		"id", "name", "status", "percentDone", 
+		"id", "name", "status", "percentDone",
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
 		"leftUntilDone", "desiredAvailable", "haveValid",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
-	
+
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status)
 		size := c.getTorrentSize(t)
 		uploadRatio, uploadedBytes := c.getUploadInfo(t)
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
-		
+
 		// Форматируем размеры на стороне сервера
 		sizeFormatted := formatBytes(size)
 		uploadedFormatted := formatBytes(uploadedBytes)
-		
+
 		result[i] = domain.Torrent{
-			ID:               *t.ID,
-			Name:             *t.Name,
-			Status:           status,
-			Progress:         *t.PercentDone * 100,
-			Size:             size,
-			SizeFormatted:    sizeFormatted,
-			UploadRatio:      uploadRatio,
-			SeedsConnected:   0,
-			SeedsTotal:       seedsTotal,
-			PeersConnected:   peersConnected,
-			PeersTotal:       peersTotal,
-			UploadedBytes:    uploadedBytes,
+			ID:                *t.ID,
+			Name:              *t.Name,
+			Status:            status,
+			Progress:          *t.PercentDone * 100,
+			Size:              size,
+			SizeFormatted:     sizeFormatted,
+			UploadRatio:       uploadRatio,
+			SeedsConnected:    0,
+			SeedsTotal:        seedsTotal,
+			PeersConnected:    peersConnected,
+			PeersTotal:        peersTotal,
+			UploadedBytes:     uploadedBytes,
 			UploadedFormatted: uploadedFormatted,
 		}
 	}

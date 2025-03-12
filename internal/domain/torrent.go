@@ -10,19 +10,19 @@ const (
 )
 
 type Torrent struct {
-	ID             int64
-	Name           string
-	Status         TorrentStatus
-	Progress       float64
-	Size           int64
-	SizeFormatted  string       // Форматированный размер файла
-	UploadRatio    float64
-	SeedsConnected int
-	SeedsTotal     int
-	PeersConnected int
-	PeersTotal     int
-	UploadedBytes  int64
-	UploadedFormatted string    // Форматированный размер выгруженных данных
+	ID                int64
+	Name              string
+	Status            TorrentStatus
+	Progress          float64
+	Size              int64
+	SizeFormatted     string // Форматированный размер файла
+	UploadRatio       float64
+	SeedsConnected    int
+	SeedsTotal        int
+	PeersConnected    int
+	PeersTotal        int
+	UploadedBytes     int64
+	UploadedFormatted string // Форматированный размер выгруженных данных
 }
 
 type TorrentRepository interface {

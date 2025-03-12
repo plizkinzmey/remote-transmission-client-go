@@ -544,7 +544,9 @@ function App() {
               ))
             ) : (
               <div className={styles.noTorrents}>
-                {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
+                {searchTerm
+                  ? "No torrents found matching your search"
+                  : "No torrents added yet"}
               </div>
             )}
           </div>

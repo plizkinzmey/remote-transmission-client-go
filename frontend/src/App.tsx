@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Button } from './components/Button';
-import { TorrentItem } from './components/TorrentItem';
-import { Settings } from './components/Settings';
-import { AddTorrent } from './components/AddTorrent';
+import { useState, useEffect } from "react";
+import { Button } from "./components/Button";
+import { TorrentItem } from "./components/TorrentItem";
+import { Settings } from "./components/Settings";
+import { AddTorrent } from "./components/AddTorrent";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
   PlayIcon,
   PauseIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
-import styles from './styles/App.module.css';
-import './App.css';
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+import styles from "./styles/App.module.css";
+import "./App.css";
 
-import { 
-  GetTorrents, 
-  AddTorrent as AddTorrentAPI, 
-  AddTorrentFile, 
-  RemoveTorrent, 
-  Initialize, 
+import {
+  GetTorrents,
+  AddTorrent as AddTorrentAPI,
+  AddTorrentFile,
+  RemoveTorrent,
+  Initialize,
   LoadConfig,
   StartTorrents,
-  StopTorrents
-} from '../wailsjs/go/main/App';
+  StopTorrents,
+} from "../wailsjs/go/main/App";
 
 interface Torrent {
   ID: number;
@@ -47,11 +47,13 @@ interface Config {
 
 function App() {
   const [torrents, setTorrents] = useState<Torrent[]>([]);
-  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(new Set());
+  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
+    new Set()
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddTorrent, setShowAddTorrent] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -63,35 +65,40 @@ function App() {
     stop: boolean;
   }>({
     start: false,
-    stop: false
+    stop: false,
   });
 
-  const [lastBulkAction, setLastBulkAction] = useState<'start' | 'stop' | null>(null);
-  const [lastTorrentStates, setLastTorrentStates] = useState<Map<number, string>>(new Map());
+  const [lastBulkAction, setLastBulkAction] = useState<"start" | "stop" | null>(
+    null
+  );
+  const [lastTorrentStates, setLastTorrentStates] = useState<
+    Map<number, string>
+  >(new Map());
 
   // Обновляем useEffect для массовых операций
   useEffect(() => {
-    if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop)) return;
+    if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop))
+      return;
 
     const selectedTorrentsArray = Array.from(selectedTorrents);
-    
+
     // Проверяем, есть ли торренты, которые можно обработать
-    const hasTorrentsToProcess = selectedTorrentsArray.some(id => {
-      const torrent = torrents.find(t => t.ID === id);
+    const hasTorrentsToProcess = selectedTorrentsArray.some((id) => {
+      const torrent = torrents.find((t) => t.ID === id);
       if (!torrent) return false;
 
-      if (lastBulkAction === 'start') {
-        return torrent.Status === 'stopped';
+      if (lastBulkAction === "start") {
+        return torrent.Status === "stopped";
       } else {
-        return torrent.Status === 'downloading' || torrent.Status === 'seeding';
+        return torrent.Status === "downloading" || torrent.Status === "seeding";
       }
     });
 
     // Если нет торрентов для обработки, отменяем операцию
     if (!hasTorrentsToProcess) {
-      setBulkOperations(prev => ({
+      setBulkOperations((prev) => ({
         ...prev,
-        [lastBulkAction]: false
+        [lastBulkAction]: false,
       }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
@@ -99,37 +106,46 @@ function App() {
     }
 
     // Проверяем изменение состояний торрентов
-    const allTorrentsChanged = selectedTorrentsArray.every(id => {
-      const torrent = torrents.find(t => t.ID === id);
+    const allTorrentsChanged = selectedTorrentsArray.every((id) => {
+      const torrent = torrents.find((t) => t.ID === id);
       const previousState = lastTorrentStates.get(id);
-      
+
       if (!torrent || !previousState) return false;
 
       // Торрент уже был в целевом состоянии
-      const wasAlreadyInTargetState = 
-        (lastBulkAction === 'start' && (previousState === 'downloading' || previousState === 'seeding')) ||
-        (lastBulkAction === 'stop' && previousState === 'stopped');
+      const wasAlreadyInTargetState =
+        (lastBulkAction === "start" &&
+          (previousState === "downloading" || previousState === "seeding")) ||
+        (lastBulkAction === "stop" && previousState === "stopped");
 
       if (wasAlreadyInTargetState) return true;
 
       // Проверяем, изменилось ли состояние на целевое
-      if (lastBulkAction === 'start') {
-        return previousState !== torrent.Status && 
-               (torrent.Status === 'downloading' || torrent.Status === 'seeding');
+      if (lastBulkAction === "start") {
+        return (
+          previousState !== torrent.Status &&
+          (torrent.Status === "downloading" || torrent.Status === "seeding")
+        );
       } else {
-        return previousState !== torrent.Status && torrent.Status === 'stopped';
+        return previousState !== torrent.Status && torrent.Status === "stopped";
       }
     });
 
     if (allTorrentsChanged) {
-      setBulkOperations(prev => ({
+      setBulkOperations((prev) => ({
         ...prev,
-        [lastBulkAction]: false
+        [lastBulkAction]: false,
       }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
-  }, [torrents, selectedTorrents, bulkOperations, lastBulkAction, lastTorrentStates]);
+  }, [
+    torrents,
+    selectedTorrents,
+    bulkOperations,
+    lastBulkAction,
+    lastTorrentStates,
+  ]);
 
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
@@ -137,14 +153,16 @@ function App() {
       setSelectedTorrents(new Set());
     } else {
       // Иначе выбираем все
-      setSelectedTorrents(new Set(filteredTorrents.map(t => t.ID)));
+      setSelectedTorrents(new Set(filteredTorrents.map((t) => t.ID)));
     }
   };
 
   // Функция переподключения к серверу
   const reconnect = async () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
-      setError('Maximum reconnection attempts reached. Please check your connection settings.');
+      setError(
+        "Maximum reconnection attempts reached. Please check your connection settings."
+      );
       setIsReconnecting(false);
       return;
     }
@@ -160,8 +178,8 @@ function App() {
         return true;
       }
     } catch (error) {
-      console.error('Reconnection attempt failed:', error);
-      setReconnectAttempts(prev => prev + 1);
+      console.error("Reconnection attempt failed:", error);
+      setReconnectAttempts((prev) => prev + 1);
       return false;
     }
   };
@@ -171,20 +189,28 @@ function App() {
     try {
       const response = await GetTorrents();
       setTorrents(response);
-      
+
       // Сбрасываем ошибки и счетчик попыток переподключения при успешном запросе
       setError(null);
       setReconnectAttempts(0);
       setIsReconnecting(false);
     } catch (error) {
-      console.error('Failed to fetch torrents:', error);
-      
+      console.error("Failed to fetch torrents:", error);
+
       // Если это ошибка соединения, пытаемся переподключиться
       if (!isReconnecting) {
-        setError(`Connection lost. Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+        setError(
+          `Connection lost. Attempting to reconnect... (${
+            reconnectAttempts + 1
+          }/${maxReconnectAttempts})`
+        );
         const reconnected = await reconnect();
         if (!reconnected) {
-          setError(`Failed to reconnect. Retrying in 3 seconds... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          setError(
+            `Failed to reconnect. Retrying in 3 seconds... (${
+              reconnectAttempts + 1
+            }/${maxReconnectAttempts})`
+          );
         }
       }
     }
@@ -195,7 +221,7 @@ function App() {
       try {
         // Загружаем сохраненные настройки
         const savedConfig = await LoadConfig();
-        
+
         if (savedConfig) {
           try {
             // Если есть сохраненные настройки, используем их
@@ -203,15 +229,17 @@ function App() {
             setIsInitialized(true);
             refreshTorrents(); // Первоначальная загрузка
           } catch (initError) {
-            console.error('Failed to connect with saved settings:', initError);
-            setError(`Connection failed: ${initError}. Please check your settings.`);
+            console.error("Failed to connect with saved settings:", initError);
+            setError(
+              `Connection failed: ${initError}. Please check your settings.`
+            );
             setShowSettings(true);
           }
         } else {
           setShowSettings(true);
         }
       } catch (error) {
-        console.error('Failed to load config:', error);
+        console.error("Failed to load config:", error);
         setError(`Failed to load configuration: ${error}`);
         setShowSettings(true);
       }
@@ -245,7 +273,7 @@ function App() {
       await AddTorrentAPI(url);
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to add torrent:', error);
+      console.error("Failed to add torrent:", error);
       setError(`Failed to add torrent: ${error}`);
     }
   };
@@ -255,7 +283,7 @@ function App() {
       await AddTorrentFile(base64Content);
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to add torrent file:', error);
+      console.error("Failed to add torrent file:", error);
       setError(`Failed to add torrent file: ${error}`);
     }
   };
@@ -265,7 +293,7 @@ function App() {
       await RemoveTorrent(id, deleteData);
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to remove torrent:', error);
+      console.error("Failed to remove torrent:", error);
       setError(`Failed to remove torrent: ${error}`);
     }
   };
@@ -278,14 +306,14 @@ function App() {
       setError(null); // Сбрасываем ошибки при успешном сохранении настроек
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      console.error("Failed to update settings:", error);
       setError(`Failed to connect with new settings: ${error}`);
       // Оставляем окно настроек открытым в случае ошибки
     }
   };
 
   const handleTorrentSelect = (id: number) => {
-    setSelectedTorrents(prev => {
+    setSelectedTorrents((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -300,28 +328,29 @@ function App() {
     if (bulkOperations.start || !hasSelectedTorrents) return;
 
     // Проверяем, есть ли торренты, которые можно запустить
-    const torrentsToStart = torrents
-      .filter(t => selectedTorrents.has(t.ID) && t.Status === 'stopped');
+    const torrentsToStart = torrents.filter(
+      (t) => selectedTorrents.has(t.ID) && t.Status === "stopped"
+    );
 
     if (torrentsToStart.length === 0) return;
-    
+
     const states = new Map(
       torrents
-        .filter(t => selectedTorrents.has(t.ID))
-        .map(t => [t.ID, t.Status])
+        .filter((t) => selectedTorrents.has(t.ID))
+        .map((t) => [t.ID, t.Status])
     );
-    
-    setBulkOperations(prev => ({ ...prev, start: true }));
-    setLastBulkAction('start');
+
+    setBulkOperations((prev) => ({ ...prev, start: true }));
+    setLastBulkAction("start");
     setLastTorrentStates(states);
-    
+
     try {
-      await StartTorrents(torrentsToStart.map(t => t.ID));
+      await StartTorrents(torrentsToStart.map((t) => t.ID));
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to start torrents:', error);
+      console.error("Failed to start torrents:", error);
       setError(`Failed to start torrents: ${error}`);
-      setBulkOperations(prev => ({ ...prev, start: false }));
+      setBulkOperations((prev) => ({ ...prev, start: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
@@ -331,29 +360,31 @@ function App() {
     if (bulkOperations.stop || !hasSelectedTorrents) return;
 
     // Проверяем, есть ли торренты, которые можно остановить
-    const torrentsToStop = torrents
-      .filter(t => selectedTorrents.has(t.ID) && 
-                  (t.Status === 'downloading' || t.Status === 'seeding'));
+    const torrentsToStop = torrents.filter(
+      (t) =>
+        selectedTorrents.has(t.ID) &&
+        (t.Status === "downloading" || t.Status === "seeding")
+    );
 
     if (torrentsToStop.length === 0) return;
 
     const states = new Map(
       torrents
-        .filter(t => selectedTorrents.has(t.ID))
-        .map(t => [t.ID, t.Status])
+        .filter((t) => selectedTorrents.has(t.ID))
+        .map((t) => [t.ID, t.Status])
     );
-    
-    setBulkOperations(prev => ({ ...prev, stop: true }));
-    setLastBulkAction('stop');
+
+    setBulkOperations((prev) => ({ ...prev, stop: true }));
+    setLastBulkAction("stop");
     setLastTorrentStates(states);
 
     try {
-      await StopTorrents(torrentsToStop.map(t => t.ID));
+      await StopTorrents(torrentsToStop.map((t) => t.ID));
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to stop torrents:', error);
+      console.error("Failed to stop torrents:", error);
       setError(`Failed to stop torrents: ${error}`);
-      setBulkOperations(prev => ({ ...prev, stop: false }));
+      setBulkOperations((prev) => ({ ...prev, stop: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
@@ -364,7 +395,7 @@ function App() {
       await StartTorrents([id]);
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to start torrent:', error);
+      console.error("Failed to start torrent:", error);
       setError(`Failed to start torrent: ${error}`);
     }
   };
@@ -374,12 +405,12 @@ function App() {
       await StopTorrents([id]);
       refreshTorrents();
     } catch (error) {
-      console.error('Failed to stop torrent:', error);
+      console.error("Failed to stop torrent:", error);
       setError(`Failed to stop torrent: ${error}`);
     }
   };
 
-  const filteredTorrents = torrents.filter(torrent =>
+  const filteredTorrents = torrents.filter((torrent) =>
     torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -399,16 +430,16 @@ function App() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
+
             <div className={styles.actions}>
-              <Button 
+              <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
                 aria-label="Settings"
               >
                 <Cog6ToothIcon />
               </Button>
-              <Button 
+              <Button
                 variant="icon"
                 onClick={() => setShowAddTorrent(true)}
                 aria-label="Add torrent"
@@ -418,11 +449,7 @@ function App() {
             </div>
           </div>
 
-          {error && (
-            <div className={styles.errorMessage}>
-              {error}
-            </div>
-          )}
+          {error && <div className={styles.errorMessage}>{error}</div>}
 
           {filteredTorrents.length > 0 && (
             <div className={styles.bulkActions}>
@@ -430,7 +457,10 @@ function App() {
                 <input
                   type="checkbox"
                   className={styles.selectAllCheckbox}
-                  checked={selectedTorrents.size > 0 && selectedTorrents.size === filteredTorrents.length}
+                  checked={
+                    selectedTorrents.size > 0 &&
+                    selectedTorrents.size === filteredTorrents.length
+                  }
                   onChange={handleSelectAll}
                 />
                 <span className={styles.selectAllLabel}>
@@ -438,7 +468,7 @@ function App() {
                 </span>
               </div>
               <div className={styles.bulkActionButtons}>
-                <Button 
+                <Button
                   variant="icon"
                   onClick={handleStartSelected}
                   disabled={!hasSelectedTorrents || bulkOperations.start}
@@ -451,7 +481,7 @@ function App() {
                     <PlayIcon />
                   )}
                 </Button>
-                <Button 
+                <Button
                   variant="icon"
                   onClick={handleStopSelected}
                   disabled={!hasSelectedTorrents || bulkOperations.stop}
@@ -465,7 +495,9 @@ function App() {
                   )}
                 </Button>
               </div>
-              {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
+              {isReconnecting && (
+                <div className={styles.reconnectingStatus}>Reconnecting...</div>
+              )}
             </div>
           )}
         </div>
@@ -496,7 +528,9 @@ function App() {
               ))
             ) : (
               <div className={styles.noTorrents}>
-                {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
+                {searchTerm
+                  ? "No torrents found matching your search"
+                  : "No torrents added yet"}
               </div>
             )}
           </div>

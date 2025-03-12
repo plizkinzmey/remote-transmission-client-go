@@ -10,17 +10,17 @@ const (
 )
 
 type Torrent struct {
-	ID           int64
-	Name         string
-	Status       TorrentStatus
-	Progress     float64
-	Size         int64
-	UploadRatio  float64
+	ID             int64
+	Name           string
+	Status         TorrentStatus
+	Progress       float64
+	Size           int64
+	UploadRatio    float64
 	SeedsConnected int
-	SeedsTotal   int
+	SeedsTotal     int
 	PeersConnected int
-	PeersTotal   int
-	UploadedBytes int64
+	PeersTotal     int
+	UploadedBytes  int64
 }
 
 type TorrentRepository interface {

@@ -36,14 +36,14 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 	// Очищаем хост от протокола
 	host := strings.TrimPrefix(config.Host, "http://")
 	host = strings.TrimPrefix(host, "https://")
-	
+
 	// Убираем любой path из хоста, если он есть
 	if idx := strings.Index(host, "/"); idx != -1 {
 		host = host[:idx]
 	}
-	
+
 	endpoint.Host = fmt.Sprintf("%s:%d", host, config.Port)
-	
+
 	// Добавляем стандартный RPC path
 	endpoint.Path = "/transmission/rpc"
 
@@ -72,28 +72,28 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
-	
+
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status)
-		
+
 		// Set default values
 		uploadRatio := float64(0)
 		peersConnected := 0
 		seedsTotal := 0
 		peersTotal := 0
 		uploadedBytes := int64(0)
-		
+
 		// Get values from fields if available
 		if t.UploadRatio != nil {
 			uploadRatio = *t.UploadRatio
 		}
-		
+
 		// Convert peersConnected from int64 to int
 		if t.PeersConnected != nil {
 			peersConnected = int(*t.PeersConnected)
 		}
-		
+
 		// Process tracker stats if available
 		if t.TrackerStats != nil {
 			for _, tracker := range t.TrackerStats {
@@ -102,13 +102,13 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 				peersTotal += int(tracker.LeecherCount)
 			}
 		}
-		
+
 		// Get uploaded bytes
 		if t.UploadedEver != nil {
 			// Convert from transmissionrpc.ByteSize to int64
 			uploadedBytes = int64(*t.UploadedEver)
 		}
-		
+
 		result[i] = domain.Torrent{
 			ID:             *t.ID,
 			Name:           *t.Name,

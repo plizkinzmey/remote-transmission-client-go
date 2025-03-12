@@ -65,16 +65,20 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 	}, nil
 }
 
-// Вспомогательные методы для обработки данных торрента
-func (c *TransmissionClient) getTorrentSize(t transmissionrpc.Torrent) int64 {
-	if t.HaveValid != nil {
-		size := *t.HaveValid
-		if t.LeftUntilDone != nil {
-			size += *t.LeftUntilDone
-		}
-		return size
+// getTorrentSize возвращает общий размер и загруженный размер
+func (c *TransmissionClient) getTorrentSizes(t transmissionrpc.Torrent) (total uint64, downloaded uint64) {
+	total = uint64(0)
+	downloaded = uint64(0)
+
+	if t.SizeWhenDone != nil {
+		total = uint64(*t.SizeWhenDone)
 	}
-	return 0
+
+	if t.HaveValid != nil {
+		downloaded = uint64(*t.HaveValid)
+	}
+
+	return total, downloaded
 }
 
 func (c *TransmissionClient) getPeerInfo(t transmissionrpc.Torrent) (int, int, int) {
@@ -111,7 +115,7 @@ func (c *TransmissionClient) getUploadInfo(t transmissionrpc.Torrent) (float64, 
 }
 
 // formatBytes преобразует размер в байтах в человеко-читаемый формат
-func formatBytes(bytes int64) string {
+func formatBytes(bytes uint64) string {
 	if bytes <= 0 {
 		return "0 B"
 	}
@@ -135,7 +139,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
 		"id", "name", "status", "percentDone",
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
-		"leftUntilDone", "desiredAvailable", "haveValid",
+		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
@@ -144,20 +148,28 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status, t)
-		size := c.getTorrentSize(t)
+		totalSize, downloadedSize := c.getTorrentSizes(t)
 		uploadRatio, uploadedBytes := c.getUploadInfo(t)
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
 
-		// Форматируем размеры на стороне сервера
-		sizeFormatted := formatBytes(size)
-		uploadedFormatted := formatBytes(uploadedBytes)
+		// Форматируем размер в зависимости от статуса
+		var sizeFormatted string
+		if status == domain.StatusDownloading {
+			sizeFormatted = fmt.Sprintf("%s / %s",
+				formatBytes(downloadedSize),
+				formatBytes(totalSize))
+		} else {
+			sizeFormatted = formatBytes(totalSize)
+		}
+
+		uploadedFormatted := formatBytes(uint64(uploadedBytes))
 
 		result[i] = domain.Torrent{
 			ID:                *t.ID,
 			Name:              *t.Name,
 			Status:            status,
 			Progress:          *t.PercentDone * 100,
-			Size:              size,
+			Size:              int64(totalSize),
 			SizeFormatted:     sizeFormatted,
 			UploadRatio:       uploadRatio,
 			SeedsConnected:    0,

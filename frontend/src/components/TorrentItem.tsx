@@ -53,8 +53,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   name,
   status,
   progress,
-  size,
-  sizeFormatted,
+  sizeFormatted, // используем уже отформатированное значение с бэкенда
   uploadRatio,
   seedsConnected,
   seedsTotal,
@@ -152,22 +151,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return t(`torrent.status.${status}`);
   };
 
-  // Ensure statistics values are never negative
+  // Используем только нормализацию отрицательных значений
   const normalizeValue = (value: number): number => {
     return value < 0 ? 0 : value;
-  };
-
-  // Format downloaded size / total size for display
-  const formatSize = () => {
-    if (status === "downloading") {
-      // During download, show downloaded/total
-      const downloadedPercent = progress / 100;
-      const downloadedSize = Math.round(size * downloadedPercent);
-      return `${normalizeValue(downloadedSize)} / ${size}`;
-    } else {
-      // After completion, show only total size
-      return sizeFormatted;
-    }
   };
 
   return (
@@ -212,7 +198,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         <div className={styles.statsContainer}>
           <span className={styles.size}>
             <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
-            {formatSize()}
+            {sizeFormatted}
           </span>
           <span className={styles.seeds}>
             <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}

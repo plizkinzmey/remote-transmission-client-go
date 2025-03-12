@@ -8,12 +8,21 @@
 /* Удаляем кастомный заголовок, так как теперь используем нативный */
 .content {
   flex: 1;
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  position: relative; /* Нужно для позиционирования фиксированных элементов */
   overflow-y: auto;
   -webkit-app-region: no-drag;
+}
+
+/* Панель управления с фиксированным позиционированием */
+.fixedHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #f8f9fa;
+  padding: 20px 20px 0;
+  margin-bottom: 20px;
 }
 
 .controlPanel {
@@ -22,6 +31,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaeaea;
 }
 
 .searchContainer {
@@ -35,6 +46,7 @@
   align-items: center;
 }
 
+/* Панель выбора множественных действий также фиксирована */
 .bulkActions {
   display: flex;
   align-items: center;
@@ -81,6 +93,12 @@
 .searchInput:focus {
   outline: none;
   border-color: #3498db;
+}
+
+/* Контейнер для списка торрентов с отступом сверху */
+.torrentListContainer {
+  flex: 1;
+  padding: 0 20px 20px;
 }
 
 .torrentList {

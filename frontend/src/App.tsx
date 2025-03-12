@@ -388,114 +388,118 @@ function App() {
   return (
     <div className={styles.appContainer}>
       <div className={styles.content}>
-        <div className={styles.controlPanel}>
-          <div className={styles.searchContainer}>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Search torrents..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className={styles.actions}>
-            <Button 
-              variant="icon"
-              onClick={() => setShowSettings(true)}
-              aria-label="Settings"
-            >
-              <Cog6ToothIcon />
-            </Button>
-            <Button 
-              variant="icon"
-              onClick={() => setShowAddTorrent(true)}
-              aria-label="Add torrent"
-            >
-              <PlusCircleIcon />
-            </Button>
-          </div>
-        </div>
-
-        {error && (
-          <div className={styles.errorMessage}>
-            {error}
-          </div>
-        )}
-
-        {filteredTorrents.length > 0 && (
-          <div className={styles.bulkActions}>
-            <div className={styles.selectAllContainer}>
+        <div className={styles.fixedHeader}>
+          <div className={styles.controlPanel}>
+            <div className={styles.searchContainer}>
               <input
-                type="checkbox"
-                className={styles.selectAllCheckbox}
-                checked={selectedTorrents.size > 0 && selectedTorrents.size === filteredTorrents.length}
-                onChange={handleSelectAll}
+                type="text"
+                className={styles.searchInput}
+                placeholder="Search torrents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <span className={styles.selectAllLabel}>
-                Select All ({selectedTorrents.size}/{filteredTorrents.length})
-              </span>
             </div>
-            <div className={styles.bulkActionButtons}>
+            
+            <div className={styles.actions}>
               <Button 
                 variant="icon"
-                onClick={handleStartSelected}
-                disabled={!hasSelectedTorrents || bulkOperations.start}
-                loading={bulkOperations.start}
-                aria-label="Start selected torrents"
+                onClick={() => setShowSettings(true)}
+                aria-label="Settings"
               >
-                {bulkOperations.start ? (
-                  <ArrowPathIcon className="loading-spinner" />
-                ) : (
-                  <PlayIcon />
-                )}
+                <Cog6ToothIcon />
               </Button>
               <Button 
                 variant="icon"
-                onClick={handleStopSelected}
-                disabled={!hasSelectedTorrents || bulkOperations.stop}
-                loading={bulkOperations.stop}
-                aria-label="Stop selected torrents"
+                onClick={() => setShowAddTorrent(true)}
+                aria-label="Add torrent"
               >
-                {bulkOperations.stop ? (
-                  <ArrowPathIcon className="loading-spinner" />
-                ) : (
-                  <PauseIcon />
-                )}
+                <PlusCircleIcon />
               </Button>
             </div>
-            {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
           </div>
-        )}
 
-        <div className={styles.torrentList}>
-          {filteredTorrents.length > 0 ? (
-            filteredTorrents.map((torrent) => (
-              <TorrentItem
-                key={torrent.ID}
-                id={torrent.ID}
-                name={torrent.Name}
-                status={torrent.Status}
-                progress={torrent.Progress}
-                size={torrent.Size}
-                uploadRatio={torrent.UploadRatio}
-                seedsConnected={torrent.SeedsConnected}
-                seedsTotal={torrent.SeedsTotal}
-                peersConnected={torrent.PeersConnected}
-                peersTotal={torrent.PeersTotal}
-                uploadedBytes={torrent.UploadedBytes}
-                selected={selectedTorrents.has(torrent.ID)}
-                onSelect={handleTorrentSelect}
-                onRemove={handleRemoveTorrent}
-                onStart={handleStartTorrent}
-                onStop={handleStopTorrent}
-              />
-            ))
-          ) : (
-            <div className={styles.noTorrents}>
-              {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
+          {error && (
+            <div className={styles.errorMessage}>
+              {error}
             </div>
           )}
+
+          {filteredTorrents.length > 0 && (
+            <div className={styles.bulkActions}>
+              <div className={styles.selectAllContainer}>
+                <input
+                  type="checkbox"
+                  className={styles.selectAllCheckbox}
+                  checked={selectedTorrents.size > 0 && selectedTorrents.size === filteredTorrents.length}
+                  onChange={handleSelectAll}
+                />
+                <span className={styles.selectAllLabel}>
+                  Select All ({selectedTorrents.size}/{filteredTorrents.length})
+                </span>
+              </div>
+              <div className={styles.bulkActionButtons}>
+                <Button 
+                  variant="icon"
+                  onClick={handleStartSelected}
+                  disabled={!hasSelectedTorrents || bulkOperations.start}
+                  loading={bulkOperations.start}
+                  aria-label="Start selected torrents"
+                >
+                  {bulkOperations.start ? (
+                    <ArrowPathIcon className="loading-spinner" />
+                  ) : (
+                    <PlayIcon />
+                  )}
+                </Button>
+                <Button 
+                  variant="icon"
+                  onClick={handleStopSelected}
+                  disabled={!hasSelectedTorrents || bulkOperations.stop}
+                  loading={bulkOperations.stop}
+                  aria-label="Stop selected torrents"
+                >
+                  {bulkOperations.stop ? (
+                    <ArrowPathIcon className="loading-spinner" />
+                  ) : (
+                    <PauseIcon />
+                  )}
+                </Button>
+              </div>
+              {isReconnecting && <div className={styles.reconnectingStatus}>Reconnecting...</div>}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.torrentListContainer}>
+          <div className={styles.torrentList}>
+            {filteredTorrents.length > 0 ? (
+              filteredTorrents.map((torrent) => (
+                <TorrentItem
+                  key={torrent.ID}
+                  id={torrent.ID}
+                  name={torrent.Name}
+                  status={torrent.Status}
+                  progress={torrent.Progress}
+                  size={torrent.Size}
+                  uploadRatio={torrent.UploadRatio}
+                  seedsConnected={torrent.SeedsConnected}
+                  seedsTotal={torrent.SeedsTotal}
+                  peersConnected={torrent.PeersConnected}
+                  peersTotal={torrent.PeersTotal}
+                  uploadedBytes={torrent.UploadedBytes}
+                  selected={selectedTorrents.has(torrent.ID)}
+                  onSelect={handleTorrentSelect}
+                  onRemove={handleRemoveTorrent}
+                  onStart={handleStartTorrent}
+                  onStop={handleStopTorrent}
+                />
+              ))
+            ) : (
+              <div className={styles.noTorrents}>
+                {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
+              </div>
+            )}
+          </div>
         </div>
 
         {showSettings && (

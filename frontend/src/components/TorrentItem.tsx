@@ -175,9 +175,16 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           />
         </label>
         <div className={styles.info}>
-          <h3 className={styles.name} title={name}>
-            {name}
-          </h3>
+          <div className={styles.topRow}>
+            <h3 className={styles.name} title={name}>
+              {name}
+            </h3>
+            <div className={styles.ratioContainer} title="Рейтинг раздачи">
+              <span className={styles.ratio}>
+                {uploadRatio.toFixed(2)}
+              </span>
+            </div>
+          </div>
           <div className={styles.statusContainer}>
             <span className={getStatusClassName(status)}>{status}</span>
             <span className={styles.progressText}>
@@ -198,16 +205,23 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           
           {/* Additional torrent info */}
           <div className={styles.detailedInfo}>
-            <div className={styles.infoRow}>
-              <span>Size: {formatBytes(size)}</span>
-              <span>Ratio: {uploadRatio.toFixed(2)}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span>Seeds: {seedsConnected}/{seedsTotal}</span>
-              <span>Peers: {peersConnected}/{peersTotal}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span>Uploaded: {formatBytes(uploadedBytes)}</span>
+            <div className={styles.infoColumns}>
+              <div className={styles.infoColumn}>
+                <div className={styles.infoRow}>
+                  <span>Size: {formatBytes(size)}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>Seeds: {seedsConnected}/{seedsTotal}</span>
+                </div>
+              </div>
+              <div className={styles.infoColumn}>
+                <div className={styles.infoRow}>
+                  <span>Peers: {peersConnected}/{peersTotal}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>Uploaded: {formatBytes(uploadedBytes)}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

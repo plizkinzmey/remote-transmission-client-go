@@ -22,7 +22,8 @@
   z-index: 100;
   background: #f8f9fa;
   padding: 20px 20px 0;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .controlPanel {
@@ -30,9 +31,8 @@
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #eaeaea;
+  background-color: #f8f9fa;
 }
 
 .searchContainer {
@@ -42,43 +42,37 @@
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 
-/* Панель выбора множественных действий также фиксирована */
-.bulkActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
+/* Счетчик выбранных торрентов */
 .selectAllContainer {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.selectAllCheckbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
 }
 
 .selectAllLabel {
   font-size: 14px;
   color: #2c3e50;
   user-select: none;
+  min-width: 80px;
+  text-align: right;
 }
 
-.bulkActionButtons {
+/* Строка с чекбоксом Select All */
+.selectAllRow {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  padding: 0 10px 10px;
+  margin-bottom: 8px;
+}
+
+.selectAllCheckbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-right: 8px;
 }
 
 .searchInput {

@@ -327,7 +327,7 @@ function App() {
   const handleStartSelected = async () => {
     if (bulkOperations.start || !hasSelectedTorrents) return;
 
-    // Проверяем, есть ли торренты, которые можно запустить
+    // Проверяем, есть ли торренты, которые можно запустить с помощью единичной кнопки Mass Action
     const torrentsToStart = torrents.filter(
       (t) => selectedTorrents.has(t.ID) && t.Status === "stopped"
     );
@@ -359,7 +359,7 @@ function App() {
   const handleStopSelected = async () => {
     if (bulkOperations.stop || !hasSelectedTorrents) return;
 
-    // Проверяем, есть ли торренты, которые можно остановить
+    // Проверяем, есть ли торренты, которые можно остановить с помощью кнопки Mass Action
     const torrentsToStop = torrents.filter(
       (t) =>
         selectedTorrents.has(t.ID) &&
@@ -432,6 +432,46 @@ function App() {
             </div>
 
             <div className={styles.actions}>
+              {/* Кнопки массовых операций */}
+              {filteredTorrents.length > 0 && (
+                <>
+                  <div className={styles.selectAllContainer}>
+                    <span className={styles.selectAllLabel}>
+                      {selectedTorrents.size > 0
+                        ? `Selected: ${selectedTorrents.size}/${filteredTorrents.length}`
+                        : ""}
+                    </span>
+                  </div>
+                  <Button
+                    variant="icon"
+                    onClick={handleStartSelected}
+                    disabled={!hasSelectedTorrents || bulkOperations.start}
+                    loading={bulkOperations.start}
+                    aria-label="Start selected torrents"
+                  >
+                    {bulkOperations.start ? (
+                      <ArrowPathIcon className="loading-spinner" />
+                    ) : (
+                      <PlayIcon />
+                    )}
+                  </Button>
+                  <Button
+                    variant="icon"
+                    onClick={handleStopSelected}
+                    disabled={!hasSelectedTorrents || bulkOperations.stop}
+                    loading={bulkOperations.stop}
+                    aria-label="Stop selected torrents"
+                  >
+                    {bulkOperations.stop ? (
+                      <ArrowPathIcon className="loading-spinner" />
+                    ) : (
+                      <PauseIcon />
+                    )}
+                  </Button>
+                </>
+              )}
+
+              {/* Стандартные кнопки управления */}
               <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
@@ -451,58 +491,30 @@ function App() {
 
           {error && <div className={styles.errorMessage}>{error}</div>}
 
-          {filteredTorrents.length > 0 && (
-            <div className={styles.bulkActions}>
-              <div className={styles.selectAllContainer}>
-                <input
-                  type="checkbox"
-                  className={styles.selectAllCheckbox}
-                  checked={
-                    selectedTorrents.size > 0 &&
-                    selectedTorrents.size === filteredTorrents.length
-                  }
-                  onChange={handleSelectAll}
-                />
-                <span className={styles.selectAllLabel}>
-                  Select All ({selectedTorrents.size}/{filteredTorrents.length})
-                </span>
-              </div>
-              <div className={styles.bulkActionButtons}>
-                <Button
-                  variant="icon"
-                  onClick={handleStartSelected}
-                  disabled={!hasSelectedTorrents || bulkOperations.start}
-                  loading={bulkOperations.start}
-                  aria-label="Start selected torrents"
-                >
-                  {bulkOperations.start ? (
-                    <ArrowPathIcon className="loading-spinner" />
-                  ) : (
-                    <PlayIcon />
-                  )}
-                </Button>
-                <Button
-                  variant="icon"
-                  onClick={handleStopSelected}
-                  disabled={!hasSelectedTorrents || bulkOperations.stop}
-                  loading={bulkOperations.stop}
-                  aria-label="Stop selected torrents"
-                >
-                  {bulkOperations.stop ? (
-                    <ArrowPathIcon className="loading-spinner" />
-                  ) : (
-                    <PauseIcon />
-                  )}
-                </Button>
-              </div>
-              {isReconnecting && (
-                <div className={styles.reconnectingStatus}>Reconnecting...</div>
-              )}
-            </div>
+          {isReconnecting && (
+            <div className={styles.reconnectingStatus}>Reconnecting...</div>
           )}
         </div>
 
         <div className={styles.torrentListContainer}>
+          {filteredTorrents.length > 0 && (
+            <div className={styles.selectAllRow}>
+              <input
+                type="checkbox"
+                className={styles.selectAllCheckbox}
+                checked={
+                  selectedTorrents.size > 0 &&
+                  selectedTorrents.size === filteredTorrents.length
+                }
+                onChange={handleSelectAll}
+                id="selectAll"
+              />
+              <label htmlFor="selectAll" className={styles.selectAllLabel}>
+                Select All
+              </label>
+            </div>
+          )}
+
           <div className={styles.torrentList}>
             {filteredTorrents.length > 0 ? (
               filteredTorrents.map((torrent) => (

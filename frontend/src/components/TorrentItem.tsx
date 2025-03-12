@@ -212,9 +212,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </span>
           <span className={styles.speed}>
             <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
-            <ArrowUpIcon className={styles.speedIcon} /> {uploadSpeedFormatted}{" "}
-            <ArrowDownIcon className={styles.speedIcon} />{" "}
-            {downloadSpeedFormatted}
+            <ArrowDownIcon
+              className={`${styles.speedIcon} ${styles.downloadIcon}`}
+            />{" "}
+            {downloadSpeedFormatted}{" "}
+            <ArrowUpIcon
+              className={`${styles.speedIcon} ${styles.uploadIcon}`}
+            />{" "}
+            {uploadSpeedFormatted}
           </span>
           <span className={styles.seeds}>
             <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}

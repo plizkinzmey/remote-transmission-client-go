@@ -140,6 +140,14 @@
   margin: 0 2px;
 }
 
+.downloadIcon {
+  color: #3498db; /* Синий цвет для входящей скорости */
+}
+
+.uploadIcon {
+  color: #2ecc71; /* Зеленый цвет для исходящей скорости */
+}
+
 .speed {
   display: inline-flex;
   align-items: center;

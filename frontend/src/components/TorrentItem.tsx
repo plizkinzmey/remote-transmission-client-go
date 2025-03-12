@@ -189,13 +189,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         </div>
 
         <div className={styles.progressContainer}>
-          <progress 
-            className={styles.progress}
-            value={progress} 
-            max="100"
-          />
+          <progress className={styles.progress} value={progress} max="100" />
         </div>
-        
+
         <div className={styles.statsContainer}>
           <span className={styles.seeds}>
             {t("torrent.seeds")}: {seedsConnected}/{seedsTotal}

@@ -53,6 +53,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   name,
   status,
   progress,
+  size,
   sizeFormatted,
   uploadRatio,
   seedsConnected,
@@ -151,6 +152,24 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return t(`torrent.status.${status}`);
   };
 
+  // Ensure statistics values are never negative
+  const normalizeValue = (value: number): number => {
+    return value < 0 ? 0 : value;
+  };
+
+  // Format downloaded size / total size for display
+  const formatSize = () => {
+    if (status === "downloading") {
+      // During download, show downloaded/total
+      const downloadedPercent = progress / 100;
+      const downloadedSize = Math.round(size * downloadedPercent);
+      return `${normalizeValue(downloadedSize)} / ${size}`;
+    } else {
+      // After completion, show only total size
+      return sizeFormatted;
+    }
+  };
+
   return (
     <div className={styles.container}>
       <label className={styles.checkbox}>
@@ -172,7 +191,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             title={t("torrent.uploadRatio")}
           >
             <span className={styles.ratio}>
-              {t("torrent.ratio")}: {uploadRatio.toFixed(2)}
+              {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
             </span>
           </div>
         </div>
@@ -181,11 +200,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <span className={getStatusClassName(status)}>
             {getStatusText(status)}
           </span>
-          <span className={styles.progressText}>
-            <span className={styles.paramName}>{t("torrent.size")}:</span>
-            {progress >= 100
-              ? sizeFormatted
-              : `${progress.toFixed(1)}% (${sizeFormatted})`}
+          <span className={styles.progressPercentage}>
+            {progress.toFixed(1)}%
           </span>
         </div>
 
@@ -194,13 +210,17 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         </div>
 
         <div className={styles.statsContainer}>
+          <span className={styles.size}>
+            <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
+            {formatSize()}
+          </span>
           <span className={styles.seeds}>
             <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
-            {seedsConnected}/{seedsTotal}
+            {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
           </span>
           <span className={styles.peers}>
             <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
-            {peersConnected}/{peersTotal}
+            {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
           </span>
           <span className={styles.uploaded}>
             <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}

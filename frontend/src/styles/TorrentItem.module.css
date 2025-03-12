@@ -9,24 +9,20 @@
   user-select: none;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
 .checkbox {
   margin-right: 16px;
   display: flex;
   align-items: center;
 }
-
 .checkbox input {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
-
 .info {
   flex: 1;
   min-width: 0;
 }
-
 /* Новый контейнер для верхнего ряда с названием и рейтингом */
 .topRow {
   display: flex;
@@ -34,7 +30,6 @@
   align-items: flex-start;
   margin-bottom: 8px;
 }
-
 .name {
   margin: 0;
   font-size: 14px;
@@ -49,7 +44,6 @@
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-weight: 500;
 }
-
 /* Стили для рейтинга */
 .ratioContainer {
   background-color: #f0f0f0;
@@ -59,63 +53,53 @@
   text-align: center;
   flex-shrink: 0;
 }
-
 .ratio {
   font-size: 12px;
   color: #2c3e50;
   white-space: nowrap;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
 .statusContainer {
   display: flex;
   align-items: center;
   gap: 12px;
   user-select: none;
-  margin-bottom: 4px;
+  margin-bottom: 4px; /* Уменьшаем отступ от прогресс бара */
   text-align: left;
   font-size: 13px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
 .statusDownloading {
   color: #3498db;
   font-weight: 500;
 }
-
 .statusSeeding {
   color: #27ae60;
   font-weight: 500;
 }
-
 .statusStopped {
   color: #7f8c8d;
   font-weight: 500;
 }
-
 .statusCompleted {
   color: #2ecc71;
   font-weight: 500;
 }
-
 .statusChecking {
   color: #f39c12;
   font-weight: 500;
 }
-
 .statusQueued {
   color: #95a5a6;
   font-weight: 500;
 }
-
 .progressContainer {
   position: relative;
   width: 100%;
   height: 8px;
-  margin-top: 12px;
-  margin-bottom: 12px;
+  margin-top: 8px; /* Уменьшаем верхний отступ */
+  margin-bottom: 8px;
 }
-
 .progressElement {
   position: absolute;
   top: 0;
@@ -125,7 +109,6 @@
   height: 100%;
   margin: 0;
 }
-
 .progress {
   width: 100%;
   height: 8px;
@@ -133,21 +116,18 @@
   border-radius: 4px;
   overflow: hidden;
 }
-
 .progressBar {
   height: 100%;
   background-color: #3498db;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
-
 .actions {
   display: flex;
   gap: 8px;
   margin-left: 16px;
   -webkit-app-region: no-drag;
 }
-
 .progressText {
   font-size: 12px;
   color: #666;
@@ -155,7 +135,6 @@
   text-align: left;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
 /* Стили для детальной информации о торренте */
 .detailedInfo {
   margin-top: 12px;
@@ -164,7 +143,6 @@
   text-align: left;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
 /* Перенастройка стиля строки информации для одной линии */
 .infoRow {
   display: flex;
@@ -172,26 +150,23 @@
   gap: 20px;
   flex-wrap: wrap;
 }
-
 .infoRow span {
   display: inline-block;
   white-space: nowrap;
 }
-
 /* Стили для контейнера статистики */
 .statsContainer {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  margin-top: 18px; /* увеличиваем отступ от прогрессбара */
+  margin-top: 12px; /* Уменьшаем отступ от прогресс бара */
   align-items: center;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;
   color: #2c3e50;
 }
-
 /* Добавляем стили для элементов статистики */
-.seeds, .peers, .uploaded {
+.seeds, .peers, .uploaded, .size {
   display: inline-flex;
   align-items: center;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -200,9 +175,14 @@
   white-space: nowrap;
   font-weight: 400;
 }
-
 /* Стиль для выделения названий параметров жирным шрифтом */
 .paramName {
   font-weight: 700;
   margin-right: 4px;
+}
+/* Стиль для отображения процентов */
+.progressPercentage {
+  font-size: 13px;
+  color: #2c3e50;
+  font-weight: 500;
 }

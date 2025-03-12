@@ -14,6 +14,7 @@ import {
 import styles from "./styles/App.module.css";
 import "./App.css";
 
+// Импорт функций API для взаимодействия с бэкендом
 import {
   GetTorrents,
   AddTorrent as AddTorrentAPI,
@@ -25,6 +26,10 @@ import {
   StopTorrents,
 } from "../wailsjs/go/main/App";
 
+/**
+ * Интерфейс, описывающий объект торрента, получаемый с сервера.
+ * Содержит ID, название, статус и другую информацию о торренте.
+ */
 interface Torrent {
   ID: number;
   Name: string;
@@ -41,6 +46,10 @@ interface Torrent {
   UploadedFormatted: string;
 }
 
+/**
+ * Интерфейс для настроек подключения к серверу Transmission.
+ * Включает параметры соединения и настройки языка интерфейса.
+ */
 interface Config {
   host: string;
   port: number;
@@ -49,22 +58,27 @@ interface Config {
   language: string;
 }
 
+/**
+ * Основной компонент приложения.
+ * Управляет состоянием всего приложения, отвечает за отображение торрентов,
+ * обработку действий пользователя и взаимодействие с бэкендом.
+ */
 function App() {
-  const { t, setLanguage } = useLocalization();
-  const [torrents, setTorrents] = useState<Torrent[]>([]);
+  const { t, setLanguage } = useLocalization(); // Хук для локализации интерфейса
+  const [torrents, setTorrents] = useState<Torrent[]>([]); // Список всех торрентов
   const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
     new Set()
-  );
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showAddTorrent, setShowAddTorrent] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const maxReconnectAttempts = 3;
+  ); // Выбранные торренты по ID
+  const [isInitialized, setIsInitialized] = useState(false); // Флаг инициализации приложения
+  const [showSettings, setShowSettings] = useState(false); // Отображение настроек
+  const [showAddTorrent, setShowAddTorrent] = useState(false); // Отображение формы добавления торрента
+  const [searchTerm, setSearchTerm] = useState(""); // Строка поиска торрентов
+  const [error, setError] = useState<string | null>(null); // Сообщение об ошибке
+  const [isReconnecting, setIsReconnecting] = useState(false); // Флаг переподключения
+  const [reconnectAttempts, setReconnectAttempts] = useState(0); // Счетчик попыток переподключения
+  const maxReconnectAttempts = 3; // Максимальное количество попыток переподключения
 
-  // Меняем isBulkLoading на объект состояний для каждой операции
+  // Состояние для отслеживания массовых операций (запуск/остановка нескольких торрентов)
   const [bulkOperations, setBulkOperations] = useState<{
     start: boolean;
     stop: boolean;
@@ -73,14 +87,20 @@ function App() {
     stop: false,
   });
 
+  // Последнее массовое действие для отслеживания изменения состояний
   const [lastBulkAction, setLastBulkAction] = useState<"start" | "stop" | null>(
     null
   );
+
+  // Карта для хранения предыдущих состояний торрентов для проверки изменений
   const [lastTorrentStates, setLastTorrentStates] = useState<
     Map<number, string>
   >(new Map());
 
-  // Обновляем useEffect для массовых операций
+  /**
+   * Эффект для отслеживания выполнения массовых операций.
+   * Проверяет завершение операций над выбранными торрентами и обновляет состояние UI.
+   */
   useEffect(() => {
     if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop))
       return;
@@ -136,6 +156,7 @@ function App() {
       }
     });
 
+    // Если все торренты изменили своё состояние, завершаем операцию
     if (allTorrentsChanged) {
       setBulkOperations((prev) => ({
         ...prev,
@@ -152,6 +173,11 @@ function App() {
     lastTorrentStates,
   ]);
 
+  /**
+   * Обработчик выбора торрента.
+   * Добавляет или удаляет торрент из списка выбранных.
+   * @param id ID торрента
+   */
   const handleTorrentSelect = (id: number) => {
     setSelectedTorrents((prev) => {
       const next = new Set(prev);
@@ -164,6 +190,10 @@ function App() {
     });
   };
 
+  /**
+   * Обработчик выбора всех торрентов.
+   * Выбирает все видимые торренты или снимает выделение со всех.
+   */
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
       // Если все выбраны - снимаем выделение
@@ -174,7 +204,11 @@ function App() {
     }
   };
 
-  // Функция переподключения к серверу
+  /**
+   * Функция для попытки переподключения к серверу Transmission.
+   * Вызывается автоматически при потере соединения.
+   * @returns Promise<boolean> - успешность переподключения
+   */
   const reconnect = async () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
       setError(t("errors.maxReconnectAttempts"));
@@ -199,7 +233,10 @@ function App() {
     }
   };
 
-  // Функция обновления списка торрентов
+  /**
+   * Функция для получения обновленного списка торрентов с сервера.
+   * Обрабатывает ошибки и пытается переподключиться при необходимости.
+   */
   const refreshTorrents = async () => {
     try {
       const response = await GetTorrents();
@@ -232,6 +269,10 @@ function App() {
     }
   };
 
+  /**
+   * Эффект для инициализации приложения при его загрузке.
+   * Загружает сохраненные настройки и устанавливает соединение с сервером.
+   */
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -262,7 +303,10 @@ function App() {
     initializeApp();
   }, []);
 
-  // Эффект для автоматического обновления списка торрентов
+  /**
+   * Эффект для периодического обновления списка торрентов.
+   * Запускается после успешной инициализации приложения.
+   */
   useEffect(() => {
     let intervalId: number;
 
@@ -282,6 +326,10 @@ function App() {
     };
   }, [isInitialized]);
 
+  /**
+   * Обработчик добавления торрента по URL или магнет-ссылке.
+   * @param url URL или магнет-ссылка на торрент
+   */
   const handleAddTorrent = async (url: string) => {
     try {
       await AddTorrentAPI(url);
@@ -292,6 +340,10 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик добавления торрента из файла (в base64).
+   * @param base64Content Содержимое торрент-файла в формате base64
+   */
   const handleAddTorrentFile = async (base64Content: string) => {
     try {
       await AddTorrentFile(base64Content);
@@ -302,6 +354,11 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик удаления торрента.
+   * @param id ID торрента
+   * @param deleteData Флаг, указывающий нужно ли удалять данные торрента
+   */
   const handleRemoveTorrent = async (id: number, deleteData: boolean) => {
     try {
       await RemoveTorrent(id, deleteData);
@@ -312,15 +369,21 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик запуска выбранных торрентов.
+   * Сохраняет текущие состояния для дальнейшего отслеживания изменений.
+   */
   const handleStartSelected = async () => {
     if (bulkOperations.start || !hasSelectedTorrents) return;
 
+    // Фильтруем торренты, которые можно запустить (в состоянии "stopped")
     const torrentsToStart = torrents.filter(
       (t) => selectedTorrents.has(t.ID) && t.Status === "stopped"
     );
 
     if (torrentsToStart.length === 0) return;
 
+    // Сохраняем текущие состояния торрентов для отслеживания изменений
     const states = new Map(
       torrents
         .filter((t) => selectedTorrents.has(t.ID))
@@ -343,9 +406,14 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик остановки выбранных торрентов.
+   * Сохраняет текущие состояния для дальнейшего отслеживания изменений.
+   */
   const handleStopSelected = async () => {
     if (bulkOperations.stop || !hasSelectedTorrents) return;
 
+    // Фильтруем торренты, которые можно остановить (активные)
     const torrentsToStop = torrents.filter(
       (t) =>
         selectedTorrents.has(t.ID) &&
@@ -354,6 +422,7 @@ function App() {
 
     if (torrentsToStop.length === 0) return;
 
+    // Сохраняем текущие состояния торрентов для отслеживания изменений
     const states = new Map(
       torrents
         .filter((t) => selectedTorrents.has(t.ID))
@@ -376,6 +445,10 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик запуска отдельного торрента.
+   * @param id ID торрента
+   */
   const handleStartTorrent = async (id: number) => {
     try {
       await StartTorrents([id]);
@@ -386,6 +459,10 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик остановки отдельного торрента.
+   * @param id ID торрента
+   */
   const handleStopTorrent = async (id: number) => {
     try {
       await StopTorrents([id]);
@@ -396,13 +473,17 @@ function App() {
     }
   };
 
+  /**
+   * Обработчик сохранения настроек приложения.
+   * @param settings Новые настройки конфигурации
+   */
   const handleSettingsSave = async (settings: Config) => {
     try {
       await Initialize(JSON.stringify(settings));
       setShowSettings(false);
       setIsInitialized(true);
       setError(null);
-      // Update language if changed
+      // Обновляем язык, если он был изменен
       setLanguage(settings.language);
       refreshTorrents();
     } catch (error) {
@@ -411,16 +492,20 @@ function App() {
     }
   };
 
+  // Фильтрация торрентов по поисковому запросу
   const filteredTorrents = torrents.filter((torrent) =>
     torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Флаг наличия выбранных торрентов
   const hasSelectedTorrents = selectedTorrents.size > 0;
 
   return (
     <div className={styles.appContainer}>
       <div className={styles.content}>
+        {/* Фиксированная шапка приложения */}
         <div className={styles.fixedHeader}>
+          {/* Панель управления с кнопками и поиском */}
           <div className={styles.controlPanel}>
             <div className={styles.leftSection}>
               <div className={styles.searchContainer}>
@@ -432,6 +517,7 @@ function App() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              {/* Кнопка добавления торрента */}
               <Button
                 variant="icon"
                 onClick={() => setShowAddTorrent(true)}
@@ -439,6 +525,7 @@ function App() {
               >
                 <PlusCircleIcon />
               </Button>
+              {/* Кнопка запуска выбранных торрентов */}
               <Button
                 variant="icon"
                 onClick={handleStartSelected}
@@ -452,6 +539,7 @@ function App() {
                   <PlayIcon />
                 )}
               </Button>
+              {/* Кнопка остановки выбранных торрентов */}
               <Button
                 variant="icon"
                 onClick={handleStopSelected}
@@ -467,6 +555,7 @@ function App() {
               </Button>
             </div>
             <div className={styles.rightSection}>
+              {/* Кнопка настроек */}
               <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
@@ -477,6 +566,7 @@ function App() {
             </div>
           </div>
 
+          {/* Блок выбора всех торрентов */}
           {filteredTorrents.length > 0 && (
             <div className={styles.selectAllContainer}>
               <input
@@ -501,16 +591,21 @@ function App() {
             </div>
           )}
 
+          {/* Отображение сообщений об ошибках */}
           {error && <div className={styles.errorMessage}>{error}</div>}
+          {/* Индикатор переподключения */}
           {isReconnecting && (
             <div className={styles.reconnectingStatus}>
               {t("app.reconnecting")}
             </div>
           )}
         </div>
+
+        {/* Контейнер со списком торрентов */}
         <div className={styles.torrentListContainer}>
           <div className={styles.torrentList}>
             {filteredTorrents.length > 0 ? (
+              // Отображаем список торрентов, если они есть
               filteredTorrents.map((torrent) => (
                 <TorrentItem
                   key={torrent.ID}
@@ -535,6 +630,7 @@ function App() {
                 />
               ))
             ) : (
+              // Сообщение, если торрентов нет или они не найдены
               <div className={styles.noTorrents}>
                 {searchTerm
                   ? t("torrents.noTorrentsFound")
@@ -543,6 +639,8 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Модальное окно настроек */}
         {showSettings && (
           <Settings
             onSave={handleSettingsSave}
@@ -553,6 +651,8 @@ function App() {
             }}
           />
         )}
+
+        {/* Модальное окно добавления торрента */}
         {showAddTorrent && (
           <AddTorrent
             onAdd={handleAddTorrent}

@@ -422,30 +422,43 @@ function App() {
       <div className={styles.content}>
         <div className={styles.fixedHeader}>
           <div className={styles.controlPanel}>
-            <div className={styles.searchContainer}>
-              <input
-                type="text"
-                className={styles.searchInput}
-                placeholder={t("torrents.search")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <div className={styles.actions}>
+            <div className={styles.leftSection}>
+              <div className={styles.searchContainer}>
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder={t("torrents.search")}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
               {filteredTorrents.length > 0 && (
+                <div className={styles.selectAllContainer}>
+                  <input
+                    type="checkbox"
+                    className={styles.selectAllCheckbox}
+                    checked={
+                      selectedTorrents.size > 0 &&
+                      selectedTorrents.size === filteredTorrents.length
+                    }
+                    onChange={handleSelectAll}
+                    id="selectAll"
+                  />
+                  <label htmlFor="selectAll" className={styles.selectAllLabel}>
+                    {selectedTorrents.size > 0
+                      ? t(
+                          "torrents.selected",
+                          String(selectedTorrents.size),
+                          String(filteredTorrents.length)
+                        )
+                      : t("torrents.selectAll")}
+                  </label>
+                </div>
+              )}
+            </div>
+            <div className={styles.actions}>
+              {hasSelectedTorrents && (
                 <>
-                  <div className={styles.selectAllContainer}>
-                    <span className={styles.selectAllLabel}>
-                      {selectedTorrents.size > 0
-                        ? t(
-                            "torrents.selected",
-                            String(selectedTorrents.size),
-                            String(filteredTorrents.length)
-                          )
-                        : ""}
-                    </span>
-                  </div>
                   <Button
                     variant="icon"
                     onClick={handleStartSelected}
@@ -474,7 +487,6 @@ function App() {
                   </Button>
                 </>
               )}
-
               <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
@@ -491,7 +503,6 @@ function App() {
               </Button>
             </div>
           </div>
-
           {error && <div className={styles.errorMessage}>{error}</div>}
           {isReconnecting && (
             <div className={styles.reconnectingStatus}>
@@ -499,26 +510,7 @@ function App() {
             </div>
           )}
         </div>
-
         <div className={styles.torrentListContainer}>
-          {filteredTorrents.length > 0 && (
-            <div className={styles.selectAllRow}>
-              <input
-                type="checkbox"
-                className={styles.selectAllCheckbox}
-                checked={
-                  selectedTorrents.size > 0 &&
-                  selectedTorrents.size === filteredTorrents.length
-                }
-                onChange={handleSelectAll}
-                id="selectAll"
-              />
-              <label htmlFor="selectAll" className={styles.selectAllLabel}>
-                {t("torrents.selectAll")}
-              </label>
-            </div>
-          )}
-
           <div className={styles.torrentList}>
             {filteredTorrents.length > 0 ? (
               filteredTorrents.map((torrent) => (
@@ -553,7 +545,6 @@ function App() {
             )}
           </div>
         </div>
-
         {showSettings && (
           <Settings
             onSave={handleSettingsSave}
@@ -564,7 +555,6 @@ function App() {
             }}
           />
         )}
-
         {showAddTorrent && (
           <AddTorrent
             onAdd={handleAddTorrent}

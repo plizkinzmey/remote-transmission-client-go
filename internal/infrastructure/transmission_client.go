@@ -65,18 +65,44 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 	}, nil
 }
 
+// formatBytes преобразует размер в человеко-читаемый формат
+func formatBytes(value uint64, isBytes bool) string {
+	bytes := value
+	if !isBytes {
+		bytes = value / 8 // Конвертируем биты в байты если нужно
+	}
+
+	if bytes <= 0 {
+		return "0 B"
+	}
+
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+
+	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
+	exp := int(math.Log(float64(bytes)) / math.Log(float64(unit)))
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
+
+	size := float64(bytes) / math.Pow(float64(unit), float64(exp))
+	return fmt.Sprintf("%.2f %s", size, units[exp])
+}
+
 // getTorrentSize возвращает общий размер и загруженный размер
 func (c *TransmissionClient) getTorrentSizes(t transmissionrpc.Torrent) (total uint64, downloaded uint64) {
 	total = uint64(0)
 	downloaded = uint64(0)
 
-	// Transmission возвращает размеры в битах, конвертируем их в байты
+	// Transmission возвращает размеры в битах
 	if t.SizeWhenDone != nil {
-		total = uint64(*t.SizeWhenDone / 8)
+		total = uint64(*t.SizeWhenDone) / 8 // Конвертируем биты в байты
 	}
 
 	if t.HaveValid != nil {
-		downloaded = uint64(*t.HaveValid / 8)
+		downloaded = uint64(*t.HaveValid) / 8 // Конвертируем биты в байты
 	}
 
 	return total, downloaded
@@ -109,102 +135,19 @@ func (c *TransmissionClient) getUploadInfo(t transmissionrpc.Torrent) (float64, 
 		uploadRatio = *t.UploadRatio
 	}
 	if t.UploadedEver != nil {
-		uploadedBytes = int64(*t.UploadedEver)
+		uploadedBytes = int64(*t.UploadedEver) // Уже в байтах
 	}
 
 	return uploadRatio, uploadedBytes
 }
 
-// formatBytes преобразует размер в байтах в человеко-читаемый формат
-func formatBytes(bytes uint64) string {
-	if bytes <= 0 {
-		return "0 B"
-	}
-
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-
-	units := []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
-	exp := int(math.Log(float64(bytes)) / math.Log(float64(unit)))
-	if exp >= len(units) {
-		exp = len(units) - 1
-	}
-
-	size := float64(bytes) / math.Pow(float64(unit), float64(exp))
-
-	// Округляем до 2 знаков после запятой для более точного отображения
-	return fmt.Sprintf("%.2f %s", size, units[exp])
-}
-
-// Добавляем поле DownloadedEver в запрос
-func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
-	torrents, err := c.client.TorrentGet(c.ctx, []string{
-		"id", "name", "status", "percentDone",
-		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
-		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
-		"rateDownload", "rateUpload", // Добавляем поля для получения скорости
-	}, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get torrents: %w", err)
-	}
-
-	result := make([]domain.Torrent, len(torrents))
-	for i, t := range torrents {
-		status := mapStatus(*t.Status, t)
-		totalSize, downloadedSize := c.getTorrentSizes(t)
-		uploadRatio, uploadedBytes := c.getUploadInfo(t)
-		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
-		downloadSpeed, uploadSpeed := c.getSpeedInfo(t)
-
-		// Форматируем размер в зависимости от статуса
-		var sizeFormatted string
-		if status == domain.StatusDownloading {
-			sizeFormatted = fmt.Sprintf("%s / %s",
-				formatBytes(downloadedSize),
-				formatBytes(totalSize))
-		} else {
-			sizeFormatted = formatBytes(totalSize)
-		}
-
-		// Форматируем скорости
-		downloadSpeedFormatted := formatBytes(uint64(downloadSpeed)) + "/s"
-		uploadSpeedFormatted := formatBytes(uint64(uploadSpeed)) + "/s"
-
-		// Также конвертируем uploadedBytes из бит в байты
-		uploadedFormatted := formatBytes(uint64(uploadedBytes / 8))
-
-		result[i] = domain.Torrent{
-			ID:                     *t.ID,
-			Name:                   *t.Name,
-			Status:                 status,
-			Progress:               *t.PercentDone * 100,
-			Size:                   int64(totalSize),
-			SizeFormatted:          sizeFormatted,
-			UploadRatio:            uploadRatio,
-			SeedsConnected:         0,
-			SeedsTotal:             seedsTotal,
-			PeersConnected:         peersConnected,
-			PeersTotal:             peersTotal,
-			UploadedBytes:          uploadedBytes,
-			UploadedFormatted:      uploadedFormatted,
-			DownloadSpeed:          downloadSpeed,
-			UploadSpeed:            uploadSpeed,
-			DownloadSpeedFormatted: downloadSpeedFormatted,
-			UploadSpeedFormatted:   uploadSpeedFormatted,
-		}
-	}
-	return result, nil
-}
-
-// Добавляем новый метод для получения информации о скорости
+// Добавляем новый метод для получения информации о скорости (в битах/с)
 func (c *TransmissionClient) getSpeedInfo(t transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed int64) {
 	if t.RateDownload != nil {
-		downloadSpeed = *t.RateDownload / 8 // Конвертируем из бит/с в байты/с
+		downloadSpeed = *t.RateDownload / 8 // Конвертируем биты/с в байты/с
 	}
 	if t.RateUpload != nil {
-		uploadSpeed = *t.RateUpload / 8 // Конвертируем из бит/с в байты/с
+		uploadSpeed = *t.RateUpload / 8 // Конвертируем биты/с в байты/с
 	}
 	return
 }
@@ -290,6 +233,66 @@ func (c *TransmissionClient) Remove(id int64, deleteData bool) error {
 		return fmt.Errorf("failed to remove torrent: %w", err)
 	}
 	return nil
+}
+
+// Добавляем поле DownloadedEver в запрос
+func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
+	torrents, err := c.client.TorrentGet(c.ctx, []string{
+		"id", "name", "status", "percentDone",
+		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
+		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
+		"rateDownload", "rateUpload",
+	}, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get torrents: %w", err)
+	}
+
+	result := make([]domain.Torrent, len(torrents))
+	for i, t := range torrents {
+		status := mapStatus(*t.Status, t)
+		totalSize, downloadedSize := c.getTorrentSizes(t)
+		uploadRatio, uploadedBytes := c.getUploadInfo(t)
+		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
+		downloadSpeed, uploadSpeed := c.getSpeedInfo(t)
+
+		// Форматируем размер в зависимости от статуса
+		var sizeFormatted string
+		if status == domain.StatusDownloading {
+			sizeFormatted = fmt.Sprintf("%s / %s",
+				formatBytes(downloadedSize, true),
+				formatBytes(totalSize, true))
+		} else {
+			sizeFormatted = formatBytes(totalSize, true)
+		}
+
+		// Форматируем скорости (уже в байтах/с после деления на 8 в getSpeedInfo)
+		downloadSpeedFormatted := formatBytes(uint64(downloadSpeed), true) + "/s"
+		uploadSpeedFormatted := formatBytes(uint64(uploadSpeed), true) + "/s"
+
+		// Форматируем выгруженное (в байтах)
+		uploadedFormatted := formatBytes(uint64(uploadedBytes), true)
+
+		result[i] = domain.Torrent{
+			ID:                     *t.ID,
+			Name:                   *t.Name,
+			Status:                 status,
+			Progress:               *t.PercentDone * 100,
+			Size:                   int64(totalSize), // Преобразуем в int64
+			SizeFormatted:          sizeFormatted,
+			UploadRatio:            uploadRatio,
+			SeedsConnected:         peersConnected,
+			SeedsTotal:             seedsTotal,
+			PeersConnected:         peersConnected,
+			PeersTotal:             peersTotal,
+			UploadedBytes:          uploadedBytes,
+			UploadedFormatted:      uploadedFormatted,
+			DownloadSpeed:          downloadSpeed,
+			UploadSpeed:            uploadSpeed,
+			DownloadSpeedFormatted: downloadSpeedFormatted,
+			UploadSpeedFormatted:   uploadSpeedFormatted,
+		}
+	}
+	return result, nil
 }
 
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {

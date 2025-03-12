@@ -16,7 +16,7 @@ type Torrent struct {
 	Name                   string
 	Status                 TorrentStatus
 	Progress               float64
-	Size                   int64
+	Size                   int64 // Возвращаем тип int64
 	SizeFormatted          string
 	UploadRatio            float64
 	SeedsConnected         int

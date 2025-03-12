@@ -167,7 +167,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-status={status}>
       <label className={styles.checkbox}>
         <input
           type="checkbox"

@@ -1,3 +1,9 @@
+:root {
+  --download-color: #3b82f6; /* синий */
+  --seed-color: #22c55e; /* зеленый */
+  --error-color: #ef4444; /* красный */
+}
+
 .container {
   display: flex;
   align-items: center;
@@ -8,6 +14,26 @@
   -webkit-app-region: no-drag;
   user-select: none;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s ease;
+}
+
+/* Стили для разных статусов */
+.container[data-status="downloading"] {
+  border-left: 4px solid var(--download-color);
+}
+.container[data-status="seeding"] {
+  border-left: 4px solid var(--seed-color);
+}
+.container[data-status="error"] {
+  border-left: 4px solid var(--error-color);
+}
+/* Добавляем цвета для иконок скорости */
+.downloadIcon {
+  color: var(--download-color);
+}
+.uploadIcon {
+  color: var(--seed-color);
 }
 .checkbox {
   margin-right: 16px;
@@ -138,14 +164,6 @@
   display: inline-block;
   vertical-align: middle;
   margin: 0 2px;
-}
-
-.downloadIcon {
-  color: #3498db; /* Синий цвет для входящей скорости */
-}
-
-.uploadIcon {
-  color: #2ecc71; /* Зеленый цвет для исходящей скорости */
 }
 
 .speed {

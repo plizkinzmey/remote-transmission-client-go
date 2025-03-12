@@ -30,12 +30,14 @@ interface Torrent {
   Status: string;
   Progress: number;
   Size: number;
+  SizeFormatted: string;
   UploadRatio: number;
   SeedsConnected: number;
   SeedsTotal: number;
   PeersConnected: number;
   PeersTotal: number;
   UploadedBytes: number;
+  UploadedFormatted: string;
 }
 
 interface Config {
@@ -525,12 +527,14 @@ function App() {
                   status={torrent.Status}
                   progress={torrent.Progress}
                   size={torrent.Size}
+                  sizeFormatted={torrent.SizeFormatted}
                   uploadRatio={torrent.UploadRatio}
                   seedsConnected={torrent.SeedsConnected}
                   seedsTotal={torrent.SeedsTotal}
                   peersConnected={torrent.PeersConnected}
                   peersTotal={torrent.PeersTotal}
                   uploadedBytes={torrent.UploadedBytes}
+                  uploadedFormatted={torrent.UploadedFormatted}
                   selected={selectedTorrents.has(torrent.ID)}
                   onSelect={handleTorrentSelect}
                   onRemove={handleRemoveTorrent}
@@ -540,9 +544,7 @@ function App() {
               ))
             ) : (
               <div className={styles.noTorrents}>
-                {searchTerm
-                  ? "No torrents found matching your search"
-                  : "No torrents added yet"}
+                {searchTerm ? 'No torrents found matching your search' : 'No torrents added yet'}
               </div>
             )}
           </div>

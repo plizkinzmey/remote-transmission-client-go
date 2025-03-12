@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -64,63 +65,107 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 	}, nil
 }
 
+// Вспомогательные методы для обработки данных торрента
+func (c *TransmissionClient) getTorrentSize(t transmissionrpc.Torrent) int64 {
+	if t.HaveValid != nil {
+		size := *t.HaveValid
+		if t.LeftUntilDone != nil {
+			size += *t.LeftUntilDone
+		}
+		return size
+	}
+	return 0
+}
+
+func (c *TransmissionClient) getPeerInfo(t transmissionrpc.Torrent) (int, int, int) {
+	peersConnected := 0
+	seedsTotal := 0
+	peersTotal := 0
+
+	if t.PeersConnected != nil {
+		peersConnected = int(*t.PeersConnected)
+	}
+
+	if t.TrackerStats != nil {
+		for _, tracker := range t.TrackerStats {
+			seedsTotal += int(tracker.SeederCount)
+			peersTotal += int(tracker.LeecherCount)
+		}
+	}
+
+	return peersConnected, seedsTotal, peersTotal
+}
+
+func (c *TransmissionClient) getUploadInfo(t transmissionrpc.Torrent) (float64, int64) {
+	uploadRatio := float64(0)
+	uploadedBytes := int64(0)
+
+	if t.UploadRatio != nil {
+		uploadRatio = *t.UploadRatio
+	}
+	if t.UploadedEver != nil {
+		uploadedBytes = int64(*t.UploadedEver)
+	}
+
+	return uploadRatio, uploadedBytes
+}
+
+// formatBytes преобразует размер в байтах в человеко-читаемый формат
+func formatBytes(bytes int64) string {
+	if bytes <= 0 {
+		return "0 B"
+	}
+
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB"}
+	exp := int(math.Log(float64(bytes)) / math.Log(float64(unit)))
+	if exp >= len(units) {
+		exp = len(units) - 1
+	}
+
+	size := float64(bytes) / math.Pow(float64(unit), float64(exp))
+	return fmt.Sprintf("%.2f %s", size, units[exp])
+}
+
 func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
-		"id", "name", "status", "percentDone", "totalSize",
+		"id", "name", "status", "percentDone", 
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
+		"leftUntilDone", "desiredAvailable", "haveValid",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
-
+	
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status)
-
-		// Set default values
-		uploadRatio := float64(0)
-		peersConnected := 0
-		seedsTotal := 0
-		peersTotal := 0
-		uploadedBytes := int64(0)
-
-		// Get values from fields if available
-		if t.UploadRatio != nil {
-			uploadRatio = *t.UploadRatio
-		}
-
-		// Convert peersConnected from int64 to int
-		if t.PeersConnected != nil {
-			peersConnected = int(*t.PeersConnected)
-		}
-
-		// Process tracker stats if available
-		if t.TrackerStats != nil {
-			for _, tracker := range t.TrackerStats {
-				// Add seeder and leecher counts directly (they are not pointers)
-				seedsTotal += int(tracker.SeederCount)
-				peersTotal += int(tracker.LeecherCount)
-			}
-		}
-
-		// Get uploaded bytes
-		if t.UploadedEver != nil {
-			// Convert from transmissionrpc.ByteSize to int64
-			uploadedBytes = int64(*t.UploadedEver)
-		}
-
+		size := c.getTorrentSize(t)
+		uploadRatio, uploadedBytes := c.getUploadInfo(t)
+		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
+		
+		// Форматируем размеры на стороне сервера
+		sizeFormatted := formatBytes(size)
+		uploadedFormatted := formatBytes(uploadedBytes)
+		
 		result[i] = domain.Torrent{
-			ID:             *t.ID,
-			Name:           *t.Name,
-			Status:         status,
-			Progress:       *t.PercentDone * 100,
-			Size:           int64(*t.TotalSize),
-			UploadRatio:    uploadRatio,
-			SeedsConnected: 0, // We don't have direct access to connected seeds
-			SeedsTotal:     seedsTotal,
-			PeersConnected: peersConnected,
-			PeersTotal:     peersTotal,
-			UploadedBytes:  uploadedBytes,
+			ID:               *t.ID,
+			Name:             *t.Name,
+			Status:           status,
+			Progress:         *t.PercentDone * 100,
+			Size:             size,
+			SizeFormatted:    sizeFormatted,
+			UploadRatio:      uploadRatio,
+			SeedsConnected:   0,
+			SeedsTotal:       seedsTotal,
+			PeersConnected:   peersConnected,
+			PeersTotal:       peersTotal,
+			UploadedBytes:    uploadedBytes,
+			UploadedFormatted: uploadedFormatted,
 		}
 	}
 	return result, nil

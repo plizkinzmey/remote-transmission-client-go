@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { Button } from "./Button";
-import { DeleteConfirmation } from "./DeleteConfirmation";
+import { useEffect, useState } from 'react';
+import { Button } from './Button';
+import { DeleteConfirmation } from './DeleteConfirmation';
 import {
   PlayIcon,
   PauseIcon,
   TrashIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
-import styles from "../styles/TorrentItem.module.css";
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+import styles from '../styles/TorrentItem.module.css';
 
 interface TorrentItemProps {
   id: number;
@@ -15,12 +15,14 @@ interface TorrentItemProps {
   status: string;
   progress: number;
   size: number;
+  sizeFormatted: string;
   uploadRatio: number;
   seedsConnected: number;
   seedsTotal: number;
   peersConnected: number;
   peersTotal: number;
   uploadedBytes: number;
+  uploadedFormatted: string;
   selected: boolean;
   onSelect: (id: number) => void;
   onRemove: (id: number, deleteData: boolean) => void;
@@ -30,31 +32,15 @@ interface TorrentItemProps {
 
 const getStatusClassName = (status: string) => {
   switch (status) {
-    case "downloading":
+    case 'downloading':
       return styles.statusDownloading;
-    case "seeding":
+    case 'seeding':
       return styles.statusSeeding;
-    case "completed":
+    case 'completed':
       return styles.statusCompleted;
     default:
       return styles.statusStopped;
   }
-};
-
-// Helper function to format bytes to human-readable format
-const formatBytes = (bytes: number): string => {
-  // Обработка отрицательных значений или нуля
-  if (bytes <= 0) return "0 B";
-
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-};
-
-// Функция для обеспечения неотрицательных значений
-const ensureNonNegative = (value: number): number => {
-  return value < 0 ? 0 : value;
 };
 
 export const TorrentItem: React.FC<TorrentItemProps> = ({
@@ -62,13 +48,13 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   name,
   status,
   progress,
-  size,
+  sizeFormatted,
   uploadRatio,
   seedsConnected,
   seedsTotal,
   peersConnected,
   peersTotal,
-  uploadedBytes,
+  uploadedFormatted,
   selected,
   onSelect,
   onRemove,
@@ -77,17 +63,16 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 }) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastAction, setLastAction] = useState<"start" | "stop" | null>(null);
+  const [lastAction, setLastAction] = useState<'start' | 'stop' | null>(null);
   const [lastStatus, setLastStatus] = useState(status);
 
   // Отслеживаем изменение статуса торрента
   useEffect(() => {
     if (isLoading && lastAction) {
       // Проверяем, можно ли выполнить действие
-      const canPerformAction =
-        (lastAction === "start" && status === "stopped") ||
-        (lastAction === "stop" &&
-          (status === "downloading" || status === "seeding"));
+      const canPerformAction = 
+        (lastAction === 'start' && status === 'stopped') ||
+        (lastAction === 'stop' && (status === 'downloading' || status === 'seeding'));
 
       // Если действие невозможно выполнить (торрент уже в нужном состоянии)
       if (!canPerformAction) {
@@ -99,9 +84,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       // Если статус изменился после выполнения действия
       if (lastStatus !== status) {
         if (
-          (lastAction === "start" &&
-            (status === "downloading" || status === "seeding")) ||
-          (lastAction === "stop" && status === "stopped")
+          (lastAction === 'start' && (status === 'downloading' || status === 'seeding')) ||
+          (lastAction === 'stop' && status === 'stopped')
         ) {
           setIsLoading(false);
           setLastAction(null);
@@ -111,35 +95,38 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     setLastStatus(status);
   }, [status, lastAction, lastStatus, isLoading]);
 
-  const handleAction = (action: "start" | "stop") => {
+  const handleAction = (action: 'start' | 'stop') => {
     if (isLoading) return;
-
+    
     // Проверяем, нужно ли выполнять действие
-    const isAlreadyInTargetState =
-      (action === "start" &&
-        (status === "downloading" || status === "seeding")) ||
-      (action === "stop" && status === "stopped");
+    const isAlreadyInTargetState = 
+      (action === 'start' && (status === 'downloading' || status === 'seeding')) ||
+      (action === 'stop' && status === 'stopped');
 
     if (isAlreadyInTargetState) {
-      return; // Не выполняем действие, если торрент уже в целевом состоянии
+      return;
     }
 
     setIsLoading(true);
     setLastAction(action);
-
-    if (action === "start") {
+    
+    if (action === 'start') {
       onStart(id);
     } else {
       onStop(id);
     }
   };
 
-  const isRunning = status === "downloading" || status === "seeding";
+  const isRunning = status === 'downloading' || status === 'seeding';
 
   const renderActionButton = () => {
     if (isLoading) {
       return (
-        <Button variant="icon" disabled loading>
+        <Button 
+          variant="icon"
+          disabled
+          loading
+        >
           <ArrowPathIcon className="loading-spinner" />
         </Button>
       );
@@ -147,9 +134,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 
     if (isRunning) {
       return (
-        <Button
+        <Button 
           variant="icon"
-          onClick={() => handleAction("stop")}
+          onClick={() => handleAction('stop')}
           aria-label={`Pause torrent ${name}`}
         >
           <PauseIcon />
@@ -158,9 +145,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
 
     return (
-      <Button
+      <Button 
         variant="icon"
-        onClick={() => handleAction("start")}
+        onClick={() => handleAction('start')}
         aria-label={`Start torrent ${name}`}
       >
         <PlayIcon />
@@ -168,38 +155,19 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     );
   };
 
-  const renderProgressInfo = () => {
-    // Убедимся, что размер не отрицательный
-    const safeSize = ensureNonNegative(size);
-
-    // Расчет скачанного размера на основе прогресса
-    const downloadedSize = Math.round(safeSize * (progress / 100));
-
-    if (progress >= 100) {
-      // Если загрузка завершена, показываем только общий размер
-      return `${formatBytes(safeSize)}`;
-    } else {
-      // Иначе показываем прогресс скачивания
-      return `${formatBytes(downloadedSize)} / ${formatBytes(
-        safeSize
-      )} (${progress.toFixed(1)}%)`;
-    }
-  };
-
-  // Обеспечиваем неотрицательные значения для всех счетчиков
-  const safeUploadRatio = ensureNonNegative(uploadRatio);
-  const safeSeedsConnected = ensureNonNegative(seedsConnected);
-  const safeSeedsTotal = ensureNonNegative(seedsTotal);
-  const safePeersConnected = ensureNonNegative(peersConnected);
-  const safePeersTotal = ensureNonNegative(peersTotal);
-  const safeUploadedBytes = ensureNonNegative(uploadedBytes);
+  // Обеспечиваем неотрицательные значения для счетчиков
+  const safeUploadRatio = uploadRatio < 0 ? 0 : uploadRatio;
+  const safeSeedsConnected = seedsConnected < 0 ? 0 : seedsConnected;
+  const safeSeedsTotal = seedsTotal < 0 ? 0 : seedsTotal;
+  const safePeersConnected = peersConnected < 0 ? 0 : peersConnected;
+  const safePeersTotal = peersTotal < 0 ? 0 : peersTotal;
 
   return (
     <>
       <div className={styles.container}>
         <label className={styles.checkbox}>
-          <input
-            type="checkbox"
+          <input 
+            type="checkbox" 
             checked={selected}
             onChange={() => onSelect(id)}
             aria-label={`Select torrent ${name}`}
@@ -218,36 +186,33 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </div>
           <div className={styles.statusContainer}>
             <span className={getStatusClassName(status)}>{status}</span>
-            <span className={styles.progressText}>{renderProgressInfo()}</span>
+            <span className={styles.progressText}>
+              {progress >= 100 ? sizeFormatted : `${progress.toFixed(1)}% (${sizeFormatted})`}
+            </span>
           </div>
           <div className={styles.progressContainer}>
-            <progress
+            <progress 
               className={styles.progressElement}
-              value={progress}
+              value={progress} 
               max={100}
             />
-            <div
-              className={styles.progressBar}
+            <div 
+              className={styles.progressBar} 
               style={{ width: `${progress}%` }}
             />
           </div>
-
-          {/* Additional torrent info - в одну линию */}
+          
           <div className={styles.detailedInfo}>
             <div className={styles.infoRow}>
-              <span>
-                Seeds: {safeSeedsConnected}/{safeSeedsTotal}
-              </span>
-              <span>
-                Peers: {safePeersConnected}/{safePeersTotal}
-              </span>
-              <span>Uploaded: {formatBytes(safeUploadedBytes)}</span>
+              <span>Seeds: {safeSeedsConnected}/{safeSeedsTotal}</span>
+              <span>Peers: {safePeersConnected}/{safePeersTotal}</span>
+              <span>Uploaded: {uploadedFormatted}</span>
             </div>
           </div>
         </div>
         <div className={styles.actions}>
           {renderActionButton()}
-          <Button
+          <Button 
             variant="icon"
             onClick={() => setShowDeleteConfirmation(true)}
             aria-label={`Remove torrent ${name}`}

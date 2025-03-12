@@ -32,6 +32,7 @@ const Modal = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   width: 400px;
   z-index: 1000;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 `;
 
 const ModalHeader = styled.div`
@@ -40,12 +41,12 @@ const ModalHeader = styled.div`
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   user-select: none;
-
   h2 {
     color: white;
-    font-size: 14px;
+    font-size: 16px;
     margin: 0;
     font-weight: 500;
+    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 `;
 
@@ -78,6 +79,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 14px;
   color: #2c3e50;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 `;
 
 const Input = styled.input`
@@ -85,7 +87,7 @@ const Input = styled.input`
   border: 1px solid #bdc3c7;
   border-radius: 4px;
   font-size: 14px;
-
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   &:focus {
     outline: none;
     border-color: #3498db;
@@ -97,6 +99,7 @@ const Select = styled.select`
   border: 1px solid #bdc3c7;
   border-radius: 4px;
   font-size: 14px;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   &:focus {
     outline: none;
     border-color: #3498db;

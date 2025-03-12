@@ -22,6 +22,8 @@ func main() {
 		Title:  "Transmission Client",
 		Width:  900,
 		Height: 600,
+		MinWidth: 800,
+		MinHeight: 500,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

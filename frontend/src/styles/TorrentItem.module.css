@@ -7,6 +7,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   -webkit-app-region: no-drag;
   user-select: none;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .checkbox {
@@ -44,7 +45,9 @@
   user-select: none;
   flex: 1;
   padding-right: 8px;
-  text-align: left; /* Явное указание выравнивания по левому краю */
+  text-align: left;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 500;
 }
 
 /* Стили для рейтинга */
@@ -54,13 +57,14 @@
   padding: 2px 8px;
   min-width: 120px;
   text-align: center;
-  flex-shrink: 0; /* Предотвращает сжатие контейнера с рейтингом */
+  flex-shrink: 0;
 }
 
 .ratio {
   font-size: 12px;
   color: #2c3e50;
-  white-space: nowrap; /* Предотвращает перенос текста */
+  white-space: nowrap;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .statusContainer {
@@ -69,7 +73,9 @@
   gap: 12px;
   user-select: none;
   margin-bottom: 4px;
-  text-align: left; /* Выравнивание по левому краю */
+  text-align: left;
+  font-size: 13px;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .statusDownloading {
@@ -102,54 +108,12 @@
   font-weight: 500;
 }
 
-.progressBar {
-  height: 100%;
-  background-color: #3498db;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  margin-left: 16px;
-  -webkit-app-region: no-drag;
-}
-
-.progressText {
-  font-size: 12px;
-  color: #666;
-  flex: 1;
-  text-align: left; /* Выравнивание по левому краю */
-}
-
-/* Стили для детальной информации о торренте */
-.detailedInfo {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #666;
-  text-align: left; /* Выравнивание по левому краю */
-}
-
-/* Перенастройка стиля строки информации для одной линии */
-.infoRow {
-  display: flex;
-  justify-content: flex-start; /* Выравнивание по левому краю */
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.infoRow span {
-  display: inline-block;
-  white-space: nowrap;
-}
-
 .progressContainer {
   position: relative;
   width: 100%;
-  height: 4px;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  height: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 
 .progressElement {
@@ -164,9 +128,75 @@
 
 .progress {
   width: 100%;
-  height: 4px;
+  height: 8px;
   background-color: #ecf0f1;
-  border-radius: 2px;
-  margin-top: 8px;
+  border-radius: 4px;
   overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background-color: #3498db;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+  -webkit-app-region: no-drag;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #666;
+  flex: 1;
+  text-align: left;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Стили для детальной информации о торренте */
+.detailedInfo {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #666;
+  text-align: left;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Перенастройка стиля строки информации для одной линии */
+.infoRow {
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.infoRow span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Стили для контейнера статистики */
+.statsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  align-items: center;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+/* Добавляем стили для элементов статистики */
+.seeds, .peers, .uploaded {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: #2c3e50;
+  white-space: nowrap;
+  font-weight: 400;
 }

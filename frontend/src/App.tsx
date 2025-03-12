@@ -432,31 +432,13 @@ function App() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {filteredTorrents.length > 0 && (
-                <div className={styles.selectAllContainer}>
-                  <input
-                    type="checkbox"
-                    className={styles.selectAllCheckbox}
-                    checked={
-                      selectedTorrents.size > 0 &&
-                      selectedTorrents.size === filteredTorrents.length
-                    }
-                    onChange={handleSelectAll}
-                    id="selectAll"
-                  />
-                  <label htmlFor="selectAll" className={styles.selectAllLabel}>
-                    {selectedTorrents.size > 0
-                      ? t(
-                          "torrents.selected",
-                          String(selectedTorrents.size),
-                          String(filteredTorrents.length)
-                        )
-                      : t("torrents.selectAll")}
-                  </label>
-                </div>
-              )}
-            </div>
-            <div className={styles.actions}>
+              <Button
+                variant="icon"
+                onClick={() => setShowAddTorrent(true)}
+                aria-label={t("add.title")}
+              >
+                <PlusCircleIcon />
+              </Button>
               {hasSelectedTorrents && (
                 <>
                   <Button
@@ -487,6 +469,8 @@ function App() {
                   </Button>
                 </>
               )}
+            </div>
+            <div className={styles.rightSection}>
               <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
@@ -494,15 +478,33 @@ function App() {
               >
                 <Cog6ToothIcon />
               </Button>
-              <Button
-                variant="icon"
-                onClick={() => setShowAddTorrent(true)}
-                aria-label={t("add.title")}
-              >
-                <PlusCircleIcon />
-              </Button>
             </div>
           </div>
+
+          {filteredTorrents.length > 0 && (
+            <div className={styles.selectAllContainer}>
+              <input
+                type="checkbox"
+                className={styles.selectAllCheckbox}
+                checked={
+                  selectedTorrents.size > 0 &&
+                  selectedTorrents.size === filteredTorrents.length
+                }
+                onChange={handleSelectAll}
+                id="selectAll"
+              />
+              <label htmlFor="selectAll" className={styles.selectAllLabel}>
+                {selectedTorrents.size > 0
+                  ? t(
+                      "torrents.selected",
+                      String(selectedTorrents.size),
+                      String(filteredTorrents.length)
+                    )
+                  : t("torrents.selectAll")}
+              </label>
+            </div>
+          )}
+
           {error && <div className={styles.errorMessage}>{error}</div>}
           {isReconnecting && (
             <div className={styles.reconnectingStatus}>

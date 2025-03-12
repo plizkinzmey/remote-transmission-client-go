@@ -38,24 +38,26 @@
 .controlPanel {
   display: flex;
   justify-content: space-between;
-  gap: 24px; /* Увеличиваем расстояние между левой и правой секциями */
+  align-items: center;
   padding-bottom: 12px;
-  flex-wrap: nowrap;
 }
 
 .leftSection {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  min-width: 200px;
-  padding-left: 16px; /* Add unified padding for the entire left section */
+  align-items: center;
+  gap: 12px;
+  padding-left: 16px;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
 }
 
 .searchContainer {
   width: 400px;
   min-width: 200px;
-  padding-left: 0; /* Remove individual padding since it's handled by leftSection */
 }
 
 .searchInput {
@@ -65,11 +67,30 @@
   font-size: 14px;
   width: 100%;
   background: white;
+  height: 32px;
 }
 
 .searchInput:focus {
   outline: none;
   border-color: #3498db;
+}
+
+/* Стили для кнопок */
+.leftSection button,
+.rightSection button {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.leftSection button svg,
+.rightSection button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .noTorrents {

@@ -19,7 +19,6 @@ interface LocaleInfo {
   name: string;
 }
 
-// Define the context type
 interface LocalizationContextType {
   t: (key: string, ...params: string[]) => string;
   currentLanguage: string;
@@ -28,7 +27,6 @@ interface LocalizationContextType {
   isLoading: boolean;
 }
 
-// Create the context with default values
 const LocalizationContext = createContext<LocalizationContextType>({
   t: (key) => key,
   currentLanguage: "en",
@@ -37,7 +35,6 @@ const LocalizationContext = createContext<LocalizationContextType>({
   isLoading: true,
 });
 
-// Custom hook for using the localization context
 export const useLocalization = () => useContext(LocalizationContext);
 
 interface LocalizationProviderProps {
@@ -63,22 +60,77 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     return result;
   };
 
-  // Translation function that gets translations from backend
+  // Synchronous translation function that uses cache
   const t = (key: string, ...params: string[]): string => {
-    // Use window runtime cache if available for better performance
-    const cacheKey = `i18n_${currentLanguage}_${key}`;
-    if ((window as any)[cacheKey]) {
-      return formatTranslation((window as any)[cacheKey], params);
-    }
-
-    // Use loaded translations
+    // Return from cache if available
     if (translations[key]) {
       return formatTranslation(translations[key], params);
     }
 
-    // Fallback to key if translation not found
+    // If not in cache, return key and trigger async load
+    GetTranslation(key, currentLanguage)
+      .then((translation) => {
+        setTranslations((prev) => ({
+          ...prev,
+          [key]: translation,
+        }));
+      })
+      .catch((error) => {
+        console.error(`Failed to get translation for key: ${key}`, error);
+      });
+
     return formatTranslation(key, params);
   };
+
+  // Preload common translations when language changes
+  useEffect(() => {
+    const preloadCommonTranslations = async () => {
+      const commonKeys = [
+        "app.title",
+        "torrent.status.stopped",
+        "torrent.status.downloading",
+        "torrent.status.seeding",
+        "torrent.status.checking",
+        "torrent.status.queued",
+        "torrent.status.completed",
+        "torrent.start",
+        "torrent.stop",
+        "torrent.remove",
+        "torrent.ratio",
+        "torrent.seeds",
+        "torrent.peers",
+        "torrent.uploaded",
+      ];
+
+      try {
+        const newTranslations: Record<string, string> = {};
+        await Promise.all(
+          commonKeys.map(async (key) => {
+            try {
+              const translation = await GetTranslation(key, currentLanguage);
+              newTranslations[key] = translation;
+            } catch (error) {
+              console.error(
+                `Failed to preload translation for key: ${key}`,
+                error
+              );
+            }
+          })
+        );
+
+        setTranslations((prev) => ({
+          ...prev,
+          ...newTranslations,
+        }));
+      } catch (error) {
+        console.error("Failed to preload translations:", error);
+      }
+    };
+
+    if (currentLanguage) {
+      preloadCommonTranslations();
+    }
+  }, [currentLanguage]);
 
   // Load available languages
   useEffect(() => {
@@ -94,11 +146,9 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         setAvailableLanguages(langs);
       } catch (error) {
         console.error("Failed to load available languages:", error);
-        // Fallback to English only
         setAvailableLanguages([{ code: "en", name: "English" }]);
       }
     };
-
     loadAvailableLanguages();
   }, []);
 
@@ -110,48 +160,17 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         if (config?.language) {
           setCurrentLanguage(config.language);
         } else {
-          // If no language set in config, try to get system language
           const systemLang = await GetSystemLanguage();
           setCurrentLanguage(systemLang);
         }
       } catch (error) {
         console.error("Failed to load language from config:", error);
-      }
-    };
-
-    loadLanguageFromConfig();
-  }, []);
-
-  // Preload translations for current language
-  useEffect(() => {
-    const preloadTranslations = async () => {
-      try {
-        setIsLoading(true);
-
-        // Get all translation keys from locales/en.json (this assumes we have all keys in English)
-        const response = await fetch("/locales/en.json");
-        const enTranslations = await response.json();
-
-        // Preload translations for current language
-        const newTranslations: Record<string, string> = {};
-        for (const key of Object.keys(enTranslations)) {
-          const translation = await GetTranslation(key, currentLanguage);
-          newTranslations[key] = translation;
-          (window as any)[`i18n_${currentLanguage}_${key}`] = translation;
-        }
-
-        setTranslations(newTranslations);
-      } catch (error) {
-        console.error("Failed to preload translations:", error);
       } finally {
         setIsLoading(false);
       }
     };
-
-    if (currentLanguage) {
-      preloadTranslations();
-    }
-  }, [currentLanguage]);
+    loadLanguageFromConfig();
+  }, []);
 
   // Update window title when language changes
   useEffect(() => {
@@ -165,10 +184,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   // Change language
   const setLanguage = (language: string) => {
     setCurrentLanguage(language);
-    // Cache will be updated on next render due to useEffect
+    setTranslations({}); // Clear translations cache when language changes
   };
 
-  // Memoize the context value to prevent unnecessary re-renders
+  // Memoize the context value
   const contextValue = useMemo(
     () => ({
       t,

@@ -44,6 +44,7 @@
   user-select: none;
   flex: 1;
   padding-right: 8px;
+  text-align: left; /* Явное указание выравнивания по левому краю */
 }
 
 /* Стили для рейтинга */
@@ -53,11 +54,13 @@
   padding: 2px 8px;
   min-width: 120px;
   text-align: center;
+  flex-shrink: 0; /* Предотвращает сжатие контейнера с рейтингом */
 }
 
 .ratio {
   font-size: 12px;
   color: #2c3e50;
+  white-space: nowrap; /* Предотвращает перенос текста */
 }
 
 .statusContainer {
@@ -66,6 +69,7 @@
   gap: 12px;
   user-select: none;
   margin-bottom: 4px;
+  text-align: left; /* Выравнивание по левому краю */
 }
 
 .status {
@@ -130,6 +134,7 @@
   font-size: 12px;
   color: #666;
   flex: 1;
+  text-align: left; /* Выравнивание по левому краю */
 }
 
 /* Стили для детальной информации о торренте */
@@ -137,12 +142,13 @@
   margin-top: 12px;
   font-size: 12px;
   color: #666;
+  text-align: left; /* Выравнивание по левому краю */
 }
 
 /* Перенастройка стиля строки информации для одной линии */
 .infoRow {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-start; /* Выравнивание по левому краю */
   gap: 20px;
   flex-wrap: wrap;
 }

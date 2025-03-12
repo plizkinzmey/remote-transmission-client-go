@@ -43,12 +43,18 @@ const getStatusClassName = (status: string) => {
 
 // Helper function to format bytes to human-readable format
 const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return "0 B";
+  // Обработка отрицательных значений или нуля
+  if (bytes <= 0) return "0 B";
 
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
 
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+};
+
+// Функция для обеспечения неотрицательных значений
+const ensureNonNegative = (value: number): number => {
+  return value < 0 ? 0 : value;
 };
 
 export const TorrentItem: React.FC<TorrentItemProps> = ({
@@ -163,19 +169,30 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   };
 
   const renderProgressInfo = () => {
+    // Убедимся, что размер не отрицательный
+    const safeSize = ensureNonNegative(size);
+
     // Расчет скачанного размера на основе прогресса
-    const downloadedSize = Math.round(size * (progress / 100));
+    const downloadedSize = Math.round(safeSize * (progress / 100));
 
     if (progress >= 100) {
       // Если загрузка завершена, показываем только общий размер
-      return `${formatBytes(size)}`;
+      return `${formatBytes(safeSize)}`;
     } else {
       // Иначе показываем прогресс скачивания
       return `${formatBytes(downloadedSize)} / ${formatBytes(
-        size
+        safeSize
       )} (${progress.toFixed(1)}%)`;
     }
   };
+
+  // Обеспечиваем неотрицательные значения для всех счетчиков
+  const safeUploadRatio = ensureNonNegative(uploadRatio);
+  const safeSeedsConnected = ensureNonNegative(seedsConnected);
+  const safeSeedsTotal = ensureNonNegative(seedsTotal);
+  const safePeersConnected = ensureNonNegative(peersConnected);
+  const safePeersTotal = ensureNonNegative(peersTotal);
+  const safeUploadedBytes = ensureNonNegative(uploadedBytes);
 
   return (
     <>
@@ -195,7 +212,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             </h3>
             <div className={styles.ratioContainer} title="Рейтинг раздачи">
               <span className={styles.ratio}>
-                Рейтинг: {uploadRatio.toFixed(2)}
+                Рейтинг: {safeUploadRatio.toFixed(2)}
               </span>
             </div>
           </div>
@@ -219,12 +236,12 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <div className={styles.detailedInfo}>
             <div className={styles.infoRow}>
               <span>
-                Seeds: {seedsConnected}/{seedsTotal}
+                Seeds: {safeSeedsConnected}/{safeSeedsTotal}
               </span>
               <span>
-                Peers: {peersConnected}/{peersTotal}
+                Peers: {safePeersConnected}/{safePeersTotal}
               </span>
-              <span>Uploaded: {formatBytes(uploadedBytes)}</span>
+              <span>Uploaded: {formatBytes(safeUploadedBytes)}</span>
             </div>
           </div>
         </div>

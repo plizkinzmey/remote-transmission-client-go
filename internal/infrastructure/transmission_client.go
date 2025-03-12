@@ -143,7 +143,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
-		status := mapStatus(*t.Status)
+		status := mapStatus(*t.Status, t)
 		size := c.getTorrentSize(t)
 		uploadRatio, uploadedBytes := c.getUploadInfo(t)
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
@@ -254,12 +254,23 @@ func (c *TransmissionClient) Remove(id int64, deleteData bool) error {
 	return nil
 }
 
-func mapStatus(status transmissionrpc.TorrentStatus) domain.TorrentStatus {
+func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
+	// Если торрент остановлен и загружен полностью, считаем его завершенным
+	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {
+		return domain.StatusCompleted
+	}
+
 	switch status {
 	case transmissionrpc.TorrentStatusStopped:
 		return domain.StatusStopped
+	case transmissionrpc.TorrentStatusCheckWait, transmissionrpc.TorrentStatusCheck:
+		return domain.StatusChecking
+	case transmissionrpc.TorrentStatusDownloadWait:
+		return domain.StatusQueued
 	case transmissionrpc.TorrentStatusDownload:
 		return domain.StatusDownloading
+	case transmissionrpc.TorrentStatusSeedWait:
+		return domain.StatusQueued
 	case transmissionrpc.TorrentStatusSeed:
 		return domain.StatusSeeding
 	default:

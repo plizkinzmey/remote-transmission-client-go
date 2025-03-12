@@ -6,4 +6,5 @@ type Config struct {
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Language string `json:"language"` // Added for localization support
 }

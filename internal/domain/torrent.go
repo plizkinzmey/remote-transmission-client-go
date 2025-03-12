@@ -7,6 +7,8 @@ const (
 	StatusDownloading TorrentStatus = "downloading"
 	StatusSeeding     TorrentStatus = "seeding"
 	StatusCompleted   TorrentStatus = "completed"
+	StatusChecking    TorrentStatus = "checking"
+	StatusQueued      TorrentStatus = "queued"
 )
 
 type Torrent struct {

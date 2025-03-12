@@ -3,6 +3,7 @@ import { Button } from "./components/Button";
 import { TorrentItem } from "./components/TorrentItem";
 import { Settings } from "./components/Settings";
 import { AddTorrent } from "./components/AddTorrent";
+import { useLocalization } from "./contexts/LocalizationContext";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
@@ -45,9 +46,11 @@ interface Config {
   port: number;
   username: string;
   password: string;
+  language: string;
 }
 
 function App() {
+  const { t, setLanguage } = useLocalization();
   const [torrents, setTorrents] = useState<Torrent[]>([]);
   const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
     new Set()
@@ -149,6 +152,18 @@ function App() {
     lastTorrentStates,
   ]);
 
+  const handleTorrentSelect = (id: number) => {
+    setSelectedTorrents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const handleSelectAll = () => {
     if (selectedTorrents.size === filteredTorrents.length) {
       // Если все выбраны - снимаем выделение
@@ -162,9 +177,7 @@ function App() {
   // Функция переподключения к серверу
   const reconnect = async () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
-      setError(
-        "Maximum reconnection attempts reached. Please check your connection settings."
-      );
+      setError(t("errors.maxReconnectAttempts"));
       setIsReconnecting(false);
       return;
     }
@@ -191,27 +204,28 @@ function App() {
     try {
       const response = await GetTorrents();
       setTorrents(response);
-
-      // Сбрасываем ошибки и счетчик попыток переподключения при успешном запросе
       setError(null);
       setReconnectAttempts(0);
       setIsReconnecting(false);
     } catch (error) {
       console.error("Failed to fetch torrents:", error);
 
-      // Если это ошибка соединения, пытаемся переподключиться
       if (!isReconnecting) {
         setError(
-          `Connection lost. Attempting to reconnect... (${
-            reconnectAttempts + 1
-          }/${maxReconnectAttempts})`
+          t(
+            "errors.connectionLost",
+            String(reconnectAttempts + 1),
+            String(maxReconnectAttempts)
+          )
         );
         const reconnected = await reconnect();
         if (!reconnected) {
           setError(
-            `Failed to reconnect. Retrying in 3 seconds... (${
-              reconnectAttempts + 1
-            }/${maxReconnectAttempts})`
+            t(
+              "errors.reconnectFailed",
+              String(reconnectAttempts + 1),
+              String(maxReconnectAttempts)
+            )
           );
         }
       }
@@ -232,9 +246,7 @@ function App() {
             refreshTorrents(); // Первоначальная загрузка
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
-            setError(
-              `Connection failed: ${initError}. Please check your settings.`
-            );
+            setError(t("errors.connectionFailed", String(initError)));
             setShowSettings(true);
           }
         } else {
@@ -242,7 +254,7 @@ function App() {
         }
       } catch (error) {
         console.error("Failed to load config:", error);
-        setError(`Failed to load configuration: ${error}`);
+        setError(t("errors.failedToLoadConfig", String(error)));
         setShowSettings(true);
       }
     };
@@ -276,7 +288,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to add torrent:", error);
-      setError(`Failed to add torrent: ${error}`);
+      setError(t("errors.failedToAddTorrent", String(error)));
     }
   };
 
@@ -286,7 +298,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to add torrent file:", error);
-      setError(`Failed to add torrent file: ${error}`);
+      setError(t("errors.failedToAddTorrent", String(error)));
     }
   };
 
@@ -296,40 +308,13 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to remove torrent:", error);
-      setError(`Failed to remove torrent: ${error}`);
+      setError(t("errors.failedToRemoveTorrent", String(error)));
     }
-  };
-
-  const handleSettingsSave = async (settings: Config) => {
-    try {
-      await Initialize(JSON.stringify(settings));
-      setShowSettings(false);
-      setIsInitialized(true);
-      setError(null); // Сбрасываем ошибки при успешном сохранении настроек
-      refreshTorrents();
-    } catch (error) {
-      console.error("Failed to update settings:", error);
-      setError(`Failed to connect with new settings: ${error}`);
-      // Оставляем окно настроек открытым в случае ошибки
-    }
-  };
-
-  const handleTorrentSelect = (id: number) => {
-    setSelectedTorrents((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
   };
 
   const handleStartSelected = async () => {
     if (bulkOperations.start || !hasSelectedTorrents) return;
 
-    // Проверяем, есть ли торренты, которые можно запустить с помощью единичной кнопки Mass Action
     const torrentsToStart = torrents.filter(
       (t) => selectedTorrents.has(t.ID) && t.Status === "stopped"
     );
@@ -351,7 +336,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to start torrents:", error);
-      setError(`Failed to start torrents: ${error}`);
+      setError(t("errors.failedToStartTorrents", String(error)));
       setBulkOperations((prev) => ({ ...prev, start: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
@@ -361,7 +346,6 @@ function App() {
   const handleStopSelected = async () => {
     if (bulkOperations.stop || !hasSelectedTorrents) return;
 
-    // Проверяем, есть ли торренты, которые можно остановить с помощью кнопки Mass Action
     const torrentsToStop = torrents.filter(
       (t) =>
         selectedTorrents.has(t.ID) &&
@@ -385,7 +369,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to stop torrents:", error);
-      setError(`Failed to stop torrents: ${error}`);
+      setError(t("errors.failedToStopTorrents", String(error)));
       setBulkOperations((prev) => ({ ...prev, stop: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
@@ -398,7 +382,7 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to start torrent:", error);
-      setError(`Failed to start torrent: ${error}`);
+      setError(t("errors.failedToStartTorrent", String(error)));
     }
   };
 
@@ -408,7 +392,22 @@ function App() {
       refreshTorrents();
     } catch (error) {
       console.error("Failed to stop torrent:", error);
-      setError(`Failed to stop torrent: ${error}`);
+      setError(t("errors.failedToStopTorrent", String(error)));
+    }
+  };
+
+  const handleSettingsSave = async (settings: Config) => {
+    try {
+      await Initialize(JSON.stringify(settings));
+      setShowSettings(false);
+      setIsInitialized(true);
+      setError(null);
+      // Update language if changed
+      setLanguage(settings.language);
+      refreshTorrents();
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      setError(t("errors.failedToUpdateSettings", String(error)));
     }
   };
 
@@ -427,20 +426,23 @@ function App() {
               <input
                 type="text"
                 className={styles.searchInput}
-                placeholder="Search torrents..."
+                placeholder={t("torrents.search")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className={styles.actions}>
-              {/* Кнопки массовых операций */}
               {filteredTorrents.length > 0 && (
                 <>
                   <div className={styles.selectAllContainer}>
                     <span className={styles.selectAllLabel}>
                       {selectedTorrents.size > 0
-                        ? `Selected: ${selectedTorrents.size}/${filteredTorrents.length}`
+                        ? t(
+                            "torrents.selected",
+                            String(selectedTorrents.size),
+                            String(filteredTorrents.length)
+                          )
                         : ""}
                     </span>
                   </div>
@@ -449,7 +451,7 @@ function App() {
                     onClick={handleStartSelected}
                     disabled={!hasSelectedTorrents || bulkOperations.start}
                     loading={bulkOperations.start}
-                    aria-label="Start selected torrents"
+                    aria-label={t("torrents.startSelected")}
                   >
                     {bulkOperations.start ? (
                       <ArrowPathIcon className="loading-spinner" />
@@ -462,7 +464,7 @@ function App() {
                     onClick={handleStopSelected}
                     disabled={!hasSelectedTorrents || bulkOperations.stop}
                     loading={bulkOperations.stop}
-                    aria-label="Stop selected torrents"
+                    aria-label={t("torrents.stopSelected")}
                   >
                     {bulkOperations.stop ? (
                       <ArrowPathIcon className="loading-spinner" />
@@ -473,18 +475,17 @@ function App() {
                 </>
               )}
 
-              {/* Стандартные кнопки управления */}
               <Button
                 variant="icon"
                 onClick={() => setShowSettings(true)}
-                aria-label="Settings"
+                aria-label={t("settings.title")}
               >
                 <Cog6ToothIcon />
               </Button>
               <Button
                 variant="icon"
                 onClick={() => setShowAddTorrent(true)}
-                aria-label="Add torrent"
+                aria-label={t("add.title")}
               >
                 <PlusCircleIcon />
               </Button>
@@ -492,9 +493,10 @@ function App() {
           </div>
 
           {error && <div className={styles.errorMessage}>{error}</div>}
-
           {isReconnecting && (
-            <div className={styles.reconnectingStatus}>Reconnecting...</div>
+            <div className={styles.reconnectingStatus}>
+              {t("app.reconnecting")}
+            </div>
           )}
         </div>
 
@@ -512,7 +514,7 @@ function App() {
                 id="selectAll"
               />
               <label htmlFor="selectAll" className={styles.selectAllLabel}>
-                Select All
+                {t("torrents.selectAll")}
               </label>
             </div>
           )}
@@ -545,8 +547,8 @@ function App() {
             ) : (
               <div className={styles.noTorrents}>
                 {searchTerm
-                  ? "No torrents found matching your search"
-                  : "No torrents added yet"}
+                  ? t("torrents.noTorrentsFound")
+                  : t("torrents.noTorrents")}
               </div>
             )}
           </div>

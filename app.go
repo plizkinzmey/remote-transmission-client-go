@@ -12,9 +12,10 @@ import (
 
 // App struct
 type App struct {
-	ctx          context.Context
-	service      *application.TorrentService
-	configService *infrastructure.ConfigService
+	ctx                 context.Context
+	service             *application.TorrentService
+	configService       *infrastructure.ConfigService
+	localizationService *infrastructure.LocalizationService
 }
 
 // Error constants
@@ -24,18 +25,34 @@ const (
 
 // NewApp creates a new App application struct
 func NewApp() *App {
+	// Initialize localization service
+	locService, err := infrastructure.NewLocalizationService()
+	if err != nil {
+		// If we can't initialize localization, fall back to a basic implementation
+		fmt.Printf("Failed to initialize localization: %v\n", err)
+		locService = &infrastructure.LocalizationService{}
+	}
+
 	return &App{
-		configService: infrastructure.NewConfigService(),
+		configService:       infrastructure.NewConfigService(),
+		localizationService: locService,
 	}
 }
 
 // startup is called when the app starts. The context is saved
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	
-	// Попробуем автоматически инициализировать с сохраненными настройками
+
+	// Try to initialize with saved settings
 	config, err := a.LoadConfig()
 	if err == nil && config != nil {
+		// If language is not set in config, detect system language
+		if config.Language == "" {
+			config.Language = a.localizationService.GetSystemLocale()
+			// Save the detected language to config
+			_ = a.configService.SaveConfig(config)
+		}
+
 		jsonConfig, _ := json.Marshal(config)
 		_ = a.Initialize(string(jsonConfig))
 	}
@@ -48,12 +65,17 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
-	// Сохраняем конфигурацию
+	// If language is not set in the config, detect system language
+	if config.Language == "" {
+		config.Language = a.localizationService.GetSystemLocale()
+	}
+
+	// Save the configuration
 	if err := a.configService.SaveConfig(&config); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Создаем клиент с конфигурацией
+	// Create client with config
 	client, err := infrastructure.NewTransmissionClient(infrastructure.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
@@ -68,12 +90,27 @@ func (a *App) Initialize(configJson string) error {
 	return nil
 }
 
-// LoadConfig загружает сохраненную конфигурацию если она существует
+// LoadConfig loads saved configuration if it exists
 func (a *App) LoadConfig() (*domain.Config, error) {
 	return a.configService.LoadConfig()
 }
 
-// GetTorrents возвращает все торренты
+// GetTranslation returns a translated string for the given key and locale
+func (a *App) GetTranslation(key string, locale string) string {
+	return a.localizationService.Translate(key, locale)
+}
+
+// GetAvailableLanguages returns all available languages
+func (a *App) GetAvailableLanguages() []string {
+	return a.localizationService.GetAvailableLocales()
+}
+
+// GetSystemLanguage returns the detected system language
+func (a *App) GetSystemLanguage() string {
+	return a.localizationService.GetSystemLocale()
+}
+
+// GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
 		return nil, fmt.Errorf(ErrServiceNotInitialized)
@@ -81,7 +118,7 @@ func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	return a.service.GetAllTorrents()
 }
 
-// AddTorrent добавляет новый торрент по URL
+// AddTorrent adds a new torrent by URL
 func (a *App) AddTorrent(url string) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -89,19 +126,19 @@ func (a *App) AddTorrent(url string) error {
 	return a.service.AddTorrent(url)
 }
 
-// AddTorrentFile добавляет торрент из баз64-закодированного файла
+// AddTorrentFile adds a torrent from a base64-encoded file
 func (a *App) AddTorrentFile(base64Content string) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
 	}
-	// Добавляем префикс data URL, если его нет
+	// Add the data URL prefix if it doesn't exist
 	if !strings.HasPrefix(base64Content, "data:") {
 		base64Content = "data:application/x-bittorrent;base64," + base64Content
 	}
 	return a.service.AddTorrent(base64Content)
 }
 
-// RemoveTorrent удаляет торрент по ID
+// RemoveTorrent removes a torrent by ID
 func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -109,7 +146,7 @@ func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	return a.service.RemoveTorrent(id, deleteData)
 }
 
-// StartTorrents запускает выбранные торренты
+// StartTorrents starts the selected torrents
 func (a *App) StartTorrents(ids []int64) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -117,7 +154,7 @@ func (a *App) StartTorrents(ids []int64) error {
 	return a.service.StartTorrents(ids)
 }
 
-// StopTorrents останавливает выбранные торренты
+// StopTorrents stops the selected torrents
 func (a *App) StopTorrents(ids []int64) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
@@ -125,7 +162,7 @@ func (a *App) StopTorrents(ids []int64) error {
 	return a.service.StopTorrents(ids)
 }
 
-// TestConnection проверяет соединение с сервером Transmission
+// TestConnection tests the connection to the Transmission server
 func (a *App) TestConnection(configJson string) error {
 	var config domain.Config
 	if err := json.Unmarshal([]byte(configJson), &config); err != nil {
@@ -141,8 +178,7 @@ func (a *App) TestConnection(configJson string) error {
 	if err != nil {
 		return err
 	}
-
-	// Пробуем получить торренты как тест соединения
+	// Try to get torrents as a connection test
 	_, err = client.GetAll()
 	return err
 }

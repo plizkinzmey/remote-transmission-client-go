@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import styled from '@emotion/styled';
-import { Button } from './Button';
-import { TestConnection, LoadConfig } from '../../wailsjs/go/main/App';
+import React, { useState, useEffect } from "react";
+import styled from "@emotion/styled";
+import { Button } from "./Button";
+import { TestConnection, LoadConfig } from "../../wailsjs/go/main/App";
+import { useLocalization } from "../contexts/LocalizationContext";
+import { LoadingSpinner } from "./LoadingSpinner";
+
+interface Config {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  language: string;
+}
 
 interface SettingsProps {
-  onSave: (settings: {
-    host: string;
-    port: number;
-    username: string;
-    password: string;
-  }) => void;
+  onSave: (settings: Config) => void;
   onClose: () => void;
 }
 
 // Создаем тип-псевдоним для статуса соединения
-type ConnectionStatusType = 'success' | 'error' | 'none';
+type ConnectionStatusType = "success" | "error" | "none";
 
 const Modal = styled.div`
   position: fixed;
@@ -87,6 +92,17 @@ const Input = styled.input`
   }
 `;
 
+const Select = styled.select`
+  padding: 8px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 14px;
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -100,52 +116,69 @@ const StatusMessage = styled.div<{ status: ConnectionStatusType }>`
   margin-top: 16px;
   border-radius: 4px;
   font-size: 14px;
-  color: ${props => getStatusColor(props.status, 'text')};
-  background-color: ${props => getStatusColor(props.status, 'bg')};
-  display: ${props => props.status === 'none' ? 'none' : 'block'};
+  color: ${(props) => getStatusColor(props.status, "text")};
+  background-color: ${(props) => getStatusColor(props.status, "bg")};
+  display: ${(props) => (props.status === "none" ? "none" : "block")};
 `;
 
 // Вспомогательная функция для определения цветов статуса
-function getStatusColor(status: ConnectionStatusType, type: 'text' | 'bg'): string {
-  if (status === 'success') {
-    return type === 'text' ? '#27ae60' : '#e8f8f5';
+function getStatusColor(
+  status: ConnectionStatusType,
+  type: "text" | "bg"
+): string {
+  if (status === "success") {
+    return type === "text" ? "#27ae60" : "#e8f8f5";
   }
-  if (status === 'error') {
-    return type === 'text' ? '#e74c3c' : '#fdedec';
+  if (status === "error") {
+    return type === "text" ? "#e74c3c" : "#fdedec";
   }
-  return 'transparent';
+  return "transparent";
 }
 
 const defaultSettings = {
-  host: 'localhost',
+  host: "localhost",
   port: 9091,
-  username: '',
-  password: '',
+  username: "",
+  password: "",
+  language: "en",
 };
 
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
-  const [settings, setSettings] = useState(defaultSettings);
+  const {
+    t,
+    currentLanguage,
+    availableLanguages,
+    isLoading: isLocalizationLoading,
+  } = useLocalization();
+  const [settings, setSettings] = useState({
+    ...defaultSettings,
+    language: currentLanguage,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatusType>('none');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatusType>("none");
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     const loadSavedSettings = async () => {
       try {
         const savedConfig = await LoadConfig();
         if (savedConfig) {
-          setSettings(savedConfig);
+          setSettings({
+            ...savedConfig,
+            language: savedConfig.language || currentLanguage,
+          });
         }
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error("Failed to load settings:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSavedSettings();
-  }, []);
+  }, [currentLanguage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,20 +186,26 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   };
 
   const handleTestConnection = async () => {
+    setIsTestingConnection(true);
     try {
       await TestConnection(JSON.stringify(settings));
-      setConnectionStatus('success');
-      setStatusMessage('Connection successful!');
+      setConnectionStatus("success");
+      setStatusMessage(t("settings.connectionSuccess"));
     } catch (error) {
-      setConnectionStatus('error');
-      setStatusMessage(`Connection failed: ${error instanceof Error ? error.message : error}`);
+      setConnectionStatus("error");
+      setStatusMessage(
+        t(
+          "settings.connectionFailed",
+          String(error instanceof Error ? error.message : error)
+        )
+      );
     } finally {
       setIsTestingConnection(false);
     }
   };
 
-  if (isLoading) {
-    return null;
+  if (isLoading || isLocalizationLoading) {
+    return <LoadingSpinner />;
   }
 
   return (
@@ -174,12 +213,12 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
       <Overlay onClick={onClose} />
       <Modal>
         <ModalHeader>
-          <h2>Connection Settings</h2>
+          <h2>{t("settings.title")}</h2>
         </ModalHeader>
         <ModalContent>
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label>Host</Label>
+              <Label>{t("settings.host")}</Label>
               <Input
                 type="text"
                 value={settings.host}
@@ -190,18 +229,21 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
               />
             </FormGroup>
             <FormGroup>
-              <Label>Port</Label>
+              <Label>{t("settings.port")}</Label>
               <Input
                 type="number"
                 value={settings.port}
                 onChange={(e) =>
-                  setSettings({ ...settings, port: parseInt(e.target.value, 10) })
+                  setSettings({
+                    ...settings,
+                    port: parseInt(e.target.value, 10),
+                  })
                 }
                 placeholder="9091"
               />
             </FormGroup>
             <FormGroup>
-              <Label>Username (optional)</Label>
+              <Label>{t("settings.username")}</Label>
               <Input
                 type="text"
                 value={settings.username}
@@ -211,7 +253,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
               />
             </FormGroup>
             <FormGroup>
-              <Label>Password (optional)</Label>
+              <Label>{t("settings.password")}</Label>
               <Input
                 type="password"
                 value={settings.password}
@@ -220,23 +262,38 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                 }
               />
             </FormGroup>
-
+            <FormGroup>
+              <Label>{t("settings.language")}</Label>
+              <Select
+                value={settings.language}
+                onChange={(e) =>
+                  setSettings({ ...settings, language: e.target.value })
+                }
+              >
+                {availableLanguages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
             <StatusMessage status={connectionStatus}>
               {statusMessage}
             </StatusMessage>
-
             <ButtonGroup>
               <Button type="button" onClick={onClose}>
-                Cancel
+                {t("settings.cancel")}
               </Button>
-              <Button 
-                type="button" 
+              <Button
+                type="button"
                 onClick={handleTestConnection}
                 disabled={isTestingConnection}
               >
-                {isTestingConnection ? 'Testing...' : 'Test Connection'}
+                {isTestingConnection
+                  ? t("settings.testing")
+                  : t("settings.testConnection")}
               </Button>
-              <Button type="submit">Save</Button>
+              <Button type="submit">{t("settings.save")}</Button>
             </ButtonGroup>
           </Form>
         </ModalContent>

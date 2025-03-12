@@ -147,7 +147,8 @@
 .selectAllContainer {
   display: flex;
   align-items: center;
-  padding: 4px 0; /* Remove left padding since it's handled by leftSection */
+  padding: 10px 0 10px 16px; /* Добавляем симметричные отступы сверху и снизу */
+  margin-bottom: 5px; /* Дополнительный отступ снизу */
 }
 
 .selectAllCheckbox {
@@ -155,7 +156,7 @@
   height: 18px;
   cursor: pointer;
   margin: 0;
-  margin-right: 16px;
+  margin-right: 16px; /* Такой же отступ как в карточках */
 }
 
 .selectAllLabel {

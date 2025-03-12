@@ -439,36 +439,32 @@ function App() {
               >
                 <PlusCircleIcon />
               </Button>
-              {hasSelectedTorrents && (
-                <>
-                  <Button
-                    variant="icon"
-                    onClick={handleStartSelected}
-                    disabled={!hasSelectedTorrents || bulkOperations.start}
-                    loading={bulkOperations.start}
-                    aria-label={t("torrents.startSelected")}
-                  >
-                    {bulkOperations.start ? (
-                      <ArrowPathIcon className="loading-spinner" />
-                    ) : (
-                      <PlayIcon />
-                    )}
-                  </Button>
-                  <Button
-                    variant="icon"
-                    onClick={handleStopSelected}
-                    disabled={!hasSelectedTorrents || bulkOperations.stop}
-                    loading={bulkOperations.stop}
-                    aria-label={t("torrents.stopSelected")}
-                  >
-                    {bulkOperations.stop ? (
-                      <ArrowPathIcon className="loading-spinner" />
-                    ) : (
-                      <PauseIcon />
-                    )}
-                  </Button>
-                </>
-              )}
+              <Button
+                variant="icon"
+                onClick={handleStartSelected}
+                disabled={!hasSelectedTorrents || bulkOperations.start}
+                loading={bulkOperations.start}
+                aria-label={t("torrents.startSelected")}
+              >
+                {bulkOperations.start ? (
+                  <ArrowPathIcon className="loading-spinner" />
+                ) : (
+                  <PlayIcon />
+                )}
+              </Button>
+              <Button
+                variant="icon"
+                onClick={handleStopSelected}
+                disabled={!hasSelectedTorrents || bulkOperations.stop}
+                loading={bulkOperations.stop}
+                aria-label={t("torrents.stopSelected")}
+              >
+                {bulkOperations.stop ? (
+                  <ArrowPathIcon className="loading-spinner" />
+                ) : (
+                  <PauseIcon />
+                )}
+              </Button>
             </div>
             <div className={styles.rightSection}>
               <Button

@@ -27,6 +27,7 @@
     "resizable": true,
     "minWidth": 800,
     "minHeight": 600,
-    "frameless": false
+    "frameless": false,
+    "icon": "build/iconfile.icns"
   }
 }

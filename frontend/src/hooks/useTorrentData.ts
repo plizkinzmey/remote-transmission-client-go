@@ -1,0 +1,273 @@
+import { useState, useEffect } from "react";
+import { TorrentData } from "../components/TorrentList";
+import { useLocalization } from "../contexts/LocalizationContext";
+import {
+  GetTorrents,
+  AddTorrent as AddTorrentAPI,
+  AddTorrentFile,
+  RemoveTorrent,
+  LoadConfig,
+  Initialize,
+  StartTorrents,
+  StopTorrents,
+} from "../../wailsjs/go/main/App";
+
+interface ConfigData {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  language: string;
+}
+
+/**
+ * Хук для работы с данными торрентов и управления соединением
+ */
+export function useTorrentData() {
+  const { t, setLanguage } = useLocalization();
+  const [torrents, setTorrents] = useState<TorrentData[]>([]);
+  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
+    new Set()
+  );
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const maxReconnectAttempts = 3;
+
+  // Обработчик выбора/снятия выбора с торрента
+  const handleTorrentSelect = (id: number) => {
+    setSelectedTorrents((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  // Обработчик выбора всех торрентов
+  const handleSelectAll = (filteredTorrents: TorrentData[]) => {
+    if (selectedTorrents.size === filteredTorrents.length) {
+      // Если все выбраны - снимаем выделение
+      setSelectedTorrents(new Set());
+    } else {
+      // Иначе выбираем все
+      setSelectedTorrents(new Set(filteredTorrents.map((t) => t.ID)));
+    }
+  };
+
+  // Функция для попытки переподключения к серверу
+  const reconnect = async () => {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      setError(t("errors.maxReconnectAttempts"));
+      setIsReconnecting(false);
+      return;
+    }
+
+    setIsReconnecting(true);
+    try {
+      const savedConfig = await LoadConfig();
+      if (savedConfig) {
+        await Initialize(JSON.stringify(savedConfig));
+        setError(null);
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        return true;
+      }
+    } catch (error) {
+      console.error("Reconnection attempt failed:", error);
+      setReconnectAttempts((prev) => prev + 1);
+      return false;
+    }
+  };
+
+  // Функция для обновления списка торрентов
+  const refreshTorrents = async () => {
+    try {
+      const response = await GetTorrents();
+      setTorrents(response);
+      setError(null);
+      setReconnectAttempts(0);
+      setIsReconnecting(false);
+    } catch (error) {
+      console.error("Failed to fetch torrents:", error);
+
+      if (!isReconnecting) {
+        setError(
+          t(
+            "errors.connectionLost",
+            String(reconnectAttempts + 1),
+            String(maxReconnectAttempts)
+          )
+        );
+        const reconnected = await reconnect();
+        if (!reconnected) {
+          setError(
+            t(
+              "errors.reconnectFailed",
+              String(reconnectAttempts + 1),
+              String(maxReconnectAttempts)
+            )
+          );
+        }
+      }
+    }
+  };
+
+  // Инициализация приложения при загрузке
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Загружаем сохраненные настройки
+        const savedConfig = await LoadConfig();
+
+        if (savedConfig) {
+          try {
+            // Если есть сохраненные настройки, используем их
+            await Initialize(JSON.stringify(savedConfig));
+            setIsInitialized(true);
+            refreshTorrents(); // Первоначальная загрузка
+          } catch (initError) {
+            console.error("Failed to connect with saved settings:", initError);
+            setError(t("errors.connectionFailed", String(initError)));
+            return false;
+          }
+        } else {
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("Failed to load config:", error);
+        setError(t("errors.failedToLoadConfig", String(error)));
+        return false;
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Эффект для обновления списка торрентов
+  useEffect(() => {
+    let intervalId: number;
+
+    if (isInitialized) {
+      // Запускаем первоначальное обновление
+      refreshTorrents();
+
+      // Устанавливаем интервал обновления каждые 3 секунды
+      intervalId = window.setInterval(refreshTorrents, 3000);
+    }
+
+    // Очистка при размонтировании
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [isInitialized]);
+
+  // Обработчик добавления торрента
+  const handleAddTorrent = async (url: string) => {
+    try {
+      await AddTorrentAPI(url);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to add torrent:", error);
+      setError(t("errors.failedToAddTorrent", String(error)));
+      return false;
+    }
+  };
+
+  // Обработчик добавления торрента из файла
+  const handleAddTorrentFile = async (base64Content: string) => {
+    try {
+      await AddTorrentFile(base64Content);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to add torrent file:", error);
+      setError(t("errors.failedToAddTorrent", String(error)));
+      return false;
+    }
+  };
+
+  // Обработчик удаления торрента
+  const handleRemoveTorrent = async (id: number, deleteData: boolean) => {
+    try {
+      await RemoveTorrent(id, deleteData);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to remove torrent:", error);
+      setError(t("errors.failedToRemoveTorrent", String(error)));
+      return false;
+    }
+  };
+
+  // Обработчик запуска торрента
+  const handleStartTorrent = async (id: number) => {
+    try {
+      await StartTorrents([id]);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to start torrent:", error);
+      setError(t("errors.failedToStartTorrent", String(error)));
+      return false;
+    }
+  };
+
+  // Обработчик остановки торрента
+  const handleStopTorrent = async (id: number) => {
+    try {
+      await StopTorrents([id]);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to stop torrent:", error);
+      setError(t("errors.failedToStopTorrent", String(error)));
+      return false;
+    }
+  };
+
+  // Обработчик сохранения настроек
+  const handleSettingsSave = async (settings: ConfigData) => {
+    try {
+      await Initialize(JSON.stringify(settings));
+      setIsInitialized(true);
+      setError(null);
+      setLanguage(settings.language);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to update settings:", error);
+      setError(t("errors.failedToUpdateSettings", String(error)));
+      return false;
+    }
+  };
+
+  // Флаг наличия выбранных торрентов
+  const hasSelectedTorrents = selectedTorrents.size > 0;
+
+  return {
+    torrents,
+    selectedTorrents,
+    isInitialized,
+    error,
+    isReconnecting,
+    hasSelectedTorrents,
+    handleTorrentSelect,
+    handleSelectAll,
+    refreshTorrents,
+    handleAddTorrent,
+    handleAddTorrentFile,
+    handleRemoveTorrent,
+    handleStartTorrent,
+    handleStopTorrent,
+    handleSettingsSave,
+  };
+}

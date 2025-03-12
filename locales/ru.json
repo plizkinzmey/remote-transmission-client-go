@@ -36,6 +36,7 @@
   "torrent.peers": "Пиры",
   "torrent.uploaded": "Отдано",
   "torrent.size": "Размер",
+  "torrent.speed": "Скорость",
   "torrent.status.stopped": "Остановлен",
   "torrent.status.downloading": "Загрузка",
   "torrent.status.seeding": "Раздача",

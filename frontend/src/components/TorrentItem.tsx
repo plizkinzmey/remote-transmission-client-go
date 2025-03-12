@@ -7,6 +7,8 @@ import {
   PauseIcon,
   TrashIcon,
   ArrowPathIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/TorrentItem.module.css";
 
@@ -29,6 +31,10 @@ interface TorrentItemProps {
   onRemove: (id: number, deleteData: boolean) => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
+  downloadSpeed: number;
+  uploadSpeed: number;
+  downloadSpeedFormatted: string;
+  uploadSpeedFormatted: string;
 }
 
 const getStatusClassName = (status: string) => {
@@ -65,6 +71,10 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   onRemove,
   onStart,
   onStop,
+  downloadSpeed,
+  uploadSpeed,
+  downloadSpeedFormatted,
+  uploadSpeedFormatted,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -199,6 +209,12 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <span className={styles.size}>
             <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
             {sizeFormatted}
+          </span>
+          <span className={styles.speed}>
+            <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
+            <ArrowUpIcon className={styles.speedIcon} /> {uploadSpeedFormatted}{" "}
+            <ArrowDownIcon className={styles.speedIcon} />{" "}
+            {downloadSpeedFormatted}
           </span>
           <span className={styles.seeds}>
             <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}

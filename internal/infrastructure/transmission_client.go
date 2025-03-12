@@ -144,6 +144,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"id", "name", "status", "percentDone",
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
 		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
+		"rateDownload", "rateUpload", // Добавляем поля для получения скорости
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
@@ -155,6 +156,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		totalSize, downloadedSize := c.getTorrentSizes(t)
 		uploadRatio, uploadedBytes := c.getUploadInfo(t)
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
+		downloadSpeed, uploadSpeed := c.getSpeedInfo(t)
 
 		// Форматируем размер в зависимости от статуса
 		var sizeFormatted string
@@ -166,26 +168,45 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 			sizeFormatted = formatBytes(totalSize)
 		}
 
+		// Форматируем скорости
+		downloadSpeedFormatted := formatBytes(uint64(downloadSpeed)) + "/s"
+		uploadSpeedFormatted := formatBytes(uint64(uploadSpeed)) + "/s"
+
 		// Также конвертируем uploadedBytes из бит в байты
 		uploadedFormatted := formatBytes(uint64(uploadedBytes / 8))
 
 		result[i] = domain.Torrent{
-			ID:                *t.ID,
-			Name:              *t.Name,
-			Status:            status,
-			Progress:          *t.PercentDone * 100,
-			Size:              int64(totalSize),
-			SizeFormatted:     sizeFormatted,
-			UploadRatio:       uploadRatio,
-			SeedsConnected:    0,
-			SeedsTotal:        seedsTotal,
-			PeersConnected:    peersConnected,
-			PeersTotal:        peersTotal,
-			UploadedBytes:     uploadedBytes,
-			UploadedFormatted: uploadedFormatted,
+			ID:                     *t.ID,
+			Name:                   *t.Name,
+			Status:                 status,
+			Progress:               *t.PercentDone * 100,
+			Size:                   int64(totalSize),
+			SizeFormatted:          sizeFormatted,
+			UploadRatio:            uploadRatio,
+			SeedsConnected:         0,
+			SeedsTotal:             seedsTotal,
+			PeersConnected:         peersConnected,
+			PeersTotal:             peersTotal,
+			UploadedBytes:          uploadedBytes,
+			UploadedFormatted:      uploadedFormatted,
+			DownloadSpeed:          downloadSpeed,
+			UploadSpeed:            uploadSpeed,
+			DownloadSpeedFormatted: downloadSpeedFormatted,
+			UploadSpeedFormatted:   uploadSpeedFormatted,
 		}
 	}
 	return result, nil
+}
+
+// Добавляем новый метод для получения информации о скорости
+func (c *TransmissionClient) getSpeedInfo(t transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed int64) {
+	if t.RateDownload != nil {
+		downloadSpeed = *t.RateDownload / 8 // Конвертируем из бит/с в байты/с
+	}
+	if t.RateUpload != nil {
+		uploadSpeed = *t.RateUpload / 8 // Конвертируем из бит/с в байты/с
+	}
+	return
 }
 
 func (c *TransmissionClient) Start(ids []int64) error {

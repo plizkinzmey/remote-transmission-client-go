@@ -17,6 +17,10 @@ export interface TorrentData {
   PeersTotal: number;
   UploadedBytes: number;
   UploadedFormatted: string;
+  DownloadSpeed: number;
+  UploadSpeed: number;
+  DownloadSpeedFormatted: string;
+  UploadSpeedFormatted: string;
 }
 
 interface TorrentListProps {
@@ -70,6 +74,10 @@ export const TorrentList: React.FC<TorrentListProps> = ({
               peersTotal={torrent.PeersTotal}
               uploadedBytes={torrent.UploadedBytes}
               uploadedFormatted={torrent.UploadedFormatted}
+              downloadSpeed={torrent.DownloadSpeed}
+              uploadSpeed={torrent.UploadSpeed}
+              downloadSpeedFormatted={torrent.DownloadSpeedFormatted}
+              uploadSpeedFormatted={torrent.UploadSpeedFormatted}
               selected={selectedTorrents.has(torrent.ID)}
               onSelect={onSelect}
               onRemove={onRemove}

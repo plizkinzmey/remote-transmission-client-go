@@ -131,6 +131,21 @@
   text-align: left;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+/* Стили для иконок скорости */
+.speedIcon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.speed {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
 /* Стили для детальной информации о торренте */
 .detailedInfo {
   margin-top: 12px;

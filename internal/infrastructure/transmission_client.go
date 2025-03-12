@@ -67,20 +67,60 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
 		"id", "name", "status", "percentDone", "totalSize",
+		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
-
+	
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status)
+		
+		// Set default values
+		uploadRatio := float64(0)
+		peersConnected := 0
+		seedsTotal := 0
+		peersTotal := 0
+		uploadedBytes := int64(0)
+		
+		// Get values from fields if available
+		if t.UploadRatio != nil {
+			uploadRatio = *t.UploadRatio
+		}
+		
+		// Convert peersConnected from int64 to int
+		if t.PeersConnected != nil {
+			peersConnected = int(*t.PeersConnected)
+		}
+		
+		// Process tracker stats if available
+		if t.TrackerStats != nil {
+			for _, tracker := range t.TrackerStats {
+				// Add seeder and leecher counts directly (they are not pointers)
+				seedsTotal += int(tracker.SeederCount)
+				peersTotal += int(tracker.LeecherCount)
+			}
+		}
+		
+		// Get uploaded bytes
+		if t.UploadedEver != nil {
+			// Convert from transmissionrpc.ByteSize to int64
+			uploadedBytes = int64(*t.UploadedEver)
+		}
+		
 		result[i] = domain.Torrent{
-			ID:       *t.ID,
-			Name:     *t.Name,
-			Status:   status,
-			Progress: *t.PercentDone * 100,
-			Size:     int64(t.TotalSize.Byte()),
+			ID:             *t.ID,
+			Name:           *t.Name,
+			Status:         status,
+			Progress:       *t.PercentDone * 100,
+			Size:           int64(*t.TotalSize),
+			UploadRatio:    uploadRatio,
+			SeedsConnected: 0, // We don't have direct access to connected seeds
+			SeedsTotal:     seedsTotal,
+			PeersConnected: peersConnected,
+			PeersTotal:     peersTotal,
+			UploadedBytes:  uploadedBytes,
 		}
 	}
 	return result, nil

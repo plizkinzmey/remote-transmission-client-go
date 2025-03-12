@@ -29,6 +29,13 @@ interface Torrent {
   Name: string;
   Status: string;
   Progress: number;
+  Size: number;
+  UploadRatio: number;
+  SeedsConnected: number;
+  SeedsTotal: number;
+  PeersConnected: number;
+  PeersTotal: number;
+  UploadedBytes: number;
 }
 
 interface Config {
@@ -470,6 +477,13 @@ function App() {
                 name={torrent.Name}
                 status={torrent.Status}
                 progress={torrent.Progress}
+                size={torrent.Size}
+                uploadRatio={torrent.UploadRatio}
+                seedsConnected={torrent.SeedsConnected}
+                seedsTotal={torrent.SeedsTotal}
+                peersConnected={torrent.PeersConnected}
+                peersTotal={torrent.PeersTotal}
+                uploadedBytes={torrent.UploadedBytes}
                 selected={selectedTorrents.has(torrent.ID)}
                 onSelect={handleTorrentSelect}
                 onRemove={handleRemoveTorrent}

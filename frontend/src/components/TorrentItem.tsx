@@ -14,6 +14,13 @@ interface TorrentItemProps {
   name: string;
   status: string;
   progress: number;
+  size: number;
+  uploadRatio: number;
+  seedsConnected: number;
+  seedsTotal: number;
+  peersConnected: number;
+  peersTotal: number;
+  uploadedBytes: number;
   selected: boolean;
   onSelect: (id: number) => void;
   onRemove: (id: number, deleteData: boolean) => void;
@@ -34,11 +41,28 @@ const getStatusClassName = (status: string) => {
   }
 };
 
+// Helper function to format bytes to human-readable format
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  
+  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+};
+
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
   status,
   progress,
+  size,
+  uploadRatio,
+  seedsConnected,
+  seedsTotal,
+  peersConnected,
+  peersTotal,
+  uploadedBytes,
   selected,
   onSelect,
   onRemove,
@@ -93,6 +117,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 
     setIsLoading(true);
     setLastAction(action);
+    
     if (action === 'start') {
       onStart(id);
     } else {
@@ -161,7 +186,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </div>
           <div className={styles.progressContainer}>
             <progress 
-              className={styles.progress}
+              className={styles.progressElement}
               value={progress} 
               max={100}
             />
@@ -169,6 +194,21 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               className={styles.progressBar} 
               style={{ width: `${progress}%` }}
             />
+          </div>
+          
+          {/* Additional torrent info */}
+          <div className={styles.detailedInfo}>
+            <div className={styles.infoRow}>
+              <span>Size: {formatBytes(size)}</span>
+              <span>Ratio: {uploadRatio.toFixed(2)}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span>Seeds: {seedsConnected}/{seedsTotal}</span>
+              <span>Peers: {peersConnected}/{peersTotal}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span>Uploaded: {formatBytes(uploadedBytes)}</span>
+            </div>
           </div>
         </div>
         <div className={styles.actions}>
@@ -182,7 +222,6 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </Button>
         </div>
       </div>
-
       {showDeleteConfirmation && (
         <DeleteConfirmation
           torrentName={name}

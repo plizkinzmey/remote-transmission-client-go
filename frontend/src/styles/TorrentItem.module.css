@@ -51,7 +51,8 @@
   padding: 2px 8px;
   min-width: 120px;
   text-align: center;
-  flex-shrink: 0;
+  margin-left: auto;
+  margin-top: 0; /* Убираем margin-стили */
 }
 .ratio {
   font-size: 12px;
@@ -64,11 +65,12 @@
   align-items: center;
   gap: 12px;
   user-select: none;
-  margin: 0; /* Убираем отступы */
-  padding: 0; /* Убираем паддинги */
+  margin: 0;
+  padding: 0;
   text-align: left;
   font-size: 13px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1;  /* Добавляем line-height чтобы контролировать высоту контейнера */
 }
 
 .statusDownloading {
@@ -99,17 +101,8 @@
   position: relative;
   width: 100%;
   height: 8px;
-  margin: 4px 0; /* Устанавливаем одинаковые отступы сверху и снизу */
+  margin: 4px 0; /* Устанавливаем минимальный отступ сверху и снизу */
   padding: 0;
-}
-.progressElement {
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
 }
 .progress {
   width: 100%;
@@ -117,6 +110,7 @@
   background-color: #ecf0f1;
   border-radius: 4px;
   overflow: hidden;
+  display: block; /* Добавляем явное указание display */
 }
 .progressBar {
   height: 100%;

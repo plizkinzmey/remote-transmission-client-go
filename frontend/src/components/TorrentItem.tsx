@@ -182,6 +182,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             {getStatusText(status)}
           </span>
           <span className={styles.progressText}>
+            <span className={styles.paramName}>{t("torrent.size")}:</span>
             {progress >= 100
               ? sizeFormatted
               : `${progress.toFixed(1)}% (${sizeFormatted})`}
@@ -194,13 +195,16 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
 
         <div className={styles.statsContainer}>
           <span className={styles.seeds}>
-            {t("torrent.seeds")}: {seedsConnected}/{seedsTotal}
+            <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
+            {seedsConnected}/{seedsTotal}
           </span>
           <span className={styles.peers}>
-            {t("torrent.peers")}: {peersConnected}/{peersTotal}
+            <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
+            {peersConnected}/{peersTotal}
           </span>
           <span className={styles.uploaded}>
-            {t("torrent.uploaded")}: {uploadedFormatted}
+            <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}
+            {uploadedFormatted}
           </span>
         </div>
       </div>

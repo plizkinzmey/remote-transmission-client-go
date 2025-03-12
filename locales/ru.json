@@ -35,6 +35,7 @@
   "torrent.seeds": "Сиды",
   "torrent.peers": "Пиры",
   "torrent.uploaded": "Отдано",
+  "torrent.size": "Размер",
   "torrent.status.stopped": "Остановлен",
   "torrent.status.downloading": "Загрузка",
   "torrent.status.seeding": "Раздача",

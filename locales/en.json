@@ -35,6 +35,7 @@
   "torrent.seeds": "Seeds",
   "torrent.peers": "Peers",
   "torrent.uploaded": "Uploaded",
+  "torrent.size": "Size",
   "torrent.status.stopped": "Stopped",
   "torrent.status.downloading": "Downloading",
   "torrent.status.seeding": "Seeding",

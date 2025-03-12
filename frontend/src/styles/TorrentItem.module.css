@@ -183,7 +183,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  margin-top: 12px;
+  margin-top: 18px; /* увеличиваем отступ от прогрессбара */
   align-items: center;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -199,4 +199,10 @@
   color: #2c3e50;
   white-space: nowrap;
   font-weight: 400;
+}
+
+/* Стиль для выделения названий параметров жирным шрифтом */
+.paramName {
+  font-weight: 700;
+  margin-right: 4px;
 }

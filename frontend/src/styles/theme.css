@@ -4,7 +4,7 @@
   --text-primary: #2c3e50;
   --text-secondary: #6c757d;
   --border-color: #e1e4e8;
-  
+
   /* Header colors */
   --header-background: #2c3e50;
   --header-text: #ffffff;
@@ -15,7 +15,7 @@
   --header-button-icon: #ffffff;
   --header-input-bg: rgba(255, 255, 255, 0.1);
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
-  
+
   /* Other colors */
   --accent-color: #3498db;
   --hover-color: #2980b9;
@@ -23,7 +23,7 @@
   --error-color: #e74c3c;
   --modal-overlay: rgba(0, 0, 0, 0.5);
   --modal-shadow: rgba(0, 0, 0, 0.1);
-  
+
   /* Button states */
   --button-disabled-bg: #cbd5e1;
   --button-disabled-text: #94a3b8;
@@ -39,7 +39,7 @@
   --card-text-secondary: #6b7280;
   --card-progress-bg: #ecf0f1;
   --card-ratio-bg: #f0f0f0;
-  
+
   /* Status colors */
   --status-downloading: #3498db;
   --status-seeding: #27ae60;
@@ -47,6 +47,10 @@
   --status-completed: #2ecc71;
   --status-checking: #f39c12;
   --status-queued: #95a5a6;
+
+  /* Torrent Actions */
+  --action-icon-color: #64748b;
+  --action-icon-hover: #475569;
 }
 
 :root[data-theme="dark"] {
@@ -55,7 +59,7 @@
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --border-color: #404040;
-  
+
   /* Header colors */
   --header-background: #000000;
   --header-text: #ffffff;
@@ -66,7 +70,7 @@
   --header-button-icon: #ffffff;
   --header-input-bg: rgba(255, 255, 255, 0.05);
   --header-input-focus-bg: rgba(255, 255, 255, 0.1);
-  
+
   /* Other colors */
   --accent-color: #3498db;
   --hover-color: #2980b9;
@@ -74,7 +78,7 @@
   --error-color: #e74c3c;
   --modal-overlay: rgba(0, 0, 0, 0.7);
   --modal-shadow: rgba(0, 0, 0, 0.3);
-  
+
   /* Button states */
   --button-disabled-bg: #374151;
   --button-disabled-text: #6b7280;
@@ -90,7 +94,7 @@
   --card-text-secondary: #a0a0a0;
   --card-progress-bg: #404040;
   --card-ratio-bg: #404040;
-  
+
   /* Status colors - немного ярче для темной темы */
   --status-downloading: #3498db;
   --status-seeding: #2ecc71;
@@ -98,4 +102,8 @@
   --status-completed: #27ae60;
   --status-checking: #f39c12;
   --status-queued: #bdc3c7;
+
+  /* Torrent Actions */
+  --action-icon-color: #94a3b8;
+  --action-icon-hover: #cbd5e1;
 }

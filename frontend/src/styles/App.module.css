@@ -14,13 +14,12 @@
   position: relative;
   overflow: hidden;
   -webkit-app-region: no-drag;
-  margin-top: 84px; /* 48px (controlPanel) + 36px (selectAllContainer) */
 }
 
 .scrollableContent {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 52px; /* Отступ для футера */
+  padding-bottom: 52px;
   width: 100%;
   padding-right: 0;
 }

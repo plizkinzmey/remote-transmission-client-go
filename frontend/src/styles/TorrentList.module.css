@@ -1,13 +1,13 @@
 .torrentListContainer {
   flex: 1;
-  padding: 0 20px 20px;
+  padding: 120px 20px 20px; /* увеличиваем отступ сверху до 120px */
   background-color: var(--background-primary);
 }
 
 .torrentList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px; /* увеличиваем отступ между карточками до 16px */
 }
 
 .noTorrents {

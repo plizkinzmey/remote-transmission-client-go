@@ -70,7 +70,7 @@ function App() {
           onSettings={() => setShowSettings(true)}
           onStartSelected={handleStartSelected}
           onStopSelected={handleStopSelected}
-          onRemoveSelected={() => handleRemoveSelected(false)}
+          onRemoveSelected={() => handleRemoveSelected(true)} // Изменяем на true для удаления данных
           hasSelectedTorrents={hasSelectedTorrents}
           startLoading={bulkOperations.start}
           stopLoading={bulkOperations.stop}

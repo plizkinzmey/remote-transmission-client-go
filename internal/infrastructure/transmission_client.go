@@ -144,10 +144,10 @@ func (c *TransmissionClient) getUploadInfo(t transmissionrpc.Torrent) (float64, 
 // Добавляем новый метод для получения информации о скорости (в битах/с)
 func (c *TransmissionClient) getSpeedInfo(t transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed int64) {
 	if t.RateDownload != nil {
-		downloadSpeed = *t.RateDownload / 8 // Конвертируем биты/с в байты/с
+		downloadSpeed = *t.RateDownload / 8 // Конвертируем биты в быстроте загрузки/с в байты
 	}
 	if t.RateUpload != nil {
-		uploadSpeed = *t.RateUpload / 8 // Конвертируем биты/с в байты/с
+		uploadSpeed = *t.RateUpload / 8 // Конвертируем биты в быстриц передачи/с в байты
 	}
 	return
 }
@@ -313,13 +313,14 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 	var freeSpace int64 = 0
 	if session.DownloadDir != nil {
 		// Получаем свободное место для директории загрузки
-		_, freeSpaceBytes, err := c.client.FreeSpace(c.ctx, *session.DownloadDir)
+		freeSpaceInfo, _, err := c.client.FreeSpace(c.ctx, *session.DownloadDir)
 		if err != nil {
-			// Если не удалось получить свободное место, просто логируем ошибку
 			fmt.Printf("failed to get free space: %v\n", err)
 		} else {
-			// Используем второе возвращаемое значение, которое содержит байты свободного места
+			// Используем значение из bits
+			freeSpaceBytes := uint64(freeSpaceInfo) / 8 // Конвертируем из бит в байты
 			freeSpace = int64(freeSpaceBytes)
+			fmt.Printf("Free space in bytes: %d\n", freeSpace)
 		}
 	}
 
@@ -333,7 +334,7 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 	return &domain.SessionStats{
 		TotalDownloadSpeed:  stats.DownloadSpeed / 8, // Конвертируем из бит/с в байты/с
 		TotalUploadSpeed:    stats.UploadSpeed / 8,   // Конвертируем из бит/с в байты/с
-		FreeSpace:           freeSpace,               // В байтах
+		FreeSpace:           freeSpace,               // Значение уже в байтах
 		TransmissionVersion: version,
 	}, nil
 }

@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { BulkDeleteConfirmation } from "./BulkDeleteConfirmation";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
@@ -9,6 +10,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/Header.module.css";
+import { useState } from "react";
 
 interface HeaderProps {
   searchTerm: string;
@@ -17,11 +19,11 @@ interface HeaderProps {
   onSettings: () => void;
   onStartSelected: () => void;
   onStopSelected: () => void;
-  onRemoveSelected: () => void; // Добавляем функцию удаления выбранных торрентов
+  onRemoveSelected: (deleteData: boolean) => void;
   hasSelectedTorrents: boolean;
   startLoading: boolean;
   stopLoading: boolean;
-  removeLoading: boolean; // Добавляем состояние загрузки для удаления
+  removeLoading: boolean;
   filteredTorrents: Array<any>;
   selectedTorrents: Set<number>;
   onSelectAll: () => void;
@@ -29,10 +31,6 @@ interface HeaderProps {
   isReconnecting: boolean;
 }
 
-/**
- * Компонент шапки приложения
- * Включает поиск, кнопки управления и сообщения об ошибках
- */
 export const Header: React.FC<HeaderProps> = ({
   searchTerm,
   setSearchTerm,
@@ -52,6 +50,11 @@ export const Header: React.FC<HeaderProps> = ({
   isReconnecting,
 }) => {
   const { t } = useLocalization();
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  const handleRemoveClick = () => {
+    setShowDeleteConfirmation(true);
+  };
 
   return (
     <div className={styles.fixedHeader}>
@@ -106,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Кнопка удаления выбранных торрентов */}
           <Button
             variant="icon"
-            onClick={onRemoveSelected}
+            onClick={handleRemoveClick}
             disabled={!hasSelectedTorrents || removeLoading}
             loading={removeLoading}
             aria-label={t("remove.title")}
@@ -161,6 +164,18 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Индикатор переподключения */}
       {isReconnecting && (
         <div className={styles.reconnectingStatus}>{t("app.reconnecting")}</div>
+      )}
+
+      {/* Диалог подтверждения удаления */}
+      {showDeleteConfirmation && (
+        <BulkDeleteConfirmation
+          count={selectedTorrents.size}
+          onConfirm={(deleteData) => {
+            onRemoveSelected(deleteData);
+            setShowDeleteConfirmation(false);
+          }}
+          onCancel={() => setShowDeleteConfirmation(false)}
+        />
       )}
     </div>
   );

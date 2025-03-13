@@ -188,27 +188,27 @@ export function useBulkOperations(
   const handleRemoveSelected = async (deleteData: boolean = false) => {
     if (bulkOperations.remove || selectedTorrents.size === 0) return;
 
-    if (!window.confirm(t("remove.selectedConfirmation"))) {
-      return;
-    }
-
     setBulkOperations((prev) => ({ ...prev, remove: true }));
 
     try {
-      // Используем Promise.all для параллельного удаления всех выбранных торрентов
-      await Promise.all(
-        Array.from(selectedTorrents).map((id) => {
-          console.log(
-            `Removing torrent with ID: ${id}, deleteData: ${deleteData}`
-          );
-          return RemoveTorrent(id, deleteData);
-        })
+      console.log(
+        `Removing ${selectedTorrents.size} torrents, deleteData: ${deleteData}`
       );
+
+      // Обрабатываем торренты последовательно
+      for (const id of Array.from(selectedTorrents)) {
+        try {
+          console.log(`Removing torrent ID: ${id}, deleteData: ${deleteData}`);
+          await RemoveTorrent(Number(id), deleteData);
+        } catch (error) {
+          console.error(`Failed to remove torrent ${id}:`, error);
+        }
+      }
 
       // Обновляем список торрентов
       await refreshTorrents();
     } catch (error) {
-      console.error("Failed to remove torrents:", error);
+      console.error("Error in bulk remove operation:", error);
       setError(t("errors.failedToRemoveTorrents", String(error)));
     } finally {
       setBulkOperations((prev) => ({ ...prev, remove: false }));

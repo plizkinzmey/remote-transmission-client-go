@@ -3,6 +3,7 @@ import styled from "@emotion/styled";
 import { Button } from "./Button";
 import { TestConnection, LoadConfig } from "../../wailsjs/go/main/App";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 
 interface Config {
@@ -11,6 +12,7 @@ interface Config {
   username: string;
   password: string;
   language: string;
+  theme: "light" | "dark";
 }
 
 interface SettingsProps {
@@ -149,6 +151,7 @@ const defaultSettings = {
   username: "",
   password: "",
   language: "en",
+  theme: "light",
 };
 
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
@@ -158,9 +161,11 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
     availableLanguages,
     isLoading: isLocalizationLoading,
   } = useLocalization();
-  const [settings, setSettings] = useState({
+  const { theme, toggleTheme } = useTheme();
+  const [settings, setSettings] = useState<Config>({
     ...defaultSettings,
     language: currentLanguage,
+    theme: theme,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -176,6 +181,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
           setSettings({
             ...savedConfig,
             language: savedConfig.language || currentLanguage,
+            theme: theme,
           });
         }
       } catch (error) {
@@ -186,7 +192,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
     };
 
     loadSavedSettings();
-  }, [currentLanguage]);
+  }, [currentLanguage, theme]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,6 +289,22 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                     {lang.name}
                   </option>
                 ))}
+              </Select>
+            </FormGroup>
+            <FormGroup>
+              <Label>{t("settings.theme")}</Label>
+              <Select
+                value={theme}
+                onChange={(e) => {
+                  toggleTheme();
+                  setSettings({
+                    ...settings,
+                    theme: e.target.value as "light" | "dark",
+                  });
+                }}
+              >
+                <option value="light">{t("settings.themeLight")}</option>
+                <option value="dark">{t("settings.themeDark")}</option>
               </Select>
             </FormGroup>
             <StatusMessage status={connectionStatus}>

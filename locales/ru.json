@@ -17,6 +17,9 @@
   "settings.testing": "Проверка...",
   "settings.connectionSuccess": "Соединение установлено!",
   "settings.connectionFailed": "Ошибка соединения: {0}",
+  "settings.theme": "Тема",
+  "settings.themeLight": "Светлая",
+  "settings.themeDark": "Темная",
   
   "torrents.search": "Поиск торрентов...",
   "torrents.selected": "Выбрано: {0}/{1}",

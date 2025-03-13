@@ -1,53 +1,47 @@
 .fixedHeader {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
-  background-color: rgba(248, 249, 250, 0.98);
-  padding: 20px 20px 0;
-  backdrop-filter: blur(5px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: var(--background-primary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .controlPanel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 12px;
+  padding: 12px;
+  background-color: var(--header-background);
+  color: var(--header-text);
 }
 
-.leftSection {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-left: 16px;
-}
-
+.leftSection,
 .rightSection {
   display: flex;
   align-items: center;
-  padding-right: 16px;
+  gap: 8px;
 }
 
 .searchContainer {
-  width: 400px;
-  min-width: 200px;
+  position: relative;
+  margin-right: 8px;
 }
 
 .searchInput {
   padding: 8px 12px;
-  border: 1px solid #e1e1e1;
-  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   font-size: 14px;
-  width: 100%;
-  background: white;
-  height: 32px;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  width: 200px;
+  transition: all 0.2s ease;
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--accent-color);
+  width: 250px;
 }
 
 /* Стили для кнопок */
@@ -71,42 +65,35 @@
 .selectAllContainer {
   display: flex;
   align-items: center;
-  padding: 10px 0 10px 16px;
-  margin-bottom: 5px;
+  padding: 8px 12px;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .selectAllCheckbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  margin: 0;
-  margin-right: 16px;
+  margin-right: 8px;
 }
 
 .selectAllLabel {
-  font-size: 13px;
-  color: #2c3e50;
+  font-size: 14px;
+  color: var(--text-primary);
   user-select: none;
-  white-space: nowrap;
 }
 
 .errorMessage {
-  padding: 12px;
-  margin: 8px 0 0;
-  border-radius: 6px;
-  background-color: #fdedec;
-  color: #e74c3c;
+  background-color: var(--error-color);
+  color: white;
+  padding: 8px 12px;
   font-size: 14px;
-  border-left: 4px solid #e74c3c;
+  text-align: center;
 }
 
 .reconnectingStatus {
-  display: flex;
-  align-items: center;
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 12px;
   font-size: 14px;
-  color: #e67e22;
-  animation: pulse 1.5s infinite;
-  margin: 8px 0 0;
+  text-align: center;
 }
 
 @keyframes pulse {

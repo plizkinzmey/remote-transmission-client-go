@@ -4,8 +4,10 @@ import { TorrentList } from "./components/TorrentList";
 import { Settings } from "./components/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import styles from "./styles/App.module.css";
 import "./App.css";
+import "./styles/theme.css";
 
 // Импортируем созданные хуки
 import { useTorrentData } from "./hooks/useTorrentData";
@@ -60,71 +62,73 @@ function App() {
   };
 
   return (
-    <div className={styles.appContainer}>
-      <div className={styles.content}>
-        {/* Шапка приложения */}
-        <Header
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          onAddTorrent={() => setShowAddTorrent(true)}
-          onSettings={() => setShowSettings(true)}
-          onStartSelected={handleStartSelected}
-          onStopSelected={handleStopSelected}
-          onRemoveSelected={() => handleRemoveSelected(true)} // Изменяем на true для удаления данных
-          hasSelectedTorrents={hasSelectedTorrents}
-          startLoading={bulkOperations.start}
-          stopLoading={bulkOperations.stop}
-          removeLoading={bulkOperations.remove}
-          filteredTorrents={filteredTorrents}
-          selectedTorrents={selectedTorrents}
-          onSelectAll={onSelectAll}
-          error={error}
-          isReconnecting={isReconnecting}
-        />
-
-        {/* Список торрентов */}
-        <TorrentList
-          torrents={torrents}
-          searchTerm={searchTerm}
-          selectedTorrents={selectedTorrents}
-          onSelect={handleTorrentSelect}
-          onRemove={handleRemoveTorrent}
-          onStart={handleStartTorrent}
-          onStop={handleStopTorrent}
-        />
-
-        {/* Футер с информацией о сессии */}
-        {sessionStats && (
-          <Footer
-            totalDownloadSpeed={sessionStats.TotalDownloadSpeed}
-            totalUploadSpeed={sessionStats.TotalUploadSpeed}
-            freeSpace={sessionStats.FreeSpace}
-            transmissionVersion={sessionStats.TransmissionVersion}
+    <ThemeProvider>
+      <div className={styles.appContainer}>
+        <div className={styles.content}>
+          {/* Шапка приложения */}
+          <Header
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onAddTorrent={() => setShowAddTorrent(true)}
+            onSettings={() => setShowSettings(true)}
+            onStartSelected={handleStartSelected}
+            onStopSelected={handleStopSelected}
+            onRemoveSelected={() => handleRemoveSelected(true)} // Изменяем на true для удаления данных
+            hasSelectedTorrents={hasSelectedTorrents}
+            startLoading={bulkOperations.start}
+            stopLoading={bulkOperations.stop}
+            removeLoading={bulkOperations.remove}
+            filteredTorrents={filteredTorrents}
+            selectedTorrents={selectedTorrents}
+            onSelectAll={onSelectAll}
+            error={error}
+            isReconnecting={isReconnecting}
           />
-        )}
 
-        {/* Модальное окно настроек */}
-        {showSettings && (
-          <Settings
-            onSave={handleSettingsSave}
-            onClose={() => {
-              if (isInitialized) {
-                setShowSettings(false);
-              }
-            }}
+          {/* Список торрентов */}
+          <TorrentList
+            torrents={torrents}
+            searchTerm={searchTerm}
+            selectedTorrents={selectedTorrents}
+            onSelect={handleTorrentSelect}
+            onRemove={handleRemoveTorrent}
+            onStart={handleStartTorrent}
+            onStop={handleStopTorrent}
           />
-        )}
 
-        {/* Модальное окно добавления торрента */}
-        {showAddTorrent && (
-          <AddTorrent
-            onAdd={handleAddTorrent}
-            onAddFile={handleAddTorrentFile}
-            onClose={() => setShowAddTorrent(false)}
-          />
-        )}
+          {/* Футер с информацией о сессии */}
+          {sessionStats && (
+            <Footer
+              totalDownloadSpeed={sessionStats.TotalDownloadSpeed}
+              totalUploadSpeed={sessionStats.TotalUploadSpeed}
+              freeSpace={sessionStats.FreeSpace}
+              transmissionVersion={sessionStats.TransmissionVersion}
+            />
+          )}
+
+          {/* Модальное окно настроек */}
+          {showSettings && (
+            <Settings
+              onSave={handleSettingsSave}
+              onClose={() => {
+                if (isInitialized) {
+                  setShowSettings(false);
+                }
+              }}
+            />
+          )}
+
+          {/* Модальное окно добавления торрента */}
+          {showAddTorrent && (
+            <AddTorrent
+              onAdd={handleAddTorrent}
+              onAddFile={handleAddTorrentFile}
+              onClose={() => setShowAddTorrent(false)}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
 

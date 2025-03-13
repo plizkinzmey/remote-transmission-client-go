@@ -17,7 +17,6 @@
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
 
   /* Other colors */
-  --accent-color: #3498db;
   --hover-color: #2980b9;
   --success-color: #27ae60;
   --error-color: #e74c3c;
@@ -30,6 +29,9 @@
   --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
   --error-color-hover: #dc2626;
+
+  /* Button colors */
+  --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
 
   /* Torrent card colors */
   --card-background: #ffffff;
@@ -51,6 +53,9 @@
   /* Torrent Actions */
   --action-icon-color: #64748b;
   --action-icon-hover: #475569;
+
+  /* Accent colors */
+  --accent-color-light: rgba(52, 152, 219, 0.2);
 }
 
 :root[data-theme="dark"] {
@@ -72,7 +77,6 @@
   --header-input-focus-bg: rgba(255, 255, 255, 0.1);
 
   /* Other colors */
-  --accent-color: #3498db;
   --hover-color: #2980b9;
   --success-color: #27ae60;
   --error-color: #e74c3c;
@@ -85,6 +89,9 @@
   --header-button-disabled-bg: rgba(255, 255, 255, 0.02);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.3);
   --error-color-hover: #b91c1c;
+
+  /* Button colors */
+  --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
 
   /* Torrent card colors */
   --card-background: #2d2d2d;
@@ -106,4 +113,7 @@
   /* Torrent Actions */
   --action-icon-color: #94a3b8;
   --action-icon-hover: #cbd5e1;
+
+  /* Accent colors */
+  --accent-color-light: rgba(52, 152, 219, 0.15);
 }

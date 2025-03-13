@@ -53,6 +53,8 @@
   "add.browse": "Browse",
   "add.add": "Add",
   "add.cancel": "Cancel",
+  "add.dropFile": "Drop your torrent file here",
+  "add.orClickToSelect": "or click to select file",
   
   "remove.title": "Remove Torrent",
   "remove.confirmation": "Are you sure you want to remove this torrent?",

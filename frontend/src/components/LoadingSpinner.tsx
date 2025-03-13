@@ -1,19 +1,18 @@
+import React from "react";
 import styled from "@emotion/styled";
 
-const SpinnerContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 100vw;
-  background-color: #f8f9fa;
+const SpinnerWrapper = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 `;
 
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
+  border: 4px solid var(--background-secondary);
+  border-top: 4px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 
@@ -27,8 +26,8 @@ const Spinner = styled.div`
   }
 `;
 
-export const LoadingSpinner = () => (
-  <SpinnerContainer>
+export const LoadingSpinner: React.FC = () => (
+  <SpinnerWrapper>
     <Spinner />
-  </SpinnerContainer>
+  </SpinnerWrapper>
 );

@@ -53,6 +53,8 @@
   "add.browse": "Обзор",
   "add.add": "Добавить",
   "add.cancel": "Отмена",
+  "add.dropFile": "Перетащите торрент-файл сюда",
+  "add.orClickToSelect": "или нажмите для выбора файла",
   
   "remove.title": "Удалить торрент",
   "remove.confirmation": "Вы уверены, что хотите удалить этот торрент?",

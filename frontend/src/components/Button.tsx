@@ -11,8 +11,10 @@ export const Button = styled.button<ButtonProps>`
     if (props.variant === "danger") return "var(--error-color)";
     return "var(--accent-color)";
   }};
-  color: ${(props) =>
-    props.variant === "icon" ? "var(--header-button-icon)" : "white"};
+  color: ${(props) => {
+    if (props.variant === "icon") return "var(--header-button-icon)";
+    return "var(--button-text)"; // Будем использовать переменную для цвета текста
+  }};
   border: none;
   border-radius: 4px;
   padding: ${(props) => (props.variant === "icon" ? "8px" : "8px 16px")};

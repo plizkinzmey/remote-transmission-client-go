@@ -30,6 +30,23 @@
   --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
   --error-color-hover: #dc2626;
+
+  /* Torrent card colors */
+  --card-background: #ffffff;
+  --card-border: #e5e7eb;
+  --card-shadow: rgba(0, 0, 0, 0.1);
+  --card-text-primary: #2c3e50;
+  --card-text-secondary: #6b7280;
+  --card-progress-bg: #ecf0f1;
+  --card-ratio-bg: #f0f0f0;
+  
+  /* Status colors */
+  --status-downloading: #3498db;
+  --status-seeding: #27ae60;
+  --status-stopped: #7f8c8d;
+  --status-completed: #2ecc71;
+  --status-checking: #f39c12;
+  --status-queued: #95a5a6;
 }
 
 :root[data-theme="dark"] {
@@ -64,4 +81,21 @@
   --header-button-disabled-bg: rgba(255, 255, 255, 0.02);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.3);
   --error-color-hover: #b91c1c;
+
+  /* Torrent card colors */
+  --card-background: #2d2d2d;
+  --card-border: #404040;
+  --card-shadow: rgba(0, 0, 0, 0.3);
+  --card-text-primary: #ffffff;
+  --card-text-secondary: #a0a0a0;
+  --card-progress-bg: #404040;
+  --card-ratio-bg: #404040;
+  
+  /* Status colors - немного ярче для темной темы */
+  --status-downloading: #3498db;
+  --status-seeding: #2ecc71;
+  --status-stopped: #95a5a6;
+  --status-completed: #27ae60;
+  --status-checking: #f39c12;
+  --status-queued: #bdc3c7;
 }

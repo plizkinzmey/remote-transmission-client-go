@@ -11,9 +11,10 @@ export const Button = styled.button<ButtonProps>`
     if (props.variant === "danger") return "var(--error-color)";
     return "var(--accent-color)";
   }};
-  color: ${(props) => (props.variant === "icon" ? "var(--header-button-icon)" : "white")};
+  color: ${(props) =>
+    props.variant === "icon" ? "var(--header-button-icon)" : "white"};
   border: none;
-  border-radius: ${(props) => (props.variant === "icon" ? "4px" : "4px")};
+  border-radius: 4px;
   padding: ${(props) => (props.variant === "icon" ? "8px" : "8px 16px")};
   font-size: 14px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -27,7 +28,7 @@ export const Button = styled.button<ButtonProps>`
   gap: 6px;
   width: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
   height: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
-  
+
   &:hover:not(:disabled) {
     background-color: ${(props) => {
       if (props.variant === "icon") return "var(--header-button-hover-bg)";
@@ -35,11 +36,11 @@ export const Button = styled.button<ButtonProps>`
       return "var(--hover-color)";
     }};
   }
-  
+
   &:disabled {
     background-color: ${(props) =>
-      props.variant === "icon" 
-        ? "var(--header-button-disabled-bg)" 
+      props.variant === "icon"
+        ? "var(--header-button-disabled-bg)"
         : "var(--button-disabled-bg)"};
     color: ${(props) =>
       props.variant === "icon"
@@ -54,12 +55,12 @@ export const Button = styled.button<ButtonProps>`
   &:active:not(:disabled) {
     transform: translateY(1px);
   }
-  
+
   svg {
     width: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
     height: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
   }
-  
+
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -68,7 +69,7 @@ export const Button = styled.button<ButtonProps>`
       transform: rotate(360deg);
     }
   }
-  
+
   .loading-spinner {
     animation: spin 1s linear infinite;
   }

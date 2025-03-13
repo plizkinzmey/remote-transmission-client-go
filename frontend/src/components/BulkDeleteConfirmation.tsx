@@ -3,6 +3,7 @@ import styled from "@emotion/styled";
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { Portal } from "./Portal";
 
 interface BulkDeleteConfirmationProps {
   count: number;
@@ -32,15 +33,15 @@ const Modal = styled.div`
   max-width: 90%;
   color: #ffffff;
   position: relative;
-  animation: modalAppear 0.2s ease-out;
+  animation: modalAppear 0.2s ease-out forwards;
 
   @keyframes modalAppear {
     from {
-      transform: translateY(-20px);
+      transform: scale(0.95);
       opacity: 0;
     }
     to {
-      transform: translateY(0);
+      transform: scale(1);
       opacity: 1;
     }
   }
@@ -121,38 +122,40 @@ export const BulkDeleteConfirmation: React.FC<BulkDeleteConfirmationProps> = ({
   }
 
   return (
-    <Overlay onClick={onCancel}>
-      <Modal onClick={handleModalClick}>
-        <Title>{t("remove.title")}</Title>
-        <Text>{t("remove.selectedConfirmation")}</Text>
-        <Text>
-          <strong>
-            {t("torrents.selected", String(count), String(count))}
-          </strong>
-        </Text>
-        <OptionsContainer>
-          <Checkbox>
-            <input
-              type="checkbox"
-              checked={deleteData}
-              onChange={(e) => setDeleteData(e.target.checked)}
-            />
-            {t("remove.withData")}
-          </Checkbox>
-        </OptionsContainer>
-        <ButtonGroup>
-          <Button type="button" onClick={onCancel}>
-            {t("remove.cancel")}
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => onConfirm(deleteData)}
-          >
-            {t("remove.confirm")}
-          </Button>
-        </ButtonGroup>
-      </Modal>
-    </Overlay>
+    <Portal>
+      <Overlay onClick={onCancel}>
+        <Modal onClick={handleModalClick}>
+          <Title>{t("remove.title")}</Title>
+          <Text>{t("remove.selectedConfirmation")}</Text>
+          <Text>
+            <strong>
+              {t("torrents.selected", String(count), String(count))}
+            </strong>
+          </Text>
+          <OptionsContainer>
+            <Checkbox>
+              <input
+                type="checkbox"
+                checked={deleteData}
+                onChange={(e) => setDeleteData(e.target.checked)}
+              />
+              {t("remove.withData")}
+            </Checkbox>
+          </OptionsContainer>
+          <ButtonGroup>
+            <Button type="button" onClick={onCancel}>
+              {t("remove.cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => onConfirm(deleteData)}
+            >
+              {t("remove.confirm")}
+            </Button>
+          </ButtonGroup>
+        </Modal>
+      </Overlay>
+    </Portal>
   );
 };

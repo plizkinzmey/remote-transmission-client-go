@@ -328,8 +328,8 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 		if err != nil {
 			fmt.Printf("failed to get free space: %v\n", err)
 		} else {
-			// FreeSpace возвращает значение в байтах
-			freeSpace = int64(freeSpaceInfo)
+			// FreeSpace возвращает значение в битах, преобразуем в байты
+			freeSpace = int64(freeSpaceInfo) / 8
 			fmt.Printf("Free space in bytes: %d\n", freeSpace)
 		}
 	}
@@ -344,7 +344,7 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 	return &domain.SessionStats{
 		TotalDownloadSpeed:  stats.DownloadSpeed, // Значение уже в байтах/с
 		TotalUploadSpeed:    stats.UploadSpeed,   // Значение уже в байтах/с
-		FreeSpace:           freeSpace,           // Значение уже в байтах
+		FreeSpace:           freeSpace,           // Преобразовано из бит в байты
 		TransmissionVersion: version,
 	}, nil
 }

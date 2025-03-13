@@ -295,6 +295,49 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 	return result, nil
 }
 
+// GetSessionStats возвращает статистику текущей сессии Transmission
+func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
+	// Получаем сессию с необходимыми полями
+	session, err := c.client.SessionArgumentsGet(c.ctx, []string{"download-dir", "version"})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session info: %w", err)
+	}
+
+	// Получаем статистику
+	stats, err := c.client.SessionStats(c.ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session stats: %w", err)
+	}
+
+	// Получаем информацию о свободном месте
+	var freeSpace int64 = 0
+	if session.DownloadDir != nil {
+		// Получаем свободное место для директории загрузки
+		freeSpaceData, _, err := c.client.FreeSpace(c.ctx, *session.DownloadDir)
+		if err != nil {
+			// Если не удалось получить свободное место, просто логируем ошибку
+			fmt.Printf("failed to get free space: %v\n", err)
+		} else {
+			// Конвертируем в int64 напрямую, так как значение уже в байтах
+			freeSpace = int64(freeSpaceData)
+		}
+	}
+
+	// Версия Transmission
+	version := "unknown"
+	if session.Version != nil {
+		version = *session.Version
+	}
+
+	// Возвращаем статистику
+	return &domain.SessionStats{
+		TotalDownloadSpeed:  stats.DownloadSpeed / 8, // Конвертируем из бит/с в байты/с
+		TotalUploadSpeed:    stats.UploadSpeed / 8,   // Конвертируем из бит/с в байты/с
+		FreeSpace:           freeSpace,               // В байтах
+		TransmissionVersion: version,
+	}, nil
+}
+
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
 	// Если торрент остановлен и загружен полностью, считаем его завершенным
 	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {

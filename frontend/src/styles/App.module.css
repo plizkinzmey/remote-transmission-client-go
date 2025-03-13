@@ -4,7 +4,6 @@
   height: 100vh;
   background: #f8f9fa;
 }
-
 .content {
   flex: 1;
   display: flex;
@@ -13,4 +12,5 @@
   overflow-y: auto;
   -webkit-app-region: no-drag;
   padding-top: 110px; /* Отступ для фиксированного заголовка */
+  padding-bottom: 52px; /* Отступ для футера (36px высота + 16px отступ) */
 }

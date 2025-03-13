@@ -30,7 +30,6 @@ type Torrent struct {
 	DownloadSpeedFormatted string
 	UploadSpeedFormatted   string
 }
-
 type TorrentRepository interface {
 	GetAll() ([]Torrent, error)
 	Add(url string) error
@@ -38,4 +37,5 @@ type TorrentRepository interface {
 	Remove(id int64, deleteData bool) error
 	Start(ids []int64) error
 	Stop(ids []int64) error
+	GetSessionStats() (*SessionStats, error) // Новый метод для получения статистики сессии
 }

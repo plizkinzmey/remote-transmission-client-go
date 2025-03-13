@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
 import { Settings } from "./components/Settings";
 import { AddTorrent } from "./components/AddTorrent";
+import { Footer } from "./components/Footer";
 import styles from "./styles/App.module.css";
 import "./App.css";
 
@@ -28,6 +29,7 @@ function App() {
     error,
     isReconnecting,
     hasSelectedTorrents,
+    sessionStats,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,
@@ -84,6 +86,16 @@ function App() {
           onStart={handleStartTorrent}
           onStop={handleStopTorrent}
         />
+
+        {/* Футер с информацией о сессии */}
+        {sessionStats && (
+          <Footer
+            totalDownloadSpeed={sessionStats.TotalDownloadSpeed}
+            totalUploadSpeed={sessionStats.TotalUploadSpeed}
+            freeSpace={sessionStats.FreeSpace}
+            transmissionVersion={sessionStats.TransmissionVersion}
+          />
+        )}
 
         {/* Модальное окно настроек */}
         {showSettings && (

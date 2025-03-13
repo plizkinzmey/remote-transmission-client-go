@@ -37,3 +37,7 @@ func (s *TorrentService) StartTorrents(ids []int64) error {
 func (s *TorrentService) StopTorrents(ids []int64) error {
 	return s.repo.Stop(ids)
 }
+
+func (s *TorrentService) GetSessionStats() (*domain.SessionStats, error) {
+	return s.repo.GetSessionStats()
+}

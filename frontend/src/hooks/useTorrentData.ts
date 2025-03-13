@@ -10,6 +10,7 @@ import {
   Initialize,
   StartTorrents,
   StopTorrents,
+  GetSessionStats,
 } from "../../wailsjs/go/main/App";
 
 interface ConfigData {
@@ -20,12 +21,23 @@ interface ConfigData {
   language: string;
 }
 
+// Интерфейс для статистики сессии
+interface SessionStatsData {
+  TotalDownloadSpeed: number;
+  TotalUploadSpeed: number;
+  FreeSpace: number;
+  TransmissionVersion: string;
+}
+
 /**
  * Хук для работы с данными торрентов и управления соединением
  */
 export function useTorrentData() {
   const { t, setLanguage } = useLocalization();
   const [torrents, setTorrents] = useState<TorrentData[]>([]);
+  const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(
+    null
+  );
   const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
     new Set()
   );
@@ -94,7 +106,6 @@ export function useTorrentData() {
       setIsReconnecting(false);
     } catch (error) {
       console.error("Failed to fetch torrents:", error);
-
       if (!isReconnecting) {
         setError(
           t(
@@ -114,6 +125,19 @@ export function useTorrentData() {
           );
         }
       }
+    }
+  };
+
+  // Функция для обновления статистики сессии
+  const refreshSessionStats = async () => {
+    try {
+      const stats = await GetSessionStats();
+      if (stats) {
+        setSessionStats(stats);
+      }
+    } catch (error) {
+      console.error("Failed to fetch session stats:", error);
+      // Не показываем ошибку пользователю, просто логируем
     }
   };
 
@@ -149,16 +173,20 @@ export function useTorrentData() {
     initializeApp();
   }, []);
 
-  // Эффект для обновления списка торрентов
+  // Эффект для обновления списка торрентов и статистики
   useEffect(() => {
     let intervalId: number;
-
     if (isInitialized) {
-      // Запускаем первоначальное обновление
-      refreshTorrents();
+      // Функция для обновления всех данных
+      const updateData = async () => {
+        await refreshTorrents();
+        await refreshSessionStats();
+      };
 
+      // Запускаем первоначальное обновление
+      updateData();
       // Устанавливаем интервал обновления каждые 3 секунды
-      intervalId = window.setInterval(refreshTorrents, 3000);
+      intervalId = window.setInterval(updateData, 3000);
     }
 
     // Очистка при размонтировании
@@ -260,6 +288,7 @@ export function useTorrentData() {
     error,
     isReconnecting,
     hasSelectedTorrents,
+    sessionStats,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,

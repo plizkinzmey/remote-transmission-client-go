@@ -110,6 +110,14 @@ func (a *App) GetSystemLanguage() string {
 	return a.localizationService.GetSystemLocale()
 }
 
+// GetSessionStats returns statistics about the current session
+func (a *App) GetSessionStats() (*domain.SessionStats, error) {
+	if a.service == nil {
+		return nil, fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.GetSessionStats()
+}
+
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {

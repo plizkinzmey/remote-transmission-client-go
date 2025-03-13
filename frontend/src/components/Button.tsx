@@ -7,43 +7,59 @@ interface ButtonProps {
 
 export const Button = styled.button<ButtonProps>`
   background-color: ${(props) => {
-    if (props.variant === "icon") return "transparent";
-    if (props.variant === "danger") return "#e74c3c";
-    return "#2c3e50";
+    if (props.variant === "icon") return "var(--header-button-bg)";
+    if (props.variant === "danger") return "var(--error-color)";
+    return "var(--accent-color)";
   }};
-  color: ${(props) => (props.variant === "icon" ? "#2c3e50" : "white")};
+  color: ${(props) => (props.variant === "icon" ? "var(--header-button-icon)" : "white")};
   border: none;
-  border-radius: ${(props) => (props.variant === "icon" ? "50%" : "4px")};
+  border-radius: ${(props) => (props.variant === "icon" ? "4px" : "4px")};
   padding: ${(props) => (props.variant === "icon" ? "8px" : "8px 16px")};
   font-size: 14px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   cursor: ${(props) => (props.loading ? "wait" : "pointer")};
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  opacity: ${(props) => (props.loading || props.disabled ? 0.5 : 1)};
-  width: ${(props) => (props.variant === "icon" ? "32px" : "auto")};
-  height: ${(props) => (props.variant === "icon" ? "32px" : "auto")};
-  &:hover {
+  width: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
+  height: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
+  
+  &:hover:not(:disabled) {
     background-color: ${(props) => {
-      if (props.variant === "icon") return "#f0f2f4";
-      if (props.variant === "danger") return "#c0392b";
-      return "#34495e";
+      if (props.variant === "icon") return "var(--header-button-hover-bg)";
+      if (props.variant === "danger") return "var(--error-color-hover)";
+      return "var(--hover-color)";
     }};
   }
+  
   &:disabled {
     background-color: ${(props) =>
-      props.variant === "icon" ? "#f0f2f4" : "#95a5a6"};
+      props.variant === "icon" 
+        ? "var(--header-button-disabled-bg)" 
+        : "var(--button-disabled-bg)"};
+    color: ${(props) =>
+      props.variant === "icon"
+        ? "var(--header-button-disabled-icon)"
+        : "var(--button-disabled-text)"};
     cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
   }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  
   svg {
-    width: ${(props) => (props.variant === "icon" ? "16px" : "14px")};
-    height: ${(props) => (props.variant === "icon" ? "16px" : "14px")};
+    width: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
+    height: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
   }
+  
   @keyframes spin {
     from {
       transform: rotate(0deg);
@@ -52,6 +68,7 @@ export const Button = styled.button<ButtonProps>`
       transform: rotate(360deg);
     }
   }
+  
   .loading-spinner {
     animation: spin 1s linear infinite;
   }

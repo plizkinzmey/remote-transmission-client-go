@@ -1,25 +1,30 @@
 .fixedHeader {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
-  background-color: var(--background-primary);
-  border-bottom: 1px solid var(--border-color);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  width: 100%;
+  background-color: var(--header-background);
 }
 
 .controlPanel {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 12px 16px;
   background-color: var(--header-background);
   color: var(--header-text);
+  box-shadow: 0 2px 4px var(--modal-shadow);
+  height: 48px;
+  box-sizing: border-box;
 }
 
 .leftSection,
 .rightSection {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .searchContainer {
@@ -29,11 +34,11 @@
 
 .searchInput {
   padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--header-border);
   border-radius: 4px;
   font-size: 14px;
-  background-color: var(--background-primary);
-  color: var(--text-primary);
+  background-color: var(--header-input-bg);
+  color: var(--header-text);
   width: 200px;
   transition: all 0.2s ease;
 }
@@ -42,32 +47,52 @@
   outline: none;
   border-color: var(--accent-color);
   width: 250px;
+  background-color: var(--header-input-focus-bg);
+}
+
+.searchInput::placeholder {
+  color: var(--header-text-secondary);
 }
 
 /* Стили для кнопок */
 .leftSection button,
 .rightSection button {
-  width: 32px;
-  height: 32px;
-  padding: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border-radius: 4px;
+  background-color: var(--header-button-bg);
+  transition: all 0.2s ease;
+}
+
+.leftSection button:hover,
+.rightSection button:hover {
+  background-color: var(--header-button-hover-bg);
 }
 
 .leftSection button svg,
 .rightSection button svg {
   width: 20px;
   height: 20px;
+  color: var(--header-button-icon);
 }
 
+/* Стили селекта для выбора всех */
 .selectAllContainer {
+  position: fixed;
+  top: 48px; /* Высота controlPanel */
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   padding: 8px 12px;
   background-color: var(--background-secondary);
   border-bottom: 1px solid var(--border-color);
+  z-index: 1000;
 }
 
 .selectAllCheckbox {

@@ -64,39 +64,36 @@ function App() {
   return (
     <ThemeProvider>
       <div className={styles.appContainer}>
+        <Header
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onAddTorrent={() => setShowAddTorrent(true)}
+          onSettings={() => setShowSettings(true)}
+          onStartSelected={handleStartSelected}
+          onStopSelected={handleStopSelected}
+          onRemoveSelected={() => handleRemoveSelected(true)}
+          hasSelectedTorrents={hasSelectedTorrents}
+          startLoading={bulkOperations.start}
+          stopLoading={bulkOperations.stop}
+          removeLoading={bulkOperations.remove}
+          filteredTorrents={filteredTorrents}
+          selectedTorrents={selectedTorrents}
+          onSelectAll={onSelectAll}
+          error={error}
+          isReconnecting={isReconnecting}
+        />
         <div className={styles.content}>
-          {/* Шапка приложения */}
-          <Header
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onAddTorrent={() => setShowAddTorrent(true)}
-            onSettings={() => setShowSettings(true)}
-            onStartSelected={handleStartSelected}
-            onStopSelected={handleStopSelected}
-            onRemoveSelected={() => handleRemoveSelected(true)} // Изменяем на true для удаления данных
-            hasSelectedTorrents={hasSelectedTorrents}
-            startLoading={bulkOperations.start}
-            stopLoading={bulkOperations.stop}
-            removeLoading={bulkOperations.remove}
-            filteredTorrents={filteredTorrents}
-            selectedTorrents={selectedTorrents}
-            onSelectAll={onSelectAll}
-            error={error}
-            isReconnecting={isReconnecting}
-          />
-
-          {/* Список торрентов */}
-          <TorrentList
-            torrents={torrents}
-            searchTerm={searchTerm}
-            selectedTorrents={selectedTorrents}
-            onSelect={handleTorrentSelect}
-            onRemove={handleRemoveTorrent}
-            onStart={handleStartTorrent}
-            onStop={handleStopTorrent}
-          />
-
-          {/* Футер с информацией о сессии */}
+          <div className={styles.scrollableContent}>
+            <TorrentList
+              torrents={torrents}
+              searchTerm={searchTerm}
+              selectedTorrents={selectedTorrents}
+              onSelect={handleTorrentSelect}
+              onRemove={handleRemoveTorrent}
+              onStart={handleStartTorrent}
+              onStop={handleStopTorrent}
+            />
+          </div>
           {sessionStats && (
             <Footer
               totalDownloadSpeed={sessionStats.TotalDownloadSpeed}
@@ -105,28 +102,26 @@ function App() {
               transmissionVersion={sessionStats.TransmissionVersion}
             />
           )}
-
-          {/* Модальное окно настроек */}
-          {showSettings && (
-            <Settings
-              onSave={handleSettingsSave}
-              onClose={() => {
-                if (isInitialized) {
-                  setShowSettings(false);
-                }
-              }}
-            />
-          )}
-
-          {/* Модальное окно добавления торрента */}
-          {showAddTorrent && (
-            <AddTorrent
-              onAdd={handleAddTorrent}
-              onAddFile={handleAddTorrentFile}
-              onClose={() => setShowAddTorrent(false)}
-            />
-          )}
         </div>
+
+        {/* Модальные окна */}
+        {showSettings && (
+          <Settings
+            onSave={handleSettingsSave}
+            onClose={() => {
+              if (isInitialized) {
+                setShowSettings(false);
+              }
+            }}
+          />
+        )}
+        {showAddTorrent && (
+          <AddTorrent
+            onAdd={handleAddTorrent}
+            onAddFile={handleAddTorrentFile}
+            onClose={() => setShowAddTorrent(false)}
+          />
+        )}
       </div>
     </ThemeProvider>
   );

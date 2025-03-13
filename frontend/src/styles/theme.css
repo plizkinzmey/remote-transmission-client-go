@@ -3,15 +3,33 @@
   --background-secondary: #f8f9fa;
   --text-primary: #2c3e50;
   --text-secondary: #6c757d;
-  --border-color: #bdc3c7;
-  --header-background: #1a1a1a;
+  --border-color: #e1e4e8;
+  
+  /* Header colors */
+  --header-background: #2c3e50;
   --header-text: #ffffff;
+  --header-text-secondary: rgba(255, 255, 255, 0.7);
+  --header-border: rgba(255, 255, 255, 0.1);
+  --header-button-bg: rgba(255, 255, 255, 0.1);
+  --header-button-hover-bg: rgba(255, 255, 255, 0.2);
+  --header-button-icon: #ffffff;
+  --header-input-bg: rgba(255, 255, 255, 0.1);
+  --header-input-focus-bg: rgba(255, 255, 255, 0.15);
+  
+  /* Other colors */
   --accent-color: #3498db;
   --hover-color: #2980b9;
   --success-color: #27ae60;
   --error-color: #e74c3c;
   --modal-overlay: rgba(0, 0, 0, 0.5);
-  --modal-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --modal-shadow: rgba(0, 0, 0, 0.1);
+  
+  /* Button states */
+  --button-disabled-bg: #cbd5e1;
+  --button-disabled-text: #94a3b8;
+  --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
+  --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
+  --error-color-hover: #dc2626;
 }
 
 :root[data-theme="dark"] {
@@ -20,12 +38,30 @@
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --border-color: #404040;
+  
+  /* Header colors */
   --header-background: #000000;
   --header-text: #ffffff;
+  --header-text-secondary: rgba(255, 255, 255, 0.7);
+  --header-border: rgba(255, 255, 255, 0.1);
+  --header-button-bg: rgba(255, 255, 255, 0.05);
+  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
+  --header-button-icon: #ffffff;
+  --header-input-bg: rgba(255, 255, 255, 0.05);
+  --header-input-focus-bg: rgba(255, 255, 255, 0.1);
+  
+  /* Other colors */
   --accent-color: #3498db;
   --hover-color: #2980b9;
   --success-color: #27ae60;
   --error-color: #e74c3c;
   --modal-overlay: rgba(0, 0, 0, 0.7);
-  --modal-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --modal-shadow: rgba(0, 0, 0, 0.3);
+  
+  /* Button states */
+  --button-disabled-bg: #374151;
+  --button-disabled-text: #6b7280;
+  --header-button-disabled-bg: rgba(255, 255, 255, 0.02);
+  --header-button-disabled-icon: rgba(255, 255, 255, 0.3);
+  --error-color-hover: #b91c1c;
 }

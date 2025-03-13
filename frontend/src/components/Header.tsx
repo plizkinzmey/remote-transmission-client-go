@@ -6,6 +6,7 @@ import {
   PlayIcon,
   PauseIcon,
   ArrowPathIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/Header.module.css";
 
@@ -16,9 +17,11 @@ interface HeaderProps {
   onSettings: () => void;
   onStartSelected: () => void;
   onStopSelected: () => void;
+  onRemoveSelected: () => void; // Добавляем функцию удаления выбранных торрентов
   hasSelectedTorrents: boolean;
   startLoading: boolean;
   stopLoading: boolean;
+  removeLoading: boolean; // Добавляем состояние загрузки для удаления
   filteredTorrents: Array<any>;
   selectedTorrents: Set<number>;
   onSelectAll: () => void;
@@ -37,9 +40,11 @@ export const Header: React.FC<HeaderProps> = ({
   onSettings,
   onStartSelected,
   onStopSelected,
+  onRemoveSelected,
   hasSelectedTorrents,
   startLoading,
   stopLoading,
+  removeLoading,
   filteredTorrents,
   selectedTorrents,
   onSelectAll,
@@ -98,6 +103,20 @@ export const Header: React.FC<HeaderProps> = ({
               <PauseIcon />
             )}
           </Button>
+          {/* Кнопка удаления выбранных торрентов */}
+          <Button
+            variant="icon"
+            onClick={onRemoveSelected}
+            disabled={!hasSelectedTorrents || removeLoading}
+            loading={removeLoading}
+            aria-label={t("remove.title")}
+          >
+            {removeLoading ? (
+              <ArrowPathIcon className="loading-spinner" />
+            ) : (
+              <TrashIcon />
+            )}
+          </Button>
         </div>
         <div className={styles.rightSection}>
           {/* Кнопка настроек */}
@@ -138,6 +157,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Отображение сообщений об ошибках */}
       {error && <div className={styles.errorMessage}>{error}</div>}
+
       {/* Индикатор переподключения */}
       {isReconnecting && (
         <div className={styles.reconnectingStatus}>{t("app.reconnecting")}</div>

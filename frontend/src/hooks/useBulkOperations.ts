@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { TorrentData } from "../components/TorrentList";
 import { useLocalization } from "../contexts/LocalizationContext";
-import { StartTorrents, StopTorrents } from "../../wailsjs/go/main/App";
+import {
+  StartTorrents,
+  StopTorrents,
+  RemoveTorrent,
+} from "../../wailsjs/go/main/App";
 
 interface BulkOperationsState {
   start: boolean;
   stop: boolean;
+  remove: boolean;
 }
 
 /**
@@ -21,10 +26,11 @@ export function useBulkOperations(
   const [bulkOperations, setBulkOperations] = useState<BulkOperationsState>({
     start: false,
     stop: false,
+    remove: false,
   });
-  const [lastBulkAction, setLastBulkAction] = useState<"start" | "stop" | null>(
-    null
-  );
+  const [lastBulkAction, setLastBulkAction] = useState<
+    "start" | "stop" | "remove" | null
+  >(null);
   const [lastTorrentStates, setLastTorrentStates] = useState<
     Map<number, string>
   >(new Map());
@@ -107,7 +113,9 @@ export function useBulkOperations(
     if (bulkOperations.start || selectedTorrents.size === 0) return;
 
     const torrentsToStart = torrents.filter(
-      (t) => selectedTorrents.has(t.ID) && t.Status === "stopped"
+      (t) =>
+        selectedTorrents.has(t.ID) &&
+        (t.Status === "stopped" || t.Status === "completed")
     );
 
     if (torrentsToStart.length === 0) return;
@@ -123,8 +131,12 @@ export function useBulkOperations(
     setLastTorrentStates(states);
 
     try {
-      await StartTorrents(torrentsToStart.map((t) => t.ID));
-      refreshTorrents();
+      // Преобразуем в массив int64
+      const idsToStart = torrentsToStart.map((t) => Number(t.ID));
+      console.log("Starting torrents with IDs:", idsToStart);
+
+      await StartTorrents(idsToStart);
+      await refreshTorrents();
     } catch (error) {
       console.error("Failed to start torrents:", error);
       setError(t("errors.failedToStartTorrents", String(error)));
@@ -157,8 +169,12 @@ export function useBulkOperations(
     setLastTorrentStates(states);
 
     try {
-      await StopTorrents(torrentsToStop.map((t) => t.ID));
-      refreshTorrents();
+      // Преобразуем в массив int64
+      const idsToStop = torrentsToStop.map((t) => Number(t.ID));
+      console.log("Stopping torrents with IDs:", idsToStop);
+
+      await StopTorrents(idsToStop);
+      await refreshTorrents();
     } catch (error) {
       console.error("Failed to stop torrents:", error);
       setError(t("errors.failedToStopTorrents", String(error)));
@@ -168,10 +184,42 @@ export function useBulkOperations(
     }
   };
 
+  // Обработчик удаления выбранных торрентов
+  const handleRemoveSelected = async (deleteData: boolean = false) => {
+    if (bulkOperations.remove || selectedTorrents.size === 0) return;
+
+    if (!window.confirm(t("remove.selectedConfirmation"))) {
+      return;
+    }
+
+    setBulkOperations((prev) => ({ ...prev, remove: true }));
+
+    try {
+      // Используем Promise.all для параллельного удаления всех выбранных торрентов
+      await Promise.all(
+        Array.from(selectedTorrents).map((id) => {
+          console.log(
+            `Removing torrent with ID: ${id}, deleteData: ${deleteData}`
+          );
+          return RemoveTorrent(id, deleteData);
+        })
+      );
+
+      // Обновляем список торрентов
+      await refreshTorrents();
+    } catch (error) {
+      console.error("Failed to remove torrents:", error);
+      setError(t("errors.failedToRemoveTorrents", String(error)));
+    } finally {
+      setBulkOperations((prev) => ({ ...prev, remove: false }));
+    }
+  };
+
   return {
     bulkOperations,
     error,
     handleStartSelected,
     handleStopSelected,
+    handleRemoveSelected,
   };
 }

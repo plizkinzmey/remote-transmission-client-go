@@ -53,6 +53,7 @@
   
   "remove.title": "Remove Torrent",
   "remove.confirmation": "Are you sure you want to remove this torrent?",
+  "remove.selectedConfirmation": "Are you sure you want to remove all selected torrents?",
   "remove.withData": "Also delete downloaded data",
   "remove.confirm": "Remove",
   "remove.cancel": "Cancel",

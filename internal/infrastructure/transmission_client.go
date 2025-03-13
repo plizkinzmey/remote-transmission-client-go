@@ -313,13 +313,13 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 	var freeSpace int64 = 0
 	if session.DownloadDir != nil {
 		// Получаем свободное место для директории загрузки
-		freeSpaceData, _, err := c.client.FreeSpace(c.ctx, *session.DownloadDir)
+		_, freeSpaceBytes, err := c.client.FreeSpace(c.ctx, *session.DownloadDir)
 		if err != nil {
 			// Если не удалось получить свободное место, просто логируем ошибку
 			fmt.Printf("failed to get free space: %v\n", err)
 		} else {
-			// Конвертируем в int64 напрямую, так как значение уже в байтах
-			freeSpace = int64(freeSpaceData)
+			// Используем второе возвращаемое значение, которое содержит байты свободного места
+			freeSpace = int64(freeSpaceBytes)
 		}
 	}
 

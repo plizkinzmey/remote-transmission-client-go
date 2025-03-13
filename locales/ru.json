@@ -53,6 +53,7 @@
   
   "remove.title": "Удалить торрент",
   "remove.confirmation": "Вы уверены, что хотите удалить этот торрент?",
+  "remove.selectedConfirmation": "Вы уверены, что хотите удалить все выбранные торренты?",
   "remove.withData": "Также удалить загруженные файлы",
   "remove.confirm": "Удалить",
   "remove.cancel": "Отмена",

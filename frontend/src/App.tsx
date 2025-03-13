@@ -47,8 +47,12 @@ function App() {
   );
 
   // Используем хук для массовых операций
-  const { bulkOperations, handleStartSelected, handleStopSelected } =
-    useBulkOperations(torrents, selectedTorrents, refreshTorrents);
+  const {
+    bulkOperations,
+    handleStartSelected,
+    handleStopSelected,
+    handleRemoveSelected,
+  } = useBulkOperations(torrents, selectedTorrents, refreshTorrents);
 
   // Обработчик выбора всех видимых торрентов
   const onSelectAll = () => {
@@ -66,9 +70,11 @@ function App() {
           onSettings={() => setShowSettings(true)}
           onStartSelected={handleStartSelected}
           onStopSelected={handleStopSelected}
+          onRemoveSelected={() => handleRemoveSelected(false)}
           hasSelectedTorrents={hasSelectedTorrents}
           startLoading={bulkOperations.start}
           stopLoading={bulkOperations.stop}
+          removeLoading={bulkOperations.remove}
           filteredTorrents={filteredTorrents}
           selectedTorrents={selectedTorrents}
           onSelectAll={onSelectAll}

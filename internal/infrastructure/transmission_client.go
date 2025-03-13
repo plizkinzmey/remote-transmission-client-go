@@ -96,13 +96,17 @@ func (c *TransmissionClient) getTorrentSizes(t transmissionrpc.Torrent) (total u
 	total = uint64(0)
 	downloaded = uint64(0)
 
-	// Transmission возвращает размеры в битах
+	// Transmission возвращает размеры в битах, нужно преобразовать в байты
 	if t.SizeWhenDone != nil {
 		total = uint64(*t.SizeWhenDone) / 8 // Конвертируем биты в байты
 	}
 
-	if t.HaveValid != nil {
-		downloaded = uint64(*t.HaveValid) / 8 // Конвертируем биты в байты
+	// Используем DownloadedEver вместо HaveValid для учета всех скачанных данных
+	if t.DownloadedEver != nil {
+		downloaded = uint64(*t.DownloadedEver) // DownloadedEver уже в байтах
+	} else if t.HaveValid != nil {
+		// Если по какой-то причине DownloadedEver отсутствует, используем HaveValid как запасной вариант
+		downloaded = uint64(*t.HaveValid) / 8
 	}
 
 	return total, downloaded
@@ -141,13 +145,17 @@ func (c *TransmissionClient) getUploadInfo(t transmissionrpc.Torrent) (float64, 
 	return uploadRatio, uploadedBytes
 }
 
-// Добавляем новый метод для получения информации о скорости (в битах/с)
+// Добавляем новый метод для получения информации о скорости (в байтах/с)
 func (c *TransmissionClient) getSpeedInfo(t transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed int64) {
 	if t.RateDownload != nil {
-		downloadSpeed = *t.RateDownload / 8 // Конвертируем биты в быстроте загрузки/с в байты
+
+		// Уже в байтах/с, не нужно делить на 8
+		downloadSpeed = *t.RateDownload
 	}
 	if t.RateUpload != nil {
-		uploadSpeed = *t.RateUpload / 8 // Конвертируем биты в быстриц передачи/с в байты
+
+		// Уже в байтах/с, не нужно делить на 8
+		uploadSpeed = *t.RateUpload
 	}
 	return
 }
@@ -241,7 +249,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"id", "name", "status", "percentDone",
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
 		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
-		"rateDownload", "rateUpload",
+		"rateDownload", "rateUpload", "downloadedEver",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
@@ -255,6 +263,9 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
 		downloadSpeed, uploadSpeed := c.getSpeedInfo(t)
 
+		// Используем процент загрузки напрямую из API
+		progress := *t.PercentDone * 100
+
 		// Форматируем размер в зависимости от статуса
 		var sizeFormatted string
 		if status == domain.StatusDownloading {
@@ -265,19 +276,19 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 			sizeFormatted = formatBytes(totalSize, true)
 		}
 
-		// Форматируем скорости (уже в байтах/с после деления на 8 в getSpeedInfo)
+		// Форматируем скорости (значения уже в байтах/с)
 		downloadSpeedFormatted := formatBytes(uint64(downloadSpeed), true) + "/s"
 		uploadSpeedFormatted := formatBytes(uint64(uploadSpeed), true) + "/s"
 
-		// Форматируем выгруженное (в байтах)
+		// Форматируем выгруженное (значение уже в байтах)
 		uploadedFormatted := formatBytes(uint64(uploadedBytes), true)
 
 		result[i] = domain.Torrent{
 			ID:                     *t.ID,
 			Name:                   *t.Name,
 			Status:                 status,
-			Progress:               *t.PercentDone * 100,
-			Size:                   int64(totalSize), // Преобразуем в int64
+			Progress:               progress,
+			Size:                   int64(totalSize),
 			SizeFormatted:          sizeFormatted,
 			UploadRatio:            uploadRatio,
 			SeedsConnected:         peersConnected,
@@ -317,9 +328,8 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 		if err != nil {
 			fmt.Printf("failed to get free space: %v\n", err)
 		} else {
-			// Используем значение из bits
-			freeSpaceBytes := uint64(freeSpaceInfo) / 8 // Конвертируем из бит в байты
-			freeSpace = int64(freeSpaceBytes)
+			// FreeSpace возвращает значение в байтах
+			freeSpace = int64(freeSpaceInfo)
 			fmt.Printf("Free space in bytes: %d\n", freeSpace)
 		}
 	}
@@ -332,9 +342,9 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 
 	// Возвращаем статистику
 	return &domain.SessionStats{
-		TotalDownloadSpeed:  stats.DownloadSpeed / 8, // Конвертируем из бит/с в байты/с
-		TotalUploadSpeed:    stats.UploadSpeed / 8,   // Конвертируем из бит/с в байты/с
-		FreeSpace:           freeSpace,               // Значение уже в байтах
+		TotalDownloadSpeed:  stats.DownloadSpeed, // Значение уже в байтах/с
+		TotalUploadSpeed:    stats.UploadSpeed,   // Значение уже в байтах/с
+		FreeSpace:           freeSpace,           // Значение уже в байтах
 		TransmissionVersion: version,
 	}, nil
 }

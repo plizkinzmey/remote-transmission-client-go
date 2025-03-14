@@ -196,12 +196,12 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Если тема изменилась, переключить её при сохранении
     if (settings.theme !== theme) {
       toggleTheme();
     }
-    
+
     // Сохраняем настройки и закрываем форму
     onSave(settings);
     onClose();

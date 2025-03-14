@@ -29,17 +29,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Определяем предпочтения системы с деструктуризацией
   const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(
-    window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+    window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
   );
 
   // Следим за изменениями системных предпочтений
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       setSystemPrefersDark(e.matches);
     };
-    
+
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);

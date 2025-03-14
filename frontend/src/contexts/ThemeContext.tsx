@@ -18,23 +18,33 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Вспомогательная функция для определения системных предпочтений
+function getSystemPreference(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   // Получаем сохраненную тему из localStorage с деструктуризацией
-  const [theme, setThemeState] = useState<Theme>(() => {
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme");
     return (savedTheme as Theme) || "light";
   });
 
-  // Определяем предпочтения системы с деструктуризацией
-  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(
-    window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
+  // Используем деструктуризацию для системных предпочтений
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    getSystemPreference()
   );
 
   // Следим за изменениями системных предпочтений
   useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const handleChange = (e: MediaQueryListEvent) => {
@@ -47,20 +57,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Определяем актуальную тему на основе выбранной темы и системных предпочтений
   const actualTheme = useMemo<"light" | "dark">(() => {
-    if (theme === "auto") {
+    if (currentTheme === "auto") {
       return systemPrefersDark ? "dark" : "light";
     }
-    return theme === "dark" ? "dark" : "light";
-  }, [theme, systemPrefersDark]);
+    return currentTheme === "dark" ? "dark" : "light";
+  }, [currentTheme, systemPrefersDark]);
 
   // Применяем тему к документу
   useEffect(() => {
-    localStorage.setItem("theme", theme);
+    localStorage.setItem("theme", currentTheme);
     document.documentElement.setAttribute("data-theme", actualTheme);
-  }, [theme, actualTheme]);
+  }, [currentTheme, actualTheme]);
 
   const toggleTheme = () => {
-    setThemeState((prev) => {
+    setCurrentTheme((prev) => {
       if (prev === "light") return "dark";
       if (prev === "dark") return "auto";
       return "light";
@@ -68,12 +78,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
+    setCurrentTheme(newTheme);
   };
 
   const value = useMemo(
-    () => ({ theme, toggleTheme, setTheme, actualTheme }),
-    [theme, actualTheme]
+    () => ({
+      theme: currentTheme,
+      toggleTheme,
+      setTheme,
+      actualTheme,
+    }),
+    [currentTheme, actualTheme]
   );
 
   return (

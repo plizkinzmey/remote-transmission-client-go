@@ -30,7 +30,9 @@ const Modal = styled.div`
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--modal-shadow);
   width: 400px;
+  max-width: 90%;
   z-index: 1000;
+  overflow: hidden; /* Предотвращаем выход контента за границы */
 `;
 
 const Title = styled.h2`
@@ -42,6 +44,8 @@ const Title = styled.h2`
 const Text = styled.p`
   margin: 0 0 16px 0;
   color: var(--text-secondary);
+  word-break: break-word; /* Разрешаем перенос длинных слов */
+  overflow-wrap: break-word;
 `;
 
 const ButtonGroup = styled.div`

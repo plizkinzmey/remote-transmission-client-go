@@ -33,6 +33,7 @@ const Modal = styled.div`
   max-width: 90%;
   color: var(--text-primary);
   position: relative;
+  overflow: hidden; /* Предотвращаем выход контента за границы */
   animation: modalAppear 0.2s ease-out forwards;
 
   @keyframes modalAppear {
@@ -57,6 +58,8 @@ const Title = styled.h2`
 const Text = styled.p`
   margin: 0 0 16px 0;
   color: var(--text-secondary);
+  word-break: break-word; /* Разрешаем перенос длинных слов */
+  overflow-wrap: break-word;
 `;
 
 const ButtonGroup = styled.div`

@@ -196,7 +196,15 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Если тема изменилась, переключить её при сохранении
+    if (settings.theme !== theme) {
+      toggleTheme();
+    }
+    
+    // Сохраняем настройки и закрываем форму
     onSave(settings);
+    onClose();
   };
 
   const handleTestConnection = async () => {
@@ -294,14 +302,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
             <FormGroup>
               <Label>{t("settings.theme")}</Label>
               <Select
-                value={theme}
-                onChange={(e) => {
-                  toggleTheme();
+                value={settings.theme}
+                onChange={(e) =>
                   setSettings({
                     ...settings,
                     theme: e.target.value as "light" | "dark",
-                  });
-                }}
+                  })
+                }
               >
                 <option value="light">{t("settings.themeLight")}</option>
                 <option value="dark">{t("settings.themeDark")}</option>

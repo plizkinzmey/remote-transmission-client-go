@@ -6,6 +6,12 @@ import { useLocalization } from "../contexts/LocalizationContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 
+// Определяем псевдоним типа для темы
+type ThemeType = "light" | "dark" | "auto";
+
+// Создаем псевдоним для типа статуса соединения
+type ConnectionStatusType = "success" | "error" | "none";
+
 // Обновленный интерфейс с поддержкой "auto" темы
 interface Config {
   host: string;
@@ -13,16 +19,13 @@ interface Config {
   username: string;
   password: string;
   language: string;
-  theme: "light" | "dark" | "auto";
+  theme: ThemeType;
 }
 
 interface SettingsProps {
   onSave: (settings: Config) => void;
   onClose: () => void;
 }
-
-// Создаем тип-псевдоним для статуса соединения
-type ConnectionStatusType = "success" | "error" | "none";
 
 const Modal = styled.div`
   position: fixed;
@@ -166,7 +169,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   const [settings, setSettings] = useState<Config>({
     ...defaultSettings,
     language: currentLanguage,
-    theme: theme as "light" | "dark" | "auto",
+    theme: theme as ThemeType,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -182,7 +185,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
           setSettings({
             ...savedConfig,
             language: savedConfig.language || currentLanguage,
-            theme: savedConfig.theme || theme as "light" | "dark" | "auto",
+            theme: (savedConfig.theme as ThemeType) || (theme as ThemeType),
           });
         }
       } catch (error) {
@@ -307,7 +310,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                 onChange={(e) =>
                   setSettings({
                     ...settings,
-                    theme: e.target.value as "light" | "dark" | "auto",
+                    theme: e.target.value as ThemeType,
                   })
                 }
               >

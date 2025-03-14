@@ -21,13 +21,13 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Получаем сохраненную тему из localStorage
+  // Получаем сохраненную тему из localStorage с деструктуризацией
   const [theme, setThemeState] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("theme");
     return (savedTheme as Theme) || "light";
   });
 
-  // Определяем предпочтения системы
+  // Определяем предпочтения системы с деструктуризацией
   const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(
     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
   );

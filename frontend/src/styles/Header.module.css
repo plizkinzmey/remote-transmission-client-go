@@ -97,17 +97,46 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 24px;
-  padding-left: 12px; /* Уменьшаем отступ для соответствия с карточками */
+  height: 24px; /* Соответствует высоте чекбокса в TorrentItem */
+  margin-left: 20px; /* Увеличиваем отступ с 20px до 24px */
+  /* Убираем padding-left, так как у контейнера уже есть отступ 16px */
 }
 
 .selectAllCheckbox {
   width: 16px;
   height: 16px;
   margin: 0;
+  padding: 0;
   cursor: pointer;
   position: relative;
-  top: -1px; /* Тонкая подстройка для визуального выравнивания */
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background-color: var(--background-primary);
+}
+
+.selectAllCheckbox:checked {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.selectAllCheckbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.selectAllCheckbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--background-secondary);
 }
 
 .selectAllLabel {

@@ -88,6 +88,7 @@ function App() {
           isReconnecting={isReconnecting}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
+          torrents={torrents}
         />
         <div className={styles.content}>
           <div className={styles.scrollableContent}>

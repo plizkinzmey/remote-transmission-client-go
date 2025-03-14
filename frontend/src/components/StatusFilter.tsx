@@ -22,20 +22,20 @@ const FilterButton = styled.button<{ isActive: boolean }>`
     props.isActive ? "var(--accent-color)" : "transparent"};
   color: ${(props) => (props.isActive ? "#ffffff" : "var(--text-secondary)")};
   border-radius: 4px;
-  cursor: pointer;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   font-size: 12px;
   transition: all 0.2s ease;
   min-height: 24px;
   white-space: nowrap;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: ${(props) =>
       props.isActive ? "var(--accent-color)" : "var(--background-hover)"};
   }
 
   &:disabled {
     opacity: 0.5;
-    cursor: not-allowed;
+    pointer-events: none;
   }
 `;
 
@@ -69,7 +69,8 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
           key={status.key}
           isActive={selectedStatus === status.key}
           onClick={() => handleFilterClick(status.key)}
-          disabled={hasNoTorrents}
+          disabled={hasNoTorrents} // Кнопки блокируются только если нет торрентов
+          type="button"
         >
           {t(`filters.${status.key}`)}
         </FilterButton>

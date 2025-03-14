@@ -32,6 +32,7 @@ interface HeaderProps {
   isReconnecting: boolean;
   statusFilter: string | null;
   onStatusFilterChange: (status: string | null) => void;
+  torrents: Array<any>; // Добавляем проп для всех торрентов
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -53,6 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
   isReconnecting,
   statusFilter,
   onStatusFilterChange,
+  torrents,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -138,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Блок выбора всех торрентов и фильтров - убираем условие показа */}
+      {/* Блок выбора всех торрентов и фильтров */}
       <div className={styles.selectAllContainer}>
         <div className={styles.selectAllWrapper}>
           <input
@@ -163,11 +165,11 @@ export const Header: React.FC<HeaderProps> = ({
           </label>
         </div>
 
-        {/* Фильтры статусов всегда видны */}
+        {/* Фильтры статусов */}
         <StatusFilter
           selectedStatus={statusFilter}
           onStatusChange={onStatusFilterChange}
-          hasNoTorrents={filteredTorrents.length === 0}
+          hasNoTorrents={torrents.length === 0} // Теперь используем общее количество торрентов
         />
       </div>
 

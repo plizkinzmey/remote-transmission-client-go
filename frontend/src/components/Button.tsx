@@ -13,7 +13,7 @@ export const Button = styled.button<ButtonProps>`
   }};
   color: ${(props) => {
     if (props.variant === "icon") return "var(--header-button-icon)";
-    return "var(--button-text)"; // Будем использовать переменную для цвета текста
+    return "var(--button-text)";
   }};
   border: none;
   border-radius: 4px;

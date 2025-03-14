@@ -17,7 +17,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--modal-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,13 +25,13 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: #1a1a1a;
+  background: var(--card-background);
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--modal-shadow);
   width: 400px;
   max-width: 90%;
-  color: #ffffff;
+  color: var(--text-primary);
   position: relative;
   animation: modalAppear 0.2s ease-out forwards;
 
@@ -50,13 +50,13 @@ const Modal = styled.div`
 const Title = styled.h2`
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 600;
 `;
 
 const Text = styled.p`
   margin: 0 0 16px 0;
-  color: #95a5a6;
+  color: var(--text-secondary);
 `;
 
 const ButtonGroup = styled.div`
@@ -69,7 +69,7 @@ const ButtonGroup = styled.div`
 const OptionsContainer = styled.div`
   margin: 16px 0;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--background-secondary);
   border-radius: 4px;
 `;
 
@@ -79,7 +79,7 @@ const Checkbox = styled.label`
   gap: 8px;
   cursor: pointer;
   user-select: none;
-  color: #95a5a6;
+  color: var(--text-secondary);
 
   input {
     margin: 0;
@@ -88,7 +88,7 @@ const Checkbox = styled.label`
     height: 16px;
 
     &:checked {
-      accent-color: #e74c3c;
+      accent-color: var(--error-color);
     }
   }
 `;

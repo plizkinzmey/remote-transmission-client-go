@@ -16,7 +16,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--modal-overlay);
   z-index: 999;
 `;
 
@@ -25,10 +25,10 @@ const Modal = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--card-background);
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--modal-shadow);
   width: 400px;
   z-index: 1000;
 `;
@@ -36,12 +36,12 @@ const Modal = styled.div`
 const Title = styled.h2`
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: #2c3e50;
+  color: var(--text-primary);
 `;
 
 const Text = styled.p`
   margin: 0 0 16px 0;
-  color: #34495e;
+  color: var(--text-secondary);
 `;
 
 const ButtonGroup = styled.div`
@@ -60,7 +60,7 @@ const Checkbox = styled.label`
   gap: 8px;
   cursor: pointer;
   user-select: none;
-  color: #34495e;
+  color: var(--text-secondary);
 
   input {
     margin: 0;

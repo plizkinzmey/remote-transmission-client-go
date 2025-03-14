@@ -31,6 +31,7 @@
   --error-color-hover: #dc2626;
 
   /* Button colors */
+  --accent-color: #3498db; /* Акцентный цвет для кнопок */
   --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
 
   /* Torrent card colors */
@@ -91,6 +92,7 @@
   --error-color-hover: #b91c1c;
 
   /* Button colors */
+  --accent-color: #3498db; /* Акцентный цвет для кнопок */
   --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
 
   /* Torrent card colors */

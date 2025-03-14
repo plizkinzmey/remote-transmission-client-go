@@ -28,10 +28,10 @@ const Modal = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--card-background);
   padding: 0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--modal-shadow);
   width: 400px;
   z-index: 1000;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -39,13 +39,13 @@ const Modal = styled.div`
 `;
 
 const ModalHeader = styled.div`
-  background: #1a1a1a;
+  background: var(--header-background);
   padding: 12px 16px;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   user-select: none;
   h2 {
-    color: white;
+    color: var(--header-text);
     font-size: 16px;
     margin: 0;
     font-weight: 500;
@@ -82,7 +82,7 @@ const FormGroup = styled.div`
 
 const Label = styled.label`
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--text-primary);
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
 `;

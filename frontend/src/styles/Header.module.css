@@ -83,26 +83,39 @@
 
 /* Стили селекта для выбора всех */
 .selectAllContainer {
-  position: fixed;
-  top: 48px; /* Высота controlPanel */
-  left: 0;
-  right: 0;
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 16px;
   background-color: var(--background-secondary);
   border-bottom: 1px solid var(--border-color);
   z-index: 1000;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.selectAllWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding-left: 12px; /* Уменьшаем отступ для соответствия с карточками */
 }
 
 .selectAllCheckbox {
-  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  position: relative;
+  top: -1px; /* Тонкая подстройка для визуального выравнивания */
 }
 
 .selectAllLabel {
   font-size: 14px;
   color: var(--text-primary);
   user-select: none;
+  display: flex;
+  align-items: center;
 }
 
 .errorMessage {

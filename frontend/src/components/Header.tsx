@@ -1,6 +1,7 @@
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { BulkDeleteConfirmation } from "./BulkDeleteConfirmation";
+import { StatusFilter } from "./StatusFilter";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
@@ -29,6 +30,8 @@ interface HeaderProps {
   onSelectAll: () => void;
   error: string | null;
   isReconnecting: boolean;
+  statusFilter: string | null;
+  onStatusFilterChange: (status: string | null) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -48,6 +51,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectAll,
   error,
   isReconnecting,
+  statusFilter,
+  onStatusFilterChange,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -133,9 +138,9 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Блок выбора всех торрентов */}
-      {filteredTorrents.length > 0 && (
-        <div className={styles.selectAllContainer}>
+      {/* Блок выбора всех торрентов и фильтров - убираем условие показа */}
+      <div className={styles.selectAllContainer}>
+        <div className={styles.selectAllWrapper}>
           <input
             type="checkbox"
             className={styles.selectAllCheckbox}
@@ -145,6 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
             }
             onChange={onSelectAll}
             id="selectAll"
+            disabled={filteredTorrents.length === 0}
           />
           <label htmlFor="selectAll" className={styles.selectAllLabel}>
             {selectedTorrents.size > 0
@@ -156,7 +162,14 @@ export const Header: React.FC<HeaderProps> = ({
               : t("torrents.selectAll")}
           </label>
         </div>
-      )}
+
+        {/* Фильтры статусов всегда видны */}
+        <StatusFilter
+          selectedStatus={statusFilter}
+          onStatusChange={onStatusFilterChange}
+          hasNoTorrents={filteredTorrents.length === 0}
+        />
+      </div>
 
       {/* Отображение сообщений об ошибках */}
       {error && <div className={styles.errorMessage}>{error}</div>}

@@ -48,6 +48,14 @@
   "torrent.status.queued": "В очереди",
   "torrent.status.completed": "Завершен",
   
+  "filters.all": "Все",
+  "filters.downloading": "Загрузка",
+  "filters.seeding": "Раздача",
+  "filters.stopped": "Остановленные",
+  "filters.checking": "Проверка",
+  "filters.queued": "В очереди",
+  "filters.completed": "Завершенные",
+  
   "add.title": "Добавить торрент",
   "add.url": "URL торрента или Magnet-ссылка",
   "add.file": "Или выберите торрент-файл",

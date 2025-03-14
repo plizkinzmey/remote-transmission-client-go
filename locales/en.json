@@ -48,6 +48,14 @@
   "torrent.status.queued": "Queued",
   "torrent.status.completed": "Completed",
   
+  "filters.all": "All",
+  "filters.downloading": "Downloading",
+  "filters.seeding": "Seeding",
+  "filters.stopped": "Stopped",
+  "filters.checking": "Checking",
+  "filters.queued": "Queued",
+  "filters.completed": "Completed",
+  
   "add.title": "Add Torrent",
   "add.url": "Torrent URL or Magnet Link",
   "add.file": "Or select a torrent file",

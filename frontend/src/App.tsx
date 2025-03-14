@@ -20,6 +20,7 @@ import { useBulkOperations } from "./hooks/useBulkOperations";
  */
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddTorrent, setShowAddTorrent] = useState(false);
 
@@ -43,10 +44,14 @@ function App() {
     handleSettingsSave,
   } = useTorrentData();
 
-  // Фильтрация торрентов по поисковому запросу
-  const filteredTorrents = torrents.filter((torrent) =>
-    torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Фильтрация торрентов по поисковому запросу и статусу
+  const filteredTorrents = torrents.filter((torrent) => {
+    const matchesSearch = torrent.Name.toLowerCase().includes(
+      searchTerm.toLowerCase()
+    );
+    const matchesStatus = !statusFilter || torrent.Status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   // Используем хук для массовых операций
   const {
@@ -81,11 +86,13 @@ function App() {
           onSelectAll={onSelectAll}
           error={error}
           isReconnecting={isReconnecting}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
         />
         <div className={styles.content}>
           <div className={styles.scrollableContent}>
             <TorrentList
-              torrents={torrents}
+              torrents={filteredTorrents}
               searchTerm={searchTerm}
               selectedTorrents={selectedTorrents}
               onSelect={handleTorrentSelect}

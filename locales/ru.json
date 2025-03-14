@@ -20,6 +20,7 @@
   "settings.theme": "Тема",
   "settings.themeLight": "Светлая",
   "settings.themeDark": "Темная",
+  "settings.themeAuto": "Динамическая",
   
   "torrents.search": "Поиск торрентов...",
   "torrents.selected": "Выбрано: {0}/{1}",

@@ -7,4 +7,5 @@ type Config struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Language string `json:"language"` // Added for localization support
+	Theme    string `json:"theme"`    // Added for theme support: "light", "dark", "auto"
 }

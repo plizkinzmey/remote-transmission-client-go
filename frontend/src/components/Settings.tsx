@@ -6,13 +6,14 @@ import { useLocalization } from "../contexts/LocalizationContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 
+// Обновленный интерфейс с поддержкой "auto" темы
 interface Config {
   host: string;
   port: number;
   username: string;
   password: string;
   language: string;
-  theme: "light" | "dark";
+  theme: "light" | "dark" | "auto";
 }
 
 interface SettingsProps {
@@ -115,7 +116,7 @@ const Select = styled.select`
 
 const ButtonGroup = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; // Меняем с flex-end на center
   gap: 8px;
   margin-top: 16px;
 `;
@@ -161,11 +162,11 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
     availableLanguages,
     isLoading: isLocalizationLoading,
   } = useLocalization();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<Config>({
     ...defaultSettings,
     language: currentLanguage,
-    theme: theme,
+    theme: theme as "light" | "dark" | "auto",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -181,7 +182,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
           setSettings({
             ...savedConfig,
             language: savedConfig.language || currentLanguage,
-            theme: theme,
+            theme: savedConfig.theme || theme as "light" | "dark" | "auto",
           });
         }
       } catch (error) {
@@ -196,12 +197,12 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Если тема изменилась, переключить её при сохранении
+    
+    // Если тема изменилась, применяем новую тему
     if (settings.theme !== theme) {
-      toggleTheme();
+      setTheme(settings.theme);
     }
-
+    
     // Сохраняем настройки и закрываем форму
     onSave(settings);
     onClose();
@@ -306,12 +307,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                 onChange={(e) =>
                   setSettings({
                     ...settings,
-                    theme: e.target.value as "light" | "dark",
+                    theme: e.target.value as "light" | "dark" | "auto",
                   })
                 }
               >
                 <option value="light">{t("settings.themeLight")}</option>
                 <option value="dark">{t("settings.themeDark")}</option>
+                <option value="auto">{t("settings.themeAuto")}</option>
               </Select>
             </FormGroup>
             <StatusMessage status={connectionStatus}>

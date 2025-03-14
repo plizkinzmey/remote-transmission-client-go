@@ -14,6 +14,7 @@
   "settings.theme": "Theme",
   "settings.themeLight": "Light",
   "settings.themeDark": "Dark",
+  "settings.themeAuto": "Auto",
   "settings.save": "Save",
   "settings.cancel": "Cancel",
   "settings.testConnection": "Test Connection",

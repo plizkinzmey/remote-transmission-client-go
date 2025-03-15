@@ -190,3 +190,23 @@ func (a *App) TestConnection(configJson string) error {
 	_, err = client.GetAll()
 	return err
 }
+
+// handleFileOpen обрабатывает открытие файла через систему
+func (a *App) handleFileOpen(filePath string) {
+	if a.service == nil {
+		fmt.Println("Сервис не инициализирован, файл не будет обработан")
+		return
+	}
+
+	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
+		fmt.Printf("Обработка торрент файла: %s\n", filePath)
+
+		// Добавляем торрент файл напрямую через сервис
+		err := a.service.AddTorrentFile(filePath)
+		if err != nil {
+			fmt.Printf("Ошибка добавления торрент файла: %v\n", err)
+		} else {
+			fmt.Printf("Торрент файл успешно добавлен: %s\n", filePath)
+		}
+	}
+}

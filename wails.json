@@ -12,7 +12,16 @@
   },
   "info": {
     "productName": "Transmission Client",
-    "comments": "Transmission Desktop Client"
+    "comments": "Transmission Desktop Client",
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "BitTorrent File",
+        "description": "BitTorrent File",
+        "iconName": "appicon",
+        "role": "Viewer"
+      }
+    ]
   },
   "windows": {
     "webviewIsTransparent": false,

@@ -35,6 +35,7 @@ func main() {
 				Message: "Desktop client for Transmission",
 				Icon:    nil,
 			},
+			OnFileOpen: app.handleFileOpen,
 		},
 		Bind: []interface{}{
 			app,

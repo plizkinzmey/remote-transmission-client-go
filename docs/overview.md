@@ -1,35 +1,85 @@
 # Transmission Client Go Overview
 
 ## Introduction
-Transmission Client Go is a desktop application that provides a modern, user-friendly interface for managing torrents through the Transmission BitTorrent client. Built with Go and React, it combines the power of native desktop applications with the flexibility of web technologies.
+
+Transmission Client Go — это современное десктопное приложение, предоставляющее удобный пользовательский интерфейс для управления торрентами через Transmission BitTorrent клиент. Построенное на Go и React, оно сочетает мощь нативных десктопных приложений с гибкостью веб-технологий.
 
 ## Key Features
-- Modern desktop interface for Transmission
-- Secure credential storage using system keyring
-- Real-time torrent status monitoring
-- Support for adding and managing torrents
-- Search and filter functionality
-- Secure communication with Transmission daemon
-- Cross-platform support (macOS, Windows, Linux)
+
+- Современный десктопный интерфейс для Transmission
+- Безопасное хранение учетных данных с использованием системного хранилища ключей
+- Мониторинг состояния торрентов в реальном времени
+- Поддержка добавления и управления торрентами
+- Функциональность поиска и фильтрации
+- Безопасное взаимодействие с демоном Transmission
+- Поддержка нескольких платформ (macOS, Windows, Linux)
+- Мультиязычный интерфейс (русский и английский)
+- Светлая и тёмная темы оформления
+- Ассоциация файлов .torrent с приложением
 
 ## Technology Stack
-- **Backend:**
-  - Go 1.24.0
-  - Wails v2 (desktop application framework)
-  - TransmissionRPC library for communication with Transmission daemon
-  - System keyring integration for secure credential storage
 
-- **Frontend:**
-  - React 
-  - TypeScript
-  - Vite
-  - CSS Modules for styling
+### Backend:
+- Go 1.24.0
+- Wails v2 (фреймворк для десктопных приложений)
+- TransmissionRPC библиотека для взаимодействия с демоном Transmission
+- Интеграция с системным хранилищем ключей для безопасного хранения учетных данных
+
+### Frontend:
+- React 18
+- TypeScript
+- Vite
+- CSS Modules для стилизации
+- React Context API для управления состоянием
+
+## User Interface
+
+Интерфейс приложения разделен на несколько ключевых компонентов:
+
+1. **Header** — верхняя панель с кнопками управления и поиском
+2. **Torrent List** — список торрентов с детальной информацией о каждом
+3. **Status Filter** — фильтрация торрентов по их статусу
+4. **Settings** — настройки подключения к серверу Transmission
+5. **Add Torrent** — модальное окно для добавления новых торрентов
 
 ## Architecture
-The application follows Clean Architecture principles with distinct layers:
-- Domain Layer (core business logic)
-- Application Layer (use cases)
-- Infrastructure Layer (external services integration)
-- Presentation Layer (UI components)
 
-See [architecture.md](architecture.md) for detailed architectural information.
+Приложение следует принципам Чистой Архитектуры с четко разделенными слоями:
+
+- Domain Layer (основная бизнес-логика)
+- Application Layer (варианты использования)
+- Infrastructure Layer (интеграция с внешними сервисами)
+- Presentation Layer (UI компоненты)
+
+Более подробную архитектурную информацию можно найти в [architecture.md](architecture.md).
+
+## File Structure
+
+```
+├── app.go                 # Основная логика приложения
+├── main.go                # Точка входа в приложение
+├── wails.json             # Конфигурация Wails
+├── build/                 # Каталог для сборки
+├── frontend/              # React приложение
+├── internal/              # Внутренняя логика приложения
+│   ├── application/       # Слой приложения
+│   ├── domain/            # Слой домена
+│   └── infrastructure/    # Инфраструктурный слой
+└── locales/               # Файлы локализации
+```
+
+## Localization
+
+Приложение поддерживает несколько языков через систему локализации:
+- English (default)
+- Русский
+
+Локализация управляется через JSON-файлы в директории `locales/`.
+
+## Theming
+
+Пользователи могут переключаться между светлой и темной темами. Тема сохраняется между сеансами и может автоматически соответствовать системным настройкам.
+
+## File Associations
+
+Приложение ассоциировано с файлами .torrent, что позволяет открывать торрент-файлы напрямую через интерфейс операционной системы.

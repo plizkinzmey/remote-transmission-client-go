@@ -1,73 +1,144 @@
-# Installation and Setup Guide
+# Руководство по установке и настройке
 
-## Prerequisites
-- Go 1.24 or higher
-- Node.js 16+ and npm
-- Transmission daemon running and accessible
-- Wails CLI installed (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
+## Требования
 
-## Development Setup
+- Go 1.24 или выше
+- Node.js 16+ и npm
+- Запущенный и доступный демон Transmission
+- Установленный Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
-### 1. Clone the Repository
+## Установка для разработки
+
+### 1. Клонирование репозитория
+
 ```bash
 git clone https://github.com/yourusername/transmission-client-go.git
 cd transmission-client-go
 ```
 
-### 2. Install Dependencies
+### 2. Установка зависимостей
+
 ```bash
-# Install frontend dependencies
+# Установка зависимостей фронтенда
 cd frontend
 npm install
 cd ..
 
-# Install Go dependencies
+# Установка Go зависимостей
 go mod download
 ```
 
-### 3. Development Mode
+### 3. Режим разработки
+
 ```bash
 wails dev
 ```
-This will start the application in development mode with hot reload.
 
-### 4. Building for Production
+Это запустит приложение в режиме разработки с горячей перезагрузкой.
+
+### 4. Сборка для продакшн
+
 ```bash
 wails build
 ```
-The built application will be available in the `build/bin` directory.
 
-## Configuration
+Собранное приложение будет доступно в каталоге `build/bin`.
 
-### Transmission Daemon Settings
-- Host: The hostname where Transmission daemon is running
-- Port: Default is 9091
-- Username & Password: If authentication is enabled
-- HTTPS: For secure connections
+## Сборка для разных платформ
 
-### Application Settings
-Settings are stored securely using the system keyring:
-1. Launch the application
-2. Click on Settings
-3. Enter your Transmission daemon details
-4. Click Save
+### macOS
 
-## Troubleshooting
+```bash
+wails build -platform darwin/universal
+```
 
-### Common Issues
-1. Connection Failed
-   - Verify Transmission daemon is running
-   - Check credentials
-   - Ensure firewall allows connection
+Это создаст универсальное приложение для macOS, работающее как на Intel, так и на Apple Silicon.
 
-2. Build Issues
-   - Update Wails CLI
-   - Clean build directory
-   - Verify Go and Node.js versions
+### Windows
 
-### Logs
-- Development logs are available in the console
-- Production logs location varies by platform:
+```bash
+wails build -platform windows/amd64
+```
+
+### Linux
+
+```bash
+wails build -platform linux/amd64
+```
+
+## Настройка файловых ассоциаций
+
+Приложение сконфигурировано для ассоциации с файлами `.torrent`. После установки приложения:
+
+- **macOS**: Приложение автоматически ассоциируется с .torrent файлами или можно настроить вручную через контекстное меню файла -> Информация -> Открывать в программе
+- **Windows**: Необходимо выбрать приложение при первом открытии .torrent файла
+
+## Настройки Transmission
+
+### Демон Transmission
+
+- Хост: Имя хоста, где запущен демон Transmission
+- Порт: По умолчанию 9091
+- Имя пользователя и пароль: Если включена аутентификация
+- HTTPS: Для безопасных соединений
+
+### Настройки приложения
+
+Настройки сохраняются безопасно с использованием системного хранилища ключей:
+
+1. Запустите приложение
+2. Нажмите на Настройки
+3. Введите данные для подключения к демону Transmission
+4. Нажмите Сохранить
+
+## Управление темами
+
+Приложение поддерживает светлую и темную темы. Для переключения:
+
+1. Запустите приложение
+2. Нажмите на кнопку переключения темы в правом верхнем углу
+
+## Смена языка
+
+Для изменения языка интерфейса:
+
+1. Откройте настройки приложения
+2. Выберите нужный язык из выпадающего списка
+3. Сохраните настройки
+
+## Устранение неполадок
+
+### Частые проблемы
+
+1. Ошибка подключения
+   - Убедитесь, что демон Transmission запущен
+   - Проверьте учетные данные
+   - Убедитесь, что брандмауэр разрешает соединение
+   - Проверьте правильность адреса и порта
+
+2. Проблемы сборки
+   - Обновите Wails CLI
+   - Очистите директорию сборки
+   - Проверьте версии Go и Node.js
+   - Запустите `go mod tidy` для обновления зависимостей
+
+3. Проблемы с файловыми ассоциациями
+   - В macOS: Проверьте права доступа приложения
+   - В Windows: Повторно зарегистрируйте приложение как обработчик .torrent файлов
+
+### Логи
+
+- В режиме разработки логи доступны в консоли
+- Расположение логов в продакшн-версии:
   - macOS: ~/Library/Logs/transmission-client-go/
   - Linux: ~/.local/share/transmission-client-go/logs/
   - Windows: %APPDATA%\transmission-client-go\logs\
+
+## Обновление приложения
+
+Для обновления до последней версии:
+
+1. Сделайте резервную копию ваших настроек
+2. Получите последние изменения из репозитория
+3. Соберите приложение заново
+4. Замените установленную версию

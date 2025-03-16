@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TorrentData } from "../components/TorrentList";
 import { useLocalization } from "../contexts/LocalizationContext";
 import {
@@ -45,6 +45,7 @@ export function useTorrentData() {
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const maxReconnectAttempts = 3;
 
   // Обработчик выбора/снятия выбора с торрента
@@ -97,7 +98,8 @@ export function useTorrentData() {
   };
 
   // Функция для обновления списка торрентов
-  const refreshTorrents = async () => {
+  const refreshTorrents = useCallback(async () => {
+    setIsLoading(true);
     try {
       const response = await GetTorrents();
       setTorrents(response);
@@ -125,11 +127,13 @@ export function useTorrentData() {
           );
         }
       }
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [isReconnecting, reconnectAttempts, t]);
 
   // Функция для обновления статистики сессии
-  const refreshSessionStats = async () => {
+  const refreshSessionStats = useCallback(async () => {
     try {
       const stats = await GetSessionStats();
       if (stats) {
@@ -139,7 +143,7 @@ export function useTorrentData() {
       console.error("Failed to fetch session stats:", error);
       // Не показываем ошибку пользователю, просто логируем
     }
-  };
+  }, []);
 
   // Инициализация приложения при загрузке
   useEffect(() => {
@@ -153,7 +157,8 @@ export function useTorrentData() {
             // Если есть сохраненные настройки, используем их
             await Initialize(JSON.stringify(savedConfig));
             setIsInitialized(true);
-            refreshTorrents(); // Первоначальная загрузка
+            refreshSessionStats(); // Сразу запрашиваем статистику
+            refreshTorrents(); // Затем запускаем загрузку торрентов
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
             setError(t("errors.connectionFailed", String(initError)));
@@ -173,29 +178,28 @@ export function useTorrentData() {
     initializeApp();
   }, []);
 
-  // Эффект для обновления списка торрентов и статистики
+  // Эффект для периодического обновления данных
   useEffect(() => {
-    let intervalId: number;
-    if (isInitialized) {
-      // Функция для обновления всех данных
-      const updateData = async () => {
-        await refreshTorrents();
-        await refreshSessionStats();
-      };
+    let torrentsInterval: number;
+    let statsInterval: number;
 
-      // Запускаем первоначальное обновление
-      updateData();
-      // Устанавливаем интервал обновления каждые 3 секунды
-      intervalId = window.setInterval(updateData, 3000);
+    if (isInitialized) {
+      // Обновляем статистику каждую секунду
+      statsInterval = window.setInterval(refreshSessionStats, 1000);
+      
+      // Обновляем список торрентов каждые 3 секунды
+      torrentsInterval = window.setInterval(refreshTorrents, 3000);
     }
 
-    // Очистка при размонтировании
     return () => {
-      if (intervalId) {
-        window.clearInterval(intervalId);
+      if (statsInterval) {
+        window.clearInterval(statsInterval);
+      }
+      if (torrentsInterval) {
+        window.clearInterval(torrentsInterval);
       }
     };
-  }, [isInitialized]);
+  }, [isInitialized, refreshSessionStats, refreshTorrents]);
 
   // Обработчик добавления торрента
   const handleAddTorrent = async (url: string) => {
@@ -289,6 +293,7 @@ export function useTorrentData() {
     isReconnecting,
     hasSelectedTorrents,
     sessionStats,
+    isLoading,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,

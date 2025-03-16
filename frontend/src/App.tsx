@@ -102,14 +102,12 @@ function App() {
               onStop={handleStopTorrent}
             />
           </div>
-          {sessionStats && (
-            <Footer
-              totalDownloadSpeed={sessionStats.TotalDownloadSpeed}
-              totalUploadSpeed={sessionStats.TotalUploadSpeed}
-              freeSpace={sessionStats.FreeSpace}
-              transmissionVersion={sessionStats.TransmissionVersion}
-            />
-          )}
+          <Footer
+            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
+            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
+            freeSpace={sessionStats?.FreeSpace}
+            transmissionVersion={sessionStats?.TransmissionVersion}
+          />
         </div>
 
         {/* Модальные окна */}

@@ -3,6 +3,7 @@ import styled from "@emotion/styled";
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { Portal } from './Portal';
 
 interface DeleteConfirmationProps {
   torrentName: string;
@@ -84,7 +85,7 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
   }
 
   return (
-    <>
+    <Portal>
       <Overlay onClick={onCancel} />
       <Modal>
         <Title>{t("remove.title")}</Title>
@@ -115,6 +116,6 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
           </Button>
         </ButtonGroup>
       </Modal>
-    </>
+    </Portal>
   );
 };

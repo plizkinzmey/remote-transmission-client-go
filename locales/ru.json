@@ -48,6 +48,9 @@
   "torrent.status.checking": "Проверка",
   "torrent.status.queued": "В очереди",
   "torrent.status.completed": "Завершен",
+  "torrent.loadingFiles": "Загрузка списка файлов...",
+  "torrent.files": "Файлы",
+  "torrent.fileList": "Список файлов",
   
   "filters.all": "Все",
   "filters.downloading": "Загрузка",
@@ -89,7 +92,11 @@
   "errors.failedToStopTorrent": "Не удалось остановить торрент: {0}",
   "errors.failedToStartTorrents": "Не удалось запустить выбранные торренты: {0}",
   "errors.failedToStopTorrents": "Не удалось остановить выбранные торренты: {0}",
+  "errors.failedToLoadFiles": "Не удалось загрузить список файлов: {0}",
+  "errors.failedToUpdateFile": "Не удалось обновить состояние файла: {0}",
   
   "language.en": "Английский",
-  "language.ru": "Русский"
+  "language.ru": "Русский",
+  
+  "common.close": "Закрыть"
 }

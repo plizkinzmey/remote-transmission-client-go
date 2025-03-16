@@ -11,6 +11,16 @@ const (
 	StatusQueued      TorrentStatus = "queued"
 )
 
+// Структура для представления файла в торренте
+type TorrentFile struct {
+	ID       int
+	Name     string
+	Path     string
+	Size     int64
+	Progress float64
+	Wanted   bool
+}
+
 type Torrent struct {
 	ID                     int64
 	Name                   string
@@ -30,6 +40,7 @@ type Torrent struct {
 	DownloadSpeedFormatted string
 	UploadSpeedFormatted   string
 }
+
 type TorrentRepository interface {
 	GetAll() ([]Torrent, error)
 	Add(url string) error
@@ -38,4 +49,8 @@ type TorrentRepository interface {
 	Start(ids []int64) error
 	Stop(ids []int64) error
 	GetSessionStats() (*SessionStats, error) // Новый метод для получения статистики сессии
+	
+	// Новые методы для работы с файлами
+	GetTorrentFiles(id int64) ([]TorrentFile, error)
+	SetFilesWanted(id int64, fileIds []int, wanted bool) error
 }

@@ -41,3 +41,12 @@ func (s *TorrentService) StopTorrents(ids []int64) error {
 func (s *TorrentService) GetSessionStats() (*domain.SessionStats, error) {
 	return s.repo.GetSessionStats()
 }
+
+// Новые методы для работы с файлами
+func (s *TorrentService) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
+	return s.repo.GetTorrentFiles(id)
+}
+
+func (s *TorrentService) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
+	return s.repo.SetFilesWanted(id, fileIds, wanted)
+}

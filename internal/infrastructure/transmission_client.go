@@ -349,6 +349,74 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 	}, nil
 }
 
+// GetTorrentFiles возвращает список файлов торрента
+func (c *TransmissionClient) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
+	torrents, err := c.client.TorrentGet(c.ctx, []string{
+		"files", "fileStats", "name",
+	}, []int64{id})
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to get torrent files: %w", err)
+	}
+
+	if len(torrents) == 0 {
+		return nil, fmt.Errorf("torrent not found")
+	}
+
+	t := torrents[0]
+	if len(t.Files) == 0 || len(t.FileStats) == 0 {
+		return nil, fmt.Errorf("no files information available")
+	}
+
+	result := make([]domain.TorrentFile, len(t.Files))
+	for i, file := range t.Files {
+		stats := t.FileStats[i]
+		
+		// Считаем прогресс
+		progress := float64(0)
+		if file.Length > 0 {
+			progress = float64(stats.BytesCompleted) / float64(file.Length) * 100
+		}
+
+		result[i] = domain.TorrentFile{
+			ID:       i,
+			Name:     filepath.Base(file.Name),
+			Path:     file.Name,
+			Size:     file.Length,
+			Progress: progress,
+			Wanted:   stats.Wanted,
+		}
+	}
+
+	return result, nil
+}
+
+// SetFilesWanted устанавливает, нужно ли загружать файлы
+func (c *TransmissionClient) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
+	// Преобразуем []int в []int64
+	fileIds64 := make([]int64, len(fileIds))
+	for i, v := range fileIds {
+		fileIds64[i] = int64(v)
+	}
+
+	payload := transmissionrpc.TorrentSetPayload{
+		IDs: []int64{id},
+	}
+
+	if wanted {
+		payload.FilesWanted = fileIds64
+	} else {
+		payload.FilesUnwanted = fileIds64
+	}
+
+	err := c.client.TorrentSet(c.ctx, payload)
+	if err != nil {
+		return fmt.Errorf("failed to set files wanted state: %w", err)
+	}
+
+	return nil
+}
+
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
 	// Если торрент остановлен и загружен полностью, считаем его завершенным
 	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {

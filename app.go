@@ -191,6 +191,22 @@ func (a *App) TestConnection(configJson string) error {
 	return err
 }
 
+// GetTorrentFiles returns the list of files in a torrent
+func (a *App) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
+	if a.service == nil {
+		return nil, fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.GetTorrentFiles(id)
+}
+
+// SetFilesWanted sets whether files should be downloaded
+func (a *App) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.SetFilesWanted(id, fileIds, wanted)
+}
+
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
 	if a.service == nil {

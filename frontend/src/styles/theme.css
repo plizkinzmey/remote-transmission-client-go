@@ -119,3 +119,17 @@
   /* Accent colors */
   --accent-color-light: rgba(52, 152, 219, 0.15);
 }
+
+:root {
+  /* TorrentContent */
+  --background-tertiary: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --error-color: #dc3545;
+}
+
+[data-theme="dark"] {
+  /* TorrentContent */
+  --background-tertiary: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --error-color: #ff4d4d;
+}

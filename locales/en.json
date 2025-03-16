@@ -48,6 +48,9 @@
   "torrent.status.checking": "Checking",
   "torrent.status.queued": "Queued",
   "torrent.status.completed": "Completed",
+  "torrent.loadingFiles": "Loading file list...",
+  "torrent.files": "Files",
+  "torrent.fileList": "File List",
   
   "filters.all": "All",
   "filters.downloading": "Downloading",
@@ -89,7 +92,11 @@
   "errors.failedToStopTorrent": "Failed to stop torrent: {0}",
   "errors.failedToStartTorrents": "Failed to start selected torrents: {0}",
   "errors.failedToStopTorrents": "Failed to stop selected torrents: {0}",
+  "errors.failedToLoadFiles": "Failed to load file list: {0}",
+  "errors.failedToUpdateFile": "Failed to update file state: {0}",
   
   "language.en": "English",
-  "language.ru": "Russian"
+  "language.ru": "Russian",
+  
+  "common.close": "Close"
 }

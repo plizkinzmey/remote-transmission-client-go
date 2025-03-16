@@ -51,6 +51,7 @@
   "torrent.loadingFiles": "Loading file list...",
   "torrent.files": "Files",
   "torrent.fileList": "File List",
+  "torrent.selectAll": "Select All",
   
   "filters.all": "All",
   "filters.downloading": "Downloading",
@@ -94,6 +95,7 @@
   "errors.failedToStopTorrents": "Failed to stop selected torrents: {0}",
   "errors.failedToLoadFiles": "Failed to load file list: {0}",
   "errors.failedToUpdateFile": "Failed to update file state: {0}",
+  "errors.failedToUpdateFiles": "Failed to update files state: {0}",
   
   "language.en": "English",
   "language.ru": "Russian",

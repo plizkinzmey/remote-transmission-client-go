@@ -1,5 +1,6 @@
 import { TorrentItem } from "./TorrentItem";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { LoadingSpinner } from "./LoadingSpinner";
 import styles from "../styles/TorrentList.module.css";
 
 // Интерфейс для торрента
@@ -31,6 +32,7 @@ interface TorrentListProps {
   onRemove: (id: number, deleteData: boolean) => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
+  isLoading?: boolean;
 }
 
 /**
@@ -45,6 +47,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
   onRemove,
   onStart,
   onStop,
+  isLoading = false,
 }) => {
   const { t } = useLocalization();
 
@@ -53,47 +56,57 @@ export const TorrentList: React.FC<TorrentListProps> = ({
     torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Функция для рендеринга содержимого списка
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className={styles.loadingContainer}>
+          <LoadingSpinner />
+          <div className={styles.loadingText}>{t("torrents.loading")}</div>
+        </div>
+      );
+    }
+
+    if (filteredTorrents.length > 0) {
+      return filteredTorrents.map((torrent) => (
+        <TorrentItem
+          key={torrent.ID}
+          id={torrent.ID}
+          name={torrent.Name}
+          status={torrent.Status}
+          progress={torrent.Progress}
+          size={torrent.Size}
+          sizeFormatted={torrent.SizeFormatted}
+          uploadRatio={torrent.UploadRatio}
+          seedsConnected={torrent.SeedsConnected}
+          seedsTotal={torrent.SeedsTotal}
+          peersConnected={torrent.PeersConnected}
+          peersTotal={torrent.PeersTotal}
+          uploadedBytes={torrent.UploadedBytes}
+          uploadedFormatted={torrent.UploadedFormatted}
+          downloadSpeed={torrent.DownloadSpeed}
+          uploadSpeed={torrent.UploadSpeed}
+          downloadSpeedFormatted={torrent.DownloadSpeedFormatted}
+          uploadSpeedFormatted={torrent.UploadSpeedFormatted}
+          selected={selectedTorrents.has(torrent.ID)}
+          onSelect={onSelect}
+          onRemove={onRemove}
+          onStart={onStart}
+          onStop={onStop}
+        />
+      ));
+    }
+
+    return (
+      <div className={styles.noTorrents}>
+        {searchTerm ? t("torrents.noTorrentsFound") : t("torrents.noTorrents")}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.torrentListContainer}>
-      <div className={styles.torrentList}>
-        {filteredTorrents.length > 0 ? (
-          // Отображаем список торрентов
-          filteredTorrents.map((torrent) => (
-            <TorrentItem
-              key={torrent.ID}
-              id={torrent.ID}
-              name={torrent.Name}
-              status={torrent.Status}
-              progress={torrent.Progress}
-              size={torrent.Size}
-              sizeFormatted={torrent.SizeFormatted}
-              uploadRatio={torrent.UploadRatio}
-              seedsConnected={torrent.SeedsConnected}
-              seedsTotal={torrent.SeedsTotal}
-              peersConnected={torrent.PeersConnected}
-              peersTotal={torrent.PeersTotal}
-              uploadedBytes={torrent.UploadedBytes}
-              uploadedFormatted={torrent.UploadedFormatted}
-              downloadSpeed={torrent.DownloadSpeed}
-              uploadSpeed={torrent.UploadSpeed}
-              downloadSpeedFormatted={torrent.DownloadSpeedFormatted}
-              uploadSpeedFormatted={torrent.UploadSpeedFormatted}
-              selected={selectedTorrents.has(torrent.ID)}
-              onSelect={onSelect}
-              onRemove={onRemove}
-              onStart={onStart}
-              onStop={onStop}
-            />
-          ))
-        ) : (
-          // Сообщение об отсутствии торрентов
-          <div className={styles.noTorrents}>
-            {searchTerm
-              ? t("torrents.noTorrentsFound")
-              : t("torrents.noTorrents")}
-          </div>
-        )}
-      </div>
+      <div className={styles.torrentList}>{renderContent()}</div>
     </div>
   );
 };

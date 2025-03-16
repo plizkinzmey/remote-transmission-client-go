@@ -30,6 +30,7 @@
   "torrents.stopSelected": "Остановить выбранные торренты",
   "torrents.selectAll": "Выбрать все",
   "torrents.selectTorrent": "Выбрать торрент {0}",
+  "torrents.loading": "Загрузка списка торрентов...",
   
   "torrent.start": "Запустить",
   "torrent.stop": "Остановить",

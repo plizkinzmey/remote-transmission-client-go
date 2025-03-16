@@ -30,6 +30,7 @@
   "torrents.stopSelected": "Stop selected torrents",
   "torrents.selectAll": "Select All",
   "torrents.selectTorrent": "Select torrent {0}",
+  "torrents.loading": "Loading torrent list...",
   
   "torrent.start": "Start",
   "torrent.stop": "Stop",

@@ -33,6 +33,7 @@ function App() {
     isReconnecting,
     hasSelectedTorrents,
     sessionStats,
+    isLoading,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,
@@ -100,6 +101,7 @@ function App() {
               onRemove={handleRemoveTorrent}
               onStart={handleStartTorrent}
               onStop={handleStopTorrent}
+              isLoading={isLoading}
             />
           </div>
           <Footer

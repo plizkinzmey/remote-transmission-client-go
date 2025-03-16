@@ -2,10 +2,9 @@ import React from "react";
 import styled from "@emotion/styled";
 
 const SpinnerWrapper = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;
 
 const Spinner = styled.div`

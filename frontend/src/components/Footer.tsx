@@ -60,12 +60,12 @@ export const Footer: React.FC<FooterProps> = ({
     const units = ["B/s", "KB/s", "MB/s", "GB/s"];
     let value = bytesPerSecond;
     let unitIndex = 0;
-    
+
     while (value >= 1024 && unitIndex < units.length - 1) {
       value /= 1024;
       unitIndex++;
     }
-    
+
     return `${value.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -74,12 +74,12 @@ export const Footer: React.FC<FooterProps> = ({
     const units = ["B", "KB", "MB", "GB", "TB"];
     let value = bytes;
     let unitIndex = 0;
-    
+
     while (value >= 1024 && unitIndex < units.length - 1) {
       value /= 1024;
       unitIndex++;
     }
-    
+
     return `${value.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -95,12 +95,8 @@ export const Footer: React.FC<FooterProps> = ({
           {formatSpeed(totalUploadSpeed)}
         </SpeedItem>
       </SpeedInfo>
-      <div>
-        {t("footer.freeSpace", formatBytes(freeSpace))}
-      </div>
-      <div>
-        {t("footer.version", transmissionVersion ?? "?")}
-      </div>
+      <div>{t("footer.freeSpace", formatBytes(freeSpace))}</div>
+      <div>{t("footer.version", transmissionVersion ?? "?")}</div>
     </FooterContainer>
   );
 };

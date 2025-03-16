@@ -46,6 +46,7 @@ export function useTorrentData() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const maxReconnectAttempts = 3;
 
   // Обработчик выбора/снятия выбора с торрента
@@ -99,13 +100,17 @@ export function useTorrentData() {
 
   // Функция для обновления списка торрентов
   const refreshTorrents = useCallback(async () => {
-    setIsLoading(true);
+    if (isFirstLoad) {
+      setIsLoading(true);
+    }
+
     try {
       const response = await GetTorrents();
       setTorrents(response);
       setError(null);
       setReconnectAttempts(0);
       setIsReconnecting(false);
+      setIsFirstLoad(false);
     } catch (error) {
       console.error("Failed to fetch torrents:", error);
       if (!isReconnecting) {
@@ -130,7 +135,7 @@ export function useTorrentData() {
     } finally {
       setIsLoading(false);
     }
-  }, [isReconnecting, reconnectAttempts, t]);
+  }, [isReconnecting, reconnectAttempts, t, isFirstLoad]);
 
   // Функция для обновления статистики сессии
   const refreshSessionStats = useCallback(async () => {
@@ -186,7 +191,7 @@ export function useTorrentData() {
     if (isInitialized) {
       // Обновляем статистику каждую секунду
       statsInterval = window.setInterval(refreshSessionStats, 1000);
-      
+
       // Обновляем список торрентов каждые 3 секунды
       torrentsInterval = window.setInterval(refreshTorrents, 3000);
     }
@@ -293,7 +298,7 @@ export function useTorrentData() {
     isReconnecting,
     hasSelectedTorrents,
     sessionStats,
-    isLoading,
+    isLoading: isLoading && isFirstLoad,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,

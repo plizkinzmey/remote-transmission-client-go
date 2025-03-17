@@ -37,6 +37,7 @@ interface FileNode {
   children?: FileNode[];
   parent?: FileNode;
   expanded?: boolean;
+  indeterminate?: boolean; // Добавляем новое свойство
 }
 
 // Styled components
@@ -356,6 +357,7 @@ const calculateDirStats = (
   node.Size = totalSize;
   node.Progress = totalCount > 0 ? totalProgressSum / totalCount : 0;
   node.Wanted = allWanted; // Устанавливаем Wanted для каталога на основе вложенных файлов
+  node.indeterminate = anyWanted && !allWanted; // Устанавливаем промежуточное состояние
 
   return {
     size: totalSize,
@@ -549,6 +551,11 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
             <Checkbox
               type="checkbox"
               checked={node.Wanted}
+              ref={(el) => {
+                if (el) {
+                  el.indeterminate = !!node.indeterminate;
+                }
+              }}
               onChange={(e) => toggleNode(node, e.target.checked)}
             />
             <FileName title={node.Name}>{node.Name}</FileName>

@@ -304,10 +304,10 @@ const createNodeForPath = (
     Path: fullPath,
     Size: isFile ? file.Size : 0,
     Progress: isFile ? file.Progress : 0,
-    Wanted: isFile ? file.Wanted : true,
+    Wanted: isFile ? file.Wanted : false, // Изменяем на false для каталогов
     isDirectory: !isFile,
     children: !isFile ? [] : undefined,
-    expanded: true, // По умолчанию все узлы развернуты
+    expanded: false, // Меняем на false, чтобы каталоги были свернуты
   };
 };
 
@@ -323,12 +323,24 @@ const addNodeToParent = (
   }
 };
 
-// Вспомогательная функция для вычисления статистики директорий
+// Изменяем функцию calculateDirStats, чтобы она также вычисляла Wanted для каталогов
 const calculateDirStats = (
   node: FileNode
-): { size: number; progressSum: number; count: number } => {
+): {
+  size: number;
+  progressSum: number;
+  count: number;
+  allWanted: boolean;
+  anyWanted: boolean;
+} => {
   if (!node.isDirectory || !node.children?.length) {
-    return { size: node.Size || 0, progressSum: node.Progress || 0, count: 1 };
+    return {
+      size: node.Size || 0,
+      progressSum: node.Progress || 0,
+      count: 1,
+      allWanted: node.Wanted,
+      anyWanted: node.Wanted,
+    };
   }
 
   const stats = node.children.map(calculateDirStats);
@@ -338,11 +350,20 @@ const calculateDirStats = (
     0
   );
   const totalCount = stats.reduce((sum, s) => sum + s.count, 0);
+  const allWanted = stats.every((s) => s.allWanted);
+  const anyWanted = stats.some((s) => s.anyWanted);
 
   node.Size = totalSize;
   node.Progress = totalCount > 0 ? totalProgressSum / totalCount : 0;
+  node.Wanted = allWanted; // Устанавливаем Wanted для каталога на основе вложенных файлов
 
-  return { size: totalSize, progressSum: node.Progress, count: totalCount };
+  return {
+    size: totalSize,
+    progressSum: node.Progress,
+    count: totalCount,
+    allWanted,
+    anyWanted,
+  };
 };
 
 const buildFileTree = (files: TorrentFile[]): FileNode[] => {

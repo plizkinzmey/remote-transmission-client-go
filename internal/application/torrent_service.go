@@ -5,7 +5,7 @@ import (
 )
 
 type TorrentService struct {
-	repo domain.TorrentRepository
+	repo   domain.TorrentRepository
 	config *domain.Config
 }
 

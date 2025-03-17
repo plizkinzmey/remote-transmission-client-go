@@ -5,6 +5,8 @@
   justify-content: center;
   height: 100%;
   gap: 16px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .loading-spinner {
@@ -14,10 +16,34 @@
 
 .loading-text {
   color: var(--text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .error-message {
   color: var(--error-color);
   text-align: center;
   padding: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.file-tree-container {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.file-name {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.file-size {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.folder-name {
+  user-select: none;
+  -webkit-user-select: none;
 }

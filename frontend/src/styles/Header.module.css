@@ -6,6 +6,8 @@
   z-index: 1000;
   width: 100%;
   background-color: var(--header-background);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .controlPanel {
@@ -153,6 +155,8 @@
   padding: 8px 12px;
   font-size: 14px;
   text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .reconnectingStatus {
@@ -161,6 +165,8 @@
   padding: 8px 12px;
   font-size: 14px;
   text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @keyframes pulse {

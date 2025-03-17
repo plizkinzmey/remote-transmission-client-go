@@ -28,7 +28,14 @@ body {
 
 /* Ensure no text selection in draggable areas */
 [data-tauri-drag-region],
-.titlebar {
+.titlebar,
+.dialog-header,
+.modal-header,
+.dialog-title,
+.modal-title,
+.status-text,
+.dialog-content:not(input):not(textarea),
+.modal-content:not(input):not(textarea) {
   user-select: none;
   -webkit-user-select: none;
 }

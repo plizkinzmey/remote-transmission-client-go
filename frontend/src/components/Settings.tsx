@@ -49,6 +49,7 @@ const ModalHeader = styled.div`
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   user-select: none;
+  -webkit-user-select: none;
   h2 {
     color: var(--header-text);
     font-size: 16px;
@@ -56,6 +57,8 @@ const ModalHeader = styled.div`
     font-weight: 500;
     font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       Helvetica, Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
   }
 `;
 
@@ -90,6 +93,8 @@ const Label = styled.label`
   color: var(--text-primary);
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
 `;
 
 const Input = styled.input`
@@ -164,6 +169,8 @@ const Description = styled.div`
   font-size: 12px;
   color: var(--text-secondary);
   margin-top: 4px;
+  user-select: none;
+  -webkit-user-select: none;
 `;
 
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {

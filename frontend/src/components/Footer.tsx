@@ -31,6 +31,8 @@ const FooterContainer = styled.footer`
   z-index: 100;
   height: 36px;
   backdrop-filter: blur(10px);
+  user-select: none;
+  -webkit-user-select: none;
 `;
 
 const SpeedInfo = styled.div`

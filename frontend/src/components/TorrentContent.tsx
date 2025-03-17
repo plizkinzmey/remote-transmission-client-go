@@ -87,6 +87,7 @@ const FileTree = styled.div`
 
 const FileNodeContainer = styled.div<{ depth: number; isDirectory: boolean }>`
   margin-left: ${(props) => props.depth * 24}px;
+  margin-bottom: 2px;
 `;
 
 const FileNodeContent = styled.div<{ isDirectory: boolean }>`
@@ -94,23 +95,13 @@ const FileNodeContent = styled.div<{ isDirectory: boolean }>`
   grid-template-columns: auto auto minmax(0, 1fr) 120px 100px;
   gap: 8px;
   align-items: center;
-  padding: 8px 12px;
-  background-color: ${(props) => 
-    props.isDirectory 
-      ? 'var(--background-tertiary)' 
-      : 'var(--background-secondary)'};
-  border-radius: 6px;
-  color: var(--text-primary);
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: var(--background-hover);
-  }
+  padding: 8px;
+  background-color: ${(props) =>
+    props.isDirectory ? "var(--background-primary)" : "transparent"};
 `;
 
 const FileChildren = styled.div<{ isExpanded: boolean }>`
-  display: ${props => props.isExpanded ? 'block' : 'none'};
-  margin-top: 2px;
+  display: ${(props) => (props.isExpanded ? "block" : "none")};
 `;
 
 const ExpandButton = styled.button<{ isExpanded: boolean }>`
@@ -126,17 +117,7 @@ const ExpandButton = styled.button<{ isExpanded: boolean }>`
   height: 24px;
   width: 24px;
   min-width: 24px;
-  transform: rotate(${props => props.isExpanded ? '0deg' : '-90deg'});
-  transition: transform 0.2s ease;
-
-  &:hover {
-    color: var(--accent-color);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
+  transform: rotate(${(props) => (props.isExpanded ? "0deg" : "-90deg")});
 `;
 
 const IconWrapper = styled.div<{ isDirectory: boolean }>`
@@ -145,7 +126,8 @@ const IconWrapper = styled.div<{ isDirectory: boolean }>`
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: ${props => props.isDirectory ? 'var(--accent-color)' : 'var(--text-secondary)'};
+  color: ${(props) =>
+    props.isDirectory ? "var(--text-primary)" : "var(--text-secondary)"};
 
   svg {
     width: 20px;
@@ -499,25 +481,25 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
   const renderFileNode = (node: FileNode, depth: number = 0) => {
     return (
-      <FileNodeContainer 
-        key={node.Path} 
-        depth={depth} 
+      <FileNodeContainer
+        key={node.Path}
+        depth={depth}
         isDirectory={!!node.isDirectory}
       >
         <FileNodeContent isDirectory={!!node.isDirectory}>
           <ExpandButton
             isExpanded={!!node.expanded}
             onClick={() => node.isDirectory && toggleExpand(node)}
-            style={{ visibility: node.isDirectory ? 'visible' : 'hidden' }}
+            style={{ visibility: node.isDirectory ? "visible" : "hidden" }}
           >
             <ChevronDownIcon />
           </ExpandButton>
-          
+
           <IconWrapper isDirectory={!!node.isDirectory}>
             {node.isDirectory ? <FolderIcon /> : <DocumentIcon />}
           </IconWrapper>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Checkbox
               type="checkbox"
               checked={node.Wanted}

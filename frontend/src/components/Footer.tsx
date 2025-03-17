@@ -18,7 +18,11 @@ const FooterContainer = styled.footer`
   background: var(--card-background);
   color: var(--text-primary);
   padding: 8px 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(200px, auto) minmax(150px, auto) minmax(
+      150px,
+      auto
+    );
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
@@ -32,6 +36,9 @@ const SpeedInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
 `;
 
 const SpeedItem = styled.div`
@@ -40,10 +47,23 @@ const SpeedItem = styled.div`
   gap: 4px;
   opacity: ${(props: { loading?: boolean }) => (props.loading ? "0.5" : "1")};
   transition: opacity 0.2s ease;
+  min-width: 90px;
   svg {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
   }
+`;
+
+const StatItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: ${(props: { loading?: boolean }) => (props.loading ? "0.5" : "1")};
+  transition: opacity 0.2s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 150px;
 `;
 
 export const Footer: React.FC<FooterProps> = ({
@@ -94,12 +114,12 @@ export const Footer: React.FC<FooterProps> = ({
           {formatSpeed(totalUploadSpeed)}
         </SpeedItem>
       </SpeedInfo>
-      <SpeedItem loading={freeSpace === undefined}>
+      <StatItem loading={freeSpace === undefined}>
         {t("footer.freeSpace")} {formatSize(freeSpace)}
-      </SpeedItem>
-      <SpeedItem loading={transmissionVersion === undefined}>
+      </StatItem>
+      <StatItem loading={transmissionVersion === undefined}>
         {t("footer.version")} {transmissionVersion ?? "-"}
-      </SpeedItem>
+      </StatItem>
     </FooterContainer>
   );
 };

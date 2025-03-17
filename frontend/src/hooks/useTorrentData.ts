@@ -101,7 +101,7 @@ export function useTorrentData() {
   // Функция для обновления статистики сессии
   const refreshSessionStats = useCallback(async () => {
     if (!isInitialized) return;
-    
+
     try {
       const stats = await GetSessionStats();
       if (stats) {
@@ -189,7 +189,7 @@ export function useTorrentData() {
     if (isInitialized) {
       // Немедленно обновляем данные при инициализации
       refreshSessionStats();
-      
+
       // Устанавливаем интервалы обновления
       statsInterval = window.setInterval(refreshSessionStats, 1000);
       torrentsInterval = window.setInterval(refreshTorrents, 3000);

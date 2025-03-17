@@ -87,6 +87,8 @@ func (a *App) Initialize(configJson string) error {
 	}
 
 	a.service = application.NewTorrentService(client)
+	// Обновляем конфигурацию в сервисе
+	a.service.UpdateConfig(&config)
 	return nil
 }
 

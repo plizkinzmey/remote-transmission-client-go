@@ -6,6 +6,7 @@ import (
 
 type TorrentService struct {
 	repo domain.TorrentRepository
+	config *domain.Config
 }
 
 func NewTorrentService(repo domain.TorrentRepository) *TorrentService {
@@ -14,8 +15,32 @@ func NewTorrentService(repo domain.TorrentRepository) *TorrentService {
 	}
 }
 
+// UpdateConfig обновляет конфигурацию сервиса
+func (s *TorrentService) UpdateConfig(config *domain.Config) {
+	s.config = config
+}
+
 func (s *TorrentService) GetAllTorrents() ([]domain.Torrent, error) {
-	return s.repo.GetAll()
+	torrents, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверяем каждый торрент на превышение максимального рейтинга
+	if s.config != nil && s.config.MaxUploadRatio > 0 {
+		var torrentsToStop []int64
+		for _, t := range torrents {
+			if t.Status == domain.StatusSeeding && t.UploadRatio >= s.config.MaxUploadRatio {
+				torrentsToStop = append(torrentsToStop, t.ID)
+			}
+		}
+		// Если есть торренты для остановки, останавливаем их
+		if len(torrentsToStop) > 0 {
+			_ = s.repo.Stop(torrentsToStop)
+		}
+	}
+
+	return torrents, nil
 }
 
 func (s *TorrentService) AddTorrent(url string) error {

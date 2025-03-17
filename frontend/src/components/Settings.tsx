@@ -20,6 +20,7 @@ interface Config {
   password: string;
   language: string;
   theme: ThemeType;
+  maxUploadRatio?: number;
 }
 
 interface SettingsProps {
@@ -156,7 +157,14 @@ const defaultSettings = {
   password: "",
   language: "en",
   theme: "light",
+  maxUploadRatio: 0,
 };
+
+const Description = styled.div`
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+`;
 
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   const {
@@ -324,6 +332,24 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                 <option value="dark">{t("settings.themeDark")}</option>
                 <option value="auto">{t("settings.themeAuto")}</option>
               </Select>
+            </FormGroup>
+            <FormGroup>
+              <Label>{t("settings.maxUploadRatio")}</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.1"
+                name="maxUploadRatio"
+                value={settings.maxUploadRatio ?? 0}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    maxUploadRatio: parseFloat(e.target.value) ?? 0,
+                  })
+                }
+                placeholder={t("settings.maxUploadRatioHint")}
+              />
+              <Description>{t("settings.maxUploadRatioHint")}</Description>
             </FormGroup>
             <StatusMessage status={connectionStatus}>
               {statusMessage}

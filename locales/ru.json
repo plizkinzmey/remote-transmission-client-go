@@ -21,6 +21,8 @@
   "settings.themeLight": "Светлая",
   "settings.themeDark": "Темная",
   "settings.themeAuto": "Динамическая",
+  "settings.maxUploadRatio": "Останавливать раздачу при рейтинге",
+  "settings.maxUploadRatioHint": "0 означает без ограничений",
   
   "torrents.search": "Поиск торрентов...",
   "torrents.selected": "Выбрано: {0}/{1}",

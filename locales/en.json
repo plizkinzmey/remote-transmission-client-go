@@ -21,6 +21,8 @@
   "settings.testing": "Testing...",
   "settings.connectionSuccess": "Connection successful!",
   "settings.connectionFailed": "Connection failed: {0}",
+  "settings.maxUploadRatio": "Stop seeding at ratio",
+  "settings.maxUploadRatioHint": "0 means unlimited",
   
   "torrents.search": "Search torrents...",
   "torrents.selected": "Selected: {0}/{1}",

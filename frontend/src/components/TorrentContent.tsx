@@ -6,6 +6,8 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  FolderIcon,
+  DocumentIcon,
 } from "@heroicons/react/24/outline";
 import styled from "@emotion/styled";
 import styles from "../styles/TorrentContent.module.css";
@@ -80,26 +82,38 @@ const Content = styled.div`
 const FileTree = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 `;
 
-const FileNode = styled.div<{ depth: number; isDirectory: boolean }>`
+const FileNodeContainer = styled.div<{ depth: number; isDirectory: boolean }>`
+  margin-left: ${(props) => props.depth * 24}px;
+`;
+
+const FileNodeContent = styled.div<{ isDirectory: boolean }>`
   display: grid;
-  grid-template-columns: 30px 30px minmax(0, 1fr) 120px 100px;
-  gap: 4px;
+  grid-template-columns: auto auto minmax(0, 1fr) 120px 100px;
+  gap: 8px;
   align-items: center;
-  padding: 8px;
-  background-color: var(--background-secondary);
+  padding: 8px 12px;
+  background-color: ${(props) => 
+    props.isDirectory 
+      ? 'var(--background-tertiary)' 
+      : 'var(--background-secondary)'};
   border-radius: 6px;
   color: var(--text-primary);
-  margin-left: ${(props) => props.depth * 20}px;
+  transition: background-color 0.2s ease;
 
   &:hover {
     background-color: var(--background-hover);
   }
 `;
 
-const ExpandButton = styled.button`
+const FileChildren = styled.div<{ isExpanded: boolean }>`
+  display: ${props => props.isExpanded ? 'block' : 'none'};
+  margin-top: 2px;
+`;
+
+const ExpandButton = styled.button<{ isExpanded: boolean }>`
   background: none;
   border: none;
   padding: 4px;
@@ -112,6 +126,8 @@ const ExpandButton = styled.button`
   height: 24px;
   width: 24px;
   min-width: 24px;
+  transform: rotate(${props => props.isExpanded ? '0deg' : '-90deg'});
+  transition: transform 0.2s ease;
 
   &:hover {
     color: var(--accent-color);
@@ -120,6 +136,20 @@ const ExpandButton = styled.button`
   svg {
     width: 16px;
     height: 16px;
+  }
+`;
+
+const IconWrapper = styled.div<{ isDirectory: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: ${props => props.isDirectory ? 'var(--accent-color)' : 'var(--text-secondary)'};
+
+  svg {
+    width: 20px;
+    height: 20px;
   }
 `;
 
@@ -469,34 +499,46 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
   const renderFileNode = (node: FileNode, depth: number = 0) => {
     return (
-      <React.Fragment key={node.Path}>
-        <FileNode depth={depth} isDirectory={!!node.isDirectory}>
-          {node.isDirectory ? (
-            <ExpandButton onClick={() => toggleExpand(node)}>
-              {node.expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-            </ExpandButton>
-          ) : (
-            <div style={{ width: "24px" }} /> // Placeholder для выравнивания
-          )}
-          <Checkbox
-            type="checkbox"
-            checked={node.Wanted}
-            onChange={(e) => toggleNode(node, e.target.checked)}
-          />
-          <FileName title={node.Name}>{node.Name}</FileName>
+      <FileNodeContainer 
+        key={node.Path} 
+        depth={depth} 
+        isDirectory={!!node.isDirectory}
+      >
+        <FileNodeContent isDirectory={!!node.isDirectory}>
+          <ExpandButton
+            isExpanded={!!node.expanded}
+            onClick={() => node.isDirectory && toggleExpand(node)}
+            style={{ visibility: node.isDirectory ? 'visible' : 'hidden' }}
+          >
+            <ChevronDownIcon />
+          </ExpandButton>
+          
+          <IconWrapper isDirectory={!!node.isDirectory}>
+            {node.isDirectory ? <FolderIcon /> : <DocumentIcon />}
+          </IconWrapper>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Checkbox
+              type="checkbox"
+              checked={node.Wanted}
+              onChange={(e) => toggleNode(node, e.target.checked)}
+            />
+            <FileName title={node.Name}>{node.Name}</FileName>
+          </div>
+
           <FileProgress
             progress={node.Progress ?? 0}
             title={`${(node.Progress ?? 0).toFixed(1)}%`}
           />
           <FileSize>{formatFileSize(node.Size)}</FileSize>
-        </FileNode>
+        </FileNodeContent>
 
-        {node.isDirectory && node.expanded && node.children && (
-          <div>
+        {node.isDirectory && node.children && (
+          <FileChildren isExpanded={!!node.expanded}>
             {node.children.map((child) => renderFileNode(child, depth + 1))}
-          </div>
+          </FileChildren>
         )}
-      </React.Fragment>
+      </FileNodeContainer>
     );
   };
 

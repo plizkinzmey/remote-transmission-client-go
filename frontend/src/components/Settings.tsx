@@ -34,10 +34,13 @@ const Modal = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--card-background);
+  margin: 0;
   padding: 0;
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--modal-shadow);
-  width: 400px;
+  width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   z-index: 1000;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
@@ -77,9 +80,10 @@ const Overlay = styled.div`
 `;
 
 const Form = styled.form`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  padding: 24px;
 `;
 
 const FormGroup = styled.div`
@@ -99,10 +103,11 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  padding: 8px;
+  padding: 6px 8px;
   border: 1px solid #bdc3c7;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
+  height: 32px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
   &:focus {
@@ -112,10 +117,11 @@ const Input = styled.input`
 `;
 
 const Select = styled.select`
-  padding: 8px;
+  padding: 6px 8px;
   border: 1px solid #bdc3c7;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
+  height: 32px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
   &:focus {
@@ -126,9 +132,10 @@ const Select = styled.select`
 
 const ButtonGroup = styled.div`
   display: flex;
-  justify-content: center; // Меняем с flex-end на center
+  justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+  grid-column: 1 / -1;
 `;
 
 // Улучшаем стили для сообщений о статусе соединения
@@ -136,10 +143,11 @@ const StatusMessage = styled.div<{ status: ConnectionStatusType }>`
   padding: 8px;
   margin-top: 16px;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
   color: ${(props) => getStatusColor(props.status, "text")};
   background-color: ${(props) => getStatusColor(props.status, "bg")};
   display: ${(props) => (props.status === "none" ? "none" : "block")};
+  grid-column: 1 / -1;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
@@ -170,9 +178,9 @@ const defaultSettings = {
 };
 
 const Description = styled.div`
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 2px;
   user-select: none;
   -webkit-user-select: none;
   cursor: default;

@@ -7,7 +7,8 @@
 .torrentList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding-bottom: 16px;
 }
 
 .noTorrents {
@@ -29,8 +30,70 @@
 
 .loadingText {
   color: var(--text-secondary);
-  font-size: 14px;
   text-align: center;
-  margin-top: 12px;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin-top: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.noTorrentsMessage {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: default;
+}
+
+.loadingMessage {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: default;
+}
+
+.errorMessage {
+  text-align: center;
+  padding: 40px;
+  color: var(--error-color);
+  font-size: 16px;
+  cursor: default;
+}
+
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.emptyStateText {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.errorText {
+  color: var(--error-color);
+  text-align: center;
+  margin-top: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }

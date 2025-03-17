@@ -68,7 +68,11 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 14px;
   color: var(--text-primary);
-  font-weight: 500;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 `;
 
 const Input = styled.input`
@@ -171,6 +175,36 @@ const ButtonGroup = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+`;
+
+const Title = styled.h2`
+  color: var(--header-text);
+  font-size: 16px;
+  margin: 0;
+  font-weight: 500;
+  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const ErrorText = styled.div`
+  color: var(--error-color);
+  font-size: 14px;
+  margin-top: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const InfoText = styled.div`
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 `;
 
 export const AddTorrent: React.FC<AddTorrentProps> = ({

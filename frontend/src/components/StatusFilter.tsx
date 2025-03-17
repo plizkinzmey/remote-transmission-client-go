@@ -37,6 +37,18 @@ const FilterButton = styled.button<{ isActive: boolean }>`
     opacity: 0.5;
     pointer-events: none;
   }
+
+  span {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+`;
+
+const CountBadge = styled.span`
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 `;
 
 const statuses = [

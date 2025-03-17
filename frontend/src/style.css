@@ -67,6 +67,17 @@ textarea {
   -webkit-user-select: text;
 }
 
+/* Глобальные стили для текстовых элементов */
+h1, h2, h3, h4, h5, h6,
+p,
+span,
+label,
+.text-content,
+.status-text,
+.info-text {
+  cursor: default;
+}
+
 /* Scrollbar styles for macOS-like appearance */
 ::-webkit-scrollbar {
   width: 8px;

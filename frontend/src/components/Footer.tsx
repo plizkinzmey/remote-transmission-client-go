@@ -66,6 +66,36 @@ const StatItem = styled.div<{ loading?: boolean }>`
   min-width: 150px;
 `;
 
+const StatsText = styled.span`
+  font-size: 13px;
+  margin: 0 16px;
+  color: var(--text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const SpeedText = styled.span`
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const IconText = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
 const formatSpeed = (speed?: number): string => {
   if (speed === undefined) return "-";
   const units = ["B/s", "KB/s", "MB/s", "GB/s"];

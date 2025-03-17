@@ -26,7 +26,7 @@ body {
   height: 100vh;
 }
 
-/* Ensure no text selection in draggable areas */
+/* Ensure no text selection in draggable areas and text content */
 [data-tauri-drag-region],
 .titlebar,
 .dialog-header,
@@ -34,10 +34,14 @@ body {
 .dialog-title,
 .modal-title,
 .status-text,
+.info-label,
 .dialog-content:not(input):not(textarea),
-.modal-content:not(input):not(textarea) {
+.modal-content:not(input):not(textarea),
+.result,
+.label-text {
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 }
 
 /* Allow text selection in specific elements */
@@ -45,11 +49,13 @@ input, textarea {
   user-select: text;
   -webkit-user-select: text;
   -webkit-app-region: no-drag;
+  cursor: text;
 }
 
 button {
   -webkit-app-region: no-drag;
   user-select: none;
+  cursor: pointer;
 }
 
 /* Custom scrollbar */
@@ -189,4 +195,62 @@ button,
   animation: placeholder-pulse 1.5s ease-in-out infinite;
   background: var(--text-secondary);
   border-radius: 2px;
+}
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+}
+
+/* Глобальные стили для текстовых элементов */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  cursor: default;
+}
+
+/* Стили для элементов, которые должны иметь курсор pointer */
+button:not(:disabled),
+a:not(:disabled),
+[role="button"]:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Стили для отключенных элементов */
+button:disabled,
+a:disabled,
+[role="button"]:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+/* Стили для текстовых полей ввода */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  cursor: text;
+}
+
+/* Стили для элементов с возможностью изменения размера */
+textarea,
+div[contenteditable="true"] {
+  cursor: text;
+}
+
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }

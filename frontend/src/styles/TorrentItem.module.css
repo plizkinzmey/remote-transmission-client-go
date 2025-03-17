@@ -124,12 +124,18 @@
   text-align: center;
   margin-left: auto;
   margin-top: 0; /* Убираем margin-стили */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 .ratio {
   font-size: 12px;
   color: var(--card-text-primary);
   white-space: nowrap;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 .statusContainer {
   display: flex;
@@ -142,14 +148,45 @@
   font-size: 13px;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1;  /* Добавляем line-height чтобы контролировать высоту контейнера */
+  cursor: default;
 }
 
-.statusDownloading { color: var(--status-downloading); }
-.statusSeeding { color: var(--status-seeding); }
-.statusStopped { color: var(--status-stopped); }
-.statusCompleted { color: var(--status-completed); }
-.statusChecking { color: var(--status-checking); }
-.statusQueued { color: var(--status-queued); }
+.statusDownloading { 
+  color: var(--status-downloading); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.statusSeeding { 
+  color: var(--status-seeding); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.statusStopped { 
+  color: var(--status-stopped); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.statusCompleted { 
+  color: var(--status-completed); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.statusChecking { 
+  color: var(--status-checking); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.statusQueued { 
+  color: var(--status-queued); 
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
 
 .progress {
   width: 100%;
@@ -194,6 +231,7 @@
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 }
 /* Стили для иконок скорости */
 .speedIcon {
@@ -217,6 +255,7 @@
   color: var(--card-text-secondary);
   text-align: left;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  cursor: default;
 }
 /* Перенастройка стиля строки информации для одной линии */
 .infoRow {
@@ -251,20 +290,53 @@
   color: var(--card-text-primary);
   white-space: nowrap;
   font-weight: 400;
+  cursor: default;
 }
 /* Стиль для выделения названий параметров жирным шрифтом */
 .paramName {
   font-weight: 700;
   margin-right: 4px;
+  cursor: default;
 }
 /* Стиль для отображения процентов */
 .progressPercentage {
   font-size: 13px;
   color: var(--card-text-primary);
   font-weight: 500;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 
 .icon {
   width: 20px;
   height: 20px;
+}
+
+.torrent-name {
+  cursor: default;
+}
+
+.torrent-status {
+  cursor: default;
+}
+
+.torrent-progress-text {
+  cursor: default;
+}
+
+.torrent-size {
+  cursor: default;
+}
+
+.torrent-eta {
+  cursor: default;
+}
+
+.torrent-speed {
+  cursor: default;
+}
+
+.torrent-ratio {
+  cursor: default;
 }

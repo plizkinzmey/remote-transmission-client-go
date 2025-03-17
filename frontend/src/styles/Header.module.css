@@ -104,6 +104,7 @@
   /* Убираем padding-left, так как у контейнера уже есть отступ 16px */
 }
 
+/* Объединенные стили для .selectAllCheckbox */
 .selectAllCheckbox {
   width: 16px;
   height: 16px;
@@ -147,6 +148,7 @@
   user-select: none;
   display: flex;
   align-items: center;
+  cursor: default;
 }
 
 .errorMessage {
@@ -157,6 +159,7 @@
   text-align: center;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 }
 
 .reconnectingStatus {
@@ -167,6 +170,7 @@
   text-align: center;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 }
 
 @keyframes pulse {
@@ -179,4 +183,100 @@
   100% {
     opacity: 0.6;
   }
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--header-background);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--header-text);
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+}
+
+.leftGroup {
+  display: flex;
+  align-items: center;
+}
+
+.rightGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  color: var(--header-button-icon);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  background: var(--header-button-hover-bg);
+  color: var(--header-button-hover-icon);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actionButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.centerGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px;
+}
+
+.selectedCount {
+  font-size: 14px;
+  color: var(--header-text);
+  margin-left: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.headerText {
+  color: var(--header-text);
+  font-size: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }

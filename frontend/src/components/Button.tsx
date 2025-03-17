@@ -63,3 +63,18 @@ export const Button = styled.button<ButtonProps>`
     height: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
   }
 `;
+
+const ButtonContent = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const ButtonText = styled.span`
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;

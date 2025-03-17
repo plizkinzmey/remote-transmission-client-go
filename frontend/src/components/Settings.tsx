@@ -95,6 +95,7 @@ const Label = styled.label`
     Helvetica, Arial, sans-serif;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 `;
 
 const Input = styled.input`
@@ -139,6 +140,9 @@ const StatusMessage = styled.div<{ status: ConnectionStatusType }>`
   color: ${(props) => getStatusColor(props.status, "text")};
   background-color: ${(props) => getStatusColor(props.status, "bg")};
   display: ${(props) => (props.status === "none" ? "none" : "block")};
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 `;
 
 // Вспомогательная функция для определения цветов статуса
@@ -171,6 +175,7 @@ const Description = styled.div`
   margin-top: 4px;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 `;
 
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {

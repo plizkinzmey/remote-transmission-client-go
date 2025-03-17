@@ -62,6 +62,33 @@ const Text = styled.p`
   overflow-wrap: break-word;
 `;
 
+const ModalText = styled.p`
+  margin: 0 0 20px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const CountText = styled.span`
+  font-weight: 600;
+  color: var(--accent-color);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
+const WarningText = styled.p`
+  color: var(--error-color);
+  font-size: 13px;
+  margin: 8px 0;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;

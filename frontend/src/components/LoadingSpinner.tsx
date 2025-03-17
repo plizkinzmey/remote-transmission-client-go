@@ -24,6 +24,14 @@ const StyledSpinner = styled(ArrowPathIcon)`
   }
 `;
 
+const LoadingText = styled.span`
+  color: var(--text-secondary);
+  margin-left: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+`;
+
 export const LoadingSpinner: React.FC<{
   className?: string;
   size?: "small" | "medium" | "large";

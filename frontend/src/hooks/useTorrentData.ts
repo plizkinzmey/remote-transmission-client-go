@@ -98,6 +98,20 @@ export function useTorrentData() {
     }
   };
 
+  // Функция для обновления статистики сессии
+  const refreshSessionStats = useCallback(async () => {
+    if (!isInitialized) return;
+    
+    try {
+      const stats = await GetSessionStats();
+      if (stats) {
+        setSessionStats(stats);
+      }
+    } catch (error) {
+      console.error("Failed to fetch session stats:", error);
+    }
+  }, [isInitialized]);
+
   // Функция для обновления списка торрентов
   const refreshTorrents = useCallback(async () => {
     if (isFirstLoad) {
@@ -137,19 +151,6 @@ export function useTorrentData() {
     }
   }, [isReconnecting, reconnectAttempts, t, isFirstLoad]);
 
-  // Функция для обновления статистики сессии
-  const refreshSessionStats = useCallback(async () => {
-    try {
-      const stats = await GetSessionStats();
-      if (stats) {
-        setSessionStats(stats);
-      }
-    } catch (error) {
-      console.error("Failed to fetch session stats:", error);
-      // Не показываем ошибку пользователю, просто логируем
-    }
-  }, []);
-
   // Инициализация приложения при загрузке
   useEffect(() => {
     const initializeApp = async () => {
@@ -158,10 +159,7 @@ export function useTorrentData() {
         if (savedConfig) {
           try {
             await Initialize(JSON.stringify(savedConfig));
-            const stats = await GetSessionStats();
-            if (stats) {
-              setSessionStats(stats);
-            }
+            await refreshSessionStats();
             await refreshTorrents();
             setIsInitialized(true);
           } catch (initError) {
@@ -181,31 +179,19 @@ export function useTorrentData() {
     };
 
     initializeApp();
-  }, [refreshTorrents, t]);
+  }, [refreshSessionStats, refreshTorrents, t]);
 
   // Эффект для периодического обновления данных
   useEffect(() => {
     let torrentsInterval: number;
     let statsInterval: number;
 
-    const updateStats = async () => {
-      if (!isInitialized) return;
-      try {
-        const stats = await GetSessionStats();
-        if (stats) {
-          setSessionStats(stats);
-        }
-      } catch (error) {
-        console.error("Failed to fetch session stats:", error);
-      }
-    };
-
     if (isInitialized) {
       // Немедленно обновляем данные при инициализации
-      updateStats();
-
+      refreshSessionStats();
+      
       // Устанавливаем интервалы обновления
-      statsInterval = window.setInterval(updateStats, 1000);
+      statsInterval = window.setInterval(refreshSessionStats, 1000);
       torrentsInterval = window.setInterval(refreshTorrents, 3000);
     }
 
@@ -217,7 +203,7 @@ export function useTorrentData() {
         window.clearInterval(torrentsInterval);
       }
     };
-  }, [isInitialized, refreshTorrents]);
+  }, [isInitialized, refreshSessionStats, refreshTorrents]);
 
   // Обработчик добавления торрента
   const handleAddTorrent = async (url: string) => {
@@ -291,7 +277,8 @@ export function useTorrentData() {
       setIsInitialized(true);
       setError(null);
       setLanguage(settings.language);
-      refreshTorrents();
+      await refreshSessionStats();
+      await refreshTorrents();
       return true;
     } catch (error) {
       console.error("Failed to update settings:", error);

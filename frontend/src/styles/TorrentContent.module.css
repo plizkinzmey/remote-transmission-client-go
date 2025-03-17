@@ -10,8 +10,6 @@
 .loading-spinner {
   width: 32px;
   height: 32px;
-  animation: spin 1s linear infinite;
-  color: var(--text-primary);
 }
 
 .loading-text {
@@ -22,9 +20,4 @@
   color: var(--error-color);
   text-align: center;
   padding: 20px;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }

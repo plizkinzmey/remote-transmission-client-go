@@ -231,7 +231,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   };
 
   if (isLoading || isLocalizationLoading) {
-    return <LoadingSpinner />;
+    return (
+      <Modal>
+        <ModalContent>
+          <LoadingSpinner />
+        </ModalContent>
+      </Modal>
+    );
   }
 
   return (

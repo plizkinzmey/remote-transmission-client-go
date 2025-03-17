@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { Button } from "./Button";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { TorrentContent } from "./TorrentContent";
+import { LoadingSpinner } from "./LoadingSpinner";
 import { useLocalization } from "../contexts/LocalizationContext";
 import {
   PlayIcon,
   PauseIcon,
   TrashIcon,
-  ArrowPathIcon,
   ArrowDownIcon,
   ArrowUpIcon,
 } from "@heroicons/react/24/outline";
@@ -32,8 +32,6 @@ interface TorrentItemProps {
   onRemove: (id: number, deleteData: boolean) => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
-  downloadSpeed: number;
-  uploadSpeed: number;
   downloadSpeedFormatted: string;
   uploadSpeedFormatted: string;
 }
@@ -72,8 +70,6 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   onRemove,
   onStart,
   onStop,
-  downloadSpeed,
-  uploadSpeed,
   downloadSpeedFormatted,
   uploadSpeedFormatted,
 }) => {
@@ -131,7 +127,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     if (isLoading) {
       return (
         <Button variant="icon" disabled loading>
-          <ArrowPathIcon className="loading-spinner" />
+          <LoadingSpinner size="small" />
         </Button>
       );
     }

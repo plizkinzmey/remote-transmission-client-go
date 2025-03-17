@@ -2,6 +2,7 @@ import React from "react";
 import styled from "@emotion/styled";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 interface FooterProps {
   totalDownloadSpeed?: number;
@@ -41,13 +42,12 @@ const SpeedInfo = styled.div`
   white-space: nowrap;
 `;
 
-const SpeedItem = styled.div`
+const SpeedItem = styled.div<{ loading?: boolean }>`
   display: flex;
   align-items: center;
   gap: 4px;
-  opacity: ${(props: { loading?: boolean }) => (props.loading ? "0.5" : "1")};
-  transition: opacity 0.2s ease;
   min-width: 90px;
+
   svg {
     width: 16px;
     height: 16px;
@@ -55,16 +55,42 @@ const SpeedItem = styled.div`
   }
 `;
 
-const StatItem = styled.div`
+const StatItem = styled.div<{ loading?: boolean }>`
   display: flex;
   align-items: center;
   gap: 4px;
-  opacity: ${(props: { loading?: boolean }) => (props.loading ? "0.5" : "1")};
-  transition: opacity 0.2s ease;
   overflow: hidden;
   white-space: nowrap;
   min-width: 150px;
 `;
+
+const formatSpeed = (speed?: number): string => {
+  if (speed === undefined) return "-";
+  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+  let value = speed;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+
+  return `${value.toFixed(2)} ${units[unitIndex]}`;
+};
+
+const formatSize = (size?: number): string => {
+  if (size === undefined) return "-";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+
+  return `${value.toFixed(2)} ${units[unitIndex]}`;
+};
 
 export const Footer: React.FC<FooterProps> = ({
   totalDownloadSpeed,
@@ -74,51 +100,47 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const { t } = useLocalization();
 
-  const formatSpeed = (bytesPerSecond?: number): string => {
-    if (bytesPerSecond === undefined) return "- KB/s";
-    const units = ["B/s", "KB/s", "MB/s", "GB/s"];
-    let value = bytesPerSecond;
-    let unitIndex = 0;
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-
-    return `${value.toFixed(1)} ${units[unitIndex]}`;
-  };
-
-  const formatSize = (bytes?: number): string => {
-    if (bytes === undefined) return "- GB";
-    const units = ["B", "KB", "MB", "GB", "TB"];
-    let value = bytes;
-    let unitIndex = 0;
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-
-    return `${value.toFixed(1)} ${units[unitIndex]}`;
-  };
-
   return (
     <FooterContainer>
       <SpeedInfo>
         <SpeedItem loading={totalDownloadSpeed === undefined}>
-          <ArrowDownIcon />
-          {formatSpeed(totalDownloadSpeed)}
+          {totalDownloadSpeed === undefined ? (
+            <LoadingSpinner size="small" />
+          ) : (
+            <>
+              <ArrowDownIcon />
+              {formatSpeed(totalDownloadSpeed)}
+            </>
+          )}
         </SpeedItem>
         <SpeedItem loading={totalUploadSpeed === undefined}>
-          <ArrowUpIcon />
-          {formatSpeed(totalUploadSpeed)}
+          {totalUploadSpeed === undefined ? (
+            <LoadingSpinner size="small" />
+          ) : (
+            <>
+              <ArrowUpIcon />
+              {formatSpeed(totalUploadSpeed)}
+            </>
+          )}
         </SpeedItem>
       </SpeedInfo>
       <StatItem loading={freeSpace === undefined}>
-        {t("footer.freeSpace")} {formatSize(freeSpace)}
+        {freeSpace === undefined ? (
+          <LoadingSpinner size="small" />
+        ) : (
+          <>
+            {t("footer.freeSpace")} {formatSize(freeSpace)}
+          </>
+        )}
       </StatItem>
       <StatItem loading={transmissionVersion === undefined}>
-        {t("footer.version")} {transmissionVersion ?? "-"}
+        {transmissionVersion === undefined ? (
+          <LoadingSpinner size="small" />
+        ) : (
+          <>
+            {t("footer.version")} {transmissionVersion}
+          </>
+        )}
       </StatItem>
     </FooterContainer>
   );

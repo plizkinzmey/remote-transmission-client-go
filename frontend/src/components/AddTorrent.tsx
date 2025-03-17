@@ -241,7 +241,15 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
         </ModalHeader>
         <ModalContent>
           {isLocalizationLoading ? (
-            <LoadingSpinner />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "24px",
+              }}
+            >
+              <LoadingSpinner size="medium" />
+            </div>
           ) : (
             <Form onSubmit={handleSubmit}>
               <Tabs>

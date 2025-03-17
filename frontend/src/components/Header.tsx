@@ -2,12 +2,12 @@ import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { BulkDeleteConfirmation } from "./BulkDeleteConfirmation";
 import { StatusFilter } from "./StatusFilter";
+import { LoadingSpinner } from "./LoadingSpinner";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
   PlayIcon,
   PauseIcon,
-  ArrowPathIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/Header.module.css";
@@ -93,11 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
             loading={startLoading}
             aria-label={t("torrents.startSelected")}
           >
-            {startLoading ? (
-              <ArrowPathIcon className="loading-spinner" />
-            ) : (
-              <PlayIcon />
-            )}
+            {startLoading ? <LoadingSpinner size="small" /> : <PlayIcon />}
           </Button>
           {/* Кнопка остановки выбранных торрентов */}
           <Button
@@ -107,11 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
             loading={stopLoading}
             aria-label={t("torrents.stopSelected")}
           >
-            {stopLoading ? (
-              <ArrowPathIcon className="loading-spinner" />
-            ) : (
-              <PauseIcon />
-            )}
+            {stopLoading ? <LoadingSpinner size="small" /> : <PauseIcon />}
           </Button>
           {/* Кнопка удаления выбранных торрентов */}
           <Button
@@ -121,11 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
             loading={removeLoading}
             aria-label={t("remove.title")}
           >
-            {removeLoading ? (
-              <ArrowPathIcon className="loading-spinner" />
-            ) : (
-              <TrashIcon />
-            )}
+            {removeLoading ? <LoadingSpinner size="small" /> : <TrashIcon />}
           </Button>
         </div>
         <div className={styles.rightSection}>

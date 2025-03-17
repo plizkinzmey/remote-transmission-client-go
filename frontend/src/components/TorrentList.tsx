@@ -61,7 +61,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
     if (isLoading) {
       return (
         <div className={styles.loadingContainer}>
-          <LoadingSpinner />
+          <LoadingSpinner size="large" />
           <div className={styles.loadingText}>{t("torrents.loading")}</div>
         </div>
       );
@@ -84,8 +84,6 @@ export const TorrentList: React.FC<TorrentListProps> = ({
           peersTotal={torrent.PeersTotal}
           uploadedBytes={torrent.UploadedBytes}
           uploadedFormatted={torrent.UploadedFormatted}
-          downloadSpeed={torrent.DownloadSpeed}
-          uploadSpeed={torrent.UploadSpeed}
           downloadSpeedFormatted={torrent.DownloadSpeedFormatted}
           uploadSpeedFormatted={torrent.UploadSpeedFormatted}
           selected={selectedTorrents.has(torrent.ID)}

@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "@emotion/styled";
+import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 const SpinnerWrapper = styled.div`
   display: flex;
@@ -7,26 +8,43 @@ const SpinnerWrapper = styled.div`
   align-items: center;
 `;
 
-const Spinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--background-secondary);
-  border-top: 4px solid var(--accent-color);
-  border-radius: 50%;
+const StyledSpinner = styled(ArrowPathIcon)`
+  width: 24px;
+  height: 24px;
   animation: spin 1s linear infinite;
+  color: var(--text-primary);
 
   @keyframes spin {
-    0% {
+    from {
       transform: rotate(0deg);
     }
-    100% {
+    to {
       transform: rotate(360deg);
     }
   }
 `;
 
-export const LoadingSpinner: React.FC = () => (
-  <SpinnerWrapper>
-    <Spinner />
-  </SpinnerWrapper>
-);
+export const LoadingSpinner: React.FC<{
+  className?: string;
+  size?: "small" | "medium" | "large";
+}> = ({ className, size = "medium" }) => {
+  const getSize = () => {
+    switch (size) {
+      case "small":
+        return "16px";
+      case "large":
+        return "32px";
+      default:
+        return "24px";
+    }
+  };
+
+  return (
+    <SpinnerWrapper>
+      <StyledSpinner
+        className={className}
+        style={{ width: getSize(), height: getSize() }}
+      />
+    </SpinnerWrapper>
+  );
+};

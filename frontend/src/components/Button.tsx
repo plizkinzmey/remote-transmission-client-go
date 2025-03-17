@@ -62,17 +62,4 @@ export const Button = styled.button<ButtonProps>`
     width: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
     height: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
   }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .loading-spinner {
-    animation: spin 1s linear infinite;
-  }
 `;

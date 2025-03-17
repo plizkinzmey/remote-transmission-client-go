@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { LoadingSpinner } from "./LoadingSpinner";
 import {
-  ArrowPathIcon,
   XMarkIcon,
   ChevronDownIcon,
   FolderIcon,
@@ -581,7 +581,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     if (loading) {
       return (
         <div className={styles["loading-container"]}>
-          <ArrowPathIcon className={styles["loading-spinner"]} />
+          <LoadingSpinner size="large" className={styles["loading-spinner"]} />
           <div className={styles["loading-text"]}>
             {t("torrent.loadingFiles")}
           </div>

@@ -26,6 +26,7 @@
   -webkit-app-region: no-drag;
   user-select: none;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-user-select: none;
 }
 
 /* Стили для разных статусов */
@@ -92,6 +93,8 @@
 .info {
   flex: 1;
   min-width: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Новый контейнер для верхнего ряда с названием и рейтингом */
 .topRow {
@@ -256,6 +259,8 @@
   text-align: left;
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Перенастройка стиля строки информации для одной линии */
 .infoRow {
@@ -263,10 +268,14 @@
   justify-content: flex-start;
   gap: 20px;
   flex-wrap: wrap;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .infoRow span {
   display: inline-block;
   white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Стили для контейнера статистики */
 .statsContainer {
@@ -280,6 +289,15 @@
   color: var(--card-text-primary);
   user-select: none;
   -webkit-user-select: none;
+  pointer-events: none;
+  cursor: default;
+}
+
+.statsContainer * {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
 }
 /* Добавляем стили для элементов статистики */
 .seeds, .peers, .uploaded, .size {
@@ -291,12 +309,16 @@
   white-space: nowrap;
   font-weight: 400;
   cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Стиль для выделения названий параметров жирным шрифтом */
 .paramName {
   font-weight: 700;
   margin-right: 4px;
   cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Стиль для отображения процентов */
 .progressPercentage {

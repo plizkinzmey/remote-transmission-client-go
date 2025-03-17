@@ -206,11 +206,11 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </div>
 
           <div className={styles.statsContainer}>
-            <span className={styles.size}>
+            <span className={styles.size} style={{ pointerEvents: "none" }}>
               <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
               {sizeFormatted}
             </span>
-            <span className={styles.speed}>
+            <span className={styles.speed} style={{ pointerEvents: "none" }}>
               <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
               <ArrowDownIcon
                 className={`${styles.speedIcon} ${styles.downloadIcon}`}
@@ -221,15 +221,15 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               />{" "}
               {uploadSpeedFormatted}
             </span>
-            <span className={styles.seeds}>
+            <span className={styles.seeds} style={{ pointerEvents: "none" }}>
               <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
               {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
             </span>
-            <span className={styles.peers}>
+            <span className={styles.peers} style={{ pointerEvents: "none" }}>
               <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
               {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
             </span>
-            <span className={styles.uploaded}>
+            <span className={styles.uploaded} style={{ pointerEvents: "none" }}>
               <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}
               {uploadedFormatted}
             </span>

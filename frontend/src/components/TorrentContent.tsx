@@ -98,17 +98,11 @@ const FileNodeContent = styled.div<{ isDirectory: boolean }>`
   gap: 8px;
   align-items: center;
   padding: 8px;
-  background-color: ${(props) =>
-    props.isDirectory ? "var(--tree-folder-bg)" : "var(--background-primary)"};
-  border-left: 3px solid
-    ${(props) =>
-      props.isDirectory ? "var(--tree-folder-border)" : "transparent"};
 `;
 
 const FileChildren = styled.div<{ isExpanded: boolean }>`
   display: ${(props) => (props.isExpanded ? "block" : "none")};
-  margin-left: 3px;
-  border-left: 1px solid var(--tree-line-color);
+  margin-left: 27px;
 `;
 
 const ExpandButton = styled.button<{ isExpanded: boolean }>`
@@ -134,7 +128,7 @@ const IconWrapper = styled.div<{ isDirectory: boolean }>`
   width: 24px;
   height: 24px;
   color: ${(props) =>
-    props.isDirectory ? "var(--accent-color)" : "var(--text-secondary)"};
+    props.isDirectory ? "var(--text-primary)" : "var(--text-secondary)"};
 
   svg {
     width: 20px;
@@ -202,6 +196,15 @@ const SelectAllContainer = styled.div`
 const SelectAllLabel = styled.span`
   margin-left: 8px;
   color: var(--text-primary);
+`;
+
+const CloseButton = styled(Button)`
+  color: var(--text-primary);
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
 `;
 
 const processTreeNodes = (nodes: FileNode[]): FileNode[] => {
@@ -588,9 +591,13 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     <Container>
       <Header>
         <Title>{name}</Title>
-        <Button variant="icon" onClick={onClose} aria-label={t("common.close")}>
-          <XMarkIcon className="h-6 w-6" />
-        </Button>
+        <CloseButton
+          variant="icon"
+          onClick={onClose}
+          aria-label={t("common.close")}
+        >
+          <XMarkIcon />
+        </CloseButton>
       </Header>
       <Content>{renderContent()}</Content>
     </Container>

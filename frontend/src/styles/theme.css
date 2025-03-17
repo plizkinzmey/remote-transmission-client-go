@@ -10,9 +10,9 @@
   --header-text: #ffffff;
   --header-text-secondary: rgba(255, 255, 255, 0.7);
   --header-border: rgba(255, 255, 255, 0.1);
-  --header-button-bg: rgba(255, 255, 255, 0.1);
-  --header-button-hover-bg: rgba(255, 255, 255, 0.2);
-  --header-button-icon: #ffffff;
+  --header-button-bg: transparent;
+  --header-button-hover-bg: transparent;
+  --header-button-icon: var(--text-primary);
   --header-input-bg: rgba(255, 255, 255, 0.1);
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
 
@@ -52,14 +52,14 @@
   --status-queued: #95a5a6;
 
   /* Torrent Actions */
-  --action-icon-color: #64748b;
-  --action-icon-hover: #475569;
+  --action-icon-color: #475569;
+  --action-icon-hover: #1e293b;
 
   /* Accent colors */
   --accent-color-light: rgba(52, 152, 219, 0.2);
 
   /* TorrentContent specific */
-  --tree-line-color: #e1e4e8;
+  --tree-line-color: #94a3b8;
   --tree-folder-bg: #f8f9fa;
   --tree-folder-border: #3498db;
   --tree-file-hover: #f1f3f5;
@@ -81,9 +81,9 @@
   --header-text: #ffffff;
   --header-text-secondary: rgba(255, 255, 255, 0.7);
   --header-border: rgba(255, 255, 255, 0.1);
-  --header-button-bg: rgba(255, 255, 255, 0.05);
-  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-button-icon: #ffffff;
+  --header-button-bg: transparent;
+  --header-button-hover-bg: transparent;
+  --header-button-icon: var(--text-primary);
   --header-input-bg: rgba(255, 255, 255, 0.05);
   --header-input-focus-bg: rgba(255, 255, 255, 0.1);
 
@@ -130,7 +130,7 @@
   --accent-color-light: rgba(52, 152, 219, 0.15);
 
   /* TorrentContent specific */
-  --tree-line-color: #404040;
+  --tree-line-color: #475569;
   --tree-folder-bg: #2d2d2d;
   --tree-folder-border: #3498db;
   --tree-file-hover: #363636;

@@ -35,6 +35,8 @@ interface TorrentItemProps {
   onStop: (id: number) => void;
   downloadSpeedFormatted: string;
   uploadSpeedFormatted: string;
+  onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
+  isSlowMode?: boolean;
 }
 
 const getStatusClassName = (status: string) => {
@@ -73,6 +75,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   onStop,
   downloadSpeedFormatted,
   uploadSpeedFormatted,
+  onSetSpeedLimit,
+  isSlowMode = false,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -245,6 +249,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             <FolderIcon className={styles.icon} />
           </Button>
           {renderActionButton()}
+          {onSetSpeedLimit && (
+            <Button
+              onClick={() => onSetSpeedLimit(id, !isSlowMode)}
+              title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
+              icon="snail"
+              active={isSlowMode}
+            />
+          )}
           <Button
             variant="icon"
             onClick={() => setShowDeleteConfirmation(true)}

@@ -209,6 +209,14 @@ func (a *App) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
 	return a.service.SetFilesWanted(id, fileIds, wanted)
 }
 
+// SetTorrentSpeedLimit sets the speed limit for the given torrents
+func (a *App) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.SetTorrentSpeedLimit(ids, isSlowMode)
+}
+
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
 	if a.service == nil {

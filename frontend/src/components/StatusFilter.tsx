@@ -58,6 +58,7 @@ const statuses = [
   { key: "checking" },
   { key: "queued" },
   { key: "completed" },
+  { key: "slow" },
 ];
 
 export const StatusFilter: React.FC<StatusFilterProps> = ({

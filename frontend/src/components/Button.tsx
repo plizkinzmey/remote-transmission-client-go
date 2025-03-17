@@ -1,80 +1,85 @@
-import styled from "@emotion/styled";
+import React from "react";
+import styled, { css } from "@emotion/styled";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { SnailIcon } from "./icons/SnailIcon";
 
-interface ButtonProps {
-  variant?: "icon" | "default" | "danger";
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "icon";
   loading?: boolean;
+  active?: boolean;
+  icon?: string;
 }
 
-export const Button = styled.button<ButtonProps>`
-  background-color: ${(props) => {
-    if (props.variant === "icon") return "var(--header-button-bg)";
-    if (props.variant === "danger") return "var(--error-color)";
-    return "var(--accent-color)";
-  }};
-  color: ${(props) => {
-    if (props.variant === "icon") return "var(--header-button-icon)";
-    return "var(--button-text)";
-  }};
-  border: none;
-  border-radius: 4px;
-  padding: ${(props) => (props.variant === "icon" ? "8px" : "8px 16px")};
-  font-size: 14px;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  font-weight: 500;
-  cursor: ${(props) => (props.loading ? "wait" : "pointer")};
-  transition: all 0.2s ease;
-  display: flex;
+const StyledButton = styled.button<ButtonProps>`
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
-  height: ${(props) => (props.variant === "icon" ? "36px" : "auto")};
+  padding: ${(props) => (props.variant === "icon" ? "8px" : "8px 16px")};
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+  background: ${(props) =>
+    props.variant === "icon" ? "transparent" : "var(--accent-color)"};
+  color: ${(props) =>
+    props.variant === "icon" ? "var(--text-primary)" : "var(--button-text)"};
 
   &:hover:not(:disabled) {
-    background-color: ${(props) => {
-      if (props.variant === "icon") return "var(--header-button-hover-bg)";
-      if (props.variant === "danger") return "var(--error-color-hover)";
-      return "var(--hover-color)";
-    }};
+    background: ${(props) =>
+      props.variant === "icon"
+        ? "var(--background-secondary)"
+        : "var(--accent-color)"};
   }
 
   &:disabled {
-    background-color: ${(props) =>
-      props.variant === "icon"
-        ? "var(--header-button-disabled-bg)"
-        : "var(--button-disabled-bg)"};
-    color: ${(props) =>
-      props.variant === "icon"
-        ? "var(--header-button-disabled-icon)"
-        : "var(--button-disabled-text)"};
+    opacity: 0.5;
     cursor: not-allowed;
-    opacity: 0.7;
-    transform: none;
-    box-shadow: none;
   }
 
-  &:active:not(:disabled) {
-    transform: translateY(1px);
-  }
-
-  svg {
-    width: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
-    height: ${(props) => (props.variant === "icon" ? "20px" : "14px")};
-  }
+  ${(props) =>
+    props.active &&
+    css`
+      background-color: var(--accent-color);
+      color: var(--text-on-accent);
+    `}
 `;
 
-const ButtonContent = styled.span`
-  display: inline-flex;
+const IconWrapper = styled.span`
+  display: flex;
   align-items: center;
-  gap: 8px;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
 `;
 
-const ButtonText = styled.span`
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  loading = false,
+  variant = "default",
+  active = false,
+  icon,
+  ...props
+}) => {
+  const renderIcon = () => {
+    if (icon === "snail") {
+      return <SnailIcon />;
+    }
+    return null;
+  };
+
+  return (
+    <StyledButton variant={variant} active={active} {...props}>
+      {loading ? (
+        <LoadingSpinner size="small" />
+      ) : (
+        <>
+          {icon && <IconWrapper>{renderIcon()}</IconWrapper>}
+          {children}
+        </>
+      )}
+    </StyledButton>
+  );
+};

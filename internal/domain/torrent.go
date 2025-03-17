@@ -39,6 +39,7 @@ type Torrent struct {
 	UploadSpeed            int64
 	DownloadSpeedFormatted string
 	UploadSpeedFormatted   string
+	IsSlowMode             bool
 }
 
 type TorrentRepository interface {
@@ -53,4 +54,5 @@ type TorrentRepository interface {
 	// Новые методы для работы с файлами
 	GetTorrentFiles(id int64) ([]TorrentFile, error)
 	SetFilesWanted(id int64, fileIds []int, wanted bool) error
+	SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error
 }

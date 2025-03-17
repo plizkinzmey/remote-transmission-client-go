@@ -11,6 +11,7 @@ import {
   StartTorrents,
   StopTorrents,
   GetSessionStats,
+  SetTorrentSpeedLimit,
 } from "../../wailsjs/go/main/App";
 
 interface ConfigData {
@@ -270,6 +271,19 @@ export function useTorrentData() {
     }
   };
 
+  // Обработчик установки лимита скорости торрента
+  const handleSetSpeedLimit = async (ids: number[], isSlowMode: boolean) => {
+    try {
+      await SetTorrentSpeedLimit(ids, isSlowMode);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to set speed limit:", error);
+      setError(t("errors.failedToSetSpeedLimit", String(error)));
+      return false;
+    }
+  };
+
   // Обработчик сохранения настроек
   const handleSettingsSave = async (settings: ConfigData) => {
     try {
@@ -308,5 +322,6 @@ export function useTorrentData() {
     handleStartTorrent,
     handleStopTorrent,
     handleSettingsSave,
+    handleSetSpeedLimit,
   };
 }

@@ -50,6 +50,9 @@
   --status-completed: #2ecc71;
   --status-checking: #f39c12;
   --status-queued: #95a5a6;
+  --warning-color: #f59e0b;
+  --warning-color-hover: #d97706;
+  --text-on-accent: #ffffff;
 
   /* Torrent Actions */
   --action-icon-color: #1e293b;
@@ -121,6 +124,9 @@
   --status-completed: #27ae60;
   --status-checking: #f39c12;
   --status-queued: #bdc3c7;
+  --warning-color: #fbbf24;
+  --warning-color-hover: #f59e0b;
+  --text-on-accent: #ffffff;
 
   /* Torrent Actions */
   --action-icon-color: #94a3b8;
@@ -152,4 +158,22 @@
   --background-tertiary: rgba(255, 255, 255, 0.1);
   --border-color: rgba(255, 255, 255, 0.1);
   --error-color: #ff4d4d;
+}
+
+.icon-snail {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-snail path {
+  fill: currentColor;
+}
+
+.button-active {
+  background-color: var(--accent-color);
+  color: var(--text-on-accent);
+}
+
+.status-slow {
+  color: var(--warning-color);
 }

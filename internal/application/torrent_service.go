@@ -4,6 +4,10 @@ import (
 	"transmission-client-go/internal/domain"
 )
 
+const (
+	DefaultSpeedLimit = 10 // 10 KB/s
+)
+
 type TorrentService struct {
 	repo   domain.TorrentRepository
 	config *domain.Config
@@ -22,12 +26,12 @@ func (s *TorrentService) UpdateConfig(config *domain.Config) {
 
 func (s *TorrentService) GetAllTorrents() ([]domain.Torrent, error) {
 	torrents, err := s.repo.GetAll()
-	if err != nil {
+	if (err != nil) {
 		return nil, err
 	}
 
 	// Проверяем каждый торрент на превышение максимального рейтинга
-	if s.config != nil && s.config.MaxUploadRatio > 0 {
+	if (s.config != nil && s.config.MaxUploadRatio > 0) {
 		var torrentsToStop []int64
 		for _, t := range torrents {
 			if t.Status == domain.StatusSeeding && t.UploadRatio >= s.config.MaxUploadRatio {
@@ -74,4 +78,19 @@ func (s *TorrentService) GetTorrentFiles(id int64) ([]domain.TorrentFile, error)
 
 func (s *TorrentService) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
 	return s.repo.SetFilesWanted(id, fileIds, wanted)
+}
+
+// SetTorrentSpeedLimit sets the speed limit for given torrents
+func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
+	var downloadLimit, uploadLimit int64
+	if isSlowMode {
+		downloadLimit = DefaultSpeedLimit
+		uploadLimit = DefaultSpeedLimit
+	}
+
+	err := s.repo.SetTorrentSpeedLimit(ids, downloadLimit, uploadLimit)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -22,6 +22,7 @@ export interface TorrentData {
   UploadSpeed: number;
   DownloadSpeedFormatted: string;
   UploadSpeedFormatted: string;
+  IsSlowMode: boolean;
 }
 
 interface TorrentListProps {
@@ -33,6 +34,7 @@ interface TorrentListProps {
   onStart: (id: number) => void;
   onStop: (id: number) => void;
   isLoading?: boolean;
+  onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
 }
 
 /**
@@ -48,6 +50,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
   onStart,
   onStop,
   isLoading = false,
+  onSetSpeedLimit,
 }) => {
   const { t } = useLocalization();
 
@@ -91,6 +94,8 @@ export const TorrentList: React.FC<TorrentListProps> = ({
           onRemove={onRemove}
           onStart={onStart}
           onStop={onStop}
+          onSetSpeedLimit={onSetSpeedLimit}
+          isSlowMode={torrent.IsSlowMode}
         />
       ));
     }

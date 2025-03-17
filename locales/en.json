@@ -1,107 +1,166 @@
 {
-  "app.title": "Transmission Client",
-  "app.loading": "Loading...",
-  "app.error": "Error",
-  "app.reconnecting": "Reconnecting...",
-  "app.reconnectFailed": "Reconnect failed after multiple attempts",
+  "app": {
+    "title": "Transmission Client",
+    "loading": "Loading...",
+    "error": "Error",
+    "reconnecting": "Reconnecting...",
+    "reconnectFailed": "Reconnect failed after multiple attempts",
+    "name": "Transmission Desktop Client"
+  },
   
-  "settings.title": "Connection Settings",
-  "settings.host": "Host",
-  "settings.port": "Port",
-  "settings.username": "Username (optional)",
-  "settings.password": "Password (optional)",
-  "settings.language": "Language",
-  "settings.theme": "Theme",
-  "settings.themeLight": "Light",
-  "settings.themeDark": "Dark",
-  "settings.themeAuto": "Auto",
-  "settings.save": "Save",
-  "settings.cancel": "Cancel",
-  "settings.testConnection": "Test Connection",
-  "settings.testing": "Testing...",
-  "settings.connectionSuccess": "Connection successful!",
-  "settings.connectionFailed": "Connection failed: {0}",
-  "settings.maxUploadRatio": "Stop seeding at ratio",
-  "settings.maxUploadRatioHint": "0 means unlimited",
-  
-  "torrents.search": "Search torrents...",
-  "torrents.selected": "Selected: {0}/{1}",
-  "torrents.noTorrents": "No torrents added yet",
-  "torrents.noTorrentsFound": "No torrents found matching your search",
-  "torrents.startSelected": "Start selected torrents",
-  "torrents.stopSelected": "Stop selected torrents",
-  "torrents.selectAll": "Select All",
-  "torrents.selectTorrent": "Select torrent {0}",
-  "torrents.loading": "Loading torrent list...",
-  
-  "torrent.start": "Start",
-  "torrent.stop": "Stop",
-  "torrent.remove": "Remove",
-  "torrent.ratio": "Ratio",
-  "torrent.uploadRatio": "Upload ratio",
-  "torrent.seeds": "Seeds",
-  "torrent.peers": "Peers",
-  "torrent.uploaded": "Uploaded",
-  "torrent.size": "Size",
-  "torrent.speed": "Speed",
-  "torrent.status.stopped": "Stopped",
-  "torrent.status.downloading": "Downloading",
-  "torrent.status.seeding": "Seeding",
-  "torrent.status.checking": "Checking",
-  "torrent.status.queued": "Queued",
-  "torrent.status.completed": "Completed",
-  "torrent.loadingFiles": "Loading file list...",
-  "torrent.files": "Files",
-  "torrent.fileList": "File List",
-  "torrent.selectAll": "Select All",
-  "torrent.viewContent": "View Files",
-  
-  "filters.all": "All",
-  "filters.downloading": "Downloading",
-  "filters.seeding": "Seeding",
-  "filters.stopped": "Stopped",
-  "filters.checking": "Checking",
-  "filters.queued": "Queued",
-  "filters.completed": "Completed",
-  
-  "add.title": "Add Torrent",
-  "add.url": "Torrent URL or Magnet Link",
-  "add.file": "Or select a torrent file",
-  "add.browse": "Browse",
-  "add.add": "Add",
-  "add.cancel": "Cancel",
-  "add.dropFile": "Drop your torrent file here",
-  "add.orClickToSelect": "or click to select file",
-  
-  "remove.title": "Remove Torrent",
-  "remove.confirmation": "Are you sure you want to remove this torrent?",
-  "remove.selectedConfirmation": "Are you sure you want to remove all selected torrents?",
-  "remove.withData": "Also delete downloaded data",
-  "remove.confirm": "Remove",
-  "remove.cancel": "Cancel",
-  
-  "footer.freeSpace": "Free:",
-  "footer.version": "Transmission",
-  
-  "errors.failedToAddTorrent": "Failed to add torrent: {0}",
-  "errors.failedToRemoveTorrent": "Failed to remove torrent: {0}",
-  "errors.failedToUpdateSettings": "Failed to update settings: {0}",
-  "errors.serviceNotInitialized": "Service not initialized, configure connection first",
-  "errors.maxReconnectAttempts": "Maximum reconnection attempts reached. Please check your connection settings.",
-  "errors.connectionLost": "Connection lost. Attempting to reconnect... ({0}/{1})",
-  "errors.reconnectFailed": "Failed to reconnect. Retrying in 3 seconds... ({0}/{1})",
-  "errors.connectionFailed": "Connection failed: {0}. Please check your settings.",
-  "errors.failedToLoadConfig": "Failed to load configuration: {0}",
-  "errors.failedToStartTorrent": "Failed to start torrent: {0}",
-  "errors.failedToStopTorrent": "Failed to stop torrent: {0}",
-  "errors.failedToStartTorrents": "Failed to start selected torrents: {0}",
-  "errors.failedToStopTorrents": "Failed to stop selected torrents: {0}",
-  "errors.failedToLoadFiles": "Failed to load file list: {0}",
-  "errors.failedToUpdateFile": "Failed to update file state: {0}",
-  "errors.failedToUpdateFiles": "Failed to update files state: {0}",
-  
-  "language.en": "English",
-  "language.ru": "Russian",
-  
-  "common.close": "Close"
+  "settings": {
+    "title": "Connection Settings",
+    "host": "Host",
+    "port": "Port",
+    "username": "Username (optional)",
+    "password": "Password (optional)",
+    "language": "Language",
+    "save": "Save",
+    "cancel": "Cancel",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "connectionSuccess": "Connection successful!",
+    "connectionFailed": "Connection failed: {0}",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeAuto": "Auto",
+    "maxUploadRatio": "Stop seeding at ratio",
+    "maxUploadRatioHint": "0 means unlimited",
+    "success": "Settings saved",
+    "error": "Error saving settings",
+    "testSuccess": "Connection successful",
+    "testError": "Connection error"
+  },
+
+  "torrents": {
+    "search": "Search torrents...",
+    "selected": "Selected: {0}/{1}",
+    "noTorrents": "No torrents added yet",
+    "noTorrentsFound": "No torrents found matching your search",
+    "startSelected": "Start selected torrents",
+    "stopSelected": "Stop selected torrents",
+    "selectAll": "Select all",
+    "selectTorrent": "Select torrent {0}",
+    "loading": "Loading torrent list..."
+  },
+
+  "torrent": {
+    "start": "Start",
+    "stop": "Stop",
+    "remove": "Remove",
+    "ratio": "Ratio",
+    "uploadRatio": "Upload ratio",
+    "seeds": "Seeds",
+    "peers": "Peers",
+    "uploaded": "Uploaded",
+    "size": "Size",
+    "speed": "Speed",
+    "loadingFiles": "Loading file list...",
+    "files": "Files",
+    "fileList": "File List",
+    "selectAll": "Select All",
+    "viewContent": "View Files",
+    "removeWithData": "Remove with Data",
+    "slowSpeed": "Slow Down",
+    "normalSpeed": "Normal Speed",
+    "status": {
+      "stopped": "Stopped",
+      "downloading": "Downloading",
+      "seeding": "Seeding",
+      "checking": "Checking",
+      "queued": "Queued",
+      "completed": "Completed",
+      "slow": "Slowed Down"
+    }
+  },
+
+  "filters": {
+    "all": "All",
+    "downloading": "Downloading",
+    "seeding": "Seeding",
+    "stopped": "Stopped",
+    "checking": "Checking",
+    "queued": "Queued",
+    "completed": "Completed",
+    "slow": "Slowed Down"
+  },
+
+  "add": {
+    "title": "Add Torrent",
+    "url": "Torrent URL or Magnet Link",
+    "file": "Or select a torrent file",
+    "browse": "Browse",
+    "add": "Add",
+    "cancel": "Cancel",
+    "dropFile": "Drop your torrent file here",
+    "orClickToSelect": "or click to select file",
+    "invalidUrl": "Invalid URL",
+    "success": "Torrent added successfully",
+    "error": "Error adding torrent"
+  },
+
+  "remove": {
+    "title": "Remove Torrent",
+    "confirmation": "Are you sure you want to remove this torrent?",
+    "selectedConfirmation": "Are you sure you want to remove all selected torrents?",
+    "withData": "Also delete downloaded data",
+    "confirm": "Remove",
+    "cancel": "Cancel",
+    "message": "Are you sure you want to remove torrent \"{0}\"?"
+  },
+
+  "footer": {
+    "freeSpace": "Free:",
+    "version": "Transmission"
+  },
+
+  "errors": {
+    "failedToAddTorrent": "Failed to add torrent: {0}",
+    "failedToRemoveTorrent": "Failed to remove torrent: {0}",
+    "failedToUpdateSettings": "Failed to update settings: {0}",
+    "serviceNotInitialized": "Service not initialized, configure connection first",
+    "maxReconnectAttempts": "Maximum reconnection attempts reached. Please check your connection settings.",
+    "connectionLost": "Connection lost. Attempting to reconnect... ({0}/{1})",
+    "reconnectFailed": "Failed to reconnect. Retrying in 3 seconds... ({0}/{1})",
+    "connectionFailed": "Connection failed: {0}. Please check your settings.",
+    "failedToLoadConfig": "Failed to load configuration: {0}",
+    "failedToStartTorrent": "Failed to start torrent: {0}",
+    "failedToStopTorrent": "Failed to stop torrent: {0}",
+    "failedToStartTorrents": "Failed to start selected torrents: {0}",
+    "failedToStopTorrents": "Failed to stop selected torrents: {0}",
+    "failedToLoadFiles": "Failed to load file list: {0}",
+    "failedToUpdateFile": "Failed to update file state: {0}",
+    "failedToUpdateFiles": "Failed to update files state: {0}"
+  },
+
+  "language": {
+    "en": "English",
+    "ru": "Russian"
+  },
+
+  "common": {
+    "close": "Close"
+  },
+
+  "header": {
+    "addTorrent": "Add Torrent",
+    "settings": "Settings",
+    "deleteSelected": "Delete Selected ({count})",
+    "startSelected": "Start Selected ({count})",
+    "stopSelected": "Stop Selected ({count})",
+    "search": "Search",
+    "slowSpeed": "Slow Down Selected",
+    "normalSpeed": "Normal Speed"
+  },
+
+  "status": {
+    "downloading": "Downloading",
+    "seeding": "Seeding",
+    "stopped": "Stopped",
+    "completed": "Completed",
+    "checking": "Checking",
+    "queued": "Queued",
+    "slow": "Slowed Down"
+  }
 }

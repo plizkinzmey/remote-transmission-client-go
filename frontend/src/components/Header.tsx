@@ -9,9 +9,10 @@ import {
   PlayIcon,
   PauseIcon,
   TrashIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/Header.module.css";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface HeaderProps {
   searchTerm: string;
@@ -32,7 +33,9 @@ interface HeaderProps {
   isReconnecting: boolean;
   statusFilter: string | null;
   onStatusFilterChange: (status: string | null) => void;
-  torrents: Array<any>; // Добавляем проп для всех торрентов
+  torrents: Array<any>;
+  onSetSpeedLimit: (isSlowMode: boolean) => void;
+  isSlowModeEnabled?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -55,6 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
   statusFilter,
   onStatusFilterChange,
   torrents,
+  onSetSpeedLimit,
+  isSlowModeEnabled = false,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -62,6 +67,14 @@ export const Header: React.FC<HeaderProps> = ({
   const handleRemoveClick = () => {
     setShowDeleteConfirmation(true);
   };
+
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newTerm = event.target.value;
+      setSearchTerm(newTerm);
+    },
+    [setSearchTerm]
+  );
 
   return (
     <div className={styles.fixedHeader}>
@@ -74,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
               className={styles.searchInput}
               placeholder={t("torrents.search")}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
           {/* Кнопка добавления торрента */}
@@ -104,6 +117,17 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label={t("torrents.stopSelected")}
           >
             {stopLoading ? <LoadingSpinner size="small" /> : <PauseIcon />}
+          </Button>
+          {/* Кнопка замедления выбранных торрентов */}
+          <Button
+            variant="icon"
+            onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
+            disabled={!hasSelectedTorrents}
+            aria-label={t(
+              isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
+            )}
+          >
+            <MagnifyingGlassIcon />
           </Button>
           {/* Кнопка удаления выбранных торрентов */}
           <Button
@@ -157,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({
         <StatusFilter
           selectedStatus={statusFilter}
           onStatusChange={onStatusFilterChange}
-          hasNoTorrents={torrents.length === 0} // Теперь используем общее количество торрентов
+          hasNoTorrents={torrents.length === 0}
         />
       </div>
 

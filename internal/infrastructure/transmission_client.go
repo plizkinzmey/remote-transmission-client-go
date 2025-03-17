@@ -442,6 +442,27 @@ func (c *TransmissionClient) SetFilesWanted(id int64, fileIds []int, wanted bool
 	return nil
 }
 
+// SetTorrentSpeedLimit устанавливает ограничение скорости для торрентов
+func (c *TransmissionClient) SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error {
+	// Создаем карту аргументов с ограничениями скорости
+	args := transmissionrpc.TorrentSetPayload{
+		IDs: ids,
+		DownloadLimited: &[]bool{downloadLimit > 0}[0],
+		UploadLimited:   &[]bool{uploadLimit > 0}[0],
+	}
+	
+	// Устанавливаем значения ограничений только если они больше 0
+	if downloadLimit > 0 {
+		args.DownloadLimit = &[]int64{downloadLimit}[0]
+	}
+	if uploadLimit > 0 {
+		args.UploadLimit = &[]int64{uploadLimit}[0]
+	}
+
+	// Применяем настройки
+	return c.client.TorrentSet(c.ctx, args)
+}
+
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
 	// Если торрент остановлен и загружен полностью, считаем его завершенным
 	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {

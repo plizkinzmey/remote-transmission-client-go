@@ -12,6 +12,7 @@ import "./styles/theme.css";
 // Импортируем созданные хуки
 import { useTorrentData } from "./hooks/useTorrentData";
 import { useBulkOperations } from "./hooks/useBulkOperations";
+import { SetTorrentSpeedLimit } from "../wailsjs/go/main/App";
 
 /**
  * Основной компонент приложения.
@@ -45,16 +46,7 @@ function App() {
     handleSettingsSave,
   } = useTorrentData();
 
-  // Фильтрация торрентов по поисковому запросу и статусу
-  const filteredTorrents = torrents.filter((torrent) => {
-    const matchesSearch = torrent.Name.toLowerCase().includes(
-      searchTerm.toLowerCase()
-    );
-    const matchesStatus = !statusFilter || torrent.Status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  // Используем хук для массовых операций
+  // Хук для массовых операций
   const {
     bulkOperations,
     handleStartSelected,
@@ -62,10 +54,39 @@ function App() {
     handleRemoveSelected,
   } = useBulkOperations(torrents, selectedTorrents, refreshTorrents);
 
-  // Обработчик выбора всех видимых торрентов
-  const onSelectAll = () => {
-    handleSelectAll(filteredTorrents);
+  // Обработчик изменения скорости для отдельного торрента
+  const handleSpeedLimitChange = async (id: number, isSlowMode: boolean) => {
+    try {
+      await SetTorrentSpeedLimit([id], isSlowMode);
+      await refreshTorrents();
+    } catch (error) {
+      console.error("Failed to set speed limit:", error);
+    }
   };
+
+  // Обработчик массового изменения скорости
+  const handleBulkSpeedLimitChange = async (isSlowMode: boolean) => {
+    try {
+      const selectedIds = Array.from(selectedTorrents);
+      await SetTorrentSpeedLimit(selectedIds, isSlowMode);
+      await refreshTorrents();
+    } catch (error) {
+      console.error("Failed to set bulk speed limit:", error);
+    }
+  };
+
+  // Фильтрация торрентов по поисковому запросу и статусу
+  const filteredTorrents = torrents.filter((torrent) => {
+    const matchesSearch = torrent.Name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = !statusFilter ||
+      (statusFilter === 'slow' ? torrent.IsSlowMode : torrent.Status === statusFilter);
+    return matchesSearch && matchesStatus;
+  });
+
+  // Проверяем, есть ли замедленные торренты среди выбранных
+  const selectedHaveSlowMode = Array.from(selectedTorrents).some(
+    id => torrents.find(t => t.ID === id)?.IsSlowMode
+  );
 
   return (
     <ThemeProvider>
@@ -84,12 +105,14 @@ function App() {
           removeLoading={bulkOperations.remove}
           filteredTorrents={filteredTorrents}
           selectedTorrents={selectedTorrents}
-          onSelectAll={onSelectAll}
+          onSelectAll={handleSelectAll}
           error={error}
           isReconnecting={isReconnecting}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
           torrents={torrents}
+          onSetSpeedLimit={handleBulkSpeedLimitChange}
+          isSlowModeEnabled={selectedHaveSlowMode}
         />
         <div className={styles.content}>
           <div className={styles.scrollableContent}>
@@ -102,6 +125,7 @@ function App() {
               onStart={handleStartTorrent}
               onStop={handleStopTorrent}
               isLoading={isLoading}
+              onSetSpeedLimit={handleSpeedLimitChange}
             />
           </div>
           <Footer

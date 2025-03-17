@@ -191,6 +191,14 @@
   cursor: default;
 }
 
+.statusSlow {
+  color: var(--warning-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
 .progress {
   width: 100%;
   height: 8px;
@@ -243,6 +251,10 @@
   display: inline-block;
   vertical-align: middle;
   margin: 0 2px;
+}
+
+.speedIcon.slow {
+  color: var(--warning-color);
 }
 
 .speed {
@@ -361,4 +373,13 @@
 
 .torrent-ratio {
   cursor: default;
+}
+
+.button.slow {
+  background-color: var(--warning-color);
+  color: var(--button-text);
+}
+
+.button.slow:hover {
+  background-color: var(--warning-color-hover);
 }

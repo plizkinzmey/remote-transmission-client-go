@@ -40,7 +40,6 @@ const SpeedItem = styled.div`
   gap: 4px;
   opacity: ${(props: { loading?: boolean }) => (props.loading ? "0.5" : "1")};
   transition: opacity 0.2s ease;
-
   svg {
     width: 16px;
     height: 16px;
@@ -69,7 +68,7 @@ export const Footer: React.FC<FooterProps> = ({
     return `${value.toFixed(1)} ${units[unitIndex]}`;
   };
 
-  const formatBytes = (bytes?: number): string => {
+  const formatSize = (bytes?: number): string => {
     if (bytes === undefined) return "- GB";
     const units = ["B", "KB", "MB", "GB", "TB"];
     let value = bytes;
@@ -95,8 +94,12 @@ export const Footer: React.FC<FooterProps> = ({
           {formatSpeed(totalUploadSpeed)}
         </SpeedItem>
       </SpeedInfo>
-      <div>{t("footer.freeSpace", formatBytes(freeSpace))}</div>
-      <div>{t("footer.version", transmissionVersion ?? "?")}</div>
+      <SpeedItem loading={freeSpace === undefined}>
+        {t("footer.freeSpace")} {formatSize(freeSpace)}
+      </SpeedItem>
+      <SpeedItem loading={transmissionVersion === undefined}>
+        {t("footer.version")} {transmissionVersion ?? "-"}
+      </SpeedItem>
     </FooterContainer>
   );
 };

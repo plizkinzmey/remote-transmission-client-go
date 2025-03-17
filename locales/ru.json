@@ -77,8 +77,8 @@
   "remove.confirm": "Удалить",
   "remove.cancel": "Отмена",
   
-  "footer.freeSpace": "Свободно: {0}",
-  "footer.version": "Transmission {0}",
+  "footer.freeSpace": "Свободно:",
+  "footer.version": "Transmission",
   
   "errors.failedToAddTorrent": "Не удалось добавить торрент: {0}",
   "errors.failedToRemoveTorrent": "Не удалось удалить торрент: {0}",

@@ -154,16 +154,16 @@ export function useTorrentData() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Загружаем сохраненные настройки
         const savedConfig = await LoadConfig();
-
         if (savedConfig) {
           try {
-            // Если есть сохраненные настройки, используем их
             await Initialize(JSON.stringify(savedConfig));
+            const stats = await GetSessionStats();
+            if (stats) {
+              setSessionStats(stats);
+            }
+            await refreshTorrents();
             setIsInitialized(true);
-            refreshSessionStats(); // Сразу запрашиваем статистику
-            refreshTorrents(); // Затем запускаем загрузку торрентов
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
             setError(t("errors.connectionFailed", String(initError)));
@@ -181,18 +181,31 @@ export function useTorrentData() {
     };
 
     initializeApp();
-  }, []);
+  }, [refreshTorrents, t]);
 
   // Эффект для периодического обновления данных
   useEffect(() => {
     let torrentsInterval: number;
     let statsInterval: number;
 
-    if (isInitialized) {
-      // Обновляем статистику каждую секунду
-      statsInterval = window.setInterval(refreshSessionStats, 1000);
+    const updateStats = async () => {
+      if (!isInitialized) return;
+      try {
+        const stats = await GetSessionStats();
+        if (stats) {
+          setSessionStats(stats);
+        }
+      } catch (error) {
+        console.error("Failed to fetch session stats:", error);
+      }
+    };
 
-      // Обновляем список торрентов каждые 3 секунды
+    if (isInitialized) {
+      // Немедленно обновляем данные при инициализации
+      updateStats();
+
+      // Устанавливаем интервалы обновления
+      statsInterval = window.setInterval(updateStats, 1000);
       torrentsInterval = window.setInterval(refreshTorrents, 3000);
     }
 
@@ -204,7 +217,7 @@ export function useTorrentData() {
         window.clearInterval(torrentsInterval);
       }
     };
-  }, [isInitialized, refreshSessionStats, refreshTorrents]);
+  }, [isInitialized, refreshTorrents]);
 
   // Обработчик добавления торрента
   const handleAddTorrent = async (url: string) => {

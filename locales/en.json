@@ -77,8 +77,8 @@
   "remove.confirm": "Remove",
   "remove.cancel": "Cancel",
   
-  "footer.freeSpace": "Free Space: {0}",
-  "footer.version": "Transmission {0}",
+  "footer.freeSpace": "Free:",
+  "footer.version": "Transmission",
   
   "errors.failedToAddTorrent": "Failed to add torrent: {0}",
   "errors.failedToRemoveTorrent": "Failed to remove torrent: {0}",

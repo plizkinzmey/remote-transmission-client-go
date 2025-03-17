@@ -11,8 +11,8 @@
   --header-text-secondary: rgba(255, 255, 255, 0.7);
   --header-border: rgba(255, 255, 255, 0.1);
   --header-button-bg: transparent;
-  --header-button-hover-bg: transparent;
-  --header-button-icon: var(--text-primary);
+  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
+  --header-button-icon: #ffffff;
   --header-input-bg: rgba(255, 255, 255, 0.1);
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
 

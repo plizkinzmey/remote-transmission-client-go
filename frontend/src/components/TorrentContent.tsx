@@ -5,7 +5,6 @@ import {
   ArrowPathIcon,
   XMarkIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
   FolderIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
@@ -61,6 +60,7 @@ const Header = styled.div`
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid var(--border-color);
+  background-color: var(--background-primary);
 `;
 
 const Title = styled.h2`
@@ -77,6 +77,8 @@ const Content = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
 `;
 
 const FileTree = styled.div`
@@ -97,11 +99,16 @@ const FileNodeContent = styled.div<{ isDirectory: boolean }>`
   align-items: center;
   padding: 8px;
   background-color: ${(props) =>
-    props.isDirectory ? "var(--background-primary)" : "transparent"};
+    props.isDirectory ? "var(--tree-folder-bg)" : "var(--background-primary)"};
+  border-left: 3px solid
+    ${(props) =>
+      props.isDirectory ? "var(--tree-folder-border)" : "transparent"};
 `;
 
 const FileChildren = styled.div<{ isExpanded: boolean }>`
   display: ${(props) => (props.isExpanded ? "block" : "none")};
+  margin-left: 3px;
+  border-left: 1px solid var(--tree-line-color);
 `;
 
 const ExpandButton = styled.button<{ isExpanded: boolean }>`
@@ -127,7 +134,7 @@ const IconWrapper = styled.div<{ isDirectory: boolean }>`
   width: 24px;
   height: 24px;
   color: ${(props) =>
-    props.isDirectory ? "var(--text-primary)" : "var(--text-secondary)"};
+    props.isDirectory ? "var(--accent-color)" : "var(--text-secondary)"};
 
   svg {
     width: 20px;
@@ -140,6 +147,13 @@ const Checkbox = styled.input`
   width: 18px;
   height: 18px;
   cursor: pointer;
+  accent-color: var(--accent-color);
+  border: 1px solid var(--tree-checkbox-border);
+  background-color: var(--tree-checkbox-bg);
+
+  &:indeterminate {
+    accent-color: var(--accent-color);
+  }
 `;
 
 const FileName = styled.span`
@@ -147,12 +161,13 @@ const FileName = styled.span`
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-right: 8px;
+  color: var(--text-primary);
 `;
 
 const FileProgress = styled.div<{ progress: number }>`
   width: 100px;
   height: 4px;
-  background-color: var(--background-tertiary);
+  background-color: var(--tree-progress-bg);
   border-radius: 2px;
   position: relative;
 
@@ -163,7 +178,7 @@ const FileProgress = styled.div<{ progress: number }>`
     top: 0;
     height: 100%;
     width: ${(props) => props.progress}%;
-    background-color: var(--accent-color);
+    background-color: var(--tree-progress-fill);
     border-radius: 2px;
   }
 `;
@@ -175,30 +190,19 @@ const FileSize = styled.span`
   white-space: nowrap;
 `;
 
-const createFileNode = (
-  file: TorrentFile,
-  path: string,
-  isLast: boolean
-): FileNode => ({
-  ID: isLast ? file.ID : -1,
-  Name: path.split("/").pop() ?? "",
-  Path: path,
-  Size: isLast ? file.Size : 0,
-  Progress: isLast ? file.Progress : 0,
-  Wanted: isLast ? file.Wanted : true,
-  isDirectory: !isLast,
-  children: !isLast ? [] : undefined,
-  expanded: true,
-});
+const SelectAllContainer = styled.div`
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+`;
 
-const updateNodeStats = (
-  node: FileNode,
-  size: number,
-  progress: number
-): void => {
-  node.Size = (node.Size || 0) + size;
-  node.Progress = (node.Progress || 0) + progress;
-};
+const SelectAllLabel = styled.span`
+  margin-left: 8px;
+  color: var(--text-primary);
+`;
 
 const processTreeNodes = (nodes: FileNode[]): FileNode[] => {
   return nodes.map((node) => {
@@ -542,13 +546,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
     return (
       <div>
-        <div
-          style={{
-            marginBottom: "16px",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
+        <SelectAllContainer>
           <Checkbox
             type="checkbox"
             checked={allChecked}
@@ -559,10 +557,8 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
             }}
             onChange={toggleAll}
           />
-          <span style={{ marginLeft: "8px", color: "var(--text-primary)" }}>
-            {t("torrent.selectAll")}
-          </span>
-        </div>
+          <SelectAllLabel>{t("torrent.selectAll")}</SelectAllLabel>
+        </SelectAllContainer>
         <FileTree>{fileTree.map((node) => renderFileNode(node))}</FileTree>
       </div>
     );

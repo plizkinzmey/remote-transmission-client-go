@@ -57,6 +57,16 @@
 
   /* Accent colors */
   --accent-color-light: rgba(52, 152, 219, 0.2);
+
+  /* TorrentContent specific */
+  --tree-line-color: #e1e4e8;
+  --tree-folder-bg: #f8f9fa;
+  --tree-folder-border: #3498db;
+  --tree-file-hover: #f1f3f5;
+  --tree-progress-bg: #ecf0f1;
+  --tree-progress-fill: #3498db;
+  --tree-checkbox-bg: #ffffff;
+  --tree-checkbox-border: #cbd5e1;
 }
 
 :root[data-theme="dark"] {
@@ -118,6 +128,16 @@
 
   /* Accent colors */
   --accent-color-light: rgba(52, 152, 219, 0.15);
+
+  /* TorrentContent specific */
+  --tree-line-color: #404040;
+  --tree-folder-bg: #2d2d2d;
+  --tree-folder-border: #3498db;
+  --tree-file-hover: #363636;
+  --tree-progress-bg: #404040;
+  --tree-progress-fill: #3498db;
+  --tree-checkbox-bg: #2d2d2d;
+  --tree-checkbox-border: #4a5568;
 }
 
 :root {

@@ -52,6 +52,7 @@
   "torrent.files": "Файлы",
   "torrent.fileList": "Список файлов",
   "torrent.selectAll": "Выбрать все",
+  "torrent.viewContent": "Просмотр файлов",
   
   "filters.all": "Все",
   "filters.downloading": "Загрузка",

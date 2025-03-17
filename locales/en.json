@@ -52,6 +52,7 @@
   "torrent.files": "Files",
   "torrent.fileList": "File List",
   "torrent.selectAll": "Select All",
+  "torrent.viewContent": "View Files",
   
   "filters.all": "All",
   "filters.downloading": "Downloading",

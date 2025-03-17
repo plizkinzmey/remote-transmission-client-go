@@ -10,6 +10,7 @@ import {
   TrashIcon,
   ArrowDownIcon,
   ArrowUpIcon,
+  FolderIcon,
 } from "@heroicons/react/24/outline";
 import styles from "../styles/TorrentItem.module.css";
 
@@ -164,119 +165,95 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return value < 0 ? 0 : value;
   };
 
-  const handleItemClick = (e: React.MouseEvent) => {
-    // Если клик был по чекбоксу или кнопкам - игнорируем
-    if (
-      (e.target as HTMLElement).closest(".checkbox, .action-buttons") !== null
-    ) {
-      return;
-    }
-    setShowContent(true);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      setShowContent(true);
-    }
-  };
-
   return (
     <>
-      <button
-        className={styles.torrentItem}
-        data-status={status}
-        onClick={handleItemClick}
-        onKeyDown={handleKeyDown}
-        aria-label={t("torrents.selectTorrent", name)}
-      >
-        <div className={styles.container} data-status={status}>
-          <label className={styles.checkbox}>
-            <input
-              type="checkbox"
-              checked={selected}
-              onChange={() => onSelect(id)}
-              aria-label={t("torrents.selectTorrent", name)}
-            />
-          </label>
+      <div className={styles.container} data-status={status}>
+        <label className={styles.checkbox}>
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onSelect(id)}
+            aria-label={t("torrents.selectTorrent", name)}
+          />
+        </label>
 
-          <div className={styles.info}>
-            <div className={styles.topRow}>
-              <h3 className={styles.name} title={name}>
-                {name}
-              </h3>
-              <div
-                className={styles.ratioContainer}
-                title={t("torrent.uploadRatio")}
-              >
-                <span className={styles.ratio}>
-                  {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            <div className={styles.statusContainer}>
-              <span className={getStatusClassName(status)}>
-                {getStatusText(status)}
-              </span>
-              <span className={styles.progressPercentage}>
-                {progress.toFixed(1)}%
-              </span>
-            </div>
-
-            <div className={styles.progressContainer}>
-              <progress
-                className={styles.progress}
-                value={progress}
-                max="100"
-              />
-            </div>
-
-            <div className={styles.statsContainer}>
-              <span className={styles.size}>
-                <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
-                {sizeFormatted}
-              </span>
-              <span className={styles.speed}>
-                <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
-                <ArrowDownIcon
-                  className={`${styles.speedIcon} ${styles.downloadIcon}`}
-                />{" "}
-                {downloadSpeedFormatted}{" "}
-                <ArrowUpIcon
-                  className={`${styles.speedIcon} ${styles.uploadIcon}`}
-                />{" "}
-                {uploadSpeedFormatted}
-              </span>
-              <span className={styles.seeds}>
-                <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
-                {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
-              </span>
-              <span className={styles.peers}>
-                <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
-                {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
-              </span>
-              <span className={styles.uploaded}>
-                <span className={styles.paramName}>
-                  {t("torrent.uploaded")}:
-                </span>{" "}
-                {uploadedFormatted}
+        <div className={styles.info}>
+          <div className={styles.topRow}>
+            <h3 className={styles.name} title={name}>
+              {name}
+            </h3>
+            <div
+              className={styles.ratioContainer}
+              title={t("torrent.uploadRatio")}
+            >
+              <span className={styles.ratio}>
+                {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
               </span>
             </div>
           </div>
 
-          <div className={styles.actions}>
-            {renderActionButton()}
-            <Button
-              variant="icon"
-              onClick={() => setShowDeleteConfirmation(true)}
-              title={t("torrent.remove")}
-            >
-              <TrashIcon className={styles.icon} />
-            </Button>
+          <div className={styles.statusContainer}>
+            <span className={getStatusClassName(status)}>
+              {getStatusText(status)}
+            </span>
+            <span className={styles.progressPercentage}>
+              {progress.toFixed(1)}%
+            </span>
+          </div>
+
+          <div className={styles.progressContainer}>
+            <progress className={styles.progress} value={progress} max="100" />
+          </div>
+
+          <div className={styles.statsContainer}>
+            <span className={styles.size}>
+              <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
+              {sizeFormatted}
+            </span>
+            <span className={styles.speed}>
+              <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
+              <ArrowDownIcon
+                className={`${styles.speedIcon} ${styles.downloadIcon}`}
+              />{" "}
+              {downloadSpeedFormatted}{" "}
+              <ArrowUpIcon
+                className={`${styles.speedIcon} ${styles.uploadIcon}`}
+              />{" "}
+              {uploadSpeedFormatted}
+            </span>
+            <span className={styles.seeds}>
+              <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
+              {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
+            </span>
+            <span className={styles.peers}>
+              <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
+              {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
+            </span>
+            <span className={styles.uploaded}>
+              <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}
+              {uploadedFormatted}
+            </span>
           </div>
         </div>
-      </button>
+
+        <div className={styles.actions}>
+          <Button
+            variant="icon"
+            onClick={() => setShowContent(true)}
+            title={t("torrent.viewContent")}
+          >
+            <FolderIcon className={styles.icon} />
+          </Button>
+          {renderActionButton()}
+          <Button
+            variant="icon"
+            onClick={() => setShowDeleteConfirmation(true)}
+            title={t("torrent.remove")}
+          >
+            <TrashIcon className={styles.icon} />
+          </Button>
+        </div>
+      </div>
 
       {showDeleteConfirmation && (
         <DeleteConfirmation

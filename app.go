@@ -95,9 +95,9 @@ func (a *App) LoadConfig() (*domain.Config, error) {
 	return a.configService.LoadConfig()
 }
 
-// GetTranslation returns a translated string for the given key and locale
-func (a *App) GetTranslation(key string, locale string) string {
-	return a.localizationService.Translate(key, locale)
+// GetTranslation returns a translated string for the given key and locale with optional parameters
+func (a *App) GetTranslation(key string, locale string, args ...interface{}) string {
+	return a.localizationService.Translate(key, locale, args...)
 }
 
 // GetAvailableLanguages returns all available languages

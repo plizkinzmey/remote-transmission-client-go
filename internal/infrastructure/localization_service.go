@@ -69,26 +69,36 @@ func (s *LocalizationService) loadTranslationFile(locale string) error {
 }
 
 // Translate returns a translated string for the given key
-func (s *LocalizationService) Translate(key string, locale string) string {
-	// If locale is not supported, use fallback
+func (s *LocalizationService) Translate(key string, locale string, args ...interface{}) string {
+	// Если локаль не поддерживается, используем запасной вариант
 	if _, ok := s.translations[locale]; !ok {
 		locale = s.fallbackLocale
 	}
 
-	// Get translation from the specified locale
-	if translation, ok := s.translations[locale][key]; ok {
-		return translation
+	// Получаем перевод для указанной локали
+	var translation string
+	var found bool
+
+	if translation, found = s.translations[locale][key]; !found && locale != s.fallbackLocale {
+		// Если перевод не найден в указанной локали, пробуем запасной вариант
+		translation, found = s.translations[s.fallbackLocale][key]
 	}
 
-	// If not found in specified locale, try fallback
-	if locale != s.fallbackLocale {
-		if translation, ok := s.translations[s.fallbackLocale][key]; ok {
-			return translation
+	if !found {
+		// Если перевод не найден, возвращаем ключ как есть
+		return key
+	}
+
+	// Если есть аргументы, заменяем плейсхолдеры
+	if len(args) > 0 {
+		// Заменяем плейсхолдеры {0}, {1}, ... на соответствующие аргументы
+		for i, arg := range args {
+			placeholder := fmt.Sprintf("{%d}", i)
+			translation = strings.Replace(translation, placeholder, fmt.Sprintf("%v", arg), -1)
 		}
 	}
 
-	// If no translation found, return the key as is
-	return key
+	return translation
 }
 
 // GetAvailableLocales returns all available locales

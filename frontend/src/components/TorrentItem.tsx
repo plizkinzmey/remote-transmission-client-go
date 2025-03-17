@@ -171,7 +171,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const handleItemClick = (e: React.MouseEvent) => {
     // Если клик был по чекбоксу или кнопкам - игнорируем
     if (
-      (e.target as HTMLElement).closest('.checkbox, .action-buttons') !== null
+      (e.target as HTMLElement).closest(".checkbox, .action-buttons") !== null
     ) {
       return;
     }
@@ -179,7 +179,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       setShowContent(true);
     }
@@ -229,7 +229,11 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             </div>
 
             <div className={styles.progressContainer}>
-              <progress className={styles.progress} value={progress} max="100" />
+              <progress
+                className={styles.progress}
+                value={progress}
+                max="100"
+              />
             </div>
 
             <div className={styles.statsContainer}>
@@ -257,7 +261,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
               </span>
               <span className={styles.uploaded}>
-                <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}
+                <span className={styles.paramName}>
+                  {t("torrent.uploaded")}:
+                </span>{" "}
                 {uploadedFormatted}
               </span>
             </div>

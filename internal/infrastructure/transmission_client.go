@@ -351,33 +351,55 @@ func (c *TransmissionClient) GetSessionStats() (*domain.SessionStats, error) {
 
 // GetTorrentFiles возвращает список файлов торрента
 func (c *TransmissionClient) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
+	fmt.Printf("Getting files for torrent ID: %d\n", id)
+
 	torrents, err := c.client.TorrentGet(c.ctx, []string{
 		"files", "fileStats", "name",
 	}, []int64{id})
-	
+
 	if err != nil {
+		fmt.Printf("Error getting torrent files: %v\n", err)
 		return nil, fmt.Errorf("failed to get torrent files: %w", err)
 	}
+
+	fmt.Printf("Received torrents response. Count: %d\n", len(torrents))
 
 	if len(torrents) == 0 {
 		return nil, fmt.Errorf("torrent not found")
 	}
 
 	t := torrents[0]
-	if len(t.Files) == 0 || len(t.FileStats) == 0 {
+
+	// Логируем информацию о файлах и статистике
+	fmt.Printf("Torrent name: %s\n", *t.Name)
+	fmt.Printf("Files count: %d, FileStats count: %d\n", len(t.Files), len(t.FileStats))
+
+	// Добавим дополнительную проверку на nil
+	if t.Files == nil || t.FileStats == nil {
+		fmt.Printf("Files or FileStats is nil\n")
 		return nil, fmt.Errorf("no files information available")
+	}
+
+	if len(t.Files) == 0 || len(t.FileStats) == 0 {
+		fmt.Printf("No files found in torrent\n")
+		// Возвращаем пустой список вместо ошибки, если у торрента просто нет файлов
+		return []domain.TorrentFile{}, nil
+	}
+
+	// Проверка соответствия длины файлов и статистики
+	if len(t.Files) != len(t.FileStats) {
+		fmt.Printf("Files count (%d) doesn't match FileStats count (%d)\n", len(t.Files), len(t.FileStats))
+		return nil, fmt.Errorf("files and file stats count mismatch")
 	}
 
 	result := make([]domain.TorrentFile, len(t.Files))
 	for i, file := range t.Files {
 		stats := t.FileStats[i]
-		
 		// Считаем прогресс
 		progress := float64(0)
 		if file.Length > 0 {
 			progress = float64(stats.BytesCompleted) / float64(file.Length) * 100
 		}
-
 		result[i] = domain.TorrentFile{
 			ID:       i,
 			Name:     filepath.Base(file.Name),
@@ -386,8 +408,11 @@ func (c *TransmissionClient) GetTorrentFiles(id int64) ([]domain.TorrentFile, er
 			Progress: progress,
 			Wanted:   stats.Wanted,
 		}
+
+		fmt.Printf("Processed file %d: %s (wanted: %v, progress: %.2f%%)\n", i, file.Name, stats.Wanted, progress)
 	}
 
+	fmt.Printf("Successfully processed %d files\n", len(result))
 	return result, nil
 }
 

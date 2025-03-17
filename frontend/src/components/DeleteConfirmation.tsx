@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { Portal } from './Portal';
+import { Portal } from "./Portal";
 
 interface DeleteConfirmationProps {
   torrentName: string;

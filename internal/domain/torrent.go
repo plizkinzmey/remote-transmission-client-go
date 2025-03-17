@@ -49,7 +49,7 @@ type TorrentRepository interface {
 	Start(ids []int64) error
 	Stop(ids []int64) error
 	GetSessionStats() (*SessionStats, error) // Новый метод для получения статистики сессии
-	
+
 	// Новые методы для работы с файлами
 	GetTorrentFiles(id int64) ([]TorrentFile, error)
 	SetFilesWanted(id int64, fileIds []int, wanted bool) error

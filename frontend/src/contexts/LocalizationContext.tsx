@@ -20,7 +20,7 @@ interface LocaleInfo {
 }
 
 interface LocalizationContextType {
-  t: (key: string, ...params: string[]) => string;
+  t: (key: string, ...params: any[]) => string;
   currentLanguage: string;
   setLanguage: (language: string) => void;
   availableLanguages: LocaleInfo[];
@@ -49,40 +49,48 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     []
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translationsCache, setTranslationsCache] = useState<
+    Record<string, string>
+  >({});
 
-  // Format translation with parameters
-  const formatTranslation = (text: string, params: string[]) => {
-    let result = text;
-    params.forEach((param, index) => {
-      result = result.replace(`{${index}}`, param);
-    });
-    return result;
-  };
+  // Синхронная функция перевода, которая использует параметры
+  const t = (key: string, ...params: any[]): string => {
+    // Получение перевода
+    const cachedTranslation = translationsCache[key];
 
-  // Synchronous translation function that uses cache
-  const t = (key: string, ...params: string[]): string => {
-    // Return from cache if available
-    if (translations[key]) {
-      return formatTranslation(translations[key], params);
+    // Если есть в кэше, используем его, иначе запрашиваем асинхронно
+    if (!cachedTranslation) {
+      // Передаем параметры как третий аргумент - массив
+      GetTranslation(key, currentLanguage, params)
+        .then((translation) => {
+          if (translation !== key) {
+            setTranslationsCache((prev) => ({
+              ...prev,
+              [key]: translation,
+            }));
+          }
+        })
+        .catch((error) => {
+          console.error(`Failed to get translation for key: ${key}`, error);
+        });
+
+      // Пока возвращаем ключ
+      return key;
     }
 
-    // If not in cache, return key and trigger async load
-    GetTranslation(key, currentLanguage)
-      .then((translation) => {
-        setTranslations((prev) => ({
-          ...prev,
-          [key]: translation,
-        }));
-      })
-      .catch((error) => {
-        console.error(`Failed to get translation for key: ${key}`, error);
+    // Если в запросе были переданы параметры, заменяем плейсхолдеры
+    if (params.length > 0) {
+      let result = cachedTranslation;
+      params.forEach((param, index) => {
+        result = result.replace(`{${index}}`, String(param));
       });
+      return result;
+    }
 
-    return formatTranslation(key, params);
+    return cachedTranslation;
   };
 
-  // Preload common translations when language changes
+  // Предзагружаем общие переводы при изменении языка
   useEffect(() => {
     const preloadCommonTranslations = async () => {
       const commonKeys = [
@@ -101,13 +109,17 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "torrent.peers",
         "torrent.uploaded",
       ];
-
       try {
         const newTranslations: Record<string, string> = {};
         await Promise.all(
           commonKeys.map(async (key) => {
             try {
-              const translation = await GetTranslation(key, currentLanguage);
+              // Добавляем пустой массив как третий аргумент
+              const translation = await GetTranslation(
+                key,
+                currentLanguage,
+                []
+              );
               newTranslations[key] = translation;
             } catch (error) {
               console.error(
@@ -117,8 +129,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
             }
           })
         );
-
-        setTranslations((prev) => ({
+        setTranslationsCache((prev) => ({
           ...prev,
           ...newTranslations,
         }));
@@ -140,7 +151,8 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         const langs = await Promise.all(
           codes.map(async (code: string) => ({
             code,
-            name: await GetTranslation(`language.${code}`, code),
+            // Добавляем пустой массив как третий аргумент
+            name: await GetTranslation(`language.${code}`, code, []),
           }))
         );
         setAvailableLanguages(langs);
@@ -175,7 +187,8 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   // Update window title when language changes
   useEffect(() => {
     const updateTitle = async () => {
-      const title = await GetTranslation("app.title", currentLanguage);
+      // Добавляем пустой массив как третий аргумент
+      const title = await GetTranslation("app.title", currentLanguage, []);
       document.title = title;
     };
     updateTitle();
@@ -184,10 +197,11 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   // Change language
   const setLanguage = (language: string) => {
     setCurrentLanguage(language);
-    setTranslations({}); // Clear translations cache when language changes
+    // Сбрасываем кэш переводов при смене языка
+    setTranslationsCache({});
   };
 
-  // Memoize the context value
+  // Мемоизируем контекстное значение
   const contextValue = useMemo(
     () => ({
       t,

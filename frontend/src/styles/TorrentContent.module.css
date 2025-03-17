@@ -3,20 +3,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  height: 100%;
   gap: 16px;
 }
 
 .loading-spinner {
   width: 32px;
   height: 32px;
-  color: var(--accent-color);
   animation: spin 1s linear infinite;
+  color: var(--accent-color);
 }
 
 .loading-text {
   color: var(--text-secondary);
-  font-size: 14px;
 }
 
 .error-message {
@@ -32,4 +31,75 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.fileTreeContainer {
+  padding: 1rem;
+  width: 100%;
+}
+
+.fileTreeItem {
+  display: grid;
+  grid-template-columns: auto 1fr 200px 100px;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fileTreeItem:hover {
+  background-color: var(--hover-background);
+}
+
+.fileName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileIcon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.progress {
+  width: 100%;
+}
+
+.progress progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.fileSize {
+  text-align: right;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.nested {
+  margin-left: 1.5rem;
+}
+
+/* Стили для progress bar */
+progress {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: var(--progress-bg);
+  border-radius: 4px;
+}
+
+progress::-webkit-progress-value {
+  background-color: var(--progress-fill);
+  border-radius: 4px;
+}
+
+progress::-moz-progress-bar {
+  background-color: var(--progress-fill);
+  border-radius: 4px;
 }

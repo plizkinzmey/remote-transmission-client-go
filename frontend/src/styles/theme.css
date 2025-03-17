@@ -1,8 +1,8 @@
 :root[data-theme="light"] {
   --background-primary: #ffffff;
   --background-secondary: #f8f9fa;
-  --text-primary: #2c3e50;
-  --text-secondary: #6c757d;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
   --border-color: #e1e4e8;
 
   /* Header colors */
@@ -52,7 +52,7 @@
   --status-queued: #95a5a6;
 
   /* Torrent Actions */
-  --action-icon-color: #475569;
+  --action-icon-color: #1e293b;
   --action-icon-hover: #1e293b;
 
   /* Accent colors */

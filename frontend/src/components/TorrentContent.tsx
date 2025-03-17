@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLocalization } from "../contexts/LocalizationContext";
-import { Button } from "./Button";
 import {
   ArrowPathIcon,
   XMarkIcon,
@@ -60,7 +59,6 @@ const Header = styled.div`
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--background-primary);
 `;
 
 const Title = styled.h2`
@@ -108,17 +106,22 @@ const FileChildren = styled.div<{ isExpanded: boolean }>`
 const ExpandButton = styled.button<{ isExpanded: boolean }>`
   background: none;
   border: none;
-  padding: 4px;
   cursor: pointer;
   color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   margin: 0;
-  height: 24px;
   width: 24px;
+  height: 24px;
   min-width: 24px;
   transform: rotate(${(props) => (props.isExpanded ? "0deg" : "-90deg")});
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const IconWrapper = styled.div<{ isDirectory: boolean }>`
@@ -198,12 +201,23 @@ const SelectAllLabel = styled.span`
   color: var(--text-primary);
 `;
 
-const CloseButton = styled(Button)`
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   svg {
     width: 24px;
     height: 24px;
+  }
+
+  &:hover {
+    opacity: 0.8;
   }
 `;
 
@@ -494,13 +508,17 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
         isDirectory={!!node.isDirectory}
       >
         <FileNodeContent isDirectory={!!node.isDirectory}>
-          <ExpandButton
-            isExpanded={!!node.expanded}
-            onClick={() => node.isDirectory && toggleExpand(node)}
-            style={{ visibility: node.isDirectory ? "visible" : "hidden" }}
-          >
-            <ChevronDownIcon />
-          </ExpandButton>
+          {node.isDirectory ? (
+            <ExpandButton
+              isExpanded={!!node.expanded}
+              onClick={() => toggleExpand(node)}
+              aria-label={node.expanded ? "Свернуть" : "Развернуть"}
+            >
+              <ChevronDownIcon />
+            </ExpandButton>
+          ) : (
+            <div style={{ width: "24px" }} />
+          )}
 
           <IconWrapper isDirectory={!!node.isDirectory}>
             {node.isDirectory ? <FolderIcon /> : <DocumentIcon />}
@@ -591,11 +609,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     <Container>
       <Header>
         <Title>{name}</Title>
-        <CloseButton
-          variant="icon"
-          onClick={onClose}
-          aria-label={t("common.close")}
-        >
+        <CloseButton onClick={onClose} aria-label={t("common.close")}>
           <XMarkIcon />
         </CloseButton>
       </Header>

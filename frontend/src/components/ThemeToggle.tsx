@@ -5,13 +5,16 @@ import { useLocalization } from "../contexts/LocalizationContext";
 
 const ToggleContainer = styled.div`
   position: relative;
-  width: 64px;
-  height: 32px;
+  width: 72px;
+  height: 36px;
   background: var(--toggle-background);
-  border-radius: 16px;
+  border-radius: 18px;
   cursor: pointer;
-  padding: 3px;
+  padding: 4px;
   border: 1px solid var(--border-color);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 `;
 
 const getSliderPosition = (position: "light" | "auto" | "dark"): string => {
@@ -19,9 +22,9 @@ const getSliderPosition = (position: "light" | "auto" | "dark"): string => {
     case "light":
       return "0";
     case "auto":
-      return "16px";
+      return "calc(50% - 14px)";
     case "dark":
-      return "32px";
+      return "calc(100% - 28px)";
     default:
       return "0";
   }
@@ -29,8 +32,8 @@ const getSliderPosition = (position: "light" | "auto" | "dark"): string => {
 
 const Slider = styled.div<{ position: "light" | "auto" | "dark" }>`
   position: absolute;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   background: var(--button-active-background);
   border-radius: 50%;
   display: flex;
@@ -43,42 +46,56 @@ const Slider = styled.div<{ position: "light" | "auto" | "dark" }>`
 
 const SunIcon = () => (
   <svg
-    width="14"
-    height="14"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2m0 16v2M4 12H2m20 0h-2m-2.8-6.8L15.8 6.6M8.2 15.4L6.8 16.8M6.8 7.2L8.2 8.6m9.6 6.8l1.4 1.4" />
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
   </svg>
 );
 
 const SystemIcon = () => (
   <svg
-    width="14"
-    height="14"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M3 9h18" />
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 3v18" />
+    <path d="M12 14a2 2 0 100-4 2 2 0 000 4z" fill="currentColor" />
   </svg>
 );
 
 const MoonIcon = () => (
   <svg
-    width="14"
-    height="14"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
   >
-    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
   </svg>
 );
 

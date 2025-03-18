@@ -67,13 +67,13 @@
   justify-content: center;
   flex-shrink: 0;
   border-radius: 4px;
-  background-color: var(--header-button-bg);
+  background-color: transparent;
   transition: all 0.2s ease;
 }
 
-.leftSection button:hover,
-.rightSection button:hover {
-  background-color: var(--header-button-hover-bg);
+.leftSection button:hover:not(:disabled),
+.rightSection button:hover:not(:disabled) {
+  background-color: rgba(128, 128, 128, 0.1);
 }
 
 .leftSection button svg,
@@ -81,6 +81,21 @@
   width: 20px;
   height: 20px;
   color: var(--header-button-icon);
+  transition: all 0.2s ease;
+}
+
+/* Стиль для активной кнопки замедления */
+.controlPanel button[data-active="true"] svg {
+  stroke-width: 2;
+  color: var(--accent-color);
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .leftSection button:hover:not(:disabled),
+  .rightSection button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
 /* Стили селекта для выбора всех */
@@ -99,12 +114,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 24px; /* Соответствует высоте чекбокса в TorrentItem */
-  margin-left: 20px; /* Увеличиваем отступ с 20px до 24px */
-  /* Убираем padding-left, так как у контейнера уже есть отступ 16px */
+  height: 24px;
+  margin-left: 20px;
 }
 
-/* Объединенные стили для .selectAllCheckbox */
 .selectAllCheckbox {
   width: 16px;
   height: 16px;
@@ -229,6 +242,13 @@
   gap: 8px;
 }
 
+.centerGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px;
+}
+
 .actionButton {
   background: none;
   border: none;
@@ -255,13 +275,6 @@
 .actionButton svg {
   width: 20px;
   height: 20px;
-}
-
-.centerGroup {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 16px;
 }
 
 .selectedCount {

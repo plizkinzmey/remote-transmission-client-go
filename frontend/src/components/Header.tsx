@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             title={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
-            active={isSlowModeEnabled}
+            data-active={isSlowModeEnabled}
           >
             <SnailIcon className={styles.icon} />
           </Button>

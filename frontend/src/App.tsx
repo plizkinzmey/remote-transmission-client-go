@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
-import { Settings } from "./components/Settings";
+import { Settings } from "./components/settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -42,7 +42,6 @@ function App() {
   const {
     torrents,
     selectedTorrents,
-    isInitialized,
     error,
     isReconnecting,
     hasSelectedTorrents,
@@ -153,12 +152,8 @@ function App() {
         {/* Модальные окна */}
         {showSettings && (
           <Settings
-            onSave={(settings: Config) => handleSettingsSave(settings)}
-            onClose={() => {
-              if (isInitialized) {
-                setShowSettings(false);
-              }
-            }}
+            onSave={handleSettingsSave}
+            onClose={() => setShowSettings(false)}
           />
         )}
         {showAddTorrent && (

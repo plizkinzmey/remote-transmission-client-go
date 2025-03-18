@@ -13,6 +13,8 @@ import {
 import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/Header.module.css";
 import { useState, useCallback } from "react";
+import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSelector } from "./LanguageSelector";
 
 interface HeaderProps {
   searchTerm: string;
@@ -142,14 +144,17 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
         </div>
         <div className={styles.rightSection}>
-          {/* Кнопка настроек */}
-          <Button
-            variant="icon"
-            onClick={onSettings}
-            aria-label={t("settings.title")}
-          >
-            <Cog6ToothIcon />
-          </Button>
+          <div className={styles.controls}>
+            <LanguageSelector />
+            <ThemeToggle />
+            <Button
+              variant="icon"
+              onClick={onSettings}
+              aria-label={t("settings.title")}
+            >
+              <Cog6ToothIcon />
+            </Button>
+          </div>
         </div>
       </div>
 

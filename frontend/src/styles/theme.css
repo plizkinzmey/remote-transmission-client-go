@@ -70,6 +70,21 @@
   --tree-progress-fill: #3498db;
   --tree-checkbox-bg: #ffffff;
   --tree-checkbox-border: #cbd5e1;
+
+  /* Theme Toggle */
+  --toggle-background: rgba(0, 0, 0, 0.05);
+  --button-active-background: var(--accent-color);
+  --button-active-text: var(--accent-contrast);
+  --button-hover-background: rgba(0, 0, 0, 0.03);
+
+  /* Settings Tabs */
+  --sidebar-background: var(--background-secondary);
+  --tab-active-background: var(--accent-color);
+  --tab-active-text: var(--accent-contrast);
+  --tab-hover-background: rgba(0, 0, 0, 0.03);
+  --input-background: var(--background-primary);
+  --focus-border: var(--accent-color);
+  --accent-contrast: #ffffff;
 }
 
 :root[data-theme="dark"] {
@@ -144,6 +159,21 @@
   --tree-progress-fill: #3498db;
   --tree-checkbox-bg: #2d2d2d;
   --tree-checkbox-border: #4a5568;
+
+  /* Theme Toggle */
+  --toggle-background: rgba(255, 255, 255, 0.1);
+  --button-active-background: var(--accent-color);
+  --button-active-text: var(--accent-contrast);
+  --button-hover-background: rgba(255, 255, 255, 0.05);
+
+  /* Settings Tabs */
+  --sidebar-background: var(--background-secondary);
+  --tab-active-background: var(--accent-color);
+  --tab-active-text: var(--accent-contrast);
+  --tab-hover-background: rgba(255, 255, 255, 0.05);
+  --input-background: var(--background-primary);
+  --focus-border: var(--accent-color);
+  --accent-contrast: #ffffff;
 }
 
 :root {
@@ -151,6 +181,23 @@
   --background-tertiary: rgba(0, 0, 0, 0.1);
   --border-color: rgba(0, 0, 0, 0.1);
   --error-color: #dc3545;
+
+  /* Theme Toggle */
+  --toggle-background: var(--background-tertiary);
+  --button-active-background: var(--accent-color);
+  --button-active-text: var(--accent-contrast);
+  --button-hover-background: var(--background-hover);
+
+  /* Settings Tabs */
+  --sidebar-background: var(--background-secondary);
+  --tab-active-background: var(--accent-color);
+  --tab-active-text: var(--accent-contrast);
+  --tab-hover-background: var(--background-hover);
+  --input-background: var(--background-primary);
+  --focus-border: var(--accent-color);
+  --success-color: #27ae60;
+  --error-color: #e74c3c;
+  --accent-contrast: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -158,6 +205,22 @@
   --background-tertiary: rgba(255, 255, 255, 0.1);
   --border-color: rgba(255, 255, 255, 0.1);
   --error-color: #ff4d4d;
+
+  /* Theme Toggle */
+  --toggle-background: rgba(255, 255, 255, 0.1);
+  --button-active-background: var(--accent-color);
+  --button-active-text: var(--accent-contrast);
+  --button-hover-background: rgba(255, 255, 255, 0.05);
+
+  /* Settings Tabs */
+  --sidebar-background: var(--background-secondary);
+  --tab-active-background: var(--accent-color);
+  --tab-active-text: var(--accent-contrast);
+  --tab-hover-background: rgba(255, 255, 255, 0.05);
+  --input-background: var(--background-primary);
+  --focus-border: var(--accent-color);
+  --success-color: #2ecc71;
+  --error-color: #e74c3c;
 }
 
 .icon-snail {

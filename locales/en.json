@@ -32,7 +32,12 @@
     "testSuccess": "Connection successful",
     "testError": "Connection error",
     "slowSpeedLimit": "Speed limit for slow mode",
-    "slowSpeedLimitHint": "Speed limit that will be applied when the slow mode is activated"
+    "slowSpeedLimitHint": "Speed limit that will be applied when the slow mode is activated",
+    "tabConnection": "Connection",
+    "tabLimits": "Limits",
+    "connectionSettings": "Connection Settings",
+    "speedLimits": "Speed Limits",
+    "ratioLimit": "Ratio Limit"
   },
 
   "torrents": {

@@ -20,6 +20,10 @@ interface ConfigData {
   username: string;
   password: string;
   language: string;
+  theme: string;
+  maxUploadRatio: number;
+  slowSpeedLimit: number;
+  slowSpeedUnit: "KiB/s" | "MiB/s";
 }
 
 // Интерфейс для статистики сессии
@@ -48,6 +52,7 @@ export function useTorrentData() {
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [config, setConfig] = useState<ConfigData | null>(null);
   const maxReconnectAttempts = 3;
 
   // Обработчик выбора/снятия выбора с торрента
@@ -158,6 +163,12 @@ export function useTorrentData() {
       try {
         const savedConfig = await LoadConfig();
         if (savedConfig) {
+          setConfig({
+            ...savedConfig,
+            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
+              | "KiB/s"
+              | "MiB/s",
+          });
           try {
             await Initialize(JSON.stringify(savedConfig));
             await refreshSessionStats();
@@ -178,7 +189,6 @@ export function useTorrentData() {
         return false;
       }
     };
-
     initializeApp();
   }, [refreshSessionStats, refreshTorrents, t]);
 
@@ -273,6 +283,7 @@ export function useTorrentData() {
 
   // Обработчик установки лимита скорости торрента
   const handleSetSpeedLimit = async (ids: number[], isSlowMode: boolean) => {
+    if (!config) return false;
     try {
       await SetTorrentSpeedLimit(ids, isSlowMode);
       refreshTorrents();
@@ -291,6 +302,7 @@ export function useTorrentData() {
       setIsInitialized(true);
       setError(null);
       setLanguage(settings.language);
+      setConfig(settings);
       await refreshSessionStats();
       await refreshTorrents();
       return true;
@@ -313,6 +325,7 @@ export function useTorrentData() {
     hasSelectedTorrents,
     sessionStats,
     isLoading: isLoading && isFirstLoad,
+    config,
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,

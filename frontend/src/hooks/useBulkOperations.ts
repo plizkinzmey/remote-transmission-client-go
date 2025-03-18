@@ -15,6 +15,11 @@ interface BulkOperationsState {
   speedLimit: boolean;
 }
 
+interface Config {
+  slowSpeedLimit: number;
+  slowSpeedUnit: "KiB/s" | "MiB/s";
+}
+
 /**
  * Хук для управления массовыми операциями запуска и остановки торрентов
  * Отслеживает состояние операций и изменения состояний торрентов
@@ -22,7 +27,8 @@ interface BulkOperationsState {
 export function useBulkOperations(
   torrents: TorrentData[],
   selectedTorrents: Set<number>,
-  refreshTorrents: () => Promise<void>
+  refreshTorrents: () => Promise<void>,
+  config: Config | undefined
 ) {
   const { t } = useLocalization();
   const [bulkOperations, setBulkOperations] = useState<BulkOperationsState>({
@@ -220,7 +226,8 @@ export function useBulkOperations(
 
   // Обработчик установки ограничения скорости для выбранных торрентов
   const handleSetSpeedLimit = async (isSlowMode: boolean) => {
-    if (bulkOperations.speedLimit || selectedTorrents.size === 0) return;
+    if (bulkOperations.speedLimit || selectedTorrents.size === 0 || !config)
+      return;
 
     setBulkOperations((prev) => ({ ...prev, speedLimit: true }));
 

@@ -20,7 +20,9 @@ interface Config {
   password: string;
   language: string;
   theme: ThemeType;
-  maxUploadRatio?: number;
+  maxUploadRatio: number;
+  slowSpeedLimit: number;
+  slowSpeedUnit: "KiB/s" | "MiB/s";
 }
 
 interface SettingsProps {
@@ -173,8 +175,10 @@ const defaultSettings = {
   username: "",
   password: "",
   language: "en",
-  theme: "light",
+  theme: "light" as ThemeType,
   maxUploadRatio: 0,
+  slowSpeedLimit: 50,
+  slowSpeedUnit: "KiB/s" as "KiB/s" | "MiB/s",
 };
 
 const Description = styled.div`
@@ -214,6 +218,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
             ...savedConfig,
             language: savedConfig.language || currentLanguage,
             theme: (savedConfig.theme as ThemeType) || (theme as ThemeType),
+            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
+              | "KiB/s"
+              | "MiB/s",
           });
         }
       } catch (error) {
@@ -370,6 +377,37 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                 placeholder={t("settings.maxUploadRatioHint")}
               />
               <Description>{t("settings.maxUploadRatioHint")}</Description>
+            </FormGroup>
+            <FormGroup>
+              <Label>{t("settings.slowSpeedLimit")}</Label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <Input
+                  type="number"
+                  min="1"
+                  value={settings.slowSpeedLimit}
+                  style={{ flex: 1 }}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      slowSpeedLimit: parseInt(e.target.value, 10) || 1,
+                    })
+                  }
+                />
+                <Select
+                  value={settings.slowSpeedUnit}
+                  style={{ width: "80px" }}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      slowSpeedUnit: e.target.value as "KiB/s" | "MiB/s",
+                    })
+                  }
+                >
+                  <option value="KiB/s">KiB/s</option>
+                  <option value="MiB/s">MiB/s</option>
+                </Select>
+              </div>
+              <Description>{t("settings.slowSpeedLimitHint")}</Description>
             </FormGroup>
             <StatusMessage status={connectionStatus}>
               {statusMessage}

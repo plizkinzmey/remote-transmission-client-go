@@ -30,7 +30,9 @@
     "success": "Settings saved",
     "error": "Error saving settings",
     "testSuccess": "Connection successful",
-    "testError": "Connection error"
+    "testError": "Connection error",
+    "slowSpeedLimit": "Speed limit for slow mode",
+    "slowSpeedLimitHint": "Speed limit that will be applied when the slow mode is activated"
   },
 
   "torrents": {

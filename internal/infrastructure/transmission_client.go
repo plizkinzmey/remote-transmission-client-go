@@ -448,6 +448,16 @@ func (c *TransmissionClient) SetFilesWanted(id int64, fileIds []int, wanted bool
 	return nil
 }
 
+// convertSpeedToKBps конвертирует скорость из KiB/s или MiB/s в KiB/s
+func convertSpeedToKBps(speed int, unit string) int64 {
+	switch unit {
+	case "MiB/s":
+		return int64(speed) * 1024 // Конвертируем MiB/s в KiB/s
+	default:
+		return int64(speed) // Значение уже в KiB/s
+	}
+}
+
 // SetTorrentSpeedLimit устанавливает ограничение скорости для торрентов
 func (c *TransmissionClient) SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error {
 	// Создаем карту аргументов с ограничениями скорости
@@ -467,6 +477,18 @@ func (c *TransmissionClient) SetTorrentSpeedLimit(ids []int64, downloadLimit int
 
 	// Применяем настройки
 	return c.client.TorrentSet(c.ctx, args)
+}
+
+// SetSpeedLimitFromConfig устанавливает ограничение скорости из конфигурации
+func (c *TransmissionClient) SetSpeedLimitFromConfig(ids []int64, config domain.Config, isSlowMode bool) error {
+	if isSlowMode {
+		// Конвертируем скорость из конфигурации в KiB/s
+		speedLimit := convertSpeedToKBps(config.SlowSpeedLimit, config.SlowSpeedUnit)
+		return c.SetTorrentSpeedLimit(ids, speedLimit, speedLimit)
+	} else {
+		// Сбрасываем ограничения
+		return c.SetTorrentSpeedLimit(ids, 0, 0)
+	}
 }
 
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {

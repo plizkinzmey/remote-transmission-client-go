@@ -9,4 +9,6 @@ type Config struct {
 	Language       string  `json:"language"`       // Added for localization support
 	Theme          string  `json:"theme"`          // Added for theme support: "light", "dark", "auto"
 	MaxUploadRatio float64 `json:"maxUploadRatio"` // Maximum upload ratio before stopping torrent (0 means unlimited)
+	SlowSpeedLimit int     `json:"slowSpeedLimit"` // Speed limit for slow mode in KiB/s or MiB/s
+	SlowSpeedUnit  string  `json:"slowSpeedUnit"`  // Unit for slow speed limit: "KiB/s" or "MiB/s"
 }

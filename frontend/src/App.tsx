@@ -13,6 +13,20 @@ import "./styles/theme.css";
 import { useTorrentData } from "./hooks/useTorrentData";
 import { useBulkOperations } from "./hooks/useBulkOperations";
 
+type ThemeType = "light" | "dark" | "auto";
+
+interface Config {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  language: string;
+  theme: ThemeType;
+  maxUploadRatio: number;
+  slowSpeedLimit: number;
+  slowSpeedUnit: "KiB/s" | "MiB/s";
+}
+
 /**
  * Основной компонент приложения.
  * Использует хуки для управления данными и состоянием приложения,
@@ -44,16 +58,22 @@ function App() {
     handleStopTorrent,
     handleSettingsSave,
     handleSetSpeedLimit: handleTorrentSpeedLimit,
+    config,
   } = useTorrentData();
 
-  // Хук для массовых операций
+  // Хук для массовых операций с учетом конфигурации скорости
   const {
     bulkOperations,
     handleStartSelected,
     handleStopSelected,
     handleRemoveSelected,
     handleSetSpeedLimit,
-  } = useBulkOperations(torrents, selectedTorrents, refreshTorrents);
+  } = useBulkOperations(
+    torrents,
+    selectedTorrents,
+    refreshTorrents,
+    config || undefined
+  );
 
   // Фильтрация торрентов по поисковому запросу и статусу
   const filteredTorrents = torrents.filter((torrent) => {
@@ -133,7 +153,7 @@ function App() {
         {/* Модальные окна */}
         {showSettings && (
           <Settings
-            onSave={handleSettingsSave}
+            onSave={(settings: Config) => handleSettingsSave(settings)}
             onClose={() => {
               if (isInitialized) {
                 setShowSettings(false);

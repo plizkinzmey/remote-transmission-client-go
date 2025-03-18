@@ -11,7 +11,7 @@ import (
 
 // LocalizationService handles the application translations
 type LocalizationService struct {
-	translations     map[string]map[string]string
+	translations     map[string]map[string]interface{}
 	fallbackLocale   string
 	availableLocales []string
 }
@@ -19,16 +19,14 @@ type LocalizationService struct {
 // NewLocalizationService creates a new localization service
 func NewLocalizationService() (*LocalizationService, error) {
 	service := &LocalizationService{
-		translations:     make(map[string]map[string]string),
+		translations:     make(map[string]map[string]interface{}),
 		fallbackLocale:   "en",
 		availableLocales: []string{"en", "ru"},
 	}
-
 	err := service.loadTranslations()
 	if err != nil {
 		return nil, err
 	}
-
 	return service, nil
 }
 
@@ -50,20 +48,20 @@ func (s *LocalizationService) loadTranslationFile(locale string) error {
 	if !ok {
 		return fmt.Errorf("failed to get current file path")
 	}
-
 	baseDir := filepath.Dir(filepath.Dir(filepath.Dir(filename)))
 	filePath := filepath.Join(baseDir, "locales", fmt.Sprintf("%s.json", locale))
-
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to read translation file %s: %w", filePath, err)
 	}
 
-	var translations map[string]string
+	// Загружаем в map с поддержкой вложенной структуры
+	var translations map[string]interface{}
 	if err := json.Unmarshal(data, &translations); err != nil {
 		return fmt.Errorf("failed to unmarshal translations for %s: %w", locale, err)
 	}
 
+	// Сохраняем с поддержкой вложенной структуры
 	s.translations[locale] = translations
 	return nil
 }
@@ -76,16 +74,15 @@ func (s *LocalizationService) Translate(key string, locale string, args ...inter
 	}
 
 	// Получаем перевод для указанной локали
-	var translation string
-	var found bool
+	translation := s.getNestedTranslation(key, locale)
 
-	if translation, found = s.translations[locale][key]; !found && locale != s.fallbackLocale {
-		// Если перевод не найден в указанной локали, пробуем запасной вариант
-		translation, found = s.translations[s.fallbackLocale][key]
+	// Если перевод не найден в указанной локали, пробуем запасной вариант
+	if translation == key && locale != s.fallbackLocale {
+		translation = s.getNestedTranslation(key, s.fallbackLocale)
 	}
 
-	if !found {
-		// Если перевод не найден, возвращаем ключ как есть
+	// Если перевод не найден, возвращаем ключ как есть
+	if translation == key {
 		return key
 	}
 
@@ -99,6 +96,38 @@ func (s *LocalizationService) Translate(key string, locale string, args ...inter
 	}
 
 	return translation
+}
+
+// getNestedTranslation получает значение вложенного ключа в формате "app.title"
+func (s *LocalizationService) getNestedTranslation(key string, locale string) string {
+	parts := strings.Split(key, ".")
+
+	// Начинаем с корневого объекта для заданной локали
+	var currentObj interface{} = s.translations[locale]
+
+	// Проходим по частям ключа
+	for _, part := range parts {
+		// Проверяем, что текущий объект - карта
+		if nestedMap, ok := currentObj.(map[string]interface{}); ok {
+			// Получаем следующую часть из карты
+			currentObj = nestedMap[part]
+			if currentObj == nil {
+				// Если часть не найдена, возвращаем исходный ключ
+				return key
+			}
+		} else {
+			// Если это не карта, значит мы не можем продолжать навигацию
+			return key
+		}
+	}
+
+	// Если дошли до конца пути и получили строку - это наш перевод
+	if strValue, ok := currentObj.(string); ok {
+		return strValue
+	}
+
+	// В противном случае возвращаем исходный ключ
+	return key
 }
 
 // GetAvailableLocales returns all available locales
@@ -121,7 +150,6 @@ func (s *LocalizationService) GetSystemLocale() string {
 			parts := strings.Split(envLocale, "_")
 			if len(parts) > 0 {
 				langCode := strings.ToLower(parts[0])
-
 				// Check if this language is supported
 				for _, supportedLocale := range s.availableLocales {
 					if supportedLocale == langCode {

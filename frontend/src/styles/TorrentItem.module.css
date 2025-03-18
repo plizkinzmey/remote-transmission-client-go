@@ -222,16 +222,31 @@
 
 .actions button {
   color: var(--action-icon-color);
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  background-color: transparent;
 }
 
 .actions button:hover:not(:disabled) {
+  background-color: rgba(128, 128, 128, 0.1);
   color: var(--action-icon-hover);
 }
 
 .actions button:disabled {
   color: var(--card-text-secondary);
   opacity: 0.5;
+}
+
+/* Обновленный стиль для кнопки замедления */
+.actions button[data-active="true"] svg {
+  stroke-width: 2;
+  color: var(--accent-color);
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .actions button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
 .progressText {

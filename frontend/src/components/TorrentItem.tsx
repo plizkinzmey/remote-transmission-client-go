@@ -257,7 +257,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               title={t(
                 isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
               )}
-              active={isSlowMode}
+              data-active={isSlowMode}
             >
               <SnailIcon className={styles.icon} />
             </Button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "@emotion/styled";
+import * as Tabs from "@radix-ui/react-tabs";
 import { Button } from "../Button";
 import { TestConnection, LoadConfig } from "../../../wailsjs/go/main/App";
 import { useLocalization } from "../../contexts/LocalizationContext";
@@ -71,36 +72,35 @@ const Overlay = styled.div`
 `;
 
 const TabsContainer = styled.div`
-  display: flex;
-`;
-
-const Sidebar = styled.div`
-  width: 180px;
-  border-right: 1px solid var(--border-color);
-  background: var(--sidebar-background);
-`;
-
-const TabButton = styled.button<{ active: boolean }>`
-  width: 100%;
-  padding: 12px 16px;
-  text-align: left;
-  border: none;
-  background: ${(props) =>
-    props.active ? "var(--tab-active-background)" : "transparent"};
-  color: ${(props) =>
-    props.active ? "var(--tab-active-text)" : "var(--text-primary)"};
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${(props) => !props.active && "var(--tab-hover-background)"};
-  }
-`;
-
-const TabContent = styled.div`
+  padding: 16px;
   flex: 1;
   overflow-y: auto;
+`;
+
+const StyledTabsList = styled(Tabs.List)`
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+`;
+
+const StyledTabTrigger = styled(Tabs.Trigger)`
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+
+  &[data-state="active"] {
+    border-bottom-color: var(--accent-color);
+    color: var(--accent-color);
+  }
+
+  &:hover:not([data-state="active"]) {
+    color: var(--text-secondary);
+  }
 `;
 
 const Footer = styled.div`
@@ -139,7 +139,6 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatusType>("none");
   const [statusMessage, setStatusMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<TabType>("connection");
 
   useEffect(() => {
     const loadSavedSettings = async () => {
@@ -199,48 +198,39 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
     );
   }
 
-  const tabs = [
-    { id: "connection" as TabType, label: t("settings.tabConnection") },
-    { id: "limits" as TabType, label: t("settings.tabLimits") },
-  ];
-
   return (
     <>
       <Overlay onClick={onClose} />
       <Modal>
         <ModalHeader>
-          <h2>{t("settings.title")}</h2>
+          <Title>{t("settings.title")}</Title>
         </ModalHeader>
+        <Tabs.Root defaultValue="connection">
+          <TabsContainer>
+            <StyledTabsList>
+              <StyledTabTrigger value="connection">
+                {t("settings.tabConnection")}
+              </StyledTabTrigger>
+              <StyledTabTrigger value="limits">
+                {t("settings.tabLimits")}
+              </StyledTabTrigger>
+            </StyledTabsList>
 
-        <TabsContainer>
-          <Sidebar>
-            {tabs.map((tab) => (
-              <TabButton
-                key={tab.id}
-                active={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </TabButton>
-            ))}
-          </Sidebar>
-
-          <TabContent>
-            {activeTab === "connection" && (
+            <Tabs.Content value="connection">
               <ConnectionTab
                 settings={settings}
                 onSettingsChange={handleSettingsChange}
               />
-            )}
-            {activeTab === "limits" && (
+            </Tabs.Content>
+
+            <Tabs.Content value="limits">
               <LimitsTab
                 settings={settings}
                 onSettingsChange={handleSettingsChange}
               />
-            )}
-          </TabContent>
-        </TabsContainer>
-
+            </Tabs.Content>
+          </TabsContainer>
+        </Tabs.Root>
         <Footer>
           <div>
             {connectionStatus !== "none" && (

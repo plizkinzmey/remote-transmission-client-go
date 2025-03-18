@@ -6,48 +6,62 @@ import { useLocalization } from "../contexts/LocalizationContext";
 const ToggleContainer = styled.div`
   position: relative;
   width: 72px;
-  height: 36px;
+  height: 28px; // Уменьшаем высоту с 36px до 28px, соответствуя размеру иконок
   background: var(--toggle-background);
-  border-radius: 18px;
+  border-radius: 14px; // Соответственно уменьшаем радиус с 18px до 14px
   cursor: pointer;
-  padding: 4px;
+  padding: 3px; // Уменьшаем внутренние отступы для лучшей пропорции
   border: 1px solid var(--border-color);
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
 `;
 
-const getSliderPosition = (position: "light" | "auto" | "dark"): string => {
-  switch (position) {
-    case "light":
-      return "0";
-    case "auto":
-      return "calc(50% - 14px)";
-    case "dark":
-      return "calc(100% - 28px)";
-    default:
-      return "0";
-  }
-};
+// Иконки теперь встроены в контейнер и не движутся вместе с кнопкой
+const IconContainer = styled.div`
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin: 0 2px;
+`;
 
 const Slider = styled.div<{ position: "light" | "auto" | "dark" }>`
   position: absolute;
-  width: 28px;
-  height: 28px;
+  left: ${(props) => {
+    switch (props.position) {
+      case "light":
+        return "3px";
+      case "auto":
+        return "calc(50% - 10px)";
+      case "dark":
+        return "calc(100% - 23px)";
+      default:
+        return "3px";
+    }
+  }};
+  width: 20px; // Уменьшаем с 28px до 20px для соответствия иконкам
+  height: 20px; // Уменьшаем с 28px до 20px для соответствия иконкам
   background: var(--button-active-background);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--button-active-text);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateX(${(props) => getSliderPosition(props.position)});
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
 `;
 
 const SunIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14" // Немного уменьшаем иконки для лучшей пропорции
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -69,8 +83,8 @@ const SunIcon = () => (
 
 const SystemIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14" // Немного уменьшаем иконки для лучшей пропорции
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -86,8 +100,8 @@ const SystemIcon = () => (
 
 const MoonIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14" // Немного уменьшаем иконки для лучшей пропорции
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -109,7 +123,7 @@ export const ThemeToggle: React.FC = () => {
     else setTheme("light");
   };
 
-  const getCurrentIcon = () => {
+  const getActiveIcon = () => {
     switch (theme) {
       case "light":
         return <SunIcon />;
@@ -133,7 +147,16 @@ export const ThemeToggle: React.FC = () => {
 
   return (
     <ToggleContainer onClick={nextTheme} title={getTitle()}>
-      <Slider position={theme}>{getCurrentIcon()}</Slider>
+      <IconContainer>
+        <SunIcon />
+      </IconContainer>
+      <IconContainer>
+        <SystemIcon />
+      </IconContainer>
+      <IconContainer>
+        <MoonIcon />
+      </IconContainer>
+      <Slider position={theme}>{getActiveIcon()}</Slider>
     </ToggleContainer>
   );
 };

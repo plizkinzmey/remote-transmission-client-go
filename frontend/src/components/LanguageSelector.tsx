@@ -1,55 +1,137 @@
 import React from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import ReactCountryFlag from "react-country-flag";
 import styled from "@emotion/styled";
 import { useLocalization } from "../contexts/LocalizationContext";
 
-const Select = styled.select`
-  background: var(--toggle-background);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  color: var(--text-primary);
-  font-size: 12px;
-  padding: 2px 24px 2px 12px;
-  height: 24px;
-  appearance: none;
+const languageToCountryCode: Record<string, string> = {
+  en: "GB",
+  ru: "RU",
+};
+
+const StyledTrigger = styled(DropdownMenu.Trigger)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--header-button-icon);
   cursor: pointer;
-  outline: none;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 
   &:hover {
-    background: var(--button-hover-background);
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
-  /* Custom arrow */
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px;
+  &:focus {
+    outline: none;
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
 `;
 
-const Container = styled.div`
-  position: relative;
-  display: inline-block;
+const StyledContent = styled(DropdownMenu.Content)`
+  z-index: 99999;
+  min-width: 150px;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+  animation: scaleIn 0.1s ease-out;
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+`;
+
+const StyledItem = styled(DropdownMenu.Item)`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--background-hover);
+  }
+
+  &:focus {
+    outline: none;
+    background: var(--background-hover);
+  }
+
+  .flag {
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .text {
+    flex: 1;
+  }
+
+  .check {
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
 `;
 
 export const LanguageSelector: React.FC = () => {
-  const { currentLanguage, availableLanguages, setLanguage } =
-    useLocalization();
+  const { currentLanguage, availableLanguages, setLanguage } = useLocalization();
 
   return (
-    <Container>
-      <Select
-        value={currentLanguage}
-        onChange={(e) => setLanguage(e.target.value)}
-        title={`${
-          availableLanguages.find((lang) => lang.code === currentLanguage)?.name
-        }`}
-      >
-        {availableLanguages.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.name}
-          </option>
-        ))}
-      </Select>
-    </Container>
+    <DropdownMenu.Root>
+      <StyledTrigger aria-label="Select language">
+        <ReactCountryFlag
+          countryCode={languageToCountryCode[currentLanguage] || "GB"}
+          svg
+          style={{ width: "20px", height: "20px" }}
+        />
+      </StyledTrigger>
+      
+      <DropdownMenu.Portal>
+        <StyledContent align="end" sideOffset={5}>
+          {availableLanguages.map((lang) => (
+            <StyledItem
+              key={lang.code}
+              onSelect={() => setLanguage(lang.code)}
+            >
+              <ReactCountryFlag
+                countryCode={languageToCountryCode[lang.code] || "GB"}
+                svg
+                style={{ width: "20px", height: "20px" }}
+                className="flag"
+              />
+              <span className="text">{lang.name}</span>
+              {currentLanguage === lang.code && (
+                <span className="check">✓</span>
+              )}
+            </StyledItem>
+          ))}
+        </StyledContent>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 };

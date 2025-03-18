@@ -99,10 +99,11 @@ const StyledItem = styled(DropdownMenu.Item)`
 `;
 
 export const LanguageSelector: React.FC = () => {
-  const { currentLanguage, availableLanguages, setLanguage } = useLocalization();
+  const { currentLanguage, availableLanguages, setLanguage } =
+    useLocalization();
 
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root modal={false}>
       <StyledTrigger aria-label="Select language">
         <ReactCountryFlag
           countryCode={languageToCountryCode[currentLanguage] || "GB"}
@@ -110,14 +111,11 @@ export const LanguageSelector: React.FC = () => {
           style={{ width: "20px", height: "20px" }}
         />
       </StyledTrigger>
-      
+
       <DropdownMenu.Portal>
-        <StyledContent align="end" sideOffset={5}>
+        <StyledContent align="end" sideOffset={5} className="dropdown-content">
           {availableLanguages.map((lang) => (
-            <StyledItem
-              key={lang.code}
-              onSelect={() => setLanguage(lang.code)}
-            >
+            <StyledItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
               <ReactCountryFlag
                 countryCode={languageToCountryCode[lang.code] || "GB"}
                 svg

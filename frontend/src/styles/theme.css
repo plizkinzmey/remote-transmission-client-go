@@ -183,9 +183,10 @@
   --error-color: #dc3545;
 
   /* Theme Toggle */
-  --toggle-background: var(--background-tertiary);
+  --toggle-background: rgba(0, 0, 0, 0.05);
   --button-active-background: var(--accent-color);
-  --button-active-text: var(--accent-contrast);
+  --button-active-text: #ffffff;
+  --text-secondary: rgba(0, 0, 0, 0.6);
   --button-hover-background: var(--background-hover);
 
   /* Settings Tabs */
@@ -209,7 +210,8 @@
   /* Theme Toggle */
   --toggle-background: rgba(255, 255, 255, 0.1);
   --button-active-background: var(--accent-color);
-  --button-active-text: var(--accent-contrast);
+  --button-active-text: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
   --button-hover-background: rgba(255, 255, 255, 0.05);
 
   /* Settings Tabs */

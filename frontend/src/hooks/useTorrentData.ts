@@ -303,6 +303,16 @@ export function useTorrentData() {
       setError(null);
       setLanguage(settings.language);
       setConfig(settings);
+
+      // Если есть замедленные торренты, применяем к ним новые настройки скорости
+      const slowedTorrents = torrents
+        .filter((t) => t.IsSlowMode)
+        .map((t) => t.ID);
+
+      if (slowedTorrents.length > 0) {
+        await handleSetSpeedLimit(slowedTorrents, true);
+      }
+
       await refreshSessionStats();
       await refreshTorrents();
       return true;

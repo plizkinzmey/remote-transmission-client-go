@@ -5,12 +5,14 @@ import {
   StartTorrents,
   StopTorrents,
   RemoveTorrent,
+  SetTorrentSpeedLimit,
 } from "../../wailsjs/go/main/App";
 
 interface BulkOperationsState {
   start: boolean;
   stop: boolean;
   remove: boolean;
+  speedLimit: boolean;
 }
 
 /**
@@ -27,9 +29,10 @@ export function useBulkOperations(
     start: false,
     stop: false,
     remove: false,
+    speedLimit: false,
   });
   const [lastBulkAction, setLastBulkAction] = useState<
-    "start" | "stop" | "remove" | null
+    "start" | "stop" | "remove" | "speedLimit" | null
   >(null);
   const [lastTorrentStates, setLastTorrentStates] = useState<
     Map<number, string>
@@ -215,11 +218,39 @@ export function useBulkOperations(
     }
   };
 
+  // Обработчик установки ограничения скорости для выбранных торрентов
+  const handleSetSpeedLimit = async (isSlowMode: boolean) => {
+    if (bulkOperations.speedLimit || selectedTorrents.size === 0) return;
+
+    setBulkOperations((prev) => ({ ...prev, speedLimit: true }));
+
+    try {
+      console.log(
+        `Setting speed limit (slow mode: ${isSlowMode}) for ${selectedTorrents.size} torrents`
+      );
+
+      // Получаем IDs выбранных торрентов
+      const selectedIds = Array.from(selectedTorrents).map(Number);
+
+      // Применяем ограничение скорости
+      await SetTorrentSpeedLimit(selectedIds, isSlowMode);
+
+      // Обновляем список торрентов для отображения изменений
+      await refreshTorrents();
+    } catch (error) {
+      console.error("Failed to set speed limit:", error);
+      setError(t("errors.failedToSetSpeedLimit", String(error)));
+    } finally {
+      setBulkOperations((prev) => ({ ...prev, speedLimit: false }));
+    }
+  };
+
   return {
     bulkOperations,
     error,
     handleStartSelected,
     handleStopSelected,
     handleRemoveSelected,
+    handleSetSpeedLimit,
   };
 }

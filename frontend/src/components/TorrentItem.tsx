@@ -12,6 +12,7 @@ import {
   ArrowUpIcon,
   FolderIcon,
 } from "@heroicons/react/24/outline";
+import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/TorrentItem.module.css";
 
 interface TorrentItemProps {
@@ -142,9 +143,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         <Button
           variant="icon"
           onClick={() => handleAction("stop")}
-          aria-label={t("torrent.stop")}
+          title={t("torrent.stop")}
         >
-          <PauseIcon />
+          <PauseIcon className={styles.icon} />
         </Button>
       );
     }
@@ -153,9 +154,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       <Button
         variant="icon"
         onClick={() => handleAction("start")}
-        aria-label={t("torrent.start")}
+        title={t("torrent.start")}
       >
-        <PlayIcon />
+        <PlayIcon className={styles.icon} />
       </Button>
     );
   };
@@ -251,11 +252,15 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           {renderActionButton()}
           {onSetSpeedLimit && (
             <Button
+              variant="icon"
               onClick={() => onSetSpeedLimit(id, !isSlowMode)}
-              title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-              icon="snail"
+              title={t(
+                isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
+              )}
               active={isSlowMode}
-            />
+            >
+              <SnailIcon className={styles.icon} />
+            </Button>
           )}
           <Button
             variant="icon"

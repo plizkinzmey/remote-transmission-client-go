@@ -9,8 +9,8 @@ import {
   PlayIcon,
   PauseIcon,
   TrashIcon,
-  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/Header.module.css";
 import { useState, useCallback } from "react";
 
@@ -123,11 +123,12 @@ export const Header: React.FC<HeaderProps> = ({
             variant="icon"
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
             disabled={!hasSelectedTorrents}
-            aria-label={t(
+            title={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
+            active={isSlowModeEnabled}
           >
-            <MagnifyingGlassIcon />
+            <SnailIcon className={styles.icon} />
           </Button>
           {/* Кнопка удаления выбранных торрентов */}
           <Button

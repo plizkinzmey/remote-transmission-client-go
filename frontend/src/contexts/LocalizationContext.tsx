@@ -52,6 +52,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   const [translationsCache, setTranslationsCache] = useState<
     Record<string, string>
   >({});
+  const [isTranslationReady, setIsTranslationReady] = useState(false);
 
   // Синхронная функция перевода, которая использует параметры
   const t = (key: string, ...params: any[]): string => {
@@ -60,7 +61,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
 
     // Если есть в кэше, используем его, иначе запрашиваем асинхронно
     if (!cachedTranslation) {
-      // Передаем параметры как третий аргумент - массив
+      // Асинхронно загружаем перевод, но возвращаем ключ пока он не загрузился
       GetTranslation(key, currentLanguage, params)
         .then((translation) => {
           if (translation !== key) {
@@ -86,15 +87,22 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
       });
       return result;
     }
-
     return cachedTranslation;
   };
 
   // Предзагружаем общие переводы при изменении языка
   useEffect(() => {
     const preloadCommonTranslations = async () => {
+      setIsTranslationReady(false);
       const commonKeys = [
         "app.title",
+        "filters.downloading",
+        "filters.seeding",
+        "filters.stopped",
+        "filters.checking",
+        "filters.queued",
+        "filters.completed",
+        "filters.slow",
         "torrent.status.stopped",
         "torrent.status.downloading",
         "torrent.status.seeding",
@@ -108,13 +116,30 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "torrent.seeds",
         "torrent.peers",
         "torrent.uploaded",
+        "torrent.size",
+        "torrent.speed",
+        "torrent.slowSpeed",
+        "torrent.normalSpeed",
+        "header.slowSpeed",
+        "header.normalSpeed",
+        "torrents.search",
+        "torrents.selectAll",
+        "torrents.selected",
+        "torrents.startSelected",
+        "torrents.stopSelected",
+        "add.title",
+        "settings.title",
+        "remove.title",
+        "remove.cancel",
+        "remove.confirm",
+        "remove.withData",
       ];
+
       try {
         const newTranslations: Record<string, string> = {};
         await Promise.all(
           commonKeys.map(async (key) => {
             try {
-              // Добавляем пустой массив как третий аргумент
               const translation = await GetTranslation(
                 key,
                 currentLanguage,
@@ -129,12 +154,15 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
             }
           })
         );
+
         setTranslationsCache((prev) => ({
           ...prev,
           ...newTranslations,
         }));
+        setIsTranslationReady(true);
       } catch (error) {
         console.error("Failed to preload translations:", error);
+        setIsTranslationReady(true); // Продолжаем даже при ошибке
       }
     };
 
@@ -213,7 +241,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     [t, currentLanguage, availableLanguages, isLoading]
   );
 
-  if (isLoading) {
+  if (isLoading || !isTranslationReady) {
     return <LoadingSpinner />;
   }
 

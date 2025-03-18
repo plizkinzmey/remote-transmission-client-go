@@ -12,7 +12,6 @@ import "./styles/theme.css";
 // Импортируем созданные хуки
 import { useTorrentData } from "./hooks/useTorrentData";
 import { useBulkOperations } from "./hooks/useBulkOperations";
-import { SetTorrentSpeedLimit } from "../wailsjs/go/main/App";
 
 /**
  * Основной компонент приложения.
@@ -44,6 +43,7 @@ function App() {
     handleStartTorrent,
     handleStopTorrent,
     handleSettingsSave,
+    handleSetSpeedLimit: handleTorrentSpeedLimit,
   } = useTorrentData();
 
   // Хук для массовых операций
@@ -52,41 +52,36 @@ function App() {
     handleStartSelected,
     handleStopSelected,
     handleRemoveSelected,
+    handleSetSpeedLimit,
   } = useBulkOperations(torrents, selectedTorrents, refreshTorrents);
-
-  // Обработчик изменения скорости для отдельного торрента
-  const handleSpeedLimitChange = async (id: number, isSlowMode: boolean) => {
-    try {
-      await SetTorrentSpeedLimit([id], isSlowMode);
-      await refreshTorrents();
-    } catch (error) {
-      console.error("Failed to set speed limit:", error);
-    }
-  };
-
-  // Обработчик массового изменения скорости
-  const handleBulkSpeedLimitChange = async (isSlowMode: boolean) => {
-    try {
-      const selectedIds = Array.from(selectedTorrents);
-      await SetTorrentSpeedLimit(selectedIds, isSlowMode);
-      await refreshTorrents();
-    } catch (error) {
-      console.error("Failed to set bulk speed limit:", error);
-    }
-  };
 
   // Фильтрация торрентов по поисковому запросу и статусу
   const filteredTorrents = torrents.filter((torrent) => {
-    const matchesSearch = torrent.Name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter ||
-      (statusFilter === 'slow' ? torrent.IsSlowMode : torrent.Status === statusFilter);
+    const matchesSearch = torrent.Name.toLowerCase().includes(
+      searchTerm.toLowerCase()
+    );
+    const matchesStatus =
+      !statusFilter ||
+      (statusFilter === "slow"
+        ? torrent.IsSlowMode
+        : torrent.Status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
   // Проверяем, есть ли замедленные торренты среди выбранных
   const selectedHaveSlowMode = Array.from(selectedTorrents).some(
-    id => torrents.find(t => t.ID === id)?.IsSlowMode
+    (id) => torrents.find((t) => t.ID === id)?.IsSlowMode
   );
+
+  // Адаптер для handleSelectAll без параметров
+  const handleSelectAllAdapter = () => {
+    handleSelectAll(filteredTorrents);
+  };
+
+  // Адаптер для handleSetSpeedLimit для работы с одним id вместо массива
+  const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {
+    handleTorrentSpeedLimit([id], isSlowMode);
+  };
 
   return (
     <ThemeProvider>
@@ -98,20 +93,20 @@ function App() {
           onSettings={() => setShowSettings(true)}
           onStartSelected={handleStartSelected}
           onStopSelected={handleStopSelected}
-          onRemoveSelected={() => handleRemoveSelected(true)}
+          onRemoveSelected={handleRemoveSelected}
           hasSelectedTorrents={hasSelectedTorrents}
           startLoading={bulkOperations.start}
           stopLoading={bulkOperations.stop}
           removeLoading={bulkOperations.remove}
           filteredTorrents={filteredTorrents}
           selectedTorrents={selectedTorrents}
-          onSelectAll={handleSelectAll}
+          onSelectAll={handleSelectAllAdapter}
           error={error}
           isReconnecting={isReconnecting}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
           torrents={torrents}
-          onSetSpeedLimit={handleBulkSpeedLimitChange}
+          onSetSpeedLimit={handleSetSpeedLimit}
           isSlowModeEnabled={selectedHaveSlowMode}
         />
         <div className={styles.content}>
@@ -125,7 +120,7 @@ function App() {
               onStart={handleStartTorrent}
               onStop={handleStopTorrent}
               isLoading={isLoading}
-              onSetSpeedLimit={handleSpeedLimitChange}
+              onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
             />
           </div>
           <Footer
@@ -135,7 +130,6 @@ function App() {
             transmissionVersion={sessionStats?.TransmissionVersion}
           />
         </div>
-
         {/* Модальные окна */}
         {showSettings && (
           <Settings

@@ -1,10 +1,11 @@
 import React from "react";
-import styled, { css } from "@emotion/styled";
+import styled from "@emotion/styled";
+import { css } from "@emotion/react";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { SnailIcon } from "./icons/SnailIcon";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "icon";
+  variant?: "default" | "icon" | "danger";
   loading?: boolean;
   active?: boolean;
   icon?: string;
@@ -22,16 +23,21 @@ const StyledButton = styled.button<ButtonProps>`
   cursor: pointer;
   transition: all 0.2s ease;
   gap: 8px;
-  background: ${(props) =>
-    props.variant === "icon" ? "transparent" : "var(--accent-color)"};
+  background: ${(props) => {
+    if (props.variant === "icon") return "transparent";
+    if (props.variant === "danger") return "var(--error-color)";
+    return "var(--accent-color)";
+  }};
   color: ${(props) =>
     props.variant === "icon" ? "var(--text-primary)" : "var(--button-text)"};
 
   &:hover:not(:disabled) {
-    background: ${(props) =>
-      props.variant === "icon"
-        ? "var(--background-secondary)"
-        : "var(--accent-color)"};
+    background: ${(props) => {
+      if (props.variant === "icon") return "var(--background-secondary)";
+      if (props.variant === "danger")
+        return "var(--error-color-hover, var(--error-color))";
+      return "var(--accent-color-hover, var(--accent-color))";
+    }};
   }
 
   &:disabled {

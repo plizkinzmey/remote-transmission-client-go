@@ -250,11 +250,11 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"uploadRatio", "peersConnected", "trackerStats", "uploadedEver",
 		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
 		"rateDownload", "rateUpload", "downloadedEver",
+		"downloadLimit", "uploadLimit", "downloadLimited", "uploadLimited",
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
-
 	result := make([]domain.Torrent, len(torrents))
 	for i, t := range torrents {
 		status := mapStatus(*t.Status, t)
@@ -262,10 +262,8 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		uploadRatio, uploadedBytes := c.getUploadInfo(t)
 		peersConnected, seedsTotal, peersTotal := c.getPeerInfo(t)
 		downloadSpeed, uploadSpeed := c.getSpeedInfo(t)
-
 		// Используем процент загрузки напрямую из API
 		progress := *t.PercentDone * 100
-
 		// Форматируем размер в зависимости от статуса
 		var sizeFormatted string
 		if status == domain.StatusDownloading {
@@ -275,13 +273,20 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		} else {
 			sizeFormatted = formatBytes(totalSize, true)
 		}
-
 		// Форматируем скорости (значения уже в байтах/с)
 		downloadSpeedFormatted := formatBytes(uint64(downloadSpeed), true) + "/s"
 		uploadSpeedFormatted := formatBytes(uint64(uploadSpeed), true) + "/s"
-
 		// Форматируем выгруженное (значение уже в байтах)
 		uploadedFormatted := formatBytes(uint64(uploadedBytes), true)
+
+		// Проверка режима замедления
+		isSlowMode := false
+		if status == domain.StatusDownloading || status == domain.StatusSeeding {
+			if (t.DownloadLimited != nil && *t.DownloadLimited) ||
+				(t.UploadLimited != nil && *t.UploadLimited) {
+				isSlowMode = true
+			}
+		}
 
 		result[i] = domain.Torrent{
 			ID:                     *t.ID,
@@ -301,6 +306,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 			UploadSpeed:            uploadSpeed,
 			DownloadSpeedFormatted: downloadSpeedFormatted,
 			UploadSpeedFormatted:   uploadSpeedFormatted,
+			IsSlowMode:             isSlowMode,
 		}
 	}
 	return result, nil
@@ -446,11 +452,11 @@ func (c *TransmissionClient) SetFilesWanted(id int64, fileIds []int, wanted bool
 func (c *TransmissionClient) SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error {
 	// Создаем карту аргументов с ограничениями скорости
 	args := transmissionrpc.TorrentSetPayload{
-		IDs: ids,
+		IDs:             ids,
 		DownloadLimited: &[]bool{downloadLimit > 0}[0],
 		UploadLimited:   &[]bool{uploadLimit > 0}[0],
 	}
-	
+
 	// Устанавливаем значения ограничений только если они больше 0
 	if downloadLimit > 0 {
 		args.DownloadLimit = &[]int64{downloadLimit}[0]

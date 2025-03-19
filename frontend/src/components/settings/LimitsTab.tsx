@@ -1,50 +1,11 @@
 import React from "react";
-import styled from "@emotion/styled";
+import { TextField, Select, Flex, Text, Grid } from "@radix-ui/themes";
+import { Config } from "./Settings";
 import { useLocalization } from "../../contexts/LocalizationContext";
-import type { Config } from "./Settings";
-
-const Container = styled.div`
-  padding: 24px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--input-background);
-  color: var(--text-primary);
-`;
-
-const Select = styled.select`
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--input-background);
-  color: var(--text-primary);
-`;
-
-const Description = styled.div`
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-`;
 
 interface LimitsTabProps {
   settings: Config;
-  onSettingsChange: (changes: Partial<Config>) => void;
+  onSettingsChange: (newSettings: Partial<Config>) => void;
 }
 
 export const LimitsTab: React.FC<LimitsTabProps> = ({
@@ -54,43 +15,15 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
   const { t } = useLocalization();
 
   return (
-    <Container>
-      <FormGroup>
-        <Label>{t("settings.slowSpeedLimit")}</Label>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Input
-            type="number"
-            min="1"
-            value={settings.slowSpeedLimit}
-            style={{ flex: 1 }}
-            onChange={(e) =>
-              onSettingsChange({
-                slowSpeedLimit: parseInt(e.target.value, 10) || 1,
-              })
-            }
-          />
-          <Select
-            value={settings.slowSpeedUnit}
-            style={{ width: "80px" }}
-            onChange={(e) =>
-              onSettingsChange({
-                slowSpeedUnit: e.target.value as "KiB/s" | "MiB/s",
-              })
-            }
-          >
-            <option value="KiB/s">KiB/s</option>
-            <option value="MiB/s">MiB/s</option>
-          </Select>
-        </div>
-        <Description>{t("settings.slowSpeedLimitHint")}</Description>
-      </FormGroup>
-
-      <FormGroup>
-        <Label>{t("settings.maxUploadRatio")}</Label>
-        <Input
+    <Grid columns="1" gap="3">
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2" weight="medium">
+          {t("settings.maxUploadRatio")}
+        </Text>
+        <TextField.Root
+          size="2"
           type="number"
-          min="0"
-          step="0.1"
+          placeholder={t("settings.maxUploadRatioPlaceholder")}
           value={settings.maxUploadRatio}
           onChange={(e) =>
             onSettingsChange({
@@ -98,8 +31,46 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             })
           }
         />
-        <Description>{t("settings.maxUploadRatioHint")}</Description>
-      </FormGroup>
-    </Container>
+      </Flex>
+
+      <Flex align="end" gap="3">
+        <Flex direction="column" gap="2" style={{ flex: 1 }}>
+          <Text as="label" size="2" weight="medium">
+            {t("settings.slowSpeedLimit")}
+          </Text>
+          <TextField.Root
+            size="2"
+            type="number"
+            placeholder={t("settings.slowSpeedLimitPlaceholder")}
+            value={settings.slowSpeedLimit}
+            onChange={(e) =>
+              onSettingsChange({
+                slowSpeedLimit: parseInt(e.target.value) || 0,
+              })
+            }
+          />
+        </Flex>
+
+        <Flex direction="column" gap="2">
+          <Text as="label" size="2" weight="medium">
+            {t("settings.slowSpeedUnit")}
+          </Text>
+          <Select.Root
+            value={settings.slowSpeedUnit}
+            onValueChange={(value) =>
+              onSettingsChange({ slowSpeedUnit: value as "KiB/s" | "MiB/s" })
+            }
+          >
+            <Select.Trigger />
+            <Select.Content>
+              <Select.Group>
+                <Select.Item value="KiB/s">KiB/s</Select.Item>
+                <Select.Item value="MiB/s">MiB/s</Select.Item>
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
+        </Flex>
+      </Flex>
+    </Grid>
   );
 };

@@ -1,35 +1,11 @@
 import React from "react";
-import styled from "@emotion/styled";
+import { TextField, Flex, Text, Grid } from "@radix-ui/themes";
+import { Config } from "./Settings";
 import { useLocalization } from "../../contexts/LocalizationContext";
-import type { Config } from "./Settings";
-
-const Container = styled.div`
-  padding: 24px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--input-background);
-  color: var(--text-primary);
-`;
 
 interface ConnectionTabProps {
   settings: Config;
-  onSettingsChange: (changes: Partial<Config>) => void;
+  onSettingsChange: (newSettings: Partial<Config>) => void;
 }
 
 export const ConnectionTab: React.FC<ConnectionTabProps> = ({
@@ -39,43 +15,58 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   const { t } = useLocalization();
 
   return (
-    <Container>
-      <FormGroup>
-        <Label>{t("settings.host")}</Label>
-        <Input
-          type="text"
+    <Grid columns="1" gap="3">
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2" weight="medium">
+          {t("settings.host")}
+        </Text>
+        <TextField.Root
+          size="2"
+          placeholder={t("settings.hostPlaceholder")}
           value={settings.host}
           onChange={(e) => onSettingsChange({ host: e.target.value })}
-          placeholder="localhost"
         />
-      </FormGroup>
-      <FormGroup>
-        <Label>{t("settings.port")}</Label>
-        <Input
+      </Flex>
+
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2" weight="medium">
+          {t("settings.port")}
+        </Text>
+        <TextField.Root
           type="number"
+          size="2"
+          placeholder={t("settings.portPlaceholder")}
           value={settings.port}
           onChange={(e) =>
-            onSettingsChange({ port: parseInt(e.target.value, 10) })
+            onSettingsChange({ port: parseInt(e.target.value) || 0 })
           }
-          placeholder="9091"
         />
-      </FormGroup>
-      <FormGroup>
-        <Label>{t("settings.username")}</Label>
-        <Input
-          type="text"
+      </Flex>
+
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2" weight="medium">
+          {t("settings.username")}
+        </Text>
+        <TextField.Root
+          size="2"
+          placeholder={t("settings.usernamePlaceholder")}
           value={settings.username}
           onChange={(e) => onSettingsChange({ username: e.target.value })}
         />
-      </FormGroup>
-      <FormGroup>
-        <Label>{t("settings.password")}</Label>
-        <Input
+      </Flex>
+
+      <Flex direction="column" gap="2">
+        <Text as="label" size="2" weight="medium">
+          {t("settings.password")}
+        </Text>
+        <TextField.Root
           type="password"
+          size="2"
+          placeholder={t("settings.passwordPlaceholder")}
           value={settings.password}
           onChange={(e) => onSettingsChange({ password: e.target.value })}
         />
-      </FormGroup>
-    </Container>
+      </Flex>
+    </Grid>
   );
 };

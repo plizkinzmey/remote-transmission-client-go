@@ -1,17 +1,17 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Theme } from "@radix-ui/themes";
+import "@radix-ui/themes/styles.css";
 import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
 import { Settings } from "./components/settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useTorrentData } from "./hooks/useTorrentData";
+import { useBulkOperations } from "./hooks/useBulkOperations";
 import styles from "./styles/App.module.css";
 import "./App.css";
 import "./styles/theme.css";
-
-// Импортируем созданные хуки
-import { useTorrentData } from "./hooks/useTorrentData";
-import { useBulkOperations } from "./hooks/useBulkOperations";
 
 type ThemeType = "light" | "dark" | "auto";
 
@@ -103,68 +103,70 @@ function App() {
   };
 
   return (
-    <ThemeProvider>
-      <div className={styles.appContainer}>
-        <Header
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          onAddTorrent={() => setShowAddTorrent(true)}
-          onSettings={() => setShowSettings(true)}
-          onStartSelected={handleStartSelected}
-          onStopSelected={handleStopSelected}
-          onRemoveSelected={handleRemoveSelected}
-          hasSelectedTorrents={hasSelectedTorrents}
-          startLoading={bulkOperations.start}
-          stopLoading={bulkOperations.stop}
-          removeLoading={bulkOperations.remove}
-          filteredTorrents={filteredTorrents}
-          selectedTorrents={selectedTorrents}
-          onSelectAll={handleSelectAllAdapter}
-          error={error}
-          isReconnecting={isReconnecting}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          torrents={torrents}
-          onSetSpeedLimit={handleSetSpeedLimit}
-          isSlowModeEnabled={selectedHaveSlowMode}
-        />
-        <div className={styles.content}>
-          <div className={styles.scrollableContent}>
-            <TorrentList
-              torrents={filteredTorrents}
-              searchTerm={searchTerm}
-              selectedTorrents={selectedTorrents}
-              onSelect={handleTorrentSelect}
-              onRemove={handleRemoveTorrent}
-              onStart={handleStartTorrent}
-              onStop={handleStopTorrent}
-              isLoading={isLoading}
-              onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
+    <Theme>
+      <ThemeProvider>
+        <div className={styles.appContainer}>
+          <Header
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onAddTorrent={() => setShowAddTorrent(true)}
+            onSettings={() => setShowSettings(true)}
+            onStartSelected={handleStartSelected}
+            onStopSelected={handleStopSelected}
+            onRemoveSelected={handleRemoveSelected}
+            hasSelectedTorrents={hasSelectedTorrents}
+            startLoading={bulkOperations.start}
+            stopLoading={bulkOperations.stop}
+            removeLoading={bulkOperations.remove}
+            filteredTorrents={filteredTorrents}
+            selectedTorrents={selectedTorrents}
+            onSelectAll={handleSelectAllAdapter}
+            error={error}
+            isReconnecting={isReconnecting}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            torrents={torrents}
+            onSetSpeedLimit={handleSetSpeedLimit}
+            isSlowModeEnabled={selectedHaveSlowMode}
+          />
+          <div className={styles.content}>
+            <div className={styles.scrollableContent}>
+              <TorrentList
+                torrents={filteredTorrents}
+                searchTerm={searchTerm}
+                selectedTorrents={selectedTorrents}
+                onSelect={handleTorrentSelect}
+                onRemove={handleRemoveTorrent}
+                onStart={handleStartTorrent}
+                onStop={handleStopTorrent}
+                isLoading={isLoading}
+                onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
+              />
+            </div>
+            <Footer
+              totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
+              totalUploadSpeed={sessionStats?.TotalUploadSpeed}
+              freeSpace={sessionStats?.FreeSpace}
+              transmissionVersion={sessionStats?.TransmissionVersion}
             />
           </div>
-          <Footer
-            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
-            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
-            freeSpace={sessionStats?.FreeSpace}
-            transmissionVersion={sessionStats?.TransmissionVersion}
-          />
+          {/* Модальные окна */}
+          {showSettings && (
+            <Settings
+              onSave={handleSettingsSave}
+              onClose={() => setShowSettings(false)}
+            />
+          )}
+          {showAddTorrent && (
+            <AddTorrent
+              onAdd={handleAddTorrent}
+              onAddFile={handleAddTorrentFile}
+              onClose={() => setShowAddTorrent(false)}
+            />
+          )}
         </div>
-        {/* Модальные окна */}
-        {showSettings && (
-          <Settings
-            onSave={handleSettingsSave}
-            onClose={() => setShowSettings(false)}
-          />
-        )}
-        {showAddTorrent && (
-          <AddTorrent
-            onAdd={handleAddTorrent}
-            onAddFile={handleAddTorrentFile}
-            onClose={() => setShowAddTorrent(false)}
-          />
-        )}
-      </div>
-    </ThemeProvider>
+      </ThemeProvider>
+    </Theme>
   );
 }
 

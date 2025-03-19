@@ -129,17 +129,12 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
 
                 <Box mt="4">
                   <Tabs.Content value="url">
-                    <Flex
-                      direction="column"
-                      gap="2"
-                      style={{ maxWidth: "400px", margin: "0 auto" }}
-                    >
+                    <Flex direction="column" gap="2">
                       <TextField.Root
                         size="1"
                         placeholder="magnet:?xt=urn:btih:..."
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
-                        className="rt-center"
                       />
                     </Flex>
                   </Tabs.Content>

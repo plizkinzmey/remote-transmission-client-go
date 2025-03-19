@@ -37,34 +37,33 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   return (
     <Grid columns="1" gap="3">
       <Flex direction="column" gap="2">
-        <Text as="label" size="1" weight="medium">
-          {t("settings.host")}
-        </Text>
-        <Box style={{ maxWidth: "250px" }}>
-          <TextField.Root
-            size="1"
-            placeholder={t("settings.hostPlaceholder")}
-            value={settings.host}
-            onChange={(e) => onSettingsChange({ host: e.target.value })}
-          />
-        </Box>
-      </Flex>
-
-      <Flex direction="column" gap="2">
-        <Text as="label" size="1" weight="medium">
-          {t("settings.port")}
-        </Text>
-        <Box style={{ maxWidth: "100px" }}>
-          <TextField.Root
-            type="number"
-            size="1"
-            placeholder={t("settings.portPlaceholder")}
-            value={settings.port}
-            onChange={(e) =>
-              onSettingsChange({ port: parseInt(e.target.value) || 0 })
-            }
-          />
-        </Box>
+        <Flex gap="2" align="start">
+          <Box style={{ width: "300px" }}>
+            <Text as="label" size="1" weight="medium">
+              {t("settings.host")}
+            </Text>
+            <TextField.Root
+              size="1"
+              placeholder={t("settings.hostPlaceholder")}
+              value={settings.host}
+              onChange={(e) => onSettingsChange({ host: e.target.value })}
+            />
+          </Box>
+          <Box style={{ width: "100px" }}>
+            <Text as="label" size="1" weight="medium">
+              {t("settings.port")}
+            </Text>
+            <TextField.Root
+              type="number"
+              size="1"
+              placeholder={t("settings.portPlaceholder")}
+              value={settings.port}
+              onChange={(e) =>
+                onSettingsChange({ port: parseInt(e.target.value) || 0 })
+              }
+            />
+          </Box>
+        </Flex>
       </Flex>
 
       <Flex direction="column" gap="2">

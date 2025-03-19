@@ -14,6 +14,16 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
 }) => {
   const { t } = useLocalization();
 
+  const handleMaxUploadRatioChange = (value: string) => {
+    const numValue = value === "" ? 0 : parseFloat(value);
+    onSettingsChange({ maxUploadRatio: numValue });
+  };
+
+  const handleSpeedLimitChange = (value: string) => {
+    const numValue = value === "" ? 0 : parseInt(value);
+    onSettingsChange({ slowSpeedLimit: numValue });
+  };
+
   return (
     <Grid columns="1" gap="3">
       <Flex direction="column" gap="2">
@@ -25,17 +35,10 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             size="1"
             type="number"
             placeholder="0"
-            value={settings.maxUploadRatio}
-            onChange={(e) =>
-              onSettingsChange({
-                maxUploadRatio: parseFloat(e.target.value) || 0,
-              })
-            }
+            value={settings.maxUploadRatio || ""}
+            onChange={(e) => handleMaxUploadRatioChange(e.target.value)}
           />
         </Box>
-        <Text size="1" color="gray">
-          {t("settings.maxUploadRatioHint")}
-        </Text>
       </Flex>
 
       <Flex direction="column" gap="2">
@@ -47,12 +50,9 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             <TextField.Root
               size="1"
               type="number"
-              value={settings.slowSpeedLimit}
-              onChange={(e) =>
-                onSettingsChange({
-                  slowSpeedLimit: parseInt(e.target.value) || 0,
-                })
-              }
+              placeholder="0"
+              value={settings.slowSpeedLimit || ""}
+              onChange={(e) => handleSpeedLimitChange(e.target.value)}
             />
           </Box>
           <Box>
@@ -74,7 +74,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
           </Box>
         </Flex>
         <Text size="1" color="gray">
-          {t("settings.slowSpeedLimitHint")}. {t("settings.maxUploadRatioHint")}
+          {t("settings.slowSpeedLimitHint")}
         </Text>
       </Flex>
     </Grid>

@@ -134,6 +134,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "remove.cancel",
         "remove.confirm",
         "remove.withData",
+        "settings.testSuccess",
+        "settings.testError",
+        "settings.testing",
+        "settings.testConnection",
       ];
 
       try {

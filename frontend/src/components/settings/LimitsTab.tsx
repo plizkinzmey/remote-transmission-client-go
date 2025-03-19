@@ -38,11 +38,11 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
         </Text>
       </Flex>
 
-      <Flex align="end" gap="3">
-        <Flex direction="column" gap="2" style={{ flex: 1 }}>
-          <Text as="label" size="1" weight="medium">
-            {t("settings.slowSpeedLimit")}
-          </Text>
+      <Flex direction="column" gap="2">
+        <Text as="label" size="1" weight="medium">
+          {t("settings.slowSpeedLimit")}
+        </Text>
+        <Flex gap="2" align="start">
           <Box style={{ maxWidth: "100px" }}>
             <TextField.Root
               size="1"
@@ -55,31 +55,27 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
               }
             />
           </Box>
-          <Text size="1" color="gray">
-            {t("settings.slowSpeedLimitHint")}
-          </Text>
+          <Box>
+            <Select.Root
+              size="1"
+              value={settings.slowSpeedUnit}
+              onValueChange={(value) =>
+                onSettingsChange({ slowSpeedUnit: value as "KiB/s" | "MiB/s" })
+              }
+            >
+              <Select.Trigger />
+              <Select.Content>
+                <Select.Group>
+                  <Select.Item value="KiB/s">{t("settings.KiB/s")}</Select.Item>
+                  <Select.Item value="MiB/s">{t("settings.MiB/s")}</Select.Item>
+                </Select.Group>
+              </Select.Content>
+            </Select.Root>
+          </Box>
         </Flex>
-
-        <Flex direction="column" gap="2">
-          <Text as="label" size="1" weight="medium">
-            {t("settings.slowSpeedUnit")}
-          </Text>
-          <Select.Root
-            size="1"
-            value={settings.slowSpeedUnit}
-            onValueChange={(value) =>
-              onSettingsChange({ slowSpeedUnit: value as "KiB/s" | "MiB/s" })
-            }
-          >
-            <Select.Trigger />
-            <Select.Content>
-              <Select.Group>
-                <Select.Item value="KiB/s">{t("settings.KiB/s")}</Select.Item>
-                <Select.Item value="MiB/s">{t("settings.MiB/s")}</Select.Item>
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </Flex>
+        <Text size="1" color="gray">
+          {t("settings.slowSpeedLimitHint")}. {t("settings.maxUploadRatioHint")}
+        </Text>
       </Flex>
     </Grid>
   );

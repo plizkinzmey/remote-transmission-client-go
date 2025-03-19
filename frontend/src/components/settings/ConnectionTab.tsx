@@ -40,7 +40,7 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
         <Text as="label" size="1" weight="medium">
           {t("settings.host")}
         </Text>
-        <Box style={{ maxWidth: "300px" }}>
+        <Box style={{ maxWidth: "250px" }}>
           <TextField.Root
             size="1"
             placeholder={t("settings.hostPlaceholder")}

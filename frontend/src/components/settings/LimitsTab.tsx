@@ -1,11 +1,11 @@
 import React from "react";
 import { TextField, Select, Flex, Text, Grid, Box } from "@radix-ui/themes";
-import { Config } from "./Settings";
+import { ConnectionConfig } from "../../App";
 import { useLocalization } from "../../contexts/LocalizationContext";
 
 interface LimitsTabProps {
-  settings: Config;
-  onSettingsChange: (newSettings: Partial<Config>) => void;
+  settings: ConnectionConfig;
+  onSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
 }
 
 export const LimitsTab: React.FC<LimitsTabProps> = ({

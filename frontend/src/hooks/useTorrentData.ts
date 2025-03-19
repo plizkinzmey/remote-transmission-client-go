@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { TorrentData } from "../components/TorrentList";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { ConnectionConfig, UIConfig, ConfigData } from "../App";
 import {
   GetTorrents,
   AddTorrent as AddTorrentAPI,
@@ -14,18 +15,6 @@ import {
   SetTorrentSpeedLimit,
 } from "../../wailsjs/go/main/App";
 
-interface ConfigData {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  language: string;
-  theme: string;
-  maxUploadRatio: number;
-  slowSpeedLimit: number;
-  slowSpeedUnit: "KiB/s" | "MiB/s";
-}
-
 // Интерфейс для статистики сессии
 interface SessionStatsData {
   TotalDownloadSpeed: number;
@@ -38,7 +27,7 @@ interface SessionStatsData {
  * Хук для работы с данными торрентов и управления соединением
  */
 export function useTorrentData() {
-  const { t, setLanguage } = useLocalization();
+  const { t } = useLocalization();
   const [torrents, setTorrents] = useState<TorrentData[]>([]);
   const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(
     null
@@ -163,14 +152,18 @@ export function useTorrentData() {
       try {
         const savedConfig = await LoadConfig();
         if (savedConfig) {
-          setConfig({
+          const config: ConfigData = {
             ...savedConfig,
+            theme: (savedConfig.theme || "light") as "light" | "dark" | "auto",
             slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
               | "KiB/s"
               | "MiB/s",
-          });
+          };
+
+          setConfig(config);
+
           try {
-            await Initialize(JSON.stringify(savedConfig));
+            await Initialize(JSON.stringify(config));
             await refreshSessionStats();
             await refreshTorrents();
             setIsInitialized(true);
@@ -296,19 +289,30 @@ export function useTorrentData() {
   };
 
   // Обработчик сохранения настроек
-  const handleSettingsSave = async (settings: ConfigData) => {
+  const handleSettingsSave = async (connectionSettings: ConnectionConfig) => {
     try {
-      await Initialize(JSON.stringify(settings));
+      // Загружаем текущий конфиг для сохранения UI настроек
+      const currentConfig = await LoadConfig();
+      const uiSettings: UIConfig = {
+        language: currentConfig?.language || "en",
+        theme: (currentConfig?.theme || "light") as "light" | "dark" | "auto",
+      };
+
+      // Создаем полный конфиг, объединяя настройки подключения и UI
+      const fullConfig: ConfigData = {
+        ...connectionSettings,
+        ...uiSettings,
+      };
+
+      await Initialize(JSON.stringify(fullConfig));
       setIsInitialized(true);
       setError(null);
-      setLanguage(settings.language);
-      setConfig(settings);
+      setConfig(fullConfig);
 
       // Если есть замедленные торренты, применяем к ним новые настройки скорости
       const slowedTorrents = torrents
         .filter((t) => t.IsSlowMode)
         .map((t) => t.ID);
-
       if (slowedTorrents.length > 0) {
         await handleSetSpeedLimit(slowedTorrents, true);
       }

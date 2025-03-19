@@ -11,6 +11,7 @@ import {
   GetTranslation,
   GetAvailableLanguages,
   GetSystemLanguage,
+  Initialize,
 } from "../../wailsjs/go/main/App";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 
@@ -44,7 +45,7 @@ interface LocalizationProviderProps {
 export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   children,
 }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<string>("en");
+  const [languageState, setLanguageState] = useState<string>("en");
   const [availableLanguages, setAvailableLanguages] = useState<LocaleInfo[]>(
     []
   );
@@ -62,7 +63,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     // Если есть в кэше, используем его, иначе запрашиваем асинхронно
     if (!cachedTranslation) {
       // Асинхронно загружаем перевод, но возвращаем ключ пока он не загрузился
-      GetTranslation(key, currentLanguage, params)
+      GetTranslation(key, languageState, params)
         .then((translation) => {
           if (translation !== key) {
             setTranslationsCache((prev) => ({
@@ -140,11 +141,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         await Promise.all(
           commonKeys.map(async (key) => {
             try {
-              const translation = await GetTranslation(
-                key,
-                currentLanguage,
-                []
-              );
+              const translation = await GetTranslation(key, languageState, []);
               newTranslations[key] = translation;
             } catch (error) {
               console.error(
@@ -166,10 +163,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
       }
     };
 
-    if (currentLanguage) {
+    if (languageState) {
       preloadCommonTranslations();
     }
-  }, [currentLanguage]);
+  }, [languageState]);
 
   // Load available languages
   useEffect(() => {
@@ -198,10 +195,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
       try {
         const config = await LoadConfig();
         if (config?.language) {
-          setCurrentLanguage(config.language);
+          setLanguageState(config.language);
         } else {
           const systemLang = await GetSystemLanguage();
-          setCurrentLanguage(systemLang);
+          setLanguageState(systemLang);
         }
       } catch (error) {
         console.error("Failed to load language from config:", error);
@@ -216,29 +213,42 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   useEffect(() => {
     const updateTitle = async () => {
       // Добавляем пустой массив как третий аргумент
-      const title = await GetTranslation("app.title", currentLanguage, []);
+      const title = await GetTranslation("app.title", languageState, []);
       document.title = title;
     };
     updateTitle();
-  }, [currentLanguage]);
+  }, [languageState]);
 
-  // Change language
-  const setLanguage = (language: string) => {
-    setCurrentLanguage(language);
-    // Сбрасываем кэш переводов при смене языка
-    setTranslationsCache({});
+  // Change language with config update
+  const setLanguage = async (language: string) => {
+    try {
+      const currentConfig = await LoadConfig();
+      const updatedConfig = {
+        ...currentConfig,
+        language,
+      };
+      await Initialize(JSON.stringify(updatedConfig));
+      setLanguageState(language);
+      // Сбрасываем кэш переводов при смене языка
+      setTranslationsCache({});
+    } catch (error) {
+      console.error("Failed to save language:", error);
+      // Всё равно меняем язык локально, даже если сохранение не удалось
+      setLanguageState(language);
+      setTranslationsCache({});
+    }
   };
 
   // Мемоизируем контекстное значение
   const contextValue = useMemo(
     () => ({
       t,
-      currentLanguage,
+      currentLanguage: languageState,
       setLanguage,
       availableLanguages,
       isLoading,
     }),
-    [t, currentLanguage, availableLanguages, isLoading]
+    [t, languageState, availableLanguages, isLoading]
   );
 
   if (isLoading || !isTranslationReady) {

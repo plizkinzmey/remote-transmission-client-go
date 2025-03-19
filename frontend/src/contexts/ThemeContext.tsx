@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { Theme as RadixTheme } from "@radix-ui/themes";
+import { LoadConfig, Initialize } from "../../wailsjs/go/main/App";
 
 type ThemeType = "light" | "dark" | "auto";
 
@@ -19,29 +20,55 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<ThemeType>("light");
+  const [themeState, setThemeState] = useState<ThemeType>("light");
 
+  // Загрузка темы при монтировании
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as ThemeType;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
+    const loadTheme = async () => {
+      try {
+        const savedConfig = await LoadConfig();
+        if (savedConfig?.theme) {
+          setThemeState(savedConfig.theme as ThemeType);
+        }
+      } catch (error) {
+        console.error("Failed to load theme:", error);
+      }
+    };
+    loadTheme();
   }, []);
 
+  // Обновление темы с сохранением в конфиг
+  const setTheme = async (newTheme: ThemeType) => {
+    try {
+      const currentConfig = await LoadConfig();
+      const updatedConfig = {
+        ...currentConfig,
+        theme: newTheme,
+      };
+      await Initialize(JSON.stringify(updatedConfig));
+      setThemeState(newTheme);
+    } catch (error) {
+      console.error("Failed to save theme:", error);
+      // Всё равно меняем тему локально, даже если сохранение не удалось
+      setThemeState(newTheme);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("theme", theme);
     const htmlElement = document.documentElement;
 
-    if (theme === "auto") {
-      htmlElement.removeAttribute("data-theme");
+    if (themeState === "auto") {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       htmlElement.setAttribute("data-theme", isDark ? "dark" : "light");
     } else {
-      htmlElement.setAttribute("data-theme", theme);
+      htmlElement.setAttribute("data-theme", themeState);
     }
-  }, [theme]);
+  }, [themeState]);
 
-  const contextValue = useMemo(() => ({ theme, setTheme }), [theme]);
+  const contextValue = useMemo(
+    () => ({ theme: themeState, setTheme }),
+    [themeState]
+  );
 
   const getSystemTheme = () => {
     return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -49,7 +76,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       : "light";
   };
 
-  const currentTheme = theme === "auto" ? getSystemTheme() : theme;
+  const currentTheme = themeState === "auto" ? getSystemTheme() : themeState;
 
   return (
     <ThemeContext.Provider value={contextValue}>

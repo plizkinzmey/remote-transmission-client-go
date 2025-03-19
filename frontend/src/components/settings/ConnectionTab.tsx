@@ -1,11 +1,12 @@
-import React from "react";
-import { TextField, Flex, Text, Grid, Box } from "@radix-ui/themes";
-import { Config } from "./Settings";
+import React, { useState } from "react";
+import { TextField, Flex, Text, Grid, Box, Button } from "@radix-ui/themes";
+import { ConnectionConfig } from "../../App";
 import { useLocalization } from "../../contexts/LocalizationContext";
+import { TestConnection } from "../../../wailsjs/go/main/App";
 
 interface ConnectionTabProps {
-  settings: Config;
-  onSettingsChange: (newSettings: Partial<Config>) => void;
+  settings: ConnectionConfig;
+  onSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
 }
 
 export const ConnectionTab: React.FC<ConnectionTabProps> = ({
@@ -13,6 +14,25 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   onSettingsChange,
 }) => {
   const { t } = useLocalization();
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<
+    "success" | "error" | "none"
+  >("none");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      await TestConnection(JSON.stringify(settings));
+      setConnectionStatus("success");
+      setStatusMessage(t("settings.testSuccess"));
+    } catch (error) {
+      setConnectionStatus("error");
+      setStatusMessage(t("settings.testError"));
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
 
   return (
     <Grid columns="1" gap="3">
@@ -74,6 +94,30 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
             onChange={(e) => onSettingsChange({ password: e.target.value })}
           />
         </Box>
+      </Flex>
+
+      <Flex direction="column" gap="2" mt="2">
+        <Box>
+          <Button
+            size="1"
+            variant="soft"
+            onClick={handleTestConnection}
+            disabled={isTestingConnection}
+          >
+            {isTestingConnection
+              ? t("settings.testing")
+              : t("settings.testConnection")}
+          </Button>
+        </Box>
+        {connectionStatus !== "none" && (
+          <Text
+            size="1"
+            color={connectionStatus === "success" ? "green" : "red"}
+            mb="2"
+          >
+            {statusMessage}
+          </Text>
+        )}
       </Flex>
     </Grid>
   );

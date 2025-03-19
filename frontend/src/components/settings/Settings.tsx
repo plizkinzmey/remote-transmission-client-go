@@ -4,73 +4,53 @@ import {
   Button as RadixButton,
   Tabs as RadixTabs,
   Flex,
-  Text,
   Box,
 } from "@radix-ui/themes";
-import { TestConnection, LoadConfig } from "../../../wailsjs/go/main/App";
+import { LoadConfig } from "../../../wailsjs/go/main/App";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ConnectionTab } from "./ConnectionTab";
 import { LimitsTab } from "./LimitsTab";
 import { Portal } from "../Portal";
-
-type ThemeType = "light" | "dark" | "auto";
-
-export interface Config {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  language: string;
-  theme: ThemeType;
-  maxUploadRatio: number;
-  slowSpeedLimit: number;
-  slowSpeedUnit: "KiB/s" | "MiB/s";
-}
-
-type ConnectionStatusType = "success" | "error" | "none";
+import { ConnectionConfig } from "../../App";
 
 interface SettingsProps {
-  onSave: (settings: Config) => void;
+  onSave: (settings: ConnectionConfig) => void;
   onClose: () => void;
 }
 
-const defaultSettings: Config = {
+const defaultSettings: ConnectionConfig = {
   host: "localhost",
   port: 9091,
   username: "",
   password: "",
-  language: "en",
-  theme: "light",
   maxUploadRatio: 0,
   slowSpeedLimit: 50,
   slowSpeedUnit: "KiB/s",
 };
 
-type TabType = "connection" | "limits";
-
 export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   const { t } = useLocalization();
-  const [settings, setSettings] = useState<Config>(defaultSettings);
+  const [settings, setSettings] = useState<ConnectionConfig>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatusType>("none");
-  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     const loadSavedSettings = async () => {
       try {
         const savedConfig = await LoadConfig();
         if (savedConfig) {
-          setSettings({
-            ...defaultSettings,
-            ...savedConfig,
-            theme: (savedConfig.theme || "light") as ThemeType,
+          const connectionSettings: ConnectionConfig = {
+            host: savedConfig.host,
+            port: savedConfig.port,
+            username: savedConfig.username,
+            password: savedConfig.password,
+            maxUploadRatio: savedConfig.maxUploadRatio,
+            slowSpeedLimit: savedConfig.slowSpeedLimit,
             slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
               | "KiB/s"
               | "MiB/s",
-          });
+          };
+          setSettings(connectionSettings);
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
@@ -81,32 +61,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
     loadSavedSettings();
   }, []);
 
-  const handleSettingsChange = (newSettings: Partial<Config>) => {
+  const handleSettingsChange = (newSettings: Partial<ConnectionConfig>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
-  };
-
-  const handleTestConnection = async () => {
-    setIsTestingConnection(true);
-    try {
-      await TestConnection(JSON.stringify(settings));
-      setConnectionStatus("success");
-      setStatusMessage(t("settings.connectionSuccess"));
-    } catch (error) {
-      setConnectionStatus("error");
-      setStatusMessage(
-        t(
-          "settings.connectionFailed",
-          String(error instanceof Error ? error.message : error)
-        )
-      );
-    } finally {
-      setIsTestingConnection(false);
-    }
   };
 
   const handleSave = () => {
     onSave(settings);
-    onClose(); // Закрываем окно после сохранения
+    onClose();
   };
 
   if (isLoading) {
@@ -156,35 +117,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
             </RadixTabs.Root>
           </Box>
 
-          <Flex justify="between" align="center" mt="4" gap="3">
-            <Box>
-              {connectionStatus !== "none" && (
-                <Text
-                  color={connectionStatus === "success" ? "green" : "red"}
-                  size="1"
-                >
-                  {statusMessage}
-                </Text>
-              )}
-            </Box>
-            <Flex gap="2">
-              <RadixButton size="1" variant="soft" onClick={onClose}>
-                {t("settings.cancel")}
-              </RadixButton>
-              <RadixButton
-                size="1"
-                variant="soft"
-                onClick={handleTestConnection}
-                disabled={isTestingConnection}
-              >
-                {isTestingConnection
-                  ? t("settings.testing")
-                  : t("settings.testConnection")}
-              </RadixButton>
-              <RadixButton size="1" variant="solid" onClick={handleSave}>
-                {t("settings.save")}
-              </RadixButton>
-            </Flex>
+          <Flex justify="end" mt="4" gap="2">
+            <RadixButton size="1" variant="soft" onClick={onClose}>
+              {t("settings.cancel")}
+            </RadixButton>
+            <RadixButton size="1" variant="solid" onClick={handleSave}>
+              {t("settings.save")}
+            </RadixButton>
           </Flex>
         </Dialog.Content>
       </Dialog.Root>

@@ -15,17 +15,25 @@ import "./styles/theme.css";
 
 type ThemeType = "light" | "dark" | "auto";
 
-interface Config {
+// Интерфейс для настроек подключения (используется в окне настроек)
+export interface ConnectionConfig {
   host: string;
   port: number;
   username: string;
   password: string;
-  language: string;
-  theme: ThemeType;
   maxUploadRatio: number;
   slowSpeedLimit: number;
   slowSpeedUnit: "KiB/s" | "MiB/s";
 }
+
+// Интерфейс для настроек UI (используется в контекстах)
+export interface UIConfig {
+  language: string;
+  theme: ThemeType;
+}
+
+// Полный интерфейс конфигурации
+export interface ConfigData extends ConnectionConfig, UIConfig {}
 
 /**
  * Основной компонент приложения.

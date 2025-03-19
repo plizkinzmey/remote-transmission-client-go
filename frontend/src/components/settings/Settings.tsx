@@ -7,6 +7,7 @@ import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ConnectionTab } from "./ConnectionTab";
 import { LimitsTab } from "./LimitsTab";
+import { Portal } from "../Portal";
 
 type ThemeType = "light" | "dark" | "auto";
 
@@ -44,6 +45,7 @@ const Modal = styled.div`
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  z-index: 1000;
 `;
 
 const ModalHeader = styled.div`
@@ -192,14 +194,16 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
 
   if (isLoading) {
     return (
-      <Modal>
-        <LoadingSpinner />
-      </Modal>
+      <Portal>
+        <Modal>
+          <LoadingSpinner />
+        </Modal>
+      </Portal>
     );
   }
 
   return (
-    <>
+    <Portal>
       <Overlay onClick={onClose} />
       <Modal>
         <ModalHeader>
@@ -258,6 +262,6 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
           </div>
         </Footer>
       </Modal>
-    </>
+    </Portal>
   );
 };

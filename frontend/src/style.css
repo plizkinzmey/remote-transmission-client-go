@@ -78,6 +78,11 @@ label,
   cursor: default;
 }
 
+/* Центрирование текста в TextField.Root */
+.rt-TextFieldInput.rt-center {
+  text-align: center;
+}
+
 /* Scrollbar styles for macOS-like appearance */
 ::-webkit-scrollbar {
   width: 8px;

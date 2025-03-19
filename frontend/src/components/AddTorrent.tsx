@@ -1,9 +1,17 @@
 import React, { useState, useRef } from "react";
-import styled from "@emotion/styled";
-import { Button } from "./Button";
+import {
+  Dialog,
+  Button,
+  Tabs,
+  Flex,
+  Text,
+  Box,
+  TextField,
+} from "@radix-ui/themes";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { FolderIcon } from "@heroicons/react/24/outline";
+import { Portal } from "./Portal";
 
 interface AddTorrentProps {
   onAdd: (url: string) => void;
@@ -11,201 +19,33 @@ interface AddTorrentProps {
   onClose: () => void;
 }
 
-const Modal = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--card-background);
-  padding: 0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--modal-shadow);
-  width: 500px;
-  z-index: 1000;
-  border: 1px solid var(--card-border);
-`;
-
-const ModalHeader = styled.div`
-  background: var(--header-background);
-  padding: 16px 20px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  user-select: none;
-  h2 {
-    color: var(--header-text);
-    font-size: 16px;
-    margin: 0;
-    font-weight: 500;
-  }
-`;
-
-const ModalContent = styled.div`
-  padding: 24px;
-`;
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--modal-overlay);
-  z-index: 999;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const Label = styled.label`
-  font-size: 14px;
-  color: var(--text-primary);
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
-
-const Input = styled.input`
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 14px;
-  background: var(--background-primary);
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px var(--accent-color-light);
-  }
-
-  &::placeholder {
-    color: var(--text-secondary);
-  }
-`;
-
-const FileInputArea = styled.div<{ isDragOver?: boolean }>`
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  padding: 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: ${(props) =>
-    props.isDragOver ? "var(--background-secondary)" : "transparent"};
-
-  &:hover {
-    border-color: var(--accent-color);
-    background: var(--background-secondary);
-  }
-`;
-
-const FileIcon = styled(FolderIcon)`
-  width: 32px;
-  height: 32px;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-`;
-
-const FileText = styled.div`
-  color: var(--text-primary);
-  font-size: 14px;
-  margin-bottom: 4px;
-`;
-
-const FileSubText = styled.div`
-  color: var(--text-secondary);
-  font-size: 12px;
-`;
-
-const SelectedFile = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--background-secondary);
-  border-radius: 6px;
-  margin-top: 8px;
-
-  span {
-    color: var(--text-primary);
-    font-size: 14px;
-    flex: 1;
-  }
-`;
-
-const Tabs = styled.div`
-  display: flex;
-  gap: 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
-`;
-
-const Tab = styled.button<{ active?: boolean }>`
-  padding: 12px 24px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid
-    ${(props) => (props.active ? "var(--accent-color)" : "transparent")};
-  color: ${(props) =>
-    props.active ? "var(--text-primary)" : "var(--text-secondary)"};
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: var(--text-primary);
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 8px;
-`;
-
-const Title = styled.h2`
-  color: var(--header-text);
-  font-size: 16px;
-  margin: 0;
-  font-weight: 500;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
-
-const ErrorText = styled.div`
-  color: var(--error-color);
-  font-size: 14px;
-  margin-top: 8px;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
-
-const InfoText = styled.div`
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
+const FileInputArea = ({
+  isDragOver,
+  ...props
+}: { isDragOver?: boolean } & React.HTMLAttributes<HTMLDivElement>) => (
+  <Box
+    {...props}
+    style={{
+      border: "2px dashed var(--gray-6)",
+      borderRadius: "8px",
+      padding: "24px",
+      textAlign: "center",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      background: isDragOver ? "var(--gray-3)" : "transparent",
+    }}
+    onMouseEnter={(e) => {
+      const target = e.currentTarget as HTMLDivElement;
+      target.style.borderColor = "var(--accent-9)";
+      target.style.background = "var(--gray-3)";
+    }}
+    onMouseLeave={(e) => {
+      const target = e.currentTarget as HTMLDivElement;
+      target.style.borderColor = "var(--gray-6)";
+      target.style.background = isDragOver ? "var(--gray-3)" : "transparent";
+    }}
+  />
+);
 
 export const AddTorrent: React.FC<AddTorrentProps> = ({
   onAdd,
@@ -267,98 +107,107 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   };
 
   return (
-    <>
-      <Overlay onClick={onClose} />
-      <Modal>
-        <ModalHeader>
-          <h2>{t("add.title")}</h2>
-        </ModalHeader>
-        <ModalContent>
+    <Portal>
+      <Dialog.Root open onOpenChange={() => onClose()}>
+        <Dialog.Content style={{ maxWidth: 500 }}>
+          <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
+
           {isLocalizationLoading ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                padding: "24px",
-              }}
-            >
+            <Flex justify="center" p="6">
               <LoadingSpinner size="medium" />
-            </div>
+            </Flex>
           ) : (
-            <Form onSubmit={handleSubmit}>
-              <Tabs>
-                <Tab
-                  active={activeTab === "url"}
-                  onClick={() => setActiveTab("url")}
-                  type="button"
-                >
-                  {t("add.url")}
-                </Tab>
-                <Tab
-                  active={activeTab === "file"}
-                  onClick={() => setActiveTab("file")}
-                  type="button"
-                >
-                  {t("add.file")}
-                </Tab>
-              </Tabs>
+            <form onSubmit={handleSubmit}>
+              <Tabs.Root
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as "url" | "file")}
+              >
+                <Tabs.List>
+                  <Tabs.Trigger value="url">{t("add.url")}</Tabs.Trigger>
+                  <Tabs.Trigger value="file">{t("add.file")}</Tabs.Trigger>
+                </Tabs.List>
 
-              {activeTab === "url" ? (
-                <FormGroup>
-                  <Input
-                    type="text"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="magnet:?xt=urn:btih:..."
-                    autoFocus
-                  />
-                </FormGroup>
-              ) : (
-                <FormGroup>
-                  <FileInputArea
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    isDragOver={isDragOver}
-                  >
-                    <FileIcon />
-                    <FileText>{t("add.dropFile")}</FileText>
-                    <FileSubText>{t("add.orClickToSelect")}</FileSubText>
-                  </FileInputArea>
-                  {selectedFileName && (
-                    <SelectedFile>
-                      <span>{selectedFileName}</span>
-                    </SelectedFile>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".torrent"
-                    onChange={handleFileChange}
-                    style={{ display: "none" }}
-                  />
-                </FormGroup>
-              )}
+                <Box mt="4">
+                  <Tabs.Content value="url">
+                    <Flex
+                      direction="column"
+                      gap="2"
+                      style={{ maxWidth: "400px", margin: "0 auto" }}
+                    >
+                      <TextField.Root
+                        size="1"
+                        placeholder="magnet:?xt=urn:btih:..."
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        className="rt-center"
+                      />
+                    </Flex>
+                  </Tabs.Content>
 
-              <ButtonGroup>
-                <Button type="button" onClick={onClose}>
+                  <Tabs.Content value="file">
+                    <Flex direction="column" gap="2">
+                      <FileInputArea
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        isDragOver={isDragOver}
+                      >
+                        <FolderIcon
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            color: "var(--gray-9)",
+                            margin: "0 auto 12px",
+                          }}
+                        />
+                        <Text as="div" size="2" mb="1">
+                          {t("add.dropFile")}
+                        </Text>
+                        <Text as="div" size="1" color="gray">
+                          {t("add.orClickToSelect")}
+                        </Text>
+                      </FileInputArea>
+
+                      {selectedFileName && (
+                        <Box
+                          mt="2"
+                          p="2"
+                          style={{
+                            background: "var(--gray-3)",
+                            borderRadius: "6px",
+                          }}
+                        >
+                          <Text size="2">{selectedFileName}</Text>
+                        </Box>
+                      )}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".torrent"
+                        onChange={handleFileChange}
+                        style={{ display: "none" }}
+                      />
+                    </Flex>
+                  </Tabs.Content>
+                </Box>
+              </Tabs.Root>
+
+              <Flex justify="end" gap="3" mt="4">
+                <Button size="1" variant="soft" onClick={onClose}>
                   {t("add.cancel")}
                 </Button>
                 {activeTab === "url" && (
-                  <Button
-                    type="submit"
-                    disabled={!url.trim()}
-                    variant="default"
-                  >
+                  <Button size="1" type="submit" disabled={!url.trim()}>
                     {t("add.add")}
                   </Button>
                 )}
-              </ButtonGroup>
-            </Form>
+              </Flex>
+            </form>
           )}
-        </ModalContent>
-      </Modal>
-    </>
+        </Dialog.Content>
+      </Dialog.Root>
+    </Portal>
   );
 };

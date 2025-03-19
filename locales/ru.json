@@ -37,7 +37,10 @@
     "tabLimits": "Ограничения",
     "connectionSettings": "Настройки соединения",
     "speedLimits": "Ограничения скорости",
-    "ratioLimit": "Ограничение рейтинга"
+    "ratioLimit": "Ограничение рейтинга",
+    "slowSpeedUnit": "Единица измерения",
+    "KiB/s": "КиБ/с",
+    "MiB/s": "МиБ/с"
   },
 
   "torrents": {

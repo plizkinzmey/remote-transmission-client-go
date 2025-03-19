@@ -106,13 +106,14 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
 
   const handleSave = () => {
     onSave(settings);
+    onClose(); // Закрываем окно после сохранения
   };
 
   if (isLoading) {
     return (
       <Portal>
         <Dialog.Root open>
-          <Dialog.Content>
+          <Dialog.Content style={{ maxWidth: 500 }}>
             <LoadingSpinner />
           </Dialog.Content>
         </Dialog.Root>
@@ -123,12 +124,12 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
   return (
     <Portal>
       <Dialog.Root open>
-        <Dialog.Content style={{ maxWidth: 600 }}>
+        <Dialog.Content style={{ maxWidth: 500 }}>
           <Dialog.Title>{t("settings.title")}</Dialog.Title>
 
           <Box mt="4">
             <RadixTabs.Root defaultValue="connection">
-              <Flex direction="column" gap="3">
+              <Flex direction="column" gap="2">
                 <RadixTabs.List>
                   <RadixTabs.Trigger value="connection">
                     {t("settings.tabConnection")}
@@ -160,17 +161,18 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
               {connectionStatus !== "none" && (
                 <Text
                   color={connectionStatus === "success" ? "green" : "red"}
-                  size="2"
+                  size="1"
                 >
                   {statusMessage}
                 </Text>
               )}
             </Box>
-            <Flex gap="3">
-              <RadixButton variant="soft" onClick={onClose}>
+            <Flex gap="2">
+              <RadixButton size="1" variant="soft" onClick={onClose}>
                 {t("settings.cancel")}
               </RadixButton>
               <RadixButton
+                size="1"
                 variant="soft"
                 onClick={handleTestConnection}
                 disabled={isTestingConnection}
@@ -179,7 +181,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
                   ? t("settings.testing")
                   : t("settings.testConnection")}
               </RadixButton>
-              <RadixButton variant="solid" onClick={handleSave}>
+              <RadixButton size="1" variant="solid" onClick={handleSave}>
                 {t("settings.save")}
               </RadixButton>
             </Flex>

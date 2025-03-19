@@ -37,7 +37,10 @@
     "tabLimits": "Limits",
     "connectionSettings": "Connection Settings",
     "speedLimits": "Speed Limits",
-    "ratioLimit": "Ratio Limit"
+    "ratioLimit": "Ratio Limit",
+    "slowSpeedUnit": "Speed unit",
+    "KiB/s": "KiB/s",
+    "MiB/s": "MiB/s"
   },
 
   "torrents": {

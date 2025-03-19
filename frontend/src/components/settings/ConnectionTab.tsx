@@ -1,5 +1,5 @@
 import React from "react";
-import { TextField, Flex, Text, Grid } from "@radix-ui/themes";
+import { TextField, Flex, Text, Grid, Box } from "@radix-ui/themes";
 import { Config } from "./Settings";
 import { useLocalization } from "../../contexts/LocalizationContext";
 
@@ -17,55 +17,63 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   return (
     <Grid columns="1" gap="3">
       <Flex direction="column" gap="2">
-        <Text as="label" size="2" weight="medium">
+        <Text as="label" size="1" weight="medium">
           {t("settings.host")}
         </Text>
-        <TextField.Root
-          size="2"
-          placeholder={t("settings.hostPlaceholder")}
-          value={settings.host}
-          onChange={(e) => onSettingsChange({ host: e.target.value })}
-        />
+        <Box style={{ maxWidth: "300px" }}>
+          <TextField.Root
+            size="1"
+            placeholder={t("settings.hostPlaceholder")}
+            value={settings.host}
+            onChange={(e) => onSettingsChange({ host: e.target.value })}
+          />
+        </Box>
       </Flex>
 
       <Flex direction="column" gap="2">
-        <Text as="label" size="2" weight="medium">
+        <Text as="label" size="1" weight="medium">
           {t("settings.port")}
         </Text>
-        <TextField.Root
-          type="number"
-          size="2"
-          placeholder={t("settings.portPlaceholder")}
-          value={settings.port}
-          onChange={(e) =>
-            onSettingsChange({ port: parseInt(e.target.value) || 0 })
-          }
-        />
+        <Box style={{ maxWidth: "100px" }}>
+          <TextField.Root
+            type="number"
+            size="1"
+            placeholder={t("settings.portPlaceholder")}
+            value={settings.port}
+            onChange={(e) =>
+              onSettingsChange({ port: parseInt(e.target.value) || 0 })
+            }
+          />
+        </Box>
       </Flex>
 
       <Flex direction="column" gap="2">
-        <Text as="label" size="2" weight="medium">
+        <Text as="label" size="1" weight="medium">
           {t("settings.username")}
         </Text>
-        <TextField.Root
-          size="2"
-          placeholder={t("settings.usernamePlaceholder")}
-          value={settings.username}
-          onChange={(e) => onSettingsChange({ username: e.target.value })}
-        />
+        <Box style={{ maxWidth: "250px" }}>
+          <TextField.Root
+            size="1"
+            placeholder={t("settings.usernamePlaceholder")}
+            value={settings.username}
+            onChange={(e) => onSettingsChange({ username: e.target.value })}
+          />
+        </Box>
       </Flex>
 
       <Flex direction="column" gap="2">
-        <Text as="label" size="2" weight="medium">
+        <Text as="label" size="1" weight="medium">
           {t("settings.password")}
         </Text>
-        <TextField.Root
-          type="password"
-          size="2"
-          placeholder={t("settings.passwordPlaceholder")}
-          value={settings.password}
-          onChange={(e) => onSettingsChange({ password: e.target.value })}
-        />
+        <Box style={{ maxWidth: "250px" }}>
+          <TextField.Root
+            type="password"
+            size="1"
+            placeholder={t("settings.passwordPlaceholder")}
+            value={settings.password}
+            onChange={(e) => onSettingsChange({ password: e.target.value })}
+          />
+        </Box>
       </Flex>
     </Grid>
   );

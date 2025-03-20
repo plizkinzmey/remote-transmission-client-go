@@ -23,18 +23,23 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [deleteData, setDeleteData] = React.useState(false);
 
+  // Сбрасываем состояние при изменении open
+  React.useEffect(() => {
+    if (!open) {
+      setDeleteData(false);
+    }
+  }, [open]);
+
   if (isLocalizationLoading) {
     return <LoadingSpinner />;
   }
 
   const handleConfirm = () => {
     onConfirm(deleteData);
-    setDeleteData(false); // Сбрасываем состояние для следующего использования
   };
 
   const handleCancel = () => {
     onCancel();
-    setDeleteData(false); // Сбрасываем состояние для следующего использования
   };
 
   return (
@@ -50,12 +55,12 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
           </Text>
           {mode === "single" && torrentName && (
             <Text as="p" size="1" weight="bold" mb="3">
-              {torrentName}
+              {t("remove.message", torrentName)}
             </Text>
           )}
-          {mode === "bulk" && count && (
+          {mode === "bulk" && count !== undefined && (
             <Text as="p" size="1" weight="bold" mb="3">
-              {t("torrents.selected", String(count), String(count))}
+              {t("remove.selectedCount", count)}
             </Text>
           )}
         </Box>

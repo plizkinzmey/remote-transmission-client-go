@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/Header.module.css";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSelector } from "./LanguageSelector";
 import { DeleteDialog } from "./DeleteDialog";
@@ -65,6 +65,11 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // Закрываем диалог при изменении количества выбранных торрентов
+  useEffect(() => {
+    setShowDeleteConfirmation(false);
+  }, [selectedTorrents]);
 
   const handleRemoveClick = () => {
     setShowDeleteConfirmation(true);
@@ -176,8 +181,8 @@ export const Header: React.FC<HeaderProps> = ({
             {selectedTorrents.size > 0
               ? t(
                   "torrents.selected",
-                  String(selectedTorrents.size),
-                  String(filteredTorrents.length)
+                  selectedTorrents.size,
+                  filteredTorrents.length
                 )
               : t("torrents.selectAll")}
           </label>

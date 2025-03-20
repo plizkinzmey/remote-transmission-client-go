@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 )
 
 // LocalizationService handles the application translations
 type LocalizationService struct {
-	translations     map[string]map[string]interface{}
+	translations     map[string]map[string]any
 	fallbackLocale   string
 	availableLocales []string
 }
@@ -19,7 +20,7 @@ type LocalizationService struct {
 // NewLocalizationService creates a new localization service
 func NewLocalizationService() (*LocalizationService, error) {
 	service := &LocalizationService{
-		translations:     make(map[string]map[string]interface{}),
+		translations:     make(map[string]map[string]any),
 		fallbackLocale:   "en",
 		availableLocales: []string{"en", "ru"},
 	}
@@ -56,7 +57,7 @@ func (s *LocalizationService) loadTranslationFile(locale string) error {
 	}
 
 	// Загружаем в map с поддержкой вложенной структуры
-	var translations map[string]interface{}
+	var translations map[string]any
 	if err := json.Unmarshal(data, &translations); err != nil {
 		return fmt.Errorf("failed to unmarshal translations for %s: %w", locale, err)
 	}
@@ -67,7 +68,20 @@ func (s *LocalizationService) loadTranslationFile(locale string) error {
 }
 
 // Translate returns a translated string for the given key
-func (s *LocalizationService) Translate(key string, locale string, args ...interface{}) string {
+func (s *LocalizationService) Translate(key string, locale string, args ...any) string {
+	// Проверяем локаль и получаем перевод
+	translation := s.getTranslationForLocale(key, locale)
+
+	// Если есть аргументы, заменяем плейсхолдеры
+	if len(args) > 0 {
+		translation = s.replacePlaceholders(translation, args)
+	}
+
+	return translation
+}
+
+// getTranslationForLocale получает перевод для указанной локали или запасной вариант
+func (s *LocalizationService) getTranslationForLocale(key string, locale string) string {
 	// Если локаль не поддерживается, используем запасной вариант
 	if _, ok := s.translations[locale]; !ok {
 		locale = s.fallbackLocale
@@ -81,21 +95,50 @@ func (s *LocalizationService) Translate(key string, locale string, args ...inter
 		translation = s.getNestedTranslation(key, s.fallbackLocale)
 	}
 
-	// Если перевод не найден, возвращаем ключ как есть
-	if translation == key {
-		return key
+	return translation
+}
+
+// replacePlaceholders заменяет плейсхолдеры в строке перевода аргументами
+func (s *LocalizationService) replacePlaceholders(translation string, args []any) string {
+	// Если перевод не найден (равен ключу), нет смысла заменять плейсхолдеры
+	if translation == "" {
+		return translation
 	}
 
-	// Если есть аргументы, заменяем плейсхолдеры
-	if len(args) > 0 {
-		// Заменяем плейсхолдеры {0}, {1}, ... на соответствующие аргументы
-		for i, arg := range args {
-			placeholder := fmt.Sprintf("{%d}", i)
-			translation = strings.Replace(translation, placeholder, fmt.Sprintf("%v", arg), -1)
-		}
+	// Обрабатываем аргументы для замены плейсхолдеров
+	processedArgs := s.processArgs(args)
+
+	// Заменяем плейсхолдеры {0}, {1}, ... на соответствующие аргументы
+	for i, arg := range processedArgs {
+		placeholder := fmt.Sprintf("{%d}", i)
+		translation = strings.Replace(translation, placeholder, fmt.Sprintf("%v", arg), -1)
 	}
 
 	return translation
+}
+
+// processArgs обрабатывает аргументы, распаковывая массивы с одним элементом
+func (s *LocalizationService) processArgs(args []any) []any {
+	processedArgs := make([]any, 0, len(args))
+
+	for _, arg := range args {
+		// Проверяем, является ли аргумент массивом/слайсом
+		val := reflect.ValueOf(arg)
+		if val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
+			// Если это массив с одним элементом, используем его элемент
+			if val.Len() == 1 {
+				processedArgs = append(processedArgs, val.Index(0).Interface())
+			} else {
+				// Иначе используем сам массив
+				processedArgs = append(processedArgs, arg)
+			}
+		} else {
+			// Не массив, используем как есть
+			processedArgs = append(processedArgs, arg)
+		}
+	}
+
+	return processedArgs
 }
 
 // getNestedTranslation получает значение вложенного ключа в формате "app.title"
@@ -103,12 +146,12 @@ func (s *LocalizationService) getNestedTranslation(key string, locale string) st
 	parts := strings.Split(key, ".")
 
 	// Начинаем с корневого объекта для заданной локали
-	var currentObj interface{} = s.translations[locale]
+	var currentObj any = s.translations[locale]
 
 	// Проходим по частям ключа
 	for _, part := range parts {
 		// Проверяем, что текущий объект - карта
-		if nestedMap, ok := currentObj.(map[string]interface{}); ok {
+		if nestedMap, ok := currentObj.(map[string]any); ok {
 			// Получаем следующую часть из карты
 			currentObj = nestedMap[part]
 			if currentObj == nil {
@@ -150,6 +193,7 @@ func (s *LocalizationService) GetSystemLocale() string {
 			parts := strings.Split(envLocale, "_")
 			if len(parts) > 0 {
 				langCode := strings.ToLower(parts[0])
+
 				// Check if this language is supported
 				for _, supportedLocale := range s.availableLocales {
 					if supportedLocale == langCode {

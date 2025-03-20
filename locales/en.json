@@ -114,6 +114,7 @@
     "title": "Remove Torrent",
     "confirmation": "Are you sure you want to remove this torrent?",
     "selectedConfirmation": "Are you sure you want to remove all selected torrents?",
+    "selectedCount": "Selected torrents: {0}",
     "withData": "Also delete downloaded data",
     "confirm": "Remove",
     "cancel": "Cancel",

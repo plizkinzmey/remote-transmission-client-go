@@ -98,7 +98,8 @@ func (a *App) LoadConfig() (*domain.Config, error) {
 }
 
 // GetTranslation returns a translated string for the given key and locale with optional parameters
-func (a *App) GetTranslation(key string, locale string, args ...interface{}) string {
+func (a *App) GetTranslation(key string, locale string, args []any) string {
+	// Передаем массив аргументов напрямую, без разворачивания через varargs
 	return a.localizationService.Translate(key, locale, args...)
 }
 

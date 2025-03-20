@@ -62,7 +62,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
 
     // Если есть в кэше, используем его, иначе запрашиваем асинхронно
     if (!cachedTranslation) {
-      // Асинхронно загружаем перевод, но возвращаем ключ пока он не загрузился
+      // Вызываем GetTranslation с правильными типами параметров
       GetTranslation(key, languageState, params)
         .then((translation) => {
           if (translation !== key) {
@@ -145,6 +145,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         await Promise.all(
           commonKeys.map(async (key) => {
             try {
+              // Передаём пустой массив для третьего параметра
               const translation = await GetTranslation(key, languageState, []);
               newTranslations[key] = translation;
             } catch (error) {
@@ -180,7 +181,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         const langs = await Promise.all(
           codes.map(async (code: string) => ({
             code,
-            // Добавляем пустой массив как третий аргумент
+            // Передаём пустой массив для третьего параметра
             name: await GetTranslation(`language.${code}`, code, []),
           }))
         );
@@ -216,7 +217,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
   // Update window title when language changes
   useEffect(() => {
     const updateTitle = async () => {
-      // Добавляем пустой массив как третий аргумент
+      // Передаём пустой массив для третьего параметра
       const title = await GetTranslation("app.title", languageState, []);
       document.title = title;
     };

@@ -1,93 +1,42 @@
-import React, { useCallback } from "react";
-import styled from "@emotion/styled";
+import React from "react";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { Button, Flex } from "@radix-ui/themes";
 
 interface StatusFilterProps {
   selectedStatus: string | null;
   onStatusChange: (status: string | null) => void;
-  hasNoTorrents?: boolean;
+  hasNoTorrents: boolean;
 }
-
-const FilterContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-left: 16px;
-  flex-wrap: wrap;
-`;
-
-const FilterButton = styled.button<{ isActive: boolean }>`
-  padding: 4px 8px;
-  border: none;
-  background: ${(props) =>
-    props.isActive ? "var(--accent-color)" : "transparent"};
-  color: ${(props) => (props.isActive ? "#ffffff" : "var(--text-secondary)")};
-  border-radius: 4px;
-  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
-  font-size: 12px;
-  transition: all 0.2s ease;
-  min-height: 24px;
-  white-space: nowrap;
-
-  &:hover:not(:disabled) {
-    background: ${(props) =>
-      props.isActive ? "var(--accent-color)" : "var(--background-hover)"};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  span {
-    user-select: none;
-    -webkit-user-select: none;
-    cursor: default;
-  }
-`;
-
-const CountBadge = styled.span`
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
-
-const statuses = [
-  { key: "downloading" },
-  { key: "seeding" },
-  { key: "stopped" },
-  { key: "checking" },
-  { key: "queued" },
-  { key: "completed" },
-  { key: "slow" },
-];
 
 export const StatusFilter: React.FC<StatusFilterProps> = ({
   selectedStatus,
   onStatusChange,
-  hasNoTorrents = false,
+  hasNoTorrents,
 }) => {
   const { t } = useLocalization();
 
-  const handleFilterClick = useCallback(
-    (status: string) => {
-      onStatusChange(selectedStatus === status ? null : status);
-    },
-    [selectedStatus, onStatusChange]
-  );
+  const statuses = [
+    { id: null, label: "all" },
+    { id: "downloading", label: "downloading" },
+    { id: "seeding", label: "seeding" },
+    { id: "paused", label: "paused" },
+    { id: "completed", label: "completed" },
+    { id: "slow", label: "slow" },
+  ];
 
   return (
-    <FilterContainer>
-      {statuses.map((status) => (
-        <FilterButton
-          key={status.key}
-          isActive={selectedStatus === status.key}
-          onClick={() => handleFilterClick(status.key)}
-          disabled={hasNoTorrents} // Кнопки блокируются только если нет торрентов
-          type="button"
+    <Flex gap="2" align="center">
+      {statuses.map(({ id, label }) => (
+        <Button
+          key={label}
+          size="1"
+          variant={selectedStatus === id ? "solid" : "ghost"}
+          onClick={() => onStatusChange(id)}
+          disabled={hasNoTorrents}
         >
-          {t(`filters.${status.key}`)}
-        </FilterButton>
+          {t(`status.${label}`)}
+        </Button>
       ))}
-    </FilterContainer>
+    </Flex>
   );
 };

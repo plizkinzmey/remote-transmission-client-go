@@ -121,6 +121,7 @@
 /* Стили селекта для выбора всех */
 .selectAllContainer {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
   background-color: var(--background-secondary);
@@ -188,7 +189,6 @@
   padding: 8px;
   margin: 8px 16px;
   background-color: var(--error-background);
-  color: var(--error-color);
   border-radius: var(--radius-3);
   font-size: 14px;
   display: block;

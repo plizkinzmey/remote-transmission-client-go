@@ -1,4 +1,3 @@
-import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { StatusFilter } from "./StatusFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -8,6 +7,7 @@ import {
   PlayIcon,
   PauseIcon,
   TrashIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/Header.module.css";
@@ -15,6 +15,14 @@ import { useState, useCallback, useEffect } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSelector } from "./LanguageSelector";
 import { DeleteDialog } from "./DeleteDialog";
+import {
+  IconButton,
+  TextField,
+  Box,
+  Flex,
+  Text,
+  Checkbox,
+} from "@radix-ui/themes";
 
 interface HeaderProps {
   searchTerm: string;
@@ -64,7 +72,6 @@ export const Header: React.FC<HeaderProps> = ({
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
-  // Закрываем диалог при изменении количества выбранных торрентов
   useEffect(() => {
     setShowDeleteConfirmation(false);
   }, [selectedTorrents]);
@@ -82,100 +89,104 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <div className={styles.fixedHeader}>
-      {/* Панель управления с кнопками и поиском */}
-      <div className={styles.controlPanel}>
-        <div className={styles.leftSection}>
-          <div className={styles.searchContainer}>
-            <input
-              type="text"
-              className={styles.searchInput}
+    <Box className={styles.fixedHeader}>
+      <Flex className={styles.controlPanel} justify="between" align="center">
+        <Flex gap="3" align="center">
+          <TextField.Root size="2" style={{ width: "200px" }}>
+            <TextField.Slot>
+              <MagnifyingGlassIcon width={16} height={16} />
+            </TextField.Slot>
+            <TextField.Root
               placeholder={t("torrents.search")}
               value={searchTerm}
               onChange={handleSearchChange}
             />
-          </div>
-          {/* Кнопка добавления торрента */}
-          <Button
-            variant="icon"
+          </TextField.Root>
+
+          <IconButton
+            variant="ghost"
             onClick={onAddTorrent}
             aria-label={t("add.title")}
           >
-            <PlusCircleIcon />
-          </Button>
-          {/* Кнопка запуска выбранных торрентов */}
-          <Button
-            variant="icon"
+            <PlusCircleIcon width={20} height={20} />
+          </IconButton>
+
+          <IconButton
+            variant="ghost"
             onClick={onStartSelected}
             disabled={!hasSelectedTorrents || startLoading}
-            loading={startLoading}
             aria-label={t("torrents.startSelected")}
           >
-            {startLoading ? <LoadingSpinner size="small" /> : <PlayIcon />}
-          </Button>
-          {/* Кнопка остановки выбранных торрентов */}
-          <Button
-            variant="icon"
+            {startLoading ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              <PlayIcon width={20} height={20} />
+            )}
+          </IconButton>
+
+          <IconButton
+            variant="ghost"
             onClick={onStopSelected}
             disabled={!hasSelectedTorrents || stopLoading}
-            loading={stopLoading}
             aria-label={t("torrents.stopSelected")}
           >
-            {stopLoading ? <LoadingSpinner size="small" /> : <PauseIcon />}
-          </Button>
-          {/* Кнопка замедления выбранных торрентов */}
-          <Button
-            variant="icon"
+            {stopLoading ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              <PauseIcon width={20} height={20} />
+            )}
+          </IconButton>
+
+          <IconButton
+            variant="ghost"
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
             disabled={!hasSelectedTorrents}
-            title={t(
+            data-active={isSlowModeEnabled}
+            aria-label={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
-            data-active={isSlowModeEnabled}
           >
-            <SnailIcon className={styles.icon} />
-          </Button>
-          {/* Кнопка удаления выбранных торрентов */}
-          <Button
-            variant="icon"
+            <SnailIcon style={{ width: 20, height: 20 }} />
+          </IconButton>
+
+          <IconButton
+            variant="ghost"
             onClick={handleRemoveClick}
             disabled={!hasSelectedTorrents || removeLoading}
-            loading={removeLoading}
             aria-label={t("remove.title")}
           >
-            {removeLoading ? <LoadingSpinner size="small" /> : <TrashIcon />}
-          </Button>
-        </div>
-        <div className={styles.rightSection}>
-          <div className={styles.controls}>
-            <LanguageSelector />
-            <ThemeToggle />
-            <Button
-              variant="icon"
-              onClick={onSettings}
-              aria-label={t("settings.title")}
-            >
-              <Cog6ToothIcon />
-            </Button>
-          </div>
-        </div>
-      </div>
+            {removeLoading ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              <TrashIcon width={20} height={20} />
+            )}
+          </IconButton>
+        </Flex>
 
-      {/* Блок выбора всех торрентов и фильтров */}
-      <div className={styles.selectAllContainer}>
-        <div className={styles.selectAllWrapper}>
-          <input
-            type="checkbox"
-            className={styles.selectAllCheckbox}
+        <Flex gap="2" align="center">
+          <LanguageSelector />
+          <ThemeToggle />
+          <IconButton
+            variant="ghost"
+            onClick={onSettings}
+            aria-label={t("settings.title")}
+          >
+            <Cog6ToothIcon width={20} height={20} />
+          </IconButton>
+        </Flex>
+      </Flex>
+
+      <Box className={styles.selectAllContainer}>
+        <Flex align="center" gap="2">
+          <Checkbox
             checked={
               selectedTorrents.size > 0 &&
               selectedTorrents.size === filteredTorrents.length
             }
-            onChange={onSelectAll}
-            id="selectAll"
+            onCheckedChange={onSelectAll}
             disabled={filteredTorrents.length === 0}
           />
-          <label htmlFor="selectAll" className={styles.selectAllLabel}>
+          <Text size="2">
             {selectedTorrents.size > 0
               ? t(
                   "torrents.selected",
@@ -183,21 +194,22 @@ export const Header: React.FC<HeaderProps> = ({
                   filteredTorrents.length
                 )
               : t("torrents.selectAll")}
-          </label>
-        </div>
+          </Text>
+        </Flex>
 
-        {/* Фильтры статусов */}
         <StatusFilter
           selectedStatus={statusFilter}
           onStatusChange={onStatusFilterChange}
           hasNoTorrents={torrents.length === 0}
         />
-      </div>
+      </Box>
 
-      {/* Отображение сообщений об ошибках */}
-      {error && <div className={styles.errorMessage}>{error}</div>}
+      {error && (
+        <Box className={styles.errorMessage}>
+          <Text color="red">{error}</Text>
+        </Box>
+      )}
 
-      {/* Диалог подтверждения удаления */}
       <DeleteDialog
         mode="bulk"
         count={selectedTorrents.size}
@@ -208,6 +220,6 @@ export const Header: React.FC<HeaderProps> = ({
         onCancel={() => setShowDeleteConfirmation(false)}
         open={showDeleteConfirmation}
       />
-    </div>
+    </Box>
   );
 };

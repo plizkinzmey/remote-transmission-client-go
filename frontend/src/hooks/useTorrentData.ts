@@ -335,7 +335,6 @@ export function useTorrentData() {
     selectedTorrents,
     isInitialized,
     error,
-    isReconnecting,
     hasSelectedTorrents,
     sessionStats,
     isLoading: isLoading && isFirstLoad,

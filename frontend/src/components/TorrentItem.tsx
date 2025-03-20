@@ -272,18 +272,17 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         </div>
       </div>
 
-      {showDeleteConfirmation && (
-        <DeleteDialog
-          mode="single"
-          torrentName={name}
-          onConfirm={(deleteData) => {
-            onRemove(id, deleteData);
-            setShowDeleteConfirmation(false);
-          }}
-          onCancel={() => setShowDeleteConfirmation(false)}
-          open={showDeleteConfirmation}
-        />
-      )}
+      {/* Диалог подтверждения удаления */}
+      <DeleteDialog
+        mode="single"
+        torrentName={name}
+        onConfirm={(deleteData) => {
+          onRemove(id, deleteData);
+          setShowDeleteConfirmation(false);
+        }}
+        onCancel={() => setShowDeleteConfirmation(false)}
+        open={showDeleteConfirmation}
+      />
 
       {showContent && (
         <TorrentContent

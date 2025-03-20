@@ -32,7 +32,6 @@ interface HeaderProps {
   selectedTorrents: Set<number>;
   onSelectAll: () => void;
   error: string | null;
-  isReconnecting: boolean;
   statusFilter: string | null;
   onStatusFilterChange: (status: string | null) => void;
   torrents: Array<any>;
@@ -56,7 +55,6 @@ export const Header: React.FC<HeaderProps> = ({
   selectedTorrents,
   onSelectAll,
   error,
-  isReconnecting,
   statusFilter,
   onStatusFilterChange,
   torrents,
@@ -199,24 +197,17 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Отображение сообщений об ошибках */}
       {error && <div className={styles.errorMessage}>{error}</div>}
 
-      {/* Индикатор переподключения */}
-      {isReconnecting && (
-        <div className={styles.reconnectingStatus}>{t("app.reconnecting")}</div>
-      )}
-
       {/* Диалог подтверждения удаления */}
-      {showDeleteConfirmation && (
-        <DeleteDialog
-          mode="bulk"
-          count={selectedTorrents.size}
-          onConfirm={(deleteData) => {
-            onRemoveSelected(deleteData);
-            setShowDeleteConfirmation(false);
-          }}
-          onCancel={() => setShowDeleteConfirmation(false)}
-          open={showDeleteConfirmation}
-        />
-      )}
+      <DeleteDialog
+        mode="bulk"
+        count={selectedTorrents.size}
+        onConfirm={(deleteData) => {
+          onRemoveSelected(deleteData);
+          setShowDeleteConfirmation(false);
+        }}
+        onCancel={() => setShowDeleteConfirmation(false)}
+        open={showDeleteConfirmation}
+      />
     </div>
   );
 };

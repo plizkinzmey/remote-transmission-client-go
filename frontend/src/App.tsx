@@ -51,7 +51,6 @@ function App() {
     torrents,
     selectedTorrents,
     error,
-    isReconnecting,
     hasSelectedTorrents,
     sessionStats,
     isLoading,
@@ -130,7 +129,6 @@ function App() {
             selectedTorrents={selectedTorrents}
             onSelectAll={handleSelectAllAdapter}
             error={error}
-            isReconnecting={isReconnecting}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
             torrents={torrents}

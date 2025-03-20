@@ -57,12 +57,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
 
   // Синхронная функция перевода, которая использует параметры
   const t = (key: string, ...params: any[]): string => {
-    // Получение перевода
     const cachedTranslation = translationsCache[key];
 
-    // Если есть в кэше, используем его, иначе запрашиваем асинхронно
     if (!cachedTranslation) {
-      // Вызываем GetTranslation с правильными типами параметров
+      // Передаем params как массив
       GetTranslation(key, languageState, params)
         .then((translation) => {
           if (translation !== key) {
@@ -76,14 +74,15 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
           console.error(`Failed to get translation for key: ${key}`, error);
         });
 
-      // Пока возвращаем ключ
       return key;
     }
 
     // Если в запросе были переданы параметры, заменяем плейсхолдеры
     if (params.length > 0) {
       let result = cachedTranslation;
-      params.forEach((param, index) => {
+      // Убедимся что параметры переданы как массив
+      const paramsArray = Array.isArray(params[0]) ? params[0] : params;
+      paramsArray.forEach((param, index) => {
         result = result.replace(`{${index}}`, String(param));
       });
       return result;
@@ -134,6 +133,10 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "remove.cancel",
         "remove.confirm",
         "remove.withData",
+        "remove.confirmation",
+        "remove.selectedConfirmation",
+        "remove.selectedCount",
+        "remove.message",
         "settings.testSuccess",
         "settings.testError",
         "settings.testing",

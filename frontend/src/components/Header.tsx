@@ -1,6 +1,5 @@
 import { Button } from "./Button";
 import { useLocalization } from "../contexts/LocalizationContext";
-import { BulkDeleteConfirmation } from "./BulkDeleteConfirmation";
 import { StatusFilter } from "./StatusFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
@@ -15,6 +14,7 @@ import styles from "../styles/Header.module.css";
 import { useState, useCallback } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSelector } from "./LanguageSelector";
+import { DeleteDialog } from "./DeleteDialog";
 
 interface HeaderProps {
   searchTerm: string;
@@ -201,13 +201,15 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Диалог подтверждения удаления */}
       {showDeleteConfirmation && (
-        <BulkDeleteConfirmation
+        <DeleteDialog
+          mode="bulk"
           count={selectedTorrents.size}
           onConfirm={(deleteData) => {
             onRemoveSelected(deleteData);
             setShowDeleteConfirmation(false);
           }}
           onCancel={() => setShowDeleteConfirmation(false)}
+          open={showDeleteConfirmation}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "./Button";
-import { DeleteConfirmation } from "./DeleteConfirmation";
+import { DeleteDialog } from "./DeleteDialog";
 import { TorrentContent } from "./TorrentContent";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useLocalization } from "../contexts/LocalizationContext";
@@ -273,13 +273,15 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       </div>
 
       {showDeleteConfirmation && (
-        <DeleteConfirmation
+        <DeleteDialog
+          mode="single"
           torrentName={name}
           onConfirm={(deleteData) => {
             onRemove(id, deleteData);
             setShowDeleteConfirmation(false);
           }}
           onCancel={() => setShowDeleteConfirmation(false)}
+          open={showDeleteConfirmation}
         />
       )}
 

@@ -92,10 +92,24 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose }) => {
             <RadixTabs.Root defaultValue="connection">
               <Flex direction="column" gap="2">
                 <RadixTabs.List>
-                  <RadixTabs.Trigger value="connection">
+                  <RadixTabs.Trigger
+                    value="connection"
+                    style={{
+                      whiteSpace: "normal",
+                      minHeight: "32px",
+                      height: "auto",
+                    }}
+                  >
                     {t("settings.tabConnection")}
                   </RadixTabs.Trigger>
-                  <RadixTabs.Trigger value="limits">
+                  <RadixTabs.Trigger
+                    value="limits"
+                    style={{
+                      whiteSpace: "normal",
+                      minHeight: "32px",
+                      height: "auto",
+                    }}
+                  >
                     {t("settings.tabLimits")}
                   </RadixTabs.Trigger>
                 </RadixTabs.List>

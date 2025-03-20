@@ -98,8 +98,8 @@
 
   "add": {
     "title": "Add Torrent",
-    "url": "Torrent URL or Magnet Link",
-    "file": "Or select a torrent file",
+    "url": "Magnet Link",
+    "file": "Torrent File",
     "browse": "Browse",
     "add": "Add",
     "cancel": "Cancel",

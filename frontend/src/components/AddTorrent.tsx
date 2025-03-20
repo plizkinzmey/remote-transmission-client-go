@@ -123,8 +123,26 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                 onValueChange={(value) => setActiveTab(value as "url" | "file")}
               >
                 <Tabs.List>
-                  <Tabs.Trigger value="url">{t("add.url")}</Tabs.Trigger>
-                  <Tabs.Trigger value="file">{t("add.file")}</Tabs.Trigger>
+                  <Tabs.Trigger
+                    value="url"
+                    style={{
+                      whiteSpace: "normal",
+                      minHeight: "32px",
+                      height: "auto",
+                    }}
+                  >
+                    {t("add.url")}
+                  </Tabs.Trigger>
+                  <Tabs.Trigger
+                    value="file"
+                    style={{
+                      whiteSpace: "normal",
+                      minHeight: "32px",
+                      height: "auto",
+                    }}
+                  >
+                    {t("add.file")}
+                  </Tabs.Trigger>
                 </Tabs.List>
 
                 <Box mt="4">

@@ -16,14 +16,14 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
   const { t } = useLocalization();
 
   const statuses = [
-    { id: "downloading", label: "downloading" },
-    { id: "seeding", label: "seeding" },
-    { id: "stopped", label: "stopped" },
-    { id: "checking", label: "checking" },
-    { id: "queued", label: "queued" },
-    { id: "completed", label: "completed" },
-    { id: "slow", label: "slow" },
-  ];
+    { id: "downloading", label: "downloading", color: "blue" },
+    { id: "seeding", label: "seeding", color: "grass" },
+    { id: "stopped", label: "stopped", color: "gray" },
+    { id: "checking", label: "checking", color: "amber" },
+    { id: "queued", label: "queued", color: "purple" },
+    { id: "completed", label: "completed", color: "mint" },
+    { id: "slow", label: "slow", color: "orange" },
+  ] as const;
 
   const handleFilterClick = (id: string) => {
     onStatusChange(selectedStatus === id ? null : id);
@@ -31,11 +31,12 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
 
   return (
     <Flex gap="3" align="center" style={{ margin: "0 8px" }}>
-      {statuses.map(({ id, label }) => (
+      {statuses.map(({ id, label, color }) => (
         <Button
           key={label}
           size="1"
-          variant={selectedStatus === id ? "soft" : "ghost"}
+          color={color}
+          variant={selectedStatus === id ? "solid" : "soft"}
           disabled={hasNoTorrents}
           onClick={() => handleFilterClick(id)}
           style={{ minWidth: "auto", padding: "0 12px" }}

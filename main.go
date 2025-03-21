@@ -19,11 +19,11 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:     "Transmission Client",
-		Width:     900,
-		Height:    600,
-		MinWidth:  800,
-		MinHeight: 500,
+		Title:     "Transmission Desktop Client",
+		Width:     960,
+		Height:    768,
+		MinWidth:  960,
+		MinHeight: 768,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

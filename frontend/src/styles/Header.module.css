@@ -36,10 +36,3 @@
   font-size: 14px;
   display: block;
 }
-
-/* Убираем старые переопределения для иконок в хедере */
-:global(.icon-button),
-:global(.icon-button:hover),
-:global(.header-icon) {
-  color: var(--gray-12);
-}

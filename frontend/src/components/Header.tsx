@@ -102,44 +102,37 @@ export const Header: React.FC<HeaderProps> = ({
               <MagnifyingGlassIcon width={16} height={16} />
             </TextField.Slot>
           </TextField.Root>
-
           <IconButton
             variant="ghost"
             onClick={onAddTorrent}
             aria-label={t("add.title")}
-            className="icon-button"
           >
-            <PlusCircleIcon className="header-icon" width={20} height={20} />
+            <PlusCircleIcon width={20} height={20} />
           </IconButton>
-
           <IconButton
             variant="ghost"
             onClick={onStartSelected}
             disabled={!hasSelectedTorrents || startLoading}
             aria-label={t("torrents.startSelected")}
-            className="icon-button"
           >
             {startLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PlayIcon className="header-icon" width={20} height={20} />
+              <PlayIcon width={20} height={20} />
             )}
           </IconButton>
-
           <IconButton
             variant="ghost"
             onClick={onStopSelected}
             disabled={!hasSelectedTorrents || stopLoading}
             aria-label={t("torrents.stopSelected")}
-            className="icon-button"
           >
             {stopLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PauseIcon className="header-icon" width={20} height={20} />
+              <PauseIcon width={20} height={20} />
             )}
           </IconButton>
-
           <IconButton
             variant="ghost"
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
@@ -148,29 +141,22 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
-            className="icon-button"
           >
-            <SnailIcon
-              className="header-icon"
-              style={{ width: 20, height: 20 }}
-            />
+            <SnailIcon style={{ width: 20, height: 20 }} />
           </IconButton>
-
           <IconButton
             variant="ghost"
             onClick={handleRemoveClick}
             disabled={!hasSelectedTorrents || removeLoading}
             aria-label={t("remove.title")}
-            className="icon-button"
           >
             {removeLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <TrashIcon className="header-icon" width={20} height={20} />
+              <TrashIcon width={20} height={20} />
             )}
           </IconButton>
         </Flex>
-
         <Flex gap="2" align="center">
           <LanguageSelector />
           <ThemeToggle />
@@ -206,7 +192,6 @@ export const Header: React.FC<HeaderProps> = ({
                 : t("torrents.selectAll")}
             </Text>
           </Flex>
-
           <StatusFilter
             selectedStatus={statusFilter}
             onStatusChange={onStatusFilterChange}

@@ -1,68 +1,6 @@
 /**
- * Файл темизации для интеграции с RadixUI
+ * Утилитарные классы для анимаций и специфичных стилей
  */
-
-/* Базовые цвета и переменные для интеграции с RadixUI */
-:root {
-  /* Статусы торрентов */
-  --status-downloading: var(--blue-9);
-  --status-seeding: var(--grass-9);
-  --status-stopped: var(--gray-9);
-  --status-completed: var(--mint-9);
-  --status-checking: var(--amber-9);
-  --status-queued: var(--slate-9);
-  
-  /* Общие цвета */
-  --download-color: var(--blue-9);
-  --seed-color: var(--grass-9);
-  --error-color: var(--tomato-9);
-  
-  /* Стили для TreeView */
-  --tree-progress-bg: var(--gray-5);
-  --tree-progress-fill: var(--blue-9);
-}
-
-/* Переменные для светлой темы */
-.rt-ThemeLight {
-  color-scheme: light;
-  
-  /* Карточки торрентов */
-  --card-background: var(--color-surface);
-  --card-border: var(--gray-4);
-  --card-text-primary: var(--gray-12);
-  --card-text-secondary: var(--gray-9);
-  --card-progress-bg: var(--gray-3);
-  --card-ratio-bg: var(--gray-3);
-  
-  /* Утилитарные цвета */
-  --error-background: var(--tomato-3);
-}
-
-/* Переменные для темной темы */
-.rt-ThemeDark {
-  color-scheme: dark;
-  
-  /* Карточки торрентов */
-  --card-background: var(--color-surface);
-  --card-border: var(--gray-6);
-  --card-text-primary: white;
-  --card-text-secondary: var(--gray-9);
-  --card-progress-bg: var(--gray-6);
-  --card-ratio-bg: var(--gray-6);
-  
-  /* Утилитарные цвета */
-  --error-background: color-mix(in srgb, var(--tomato-9) 20%, black);
-}
-
-/* Утилитарные классы */
-.icon-snail {
-  width: 20px;
-  height: 20px;
-}
-
-.icon-snail path {
-  fill: currentColor;
-}
 
 /* Анимация загрузки */
 @keyframes placeholder-pulse {
@@ -75,8 +13,12 @@
   animation: placeholder-pulse 1.5s ease-in-out infinite;
 }
 
-/* Класс для прозрачного элемента с контрастной рамкой */
-.ghost-item {
-  background-color: transparent;
-  border: 1px solid var(--gray-6);
+/* Утилитарные классы для иконок */
+.icon-snail {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-snail path {
+  fill: currentColor;
 }

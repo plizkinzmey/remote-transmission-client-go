@@ -155,6 +155,7 @@
     "directoryNotExists": "Указанная директория не существует",
     "directoryAccessDenied": "Нет доступа к указанной директории",
     "directoryNotAccessible": "Директория недоступна",
+    "parentDirectoryNotExists": "Родительская директория не существует",
     "invalidPath": "Некорректный путь",
     "emptyPath": "Путь не может быть пустым"
   },

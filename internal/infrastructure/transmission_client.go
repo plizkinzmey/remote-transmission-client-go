@@ -612,14 +612,19 @@ func (e *LocalizedError) Error() string {
 
 // checkAccessibility проверяет доступность пути
 func (c *TransmissionClient) checkAccessibility(path string) error {
-	_, _, err := c.client.FreeSpace(c.ctx, path)
+	// Получаем родительский каталог
+	parentDir := filepath.Dir(path)
+
+	// Проверяем доступность родительского каталога через API FreeSpace
+	_, _, err := c.client.FreeSpace(c.ctx, parentDir)
 	if err != nil {
 		errStr := err.Error()
 		switch {
 		case strings.Contains(errStr, errPermissionDenied):
 			return &LocalizedError{key: "errors.directoryAccessDenied"}
 		case strings.Contains(errStr, errNoSuchFileOrDirectory):
-			return &LocalizedError{key: "errors.directoryNotExists"}
+			// Если родительский каталог не существует, возвращаем ошибку
+			return &LocalizedError{key: "errors.parentDirectoryNotExists"}
 		default:
 			return &LocalizedError{key: "errors.directoryNotAccessible"}
 		}
@@ -635,7 +640,7 @@ func (c *TransmissionClient) ValidateDownloadPath(path string) error {
 		return err
 	}
 
-	// Проверяем доступность
+	// Проверяем доступность родительского каталога
 	return c.checkAccessibility(validPath)
 }
 

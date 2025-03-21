@@ -155,6 +155,7 @@
     "directoryNotExists": "The specified directory does not exist",
     "directoryAccessDenied": "Access denied to the specified directory",
     "directoryNotAccessible": "Directory is not accessible",
+    "parentDirectoryNotExists": "Parent directory does not exist",
     "invalidPath": "Invalid path",
     "emptyPath": "Path cannot be empty"
   },

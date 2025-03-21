@@ -1,11 +1,8 @@
 import React from "react";
 import { IconButton } from "@radix-ui/themes";
 import { useTheme } from "../contexts/ThemeContext";
-import {
-  MoonIcon,
-  SunIcon,
-  ComputerDesktopIcon,
-} from "@heroicons/react/24/outline";
+import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
+import { AutoThemeIcon } from "./icons/AutoThemeIcon";
 import { useLocalization } from "../contexts/LocalizationContext";
 
 export const ThemeToggle: React.FC = () => {
@@ -26,7 +23,7 @@ export const ThemeToggle: React.FC = () => {
       case "dark":
         return <MoonIcon width={20} height={20} />;
       default:
-        return <ComputerDesktopIcon width={20} height={20} />;
+        return <AutoThemeIcon />;
     }
   };
 

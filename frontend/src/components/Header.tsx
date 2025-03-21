@@ -158,15 +158,17 @@ export const Header: React.FC<HeaderProps> = ({
           </IconButton>
         </Flex>
         <Flex gap="2" align="center">
-          <LanguageSelector />
-          <ThemeToggle />
-          <IconButton
-            variant="ghost"
-            onClick={onSettings}
-            aria-label={t("settings.title")}
-          >
-            <Cog6ToothIcon width={20} height={20} />
-          </IconButton>
+          <Flex gap="4" align="center">
+            <LanguageSelector />
+            <ThemeToggle />
+            <IconButton
+              variant="ghost"
+              onClick={onSettings}
+              aria-label={t("settings.title")}
+            >
+              <Cog6ToothIcon width={20} height={20} />
+            </IconButton>
+          </Flex>
         </Flex>
       </Flex>
 

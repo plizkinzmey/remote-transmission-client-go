@@ -181,41 +181,42 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return value < 0 ? 0 : value;
   };
 
-  // Функция для определения цвета статуса
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "downloading":
-        return "var(--status-downloading)";
-      case "seeding":
-        return "var(--status-seeding)";
-      case "completed":
-        return "var(--status-completed)";
-      case "checking":
-        return "var(--status-checking)";
-      case "queued":
-        return "var(--status-queued)";
-      default:
-        return "var(--status-stopped)";
-    }
-  };
-
-  // Функция для определения цвета прогресс-бара
+  // Функция для определения цвета всех элементов
   const getProgressColor = (
     status: string
-  ): "blue" | "green" | "gray" | "amber" | "purple" => {
+  ): "blue" | "green" | "gray" | "amber" | "purple" | "red" => {
     switch (status) {
       case "downloading":
         return "blue";
-      case "seeding":
-        return "green";
       case "completed":
         return "green";
+      case "seeding":
+        return "blue";
       case "checking":
         return "amber";
       case "queued":
         return "purple";
       default:
         return "gray";
+    }
+  };
+
+  // Функция для получения CSS переменной цвета
+  const getStatusColor = (status: string): string => {
+    const color = getProgressColor(status);
+    switch (color) {
+      case "blue":
+        return "var(--blue-9)";
+      case "green":
+        return "var(--green-9)";
+      case "red":
+        return "var(--red-9)";
+      case "amber":
+        return "var(--amber-9)";
+      case "purple":
+        return "var(--purple-9)";
+      default:
+        return "var(--gray-9)";
     }
   };
 
@@ -270,6 +271,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               </Badge>
               <Text size="1">{progress.toFixed(1)}%</Text>
             </Flex>
+
             <Progress
               size="1"
               variant="surface"

@@ -102,15 +102,21 @@ export const Header: React.FC<HeaderProps> = ({
               <MagnifyingGlassIcon width={18} height={18} />
             </TextField.Slot>
           </TextField.Root>
+
           <IconButton
-            variant="ghost"
+            size="2"
+            variant="soft"
+            color="blue"
             onClick={onAddTorrent}
             aria-label={t("add.title")}
           >
             <PlusCircleIcon width={18} height={18} />
           </IconButton>
+
           <IconButton
-            variant="ghost"
+            size="2"
+            variant="soft"
+            color="grass"
             onClick={onStartSelected}
             disabled={!hasSelectedTorrents || startLoading}
             aria-label={t("torrents.startSelected")}
@@ -121,8 +127,11 @@ export const Header: React.FC<HeaderProps> = ({
               <PlayIcon width={18} height={18} />
             )}
           </IconButton>
+
           <IconButton
-            variant="ghost"
+            size="2"
+            variant="solid"
+            color="amber"
             onClick={onStopSelected}
             disabled={!hasSelectedTorrents || stopLoading}
             aria-label={t("torrents.stopSelected")}
@@ -133,19 +142,24 @@ export const Header: React.FC<HeaderProps> = ({
               <PauseIcon width={18} height={18} />
             )}
           </IconButton>
+
           <IconButton
-            variant="ghost"
+            size="2"
+            variant={isSlowModeEnabled ? "solid" : "soft"}
+            color={isSlowModeEnabled ? "orange" : "blue"}
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
             disabled={!hasSelectedTorrents}
-            data-active={isSlowModeEnabled}
             aria-label={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
           >
             <SnailIcon style={{ width: 18, height: 18 }} />
           </IconButton>
+
           <IconButton
-            variant="ghost"
+            size="2"
+            variant="soft"
+            color="red"
             onClick={handleRemoveClick}
             disabled={!hasSelectedTorrents || removeLoading}
             aria-label={t("remove.title")}
@@ -157,12 +171,15 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </IconButton>
         </Flex>
+
         <Flex gap="2" align="center">
           <Flex gap="4" align="center">
             <LanguageSelector />
             <ThemeToggle />
             <IconButton
-              variant="ghost"
+              size="2"
+              variant="soft"
+              color="indigo"
               onClick={onSettings}
               aria-label={t("settings.title")}
             >

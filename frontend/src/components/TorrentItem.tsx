@@ -233,6 +233,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         <Flex gap="3" align="start">
           <Box pt="1">
             <Checkbox
+              size="1"
               checked={selected}
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}

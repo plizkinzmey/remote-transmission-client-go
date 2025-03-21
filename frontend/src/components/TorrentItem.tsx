@@ -49,23 +49,6 @@ interface TorrentItemProps {
   isSlowMode?: boolean;
 }
 
-const getStatusClassName = (status: string) => {
-  switch (status) {
-    case "downloading":
-      return styles.statusDownloading;
-    case "seeding":
-      return styles.statusSeeding;
-    case "completed":
-      return styles.statusCompleted;
-    case "checking":
-      return styles.statusChecking;
-    case "queued":
-      return styles.statusQueued;
-    default:
-      return styles.statusStopped;
-  }
-};
-
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
@@ -201,35 +184,16 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
   };
 
-  // Функция для получения CSS переменной цвета
-  const getStatusColor = (status: string): string => {
-    const color = getProgressColor(status);
-    switch (color) {
-      case "blue":
-        return "var(--blue-9)";
-      case "green":
-        return "var(--green-9)";
-      case "red":
-        return "var(--red-9)";
-      case "amber":
-        return "var(--amber-9)";
-      case "purple":
-        return "var(--purple-9)";
-      default:
-        return "var(--gray-9)";
-    }
+  // Функция для получения класса в зависимости от статуса
+  const getCardClassName = (): string => {
+    return `${styles.card} ${
+      styles[`card${status.charAt(0).toUpperCase()}${status.slice(1)}`]
+    }`;
   };
 
   return (
     <>
-      <Card
-        variant="surface"
-        style={{
-          marginBottom: "8px",
-          borderLeft: `4px solid ${getStatusColor(status)}`,
-          padding: "12px",
-        }}
-      >
+      <Card variant="surface" className={getCardClassName()}>
         <Flex gap="3" align="start">
           <Box pt="1">
             <Checkbox
@@ -240,18 +204,13 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             />
           </Box>
 
-          <Box style={{ flex: 1, minWidth: 0 }}>
+          <Box className={styles.contentBox}>
             <Flex justify="between" align="start" mb="2">
               <Text
                 as="span"
                 size="2"
                 weight="medium"
-                style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  flex: 1,
-                }}
+                className={styles.textEllipsis}
                 title={name}
               >
                 {name}
@@ -277,9 +236,10 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               size="1"
               variant="surface"
               value={progress}
-              style={{ marginBottom: "12px" }}
+              className={styles.progressWrapper}
               color={getProgressColor(status)}
             />
+
             <Flex wrap="wrap" gap="3" justify="between">
               <Flex wrap="wrap" gap="3">
                 <Flex gap="1" align="center">
@@ -322,18 +282,18 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                   <ArrowDownIcon
                     width={16}
                     height={16}
-                    style={{ color: "var(--download-color)" }}
+                    className={styles.downloadIcon}
                   />
                   <Text size="1">{downloadSpeedFormatted}</Text>
                   <ArrowUpIcon
                     width={16}
                     height={16}
-                    style={{ color: "var(--seed-color)" }}
+                    className={styles.uploadIcon}
                   />
                   <Text size="1">{uploadSpeedFormatted}</Text>
                 </Flex>
 
-                <Flex gap="2">
+                <Flex className={styles.actions}>
                   <IconButton
                     size="2"
                     variant="soft"

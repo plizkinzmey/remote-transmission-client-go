@@ -1,9 +1,4 @@
-:root {
-  --download-color: #3b82f6; /* синий */
-  --seed-color: #22c55e; /* зеленый */
-  --error-color: #ef4444; /* красный */
-}
-
+/* Базовые стили компонентов */
 .torrentItem {
   background: none;
   border: none;
@@ -13,215 +8,68 @@
   cursor: pointer;
 }
 
-.container {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+/* Карточка торрента */
+.card {
+  margin-bottom: 8px;
   padding: 12px;
-  background: var(--color-surface);
+  border: 2px solid var(--gray-7);
   border-radius: var(--radius-4);
-  border: 1px solid var(--gray-6);
-  border-left: 4px solid var(--gray-6);
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  -webkit-app-region: no-drag;
-  user-select: none;
-  font-family: var(--font-family);
-  -webkit-user-select: none;
+  background-color: var(--color-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-2);
+}
+
+.card:hover {
   box-shadow: var(--shadow-3);
+  border-color: var(--gray-8);
 }
 
-.container:hover {
-  box-shadow: var(--shadow-4);
-  border-color: var(--gray-7);
-}
+/* Статусы карточки */
+.cardDownloading { border-left: 4px solid var(--blue-9); }
+.cardSeeding { border-left: 4px solid var(--grass-9); }
+.cardError { border-left: 4px solid var(--tomato-9); }
+.cardCompleted { border-left: 4px solid var(--mint-9); }
+.cardChecking { border-left: 4px solid var(--amber-9); }
+.cardQueued { border-left: 4px solid var(--purple-9); }
 
-/* Стили для разных статусов */
-.container[data-status="downloading"] {
-  border-left: 4px solid var(--blue-9);
-  box-shadow: var(--shadow-4);
-}
-.container[data-status="seeding"] {
-  border-left: 4px solid var(--grass-9);
-  box-shadow: var(--shadow-4);
-}
-.container[data-status="error"] {
-  border-left: 4px solid var(--tomato-9);
-  box-shadow: var(--shadow-4);
-}
-/* Добавляем цвета для иконок скорости */
-.downloadIcon {
-  color: var(--blue-9);
-}
-.uploadIcon {
-  color: var(--grass-9);
-}
-.checkbox {
-  margin-right: 16px;
-  display: flex;
-  align-items: center;
-  height: 24px; /* Соответствует высоте в header */
-}
-.checkbox input {
-  width: 16px;  /* Соответствует размеру чекбокса в header */
-  height: 16px;
-  cursor: pointer;
-  margin: 0;  /* Убираем стандартные отступы */
-  padding: 0;
-  position: relative;
-  top: -1px; /* Тонкая подстройка для визуального выравнивания */
-  -webkit-appearance: none;
-  appearance: none;
-  border: 1px solid var(--gray-7);
-  border-radius: var(--radius-1);
-  background-color: var(--color-background);
-}
-
-.checkbox input:checked {
-  background-color: var(--accent-9);
-  border-color: var(--accent-9);
-}
-
-.checkbox input:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 5px;
-  height: 9px;
-  border: solid var(--color-background);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.checkbox input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: var(--gray-3);
-}
-
-.info {
+/* Контент */
+.contentBox {
   flex: 1;
   min-width: 0;
-  user-select: none;
-  -webkit-user-select: none;
 }
-/* Новый контейнер для верхнего ряда с названием и рейтингом */
-.topRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
-.name {
-  margin: 0;
-  font-size: var(--font-size-2);
-  color: var(--gray-12);
-  white-space: nowrap;
+
+.textEllipsis {
   overflow: hidden;
   text-overflow: ellipsis;
-  user-select: none;
-  flex: 1;
-  padding-right: 8px;
-  text-align: left;
-  font-family: var(--font-family);
-  font-weight: 500;
-  -webkit-user-select: none;
-}
-/* Стили для рейтинга */
-.ratioContainer {
-  background-color: var(--gray-3);
-  border-radius: var(--radius-3);
-  padding: 2px 8px;
-  min-width: 120px;
-  text-align: center;
-  margin-left: auto;
-  margin-top: 0; /* Убираем margin-стили */
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.ratio {
-  font-size: var(--font-size-1);
-  color: var(--gray-11);
   white-space: nowrap;
-  font-family: var(--font-family);
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusContainer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  user-select: none;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-  font-size: var(--font-size-2);
-  font-family: var(--font-family);
-  line-height: 1;  /* Добавляем line-height чтобы контролировать высоту контейнера */
-  cursor: default;
+  flex: 1;
 }
 
-.statusDownloading { 
-  color: var(--blue-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusSeeding { 
-  color: var(--grass-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusStopped { 
-  color: var(--gray-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusCompleted { 
-  color: var(--mint-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusChecking { 
-  color: var(--amber-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-.statusQueued { 
-  color: var(--purple-9); 
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
+.progressWrapper {
+  margin-bottom: 12px;
 }
 
-.statusSlow {
-  color: var(--amber-9);
+/* Иконки */
+.downloadIcon { color: var(--blue-9); }
+.uploadIcon { color: var(--grass-9); }
+
+.speedIcon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.speedIcon.slow { color: var(--amber-9); }
+
+.speed {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: var(--font-size-2);
+  margin-right: 12px;
 }
 
-.progress {
-  width: 100%;
-  height: 8px;
-  background-color: var(--gray-3);
-  border-radius: var(--radius-2);
-  overflow: hidden;
-  display: block; /* Добавляем явное указание display */
-}
-.progressBar {
-  height: 100%;
-  background-color: var(--blue-9);
-  border-radius: var(--radius-2);
-  transition: width 0.3s ease;
-}
+/* Действия */
 .actions {
   display: flex;
   gap: 8px;
@@ -245,7 +93,6 @@
   opacity: 0.5;
 }
 
-/* Активные состояния кнопок */
 .actions button[data-active="true"] svg {
   stroke-width: 2;
   color: var(--blue-9);
@@ -253,157 +100,18 @@
 
 /* Темная тема */
 @media (prefers-color-scheme: dark) {
+  .card {
+    border-color: var(--gray-6);
+  }
+  
+  .cardDownloading { border-left: 4px solid var(--blue-8); }
+  .cardSeeding { border-left: 4px solid var(--grass-8); }
+  .cardError { border-left: 4px solid var(--tomato-8); }
+  .cardCompleted { border-left: 4px solid var(--mint-8); }
+  .cardChecking { border-left: 4px solid var(--amber-8); }
+  .cardQueued { border-left: 4px solid var(--purple-8); }
+  
   .actions button:hover:not(:disabled) {
     background-color: rgba(255, 255, 255, 0.1);
   }
-}
-
-.progressText {
-  font-size: var(--font-size-1);
-  color: var(--gray-11);
-  flex: 1;
-  text-align: left;
-  font-family: var(--font-family);
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-/* Стили для иконок скорости */
-.speedIcon {
-  width: 14px;
-  height: 14px;
-  display: inline-block;
-  vertical-align: middle;
-  margin: 0 2px;
-}
-
-.speedIcon.slow {
-  color: var(--amber-9);
-}
-
-.speed {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 12px;
-}
-
-/* Стили для детальной информации о торренте */
-.detailedInfo {
-  margin-top: 12px;
-  font-size: var(--font-size-1);
-  color: var(--gray-11);
-  text-align: left;
-  font-family: var(--font-family);
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-/* Перенастройка стиля строки информации для одной линии */
-.infoRow {
-  display: flex;
-  justify-content: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.infoRow span {
-  display: inline-block;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
-}
-/* Стили для контейнера статистики */
-.statsContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 12px; /* Уменьшаем отступ от прогресс бара */
-  align-items: center;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: var(--font-size-2);
-  color: var(--gray-11);
-  user-select: none;
-  -webkit-user-select: none;
-  pointer-events: none;
-  cursor: default;
-}
-
-.statsContainer * {
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-/* Добавляем стили для элементов статистики */
-.seeds, .peers, .uploaded, .size {
-  display: inline-flex;
-  align-items: center;
-  font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: var(--font-size-2);
-  color: var (--gray-11);
-  white-space: nowrap;
-  font-weight: 400;
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-/* Стиль для выделения названий параметров жирным шрифтом */
-.paramName {
-  font-weight: 700;
-  margin-right: 4px;
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-/* Стиль для отображения процентов */
-.progressPercentage {
-  font-size: var(--font-size-2);
-  color: var(--gray-11);
-  font-weight: 500;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-}
-
-.icon {
-  width: 20px;
-  height: 20px;
-}
-
-.torrent-name {
-  cursor: default;
-}
-
-.torrent-status {
-  cursor: default;
-}
-
-.torrent-progress-text {
-  cursor: default;
-}
-
-.torrent-size {
-  cursor: default;
-}
-
-.torrent-eta {
-  cursor: default;
-}
-
-.torrent-speed {
-  cursor: default;
-}
-
-.torrent-ratio {
-  cursor: default;
-}
-
-.button.slow {
-  background-color: var(--amber-9);
-  color: var(--color-background);
-}
-
-.button.slow:hover {
-  background-color: var(--amber-10);
 }

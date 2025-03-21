@@ -164,7 +164,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       return (
         <IconButton
           size="2"
-          variant="soft"
+          variant="solid"
           color="amber"
           onClick={() => handleAction("stop")}
           title={t("torrent.stop")}
@@ -193,8 +193,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return (
       <IconButton
         size="2"
-        variant="soft"
-        color={isSlowMode ? "amber" : "blue"}
+        variant={isSlowMode ? "solid" : "soft"}
+        color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
       >
@@ -288,7 +288,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       <IconButton
         size="2"
         variant="soft"
-        color="blue"
+        color="indigo"
         onClick={() => setShowContent(true)}
         title={t("torrent.viewContent")}
       >

@@ -93,11 +93,17 @@ func convertSpeedToKBps(speed int, unit string) int64 {
 // SetTorrentSpeedLimit устанавливает ограничение скорости для указанных торрентов
 func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
 	var downloadLimit, uploadLimit int64
-	if isSlowMode && s.config != nil {
-		// Конвертируем значение скорости из конфигурации в KiB/s
-		limit := convertSpeedToKBps(s.config.SlowSpeedLimit, s.config.SlowSpeedUnit)
-		downloadLimit = limit
-		uploadLimit = limit
+	if isSlowMode {
+		if s.config != nil && s.config.SlowSpeedLimit > 0 {
+			// Используем значение из конфигурации
+			limit := convertSpeedToKBps(s.config.SlowSpeedLimit, s.config.SlowSpeedUnit)
+			downloadLimit = limit
+			uploadLimit = limit
+		} else {
+			// Значение по умолчанию: 10 КБит/с
+			downloadLimit = 10
+			uploadLimit = 10
+		}
 	}
 	return s.repo.SetTorrentSpeedLimit(ids, downloadLimit, uploadLimit)
 }

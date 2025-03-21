@@ -145,7 +145,18 @@
     "failedToStopTorrents": "Не удалось остановить выбранные торренты: {0}",
     "failedToLoadFiles": "Не удалось загрузить список файлов: {0}",
     "failedToUpdateFile": "Не удалось обновить состояние файла: {0}",
-    "failedToUpdateFiles": "Не удалось обновить состояние файлов: {0}"
+    "failedToUpdateFiles": "Не удалось обновить состояние файлов: {0}",
+    "downloadPathEmpty": "Путь загрузки не может быть пустым",
+    "downloadPathNotExists": "Директория не существует: {0}",
+    "downloadPathNoAccess": "Нет доступа к директории: {0}",
+    "downloadPathPermissionDenied": "Отказано в доступе к директории: {0}",
+    "invalidPathFormat": "Неверный формат пути",
+    "cannotRemoveDefaultPath": "Нельзя удалить путь по умолчанию",
+    "directoryNotExists": "Указанная директория не существует",
+    "directoryAccessDenied": "Нет доступа к указанной директории",
+    "directoryNotAccessible": "Директория недоступна",
+    "invalidPath": "Некорректный путь",
+    "emptyPath": "Путь не может быть пустым"
   },
 
   "language": {

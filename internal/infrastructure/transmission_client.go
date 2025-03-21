@@ -14,6 +14,17 @@ import (
 	"github.com/hekmon/transmissionrpc/v3"
 )
 
+const (
+	// Errors
+	errPermissionDenied      = "permission denied"
+	errNoSuchFileOrDirectory = "No such file or directory"
+	// Изменяем формат сообщений об ошибках, чтобы показывать оригинальный путь
+	errDirectoryDoesNotExist   = "directory does not exist: %s"
+	errPermissionDeniedForPath = "permission denied for directory: %s"
+	errDirectoryNotAccessible  = "directory is not accessible"
+	errInvalidDrive            = "invalid drive: %s"
+)
+
 type TransmissionConfig struct {
 	Host     string
 	Port     int
@@ -191,8 +202,14 @@ func (c *TransmissionClient) GetDefaultDownloadDir() (string, error) {
 }
 
 func (c *TransmissionClient) Add(url string, downloadDir string) error {
+	// Проверяем путь, если он указан
+	if downloadDir != "" {
+		if err := c.ValidateDownloadPath(downloadDir); err != nil {
+			return fmt.Errorf("invalid download directory: %w", err)
+		}
+	}
+
 	if strings.HasPrefix(url, "data:") {
-		// Если это base64-закодированный файл
 		return c.addFromBase64(url, downloadDir)
 	}
 
@@ -201,7 +218,6 @@ func (c *TransmissionClient) Add(url string, downloadDir string) error {
 		Filename: &url,
 	}
 
-	// Добавляем директорию загрузки, если она указана
 	if downloadDir != "" {
 		payload.DownloadDir = &downloadDir
 	}
@@ -209,12 +225,29 @@ func (c *TransmissionClient) Add(url string, downloadDir string) error {
 	// Обычная ссылка или магнет-ссылка
 	_, err := c.client.TorrentAdd(c.ctx, payload)
 	if err != nil {
-		return fmt.Errorf("failed to add torrent: %w", err)
+		// Анализируем ошибку на предмет проблем с путем
+		errStr := err.Error()
+		switch {
+		case strings.Contains(errStr, errPermissionDenied):
+			return fmt.Errorf(errPermissionDeniedForPath, downloadDir)
+		case strings.Contains(errStr, errNoSuchFileOrDirectory):
+			return fmt.Errorf(errDirectoryDoesNotExist, downloadDir)
+		default:
+			return fmt.Errorf("failed to add torrent: %w", err)
+		}
 	}
+
 	return nil
 }
 
 func (c *TransmissionClient) AddFile(filepath string, downloadDir string) error {
+	// Проверяем путь, если он указан
+	if downloadDir != "" {
+		if err := c.ValidateDownloadPath(downloadDir); err != nil {
+			return fmt.Errorf("invalid download directory: %w", err)
+		}
+	}
+
 	// Читаем файл
 	metainfo, err := os.ReadFile(filepath)
 	if err != nil {
@@ -229,7 +262,6 @@ func (c *TransmissionClient) AddFile(filepath string, downloadDir string) error 
 		MetaInfo: &metainfoB64,
 	}
 
-	// Добавляем директорию загрузки, если она указана
 	if downloadDir != "" {
 		payload.DownloadDir = &downloadDir
 	}
@@ -237,8 +269,18 @@ func (c *TransmissionClient) AddFile(filepath string, downloadDir string) error 
 	// Добавляем торрент
 	_, err = c.client.TorrentAdd(c.ctx, payload)
 	if err != nil {
-		return fmt.Errorf("failed to add torrent from file: %w", err)
+		// Анализируем ошибку на предмет проблем с путем
+		errStr := err.Error()
+		switch {
+		case strings.Contains(errStr, errPermissionDenied):
+			return fmt.Errorf(errPermissionDeniedForPath, downloadDir)
+		case strings.Contains(errStr, errNoSuchFileOrDirectory):
+			return fmt.Errorf(errDirectoryDoesNotExist, downloadDir)
+		default:
+			return fmt.Errorf("failed to add torrent from file: %w", err)
+		}
 	}
+
 	return nil
 }
 
@@ -534,6 +576,67 @@ func (c *TransmissionClient) SetSpeedLimitFromConfig(ids []int64, config domain.
 		// Сбрасываем ограничения
 		return c.SetTorrentSpeedLimit(ids, 0, 0)
 	}
+}
+
+// validatePath подготавливает и проверяет путь
+func (c *TransmissionClient) validatePath(path string) (string, error) {
+	if path == "" {
+		return "", &LocalizedError{key: "errors.emptyPath"}
+	}
+
+	// Windows пути не нуждаются в дополнительной обработке
+	if filepath.VolumeName(path) != "" || strings.HasPrefix(path, "\\\\") {
+		return path, nil
+	}
+
+	// Для Unix путей с тильдой
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", &LocalizedError{key: "errors.invalidPath"}
+		}
+		path = filepath.Join(home, path[2:])
+	}
+
+	return path, nil
+}
+
+// LocalizedError представляет ошибку с ключом локализации
+type LocalizedError struct {
+	key string
+}
+
+func (e *LocalizedError) Error() string {
+	return e.key
+}
+
+// checkAccessibility проверяет доступность пути
+func (c *TransmissionClient) checkAccessibility(path string) error {
+	_, _, err := c.client.FreeSpace(c.ctx, path)
+	if err != nil {
+		errStr := err.Error()
+		switch {
+		case strings.Contains(errStr, errPermissionDenied):
+			return &LocalizedError{key: "errors.directoryAccessDenied"}
+		case strings.Contains(errStr, errNoSuchFileOrDirectory):
+			return &LocalizedError{key: "errors.directoryNotExists"}
+		default:
+			return &LocalizedError{key: "errors.directoryNotAccessible"}
+		}
+	}
+	return nil
+}
+
+// ValidateDownloadPath проверяет существование и доступность пути для скачивания
+func (c *TransmissionClient) ValidateDownloadPath(path string) error {
+	// Проверяем и подготавливаем путь
+	validPath, err := c.validatePath(path)
+	if err != nil {
+		return err
+	}
+
+	// Проверяем доступность
+	return c.checkAccessibility(validPath)
 }
 
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {

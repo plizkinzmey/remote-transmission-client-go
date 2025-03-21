@@ -2,13 +2,15 @@ package application
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
 )
 
 const (
-	DefaultSpeedLimit = 10 // 10 KB/s
+	DefaultSpeedLimit  = 10 // 10 KB/s
+	ErrConfigNotInited = "config is not initialized"
 )
 
 type TorrentService struct {
@@ -80,7 +82,7 @@ func (s *TorrentService) GetDefaultDownloadDir() (string, error) {
 // SaveDownloadPath сохраняет путь загрузки в историю
 func (s *TorrentService) SaveDownloadPath(path string) error {
 	if s.config == nil {
-		return fmt.Errorf("config is not initialized")
+		return fmt.Errorf(ErrConfigNotInited)
 	}
 
 	// Проверяем, что путь не пустой
@@ -160,7 +162,7 @@ func (s *TorrentService) addUniquePathsFromHistory(result []string) []string {
 // GetDownloadPaths возвращает список сохраненных путей загрузки
 func (s *TorrentService) GetDownloadPaths() ([]string, error) {
 	if s.config == nil {
-		return nil, fmt.Errorf("config is not initialized")
+		return nil, fmt.Errorf(ErrConfigNotInited)
 	}
 
 	// Создаем результирующий список
@@ -188,6 +190,11 @@ func (s *TorrentService) GetDownloadPaths() ([]string, error) {
 }
 
 func (s *TorrentService) AddTorrent(url string, downloadDir string) error {
+	// Проверяем путь перед добавлением торрента
+	if err := s.ValidateDownloadPath(downloadDir); err != nil {
+		return fmt.Errorf("invalid download path: %w", err)
+	}
+
 	// Если указана директория загрузки, сохраняем ее в историю
 	if downloadDir != "" {
 		_ = s.SaveDownloadPath(downloadDir)
@@ -202,6 +209,11 @@ func (s *TorrentService) AddTorrent(url string, downloadDir string) error {
 }
 
 func (s *TorrentService) AddTorrentFile(filepath string, downloadDir string) error {
+	// Проверяем путь перед добавлением торрента
+	if err := s.ValidateDownloadPath(downloadDir); err != nil {
+		return fmt.Errorf("invalid download path: %w", err)
+	}
+
 	// Если указана директория загрузки, сохраняем ее в историю
 	if downloadDir != "" {
 		_ = s.SaveDownloadPath(downloadDir)
@@ -266,4 +278,51 @@ func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) erro
 		}
 	}
 	return s.repo.SetTorrentSpeedLimit(ids, downloadLimit, uploadLimit)
+}
+
+// RemoveDownloadPath удаляет путь из истории путей скачивания
+func (s *TorrentService) RemoveDownloadPath(path string) error {
+	if s.config == nil {
+		return fmt.Errorf(ErrConfigNotInited)
+	}
+
+	// Проверяем, что путь не является путем по умолчанию
+	if path == s.config.DefaultDownloadPath {
+		return fmt.Errorf("cannot remove default download path")
+	}
+
+	// Получаем индекс пути в списке
+	idx := slices.Index(s.config.DownloadPaths, path)
+	if idx == -1 {
+		return nil // путь не найден в списке
+	}
+
+	// Удаляем путь из списка, используя slices.Delete
+	s.config.DownloadPaths = slices.Delete(s.config.DownloadPaths, idx, idx+1)
+
+	// Сохраняем конфигурацию
+	configService := infrastructure.NewConfigService()
+	return configService.SaveConfig(s.config)
+}
+
+// ValidateDownloadPath проверяет существование и доступность пути для скачивания
+func (s *TorrentService) ValidateDownloadPath(path string) error {
+	// Проверяем, что путь не пустой
+	if path == "" {
+		return fmt.Errorf("download path cannot be empty")
+	}
+
+	// Получаем абсолютный путь
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("invalid path format: %w", err)
+	}
+
+	// Проверяем путь через клиент Transmission
+	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	if !ok {
+		return fmt.Errorf("repository does not support path validation")
+	}
+
+	return client.ValidateDownloadPath(absPath)
 }

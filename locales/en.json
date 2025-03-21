@@ -145,7 +145,18 @@
     "failedToStopTorrents": "Failed to stop selected torrents: {0}",
     "failedToLoadFiles": "Failed to load file list: {0}",
     "failedToUpdateFile": "Failed to update file state: {0}",
-    "failedToUpdateFiles": "Failed to update files state: {0}"
+    "failedToUpdateFiles": "Failed to update files state: {0}",
+    "downloadPathEmpty": "Download path cannot be empty",
+    "downloadPathNotExists": "Directory does not exist: {0}",
+    "downloadPathNoAccess": "Cannot access directory: {0}",
+    "downloadPathPermissionDenied": "Permission denied for directory: {0}",
+    "invalidPathFormat": "Invalid path format",
+    "cannotRemoveDefaultPath": "Cannot remove default download path",
+    "directoryNotExists": "The specified directory does not exist",
+    "directoryAccessDenied": "Access denied to the specified directory",
+    "directoryNotAccessible": "Directory is not accessible",
+    "invalidPath": "Invalid path",
+    "emptyPath": "Path cannot be empty"
   },
 
   "language": {

@@ -242,6 +242,39 @@ func (a *App) GetDownloadPaths() ([]string, error) {
 	return a.service.GetDownloadPaths()
 }
 
+// RemoveDownloadPath удаляет путь из истории путей скачивания
+func (a *App) RemoveDownloadPath(path string) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.RemoveDownloadPath(path)
+}
+
+// getLocalizedError возвращает локализованное сообщение об ошибке
+func (a *App) getLocalizedError(err error) string {
+	if locErr, ok := err.(*infrastructure.LocalizedError); ok {
+		// Получаем локализованное сообщение используя метод Translate
+		currentConfig, configErr := a.LoadConfig()
+		if configErr != nil {
+			return err.Error()
+		}
+		return a.localizationService.Translate(locErr.Error(), currentConfig.Language)
+	}
+	return err.Error()
+}
+
+// ValidateDownloadPath проверяет существование и доступность пути для скачивания
+func (a *App) ValidateDownloadPath(path string) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	if err := a.service.ValidateDownloadPath(path); err != nil {
+		// Возвращаем локализованное сообщение об ошибке
+		return fmt.Errorf(a.getLocalizedError(err))
+	}
+	return nil
+}
+
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
 	if a.service == nil {
@@ -257,6 +290,14 @@ func (a *App) handleFileOpen(filePath string) {
 		if err != nil {
 			fmt.Printf("Ошибка получения директории по умолчанию: %v\n", err)
 			defaultDir = "" // Будет использован стандартный путь Transmission
+		}
+
+		// Проверяем путь перед добавлением торрента
+		if defaultDir != "" {
+			if err := a.ValidateDownloadPath(defaultDir); err != nil {
+				fmt.Printf("Ошибка валидации пути по умолчанию: %v\n", err)
+				defaultDir = "" // Будет использован стандартный путь Transmission
+			}
 		}
 
 		// Добавляем торрент файл напрямую через сервис

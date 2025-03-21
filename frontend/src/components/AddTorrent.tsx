@@ -8,12 +8,17 @@ import {
   Box,
   TextField,
   Select,
+  IconButton,
 } from "@radix-ui/themes";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { FolderIcon } from "@heroicons/react/24/outline";
+import { FolderIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Portal } from "./Portal";
-import { GetDownloadPaths } from "../../wailsjs/go/main/App";
+import {
+  GetDownloadPaths,
+  ValidateDownloadPath,
+  RemoveDownloadPath,
+} from "../../wailsjs/go/main/App";
 
 interface AddTorrentProps {
   onAdd: (url: string, downloadDir: string) => void;
@@ -60,11 +65,14 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
+  const [selectedFileData, setSelectedFileData] = useState<string>("");
   const [downloadPath, setDownloadPath] = useState<string>("");
   const [downloadPaths, setDownloadPaths] = useState<string[]>([]);
   const [isLoadingPaths, setIsLoadingPaths] = useState<boolean>(true);
   const [customPath, setCustomPath] = useState<string>("");
   const [showCustomPath, setShowCustomPath] = useState<boolean>(false);
+  const [pathError, setPathError] = useState<string>("");
+  const [defaultPath, setDefaultPath] = useState<string>("");
 
   // Получаем список путей при инициализации
   useEffect(() => {
@@ -75,6 +83,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
 
         if (paths.length > 0) {
           setDownloadPath(paths[0]);
+          setDefaultPath(paths[0]); // Сохраняем путь по умолчанию
         }
 
         setIsLoadingPaths(false);
@@ -87,13 +96,49 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
     fetchPaths();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Валидация пути при его изменении
+  const validatePath = async (path: string) => {
+    try {
+      await ValidateDownloadPath(path);
+      setPathError("");
+      return true;
+    } catch (error) {
+      setPathError(String(error));
+      return false;
+    }
+  };
+
+  const handleRemovePath = async (pathToRemove: string) => {
+    try {
+      await RemoveDownloadPath(pathToRemove);
+      // Обновляем список путей
+      const paths = await GetDownloadPaths();
+      setDownloadPaths(paths);
+
+      // Если удалили текущий путь, выбираем первый из оставшихся
+      if (pathToRemove === downloadPath && paths.length > 0) {
+        setDownloadPath(paths[0]);
+      }
+    } catch (error) {
+      console.error("Ошибка при удалении пути:", error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const pathToUse = showCustomPath && customPath ? customPath : downloadPath;
+
+    // Валидация пути перед отправкой
+    const isValid = await validatePath(pathToUse);
+    if (!isValid) {
+      return;
+    }
+
     if (activeTab === "url" && url.trim()) {
-      // Используем выбранный путь или кастомный путь, если он указан
-      const pathToUse =
-        showCustomPath && customPath ? customPath : downloadPath;
       onAdd(url.trim(), pathToUse);
+      onClose();
+    } else if (activeTab === "file" && selectedFileData) {
+      onAddFile(selectedFileData, pathToUse);
       onClose();
     }
   };
@@ -111,14 +156,24 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
     reader.onload = () => {
       const base64Content = reader.result as string;
       const base64Data = base64Content.split(",")[1];
-
-      // Используем выбранный путь или кастомный путь, если он указан
-      const pathToUse =
-        showCustomPath && customPath ? customPath : downloadPath;
-      onAddFile(base64Data, pathToUse);
-      onClose();
+      setSelectedFileData(base64Data);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handlePathChange = async (path: string) => {
+    setDownloadPath(path);
+    await validatePath(path);
+  };
+
+  const handleCustomPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const path = e.target.value;
+    setCustomPath(path);
+    if (path) {
+      validatePath(path);
+    } else {
+      setPathError("");
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -187,14 +242,12 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                 </Tabs.List>
                 <Box mt="4">
                   <Tabs.Content value="url">
-                    <Flex direction="column" gap="2">
-                      <TextField.Root
-                        size="1"
-                        placeholder="magnet:?xt=urn:btih:..."
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                      />
-                    </Flex>
+                    <TextField.Root
+                      size="1"
+                      placeholder="magnet:?xt=urn:btih:..."
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                    />
                   </Tabs.Content>
                   <Tabs.Content value="file">
                     <Flex direction="column" gap="2">
@@ -253,14 +306,27 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                     {!showCustomPath ? (
                       <Select.Root
                         value={downloadPath}
-                        onValueChange={setDownloadPath}
+                        onValueChange={handlePathChange}
                       >
                         <Select.Trigger />
                         <Select.Content>
                           {downloadPaths.map((path) => (
-                            <Select.Item key={path} value={path}>
-                              {path}
-                            </Select.Item>
+                            <Flex key={path} justify="between" align="center">
+                              <Select.Item value={path}>{path}</Select.Item>
+                              {path !== defaultPath && (
+                                <IconButton
+                                  size="1"
+                                  variant="soft"
+                                  color="red"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemovePath(path);
+                                  }}
+                                >
+                                  <TrashIcon width={16} height={16} />
+                                </IconButton>
+                              )}
+                            </Flex>
                           ))}
                         </Select.Content>
                       </Select.Root>
@@ -269,7 +335,8 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                         size="1"
                         placeholder="/path/to/downloads"
                         value={customPath}
-                        onChange={(e) => setCustomPath(e.target.value)}
+                        onChange={handleCustomPathChange}
+                        color={pathError ? "red" : undefined}
                       />
                     )}
 
@@ -283,6 +350,12 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                         ? t("add.selectFromExisting")
                         : t("add.enterCustomPath")}
                     </Button>
+
+                    {pathError && (
+                      <Text color="red" size="2">
+                        {pathError}
+                      </Text>
+                    )}
                   </Flex>
                 </Box>
               </Tabs.Root>
@@ -290,11 +363,16 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                 <Button size="1" variant="soft" onClick={onClose}>
                   {t("add.cancel")}
                 </Button>
-                {activeTab === "url" && (
-                  <Button size="1" type="submit" disabled={!url.trim()}>
-                    {t("add.add")}
-                  </Button>
-                )}
+                <Button
+                  size="1"
+                  type="submit"
+                  disabled={
+                    (activeTab === "url" && !url.trim()) ||
+                    (activeTab === "file" && !selectedFileData)
+                  }
+                >
+                  {t("add.add")}
+                </Button>
               </Flex>
             </form>
           )}

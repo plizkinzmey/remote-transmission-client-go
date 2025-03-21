@@ -1,6 +1,5 @@
 /**
  * Файл темизации для интеграции с RadixUI
- * Определяет основные цветовые переменные и токены для использования в приложении
  */
 
 /* Базовые цвета и переменные для интеграции с RadixUI */
@@ -19,7 +18,6 @@
   --error-color: var(--tomato-9);
   
   /* Стили для TreeView */
-  --tree-folder-bg: var(--gray-3);
   --tree-progress-bg: var(--gray-5);
   --tree-progress-fill: var(--blue-9);
 }
@@ -54,9 +52,6 @@
   
   /* Утилитарные цвета */
   --error-background: color-mix(in srgb, var(--tomato-9) 20%, black);
-  
-  /* Переопределения для темной темы */
-  --tree-folder-bg: var(--gray-4);
 }
 
 /* Утилитарные классы */

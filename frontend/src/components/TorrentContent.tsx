@@ -364,11 +364,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
           style={{
             padding: "8px",
             borderRadius: "4px",
-            backgroundColor: node.isDirectory
-              ? "var(--tree-folder-bg)"
-              : "transparent",
           }}
-          className="file-node-content"
         >
           {node.isDirectory ? (
             <Box
@@ -400,9 +396,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
               width: "24px",
               display: "flex",
               justifyContent: "center",
-              color: node.isDirectory
-                ? "var(--text-primary)"
-                : "var(--text-secondary)",
+              color: node.isDirectory ? "var(--gray-12)" : "var(--gray-11)",
             }}
           >
             {node.isDirectory ? (
@@ -419,7 +413,6 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
                 onCheckedChange={(checked) => toggleNode(node, !!checked)}
                 ref={(el) => {
                   if (el && node.indeterminate) {
-                    // Используем класс для стилизации вместо прямого изменения style
                     el.classList.add("indeterminate-checkbox");
                   }
                 }}

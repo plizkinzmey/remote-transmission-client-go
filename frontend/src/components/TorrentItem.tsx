@@ -85,6 +85,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const [lastAction, setLastAction] = useState<"start" | "stop" | null>(null);
   const [lastStatus, setLastStatus] = useState(status);
 
+  const isRunning = ["downloading", "seeding"].includes(status);
+
   useEffect(() => {
     if (!isLoading || !lastAction) return;
 
@@ -152,28 +154,51 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const renderActionButton = () => {
     if (isLoading) {
       return (
-        <IconButton disabled>
+        <IconButton disabled variant="soft" color="gray">
           <LoadingSpinner size="small" />
         </IconButton>
       );
     }
 
-    const isRunning = ["downloading", "seeding"].includes(status);
-    const actionProps = isRunning
-      ? {
-          onClick: () => handleAction("stop"),
-          title: t("torrent.stop"),
-          icon: <PauseIcon width={16} height={16} />,
-        }
-      : {
-          onClick: () => handleAction("start"),
-          title: t("torrent.start"),
-          icon: <PlayIcon width={16} height={16} />,
-        };
+    if (isRunning) {
+      return (
+        <IconButton
+          size="2"
+          variant="soft"
+          color="amber"
+          onClick={() => handleAction("stop")}
+          title={t("torrent.stop")}
+        >
+          <PauseIcon width={16} height={16} />
+        </IconButton>
+      );
+    }
 
     return (
-      <IconButton size="2" variant="soft" {...actionProps}>
-        {actionProps.icon}
+      <IconButton
+        size="2"
+        variant="soft"
+        color="grass"
+        onClick={() => handleAction("start")}
+        title={t("torrent.start")}
+      >
+        <PlayIcon width={16} height={16} />
+      </IconButton>
+    );
+  };
+
+  const renderSpeedLimitButton = () => {
+    if (!onSetSpeedLimit) return null;
+
+    return (
+      <IconButton
+        size="2"
+        variant="soft"
+        color={isSlowMode ? "amber" : "blue"}
+        onClick={() => onSetSpeedLimit(id, !isSlowMode)}
+        title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
+      >
+        <SnailIcon style={{ width: 16, height: 16 }} />
       </IconButton>
     );
   };
@@ -263,6 +288,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       <IconButton
         size="2"
         variant="soft"
+        color="blue"
         onClick={() => setShowContent(true)}
         title={t("torrent.viewContent")}
       >
@@ -270,18 +296,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       </IconButton>
 
       {renderActionButton()}
-
-      {onSetSpeedLimit && (
-        <IconButton
-          size="2"
-          variant="soft"
-          onClick={() => onSetSpeedLimit(id, !isSlowMode)}
-          title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-          color={isSlowMode ? "amber" : undefined}
-        >
-          <SnailIcon style={{ width: 16, height: 16 }} />
-        </IconButton>
-      )}
+      {renderSpeedLimitButton()}
 
       <IconButton
         size="2"

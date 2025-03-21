@@ -29,14 +29,12 @@ interface TorrentItemProps {
   name: string;
   status: string;
   progress: number;
-  size: number;
   sizeFormatted: string;
   uploadRatio: number;
   seedsConnected: number;
   seedsTotal: number;
   peersConnected: number;
   peersTotal: number;
-  uploadedBytes: number;
   uploadedFormatted: string;
   selected: boolean;
   onSelect: (id: number) => void;
@@ -49,12 +47,21 @@ interface TorrentItemProps {
   isSlowMode?: boolean;
 }
 
+type StatusType =
+  | "downloading"
+  | "seeding"
+  | "stopped"
+  | "completed"
+  | "checking"
+  | "queued";
+type ColorType = "blue" | "green" | "gray" | "amber" | "purple" | "red";
+
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
   status,
   progress,
-  sizeFormatted, // используем уже отформатированное значение с бэкенда
+  sizeFormatted,
   uploadRatio,
   seedsConnected,
   seedsTotal,
@@ -78,34 +85,31 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const [lastAction, setLastAction] = useState<"start" | "stop" | null>(null);
   const [lastStatus, setLastStatus] = useState(status);
 
-  // Отслеживаем изменение статуса торрента
   useEffect(() => {
-    if (isLoading && lastAction) {
-      // Проверяем, можно ли выполнить действие
-      const canPerformAction =
-        (lastAction === "start" && status === "stopped") ||
-        (lastAction === "stop" &&
-          (status === "downloading" || status === "seeding"));
+    if (!isLoading || !lastAction) return;
 
-      // Если действие невозможно выполнить (торрент уже в нужном состоянии)
-      if (!canPerformAction) {
+    const canPerformAction =
+      (lastAction === "start" && status === "stopped") ||
+      (lastAction === "stop" && ["downloading", "seeding"].includes(status));
+
+    if (!canPerformAction) {
+      setIsLoading(false);
+      setLastAction(null);
+      return;
+    }
+
+    if (lastStatus !== status) {
+      const isActionComplete =
+        (lastAction === "start" &&
+          ["downloading", "seeding"].includes(status)) ||
+        (lastAction === "stop" && status === "stopped");
+
+      if (isActionComplete) {
         setIsLoading(false);
         setLastAction(null);
-        return;
-      }
-
-      // Если статус изменился после выполнения действия
-      if (lastStatus !== status) {
-        if (
-          (lastAction === "start" &&
-            (status === "downloading" || status === "seeding")) ||
-          (lastAction === "stop" && status === "stopped")
-        ) {
-          setIsLoading(false);
-          setLastAction(null);
-        }
       }
     }
+
     setLastStatus(status);
   }, [status, lastAction, lastStatus, isLoading]);
 
@@ -119,7 +123,31 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
   };
 
-  const isRunning = status === "downloading" || status === "seeding";
+  const normalizeValue = (value: number): number => (value < 0 ? 0 : value);
+
+  const getStatusData = (
+    status: string
+  ): { text: string; color: ColorType } => {
+    const statusMap: Record<StatusType, { color: ColorType }> = {
+      downloading: { color: "blue" },
+      seeding: { color: "blue" },
+      completed: { color: "green" },
+      checking: { color: "amber" },
+      queued: { color: "purple" },
+      stopped: { color: "gray" },
+    };
+
+    return {
+      text: t(`torrent.status.${status}`),
+      color: statusMap[status as StatusType]?.color || "gray",
+    };
+  };
+
+  const getCardClassName = (): string => {
+    const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
+    const statusClassName = "card" + statusCapitalized;
+    return `${styles.card} ${styles[statusClassName]}`;
+  };
 
   const renderActionButton = () => {
     if (isLoading) {
@@ -130,66 +158,142 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       );
     }
 
-    if (isRunning) {
-      return (
-        <IconButton
-          size="2"
-          variant="soft"
-          onClick={() => handleAction("stop")}
-          title={t("torrent.stop")}
-        >
-          <PauseIcon width={16} height={16} />
-        </IconButton>
-      );
-    }
+    const isRunning = ["downloading", "seeding"].includes(status);
+    const actionProps = isRunning
+      ? {
+          onClick: () => handleAction("stop"),
+          title: t("torrent.stop"),
+          icon: <PauseIcon width={16} height={16} />,
+        }
+      : {
+          onClick: () => handleAction("start"),
+          title: t("torrent.start"),
+          icon: <PlayIcon width={16} height={16} />,
+        };
 
     return (
-      <IconButton
-        size="2"
-        variant="soft"
-        onClick={() => handleAction("start")}
-        title={t("torrent.start")}
-      >
-        <PlayIcon width={16} height={16} />
+      <IconButton size="2" variant="soft" {...actionProps}>
+        {actionProps.icon}
       </IconButton>
     );
   };
 
-  const getStatusText = (status: string): string => {
-    return t(`torrent.status.${status}`);
+  const renderTorrentInfo = () => {
+    const { color } = getStatusData(status);
+
+    return (
+      <Box className={styles.contentBox}>
+        <Flex justify="between" align="start" mb="2">
+          <Text
+            as="span"
+            size="2"
+            weight="medium"
+            className={styles.textEllipsis}
+            title={name}
+          >
+            {name}
+          </Text>
+          <Badge variant="surface" size="1" title={t("torrent.uploadRatio")}>
+            {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
+          </Badge>
+        </Flex>
+
+        <Flex gap="2" align="center" mb="2">
+          <Badge variant="soft" size="1" color={color}>
+            {t(`torrent.status.${status}`)}
+          </Badge>
+          <Text size="1">{progress.toFixed(1)}%</Text>
+        </Flex>
+
+        <Progress
+          size="1"
+          variant="surface"
+          value={progress}
+          className={styles.progressWrapper}
+          color={color}
+        />
+
+        {renderStats()}
+      </Box>
+    );
   };
 
-  // Используем только нормализацию отрицательных значений
-  const normalizeValue = (value: number): number => {
-    return value < 0 ? 0 : value;
-  };
+  const renderStats = () => (
+    <Flex wrap="wrap" gap="3" justify="between">
+      <Flex wrap="wrap" gap="3">
+        {renderStatItem("size", sizeFormatted)}
+        {renderStatItem(
+          "seeds",
+          `${normalizeValue(seedsConnected)}/${normalizeValue(seedsTotal)}`
+        )}
+        {renderStatItem(
+          "peers",
+          `${normalizeValue(peersConnected)}/${normalizeValue(peersTotal)}`
+        )}
+        {renderStatItem("uploaded", uploadedFormatted)}
+      </Flex>
 
-  // Функция для определения цвета всех элементов
-  const getProgressColor = (
-    status: string
-  ): "blue" | "green" | "gray" | "amber" | "purple" | "red" => {
-    switch (status) {
-      case "downloading":
-        return "blue";
-      case "completed":
-        return "green";
-      case "seeding":
-        return "blue";
-      case "checking":
-        return "amber";
-      case "queued":
-        return "purple";
-      default:
-        return "gray";
-    }
-  };
+      <Flex justify="between" gap="3" align="center">
+        {renderSpeedInfo()}
+        {renderActions()}
+      </Flex>
+    </Flex>
+  );
 
-  // Функция для получения класса в зависимости от статуса
-  const getCardClassName = (): string => {
-    return `${styles.card} ${
-      styles[`card${status.charAt(0).toUpperCase()}${status.slice(1)}`]
-    }`;
-  };
+  const renderStatItem = (label: string, value: string) => (
+    <Flex gap="1" align="center">
+      <Text size="1" weight="medium">
+        {t(`torrent.${label}`)}:
+      </Text>
+      <Text size="1">{value}</Text>
+    </Flex>
+  );
+
+  const renderSpeedInfo = () => (
+    <Flex gap="1" align="center">
+      <ArrowDownIcon width={16} height={16} className={styles.downloadIcon} />
+      <Text size="1">{downloadSpeedFormatted}</Text>
+      <ArrowUpIcon width={16} height={16} className={styles.uploadIcon} />
+      <Text size="1">{uploadSpeedFormatted}</Text>
+    </Flex>
+  );
+
+  const renderActions = () => (
+    <Flex className={styles.actions}>
+      <IconButton
+        size="2"
+        variant="soft"
+        onClick={() => setShowContent(true)}
+        title={t("torrent.viewContent")}
+      >
+        <FolderIcon width={16} height={16} />
+      </IconButton>
+
+      {renderActionButton()}
+
+      {onSetSpeedLimit && (
+        <IconButton
+          size="2"
+          variant="soft"
+          onClick={() => onSetSpeedLimit(id, !isSlowMode)}
+          title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
+          color={isSlowMode ? "amber" : undefined}
+        >
+          <SnailIcon style={{ width: 16, height: 16 }} />
+        </IconButton>
+      )}
+
+      <IconButton
+        size="2"
+        variant="soft"
+        color="red"
+        onClick={() => setShowDeleteConfirmation(true)}
+        title={t("torrent.remove")}
+      >
+        <TrashIcon width={16} height={16} />
+      </IconButton>
+    </Flex>
+  );
 
   return (
     <>
@@ -203,139 +307,10 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               aria-label={t("torrents.selectTorrent", name)}
             />
           </Box>
-
-          <Box className={styles.contentBox}>
-            <Flex justify="between" align="start" mb="2">
-              <Text
-                as="span"
-                size="2"
-                weight="medium"
-                className={styles.textEllipsis}
-                title={name}
-              >
-                {name}
-              </Text>
-
-              <Badge
-                variant="surface"
-                size="1"
-                title={t("torrent.uploadRatio")}
-              >
-                {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
-              </Badge>
-            </Flex>
-
-            <Flex gap="2" align="center" mb="2">
-              <Badge variant="soft" size="1" color={getProgressColor(status)}>
-                {getStatusText(status)}
-              </Badge>
-              <Text size="1">{progress.toFixed(1)}%</Text>
-            </Flex>
-
-            <Progress
-              size="1"
-              variant="surface"
-              value={progress}
-              className={styles.progressWrapper}
-              color={getProgressColor(status)}
-            />
-
-            <Flex wrap="wrap" gap="3" justify="between">
-              <Flex wrap="wrap" gap="3">
-                <Flex gap="1" align="center">
-                  <Text size="1" weight="medium">
-                    {t("torrent.size")}:
-                  </Text>
-                  <Text size="1">{sizeFormatted}</Text>
-                </Flex>
-
-                <Flex gap="1" align="center">
-                  <Text size="1" weight="medium">
-                    {t("torrent.seeds")}:
-                  </Text>
-                  <Text size="1">
-                    {normalizeValue(seedsConnected)}/
-                    {normalizeValue(seedsTotal)}
-                  </Text>
-                </Flex>
-
-                <Flex gap="1" align="center">
-                  <Text size="1" weight="medium">
-                    {t("torrent.peers")}:
-                  </Text>
-                  <Text size="1">
-                    {normalizeValue(peersConnected)}/
-                    {normalizeValue(peersTotal)}
-                  </Text>
-                </Flex>
-
-                <Flex gap="1" align="center">
-                  <Text size="1" weight="medium">
-                    {t("torrent.uploaded")}:
-                  </Text>
-                  <Text size="1">{uploadedFormatted}</Text>
-                </Flex>
-              </Flex>
-
-              <Flex justify="between" gap="3" align="center">
-                <Flex gap="1" align="center">
-                  <ArrowDownIcon
-                    width={16}
-                    height={16}
-                    className={styles.downloadIcon}
-                  />
-                  <Text size="1">{downloadSpeedFormatted}</Text>
-                  <ArrowUpIcon
-                    width={16}
-                    height={16}
-                    className={styles.uploadIcon}
-                  />
-                  <Text size="1">{uploadSpeedFormatted}</Text>
-                </Flex>
-
-                <Flex className={styles.actions}>
-                  <IconButton
-                    size="2"
-                    variant="soft"
-                    onClick={() => setShowContent(true)}
-                    title={t("torrent.viewContent")}
-                  >
-                    <FolderIcon width={16} height={16} />
-                  </IconButton>
-
-                  {renderActionButton()}
-
-                  {onSetSpeedLimit && (
-                    <IconButton
-                      size="2"
-                      variant="soft"
-                      onClick={() => onSetSpeedLimit(id, !isSlowMode)}
-                      title={t(
-                        isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
-                      )}
-                      color={isSlowMode ? "amber" : undefined}
-                    >
-                      <SnailIcon style={{ width: 16, height: 16 }} />
-                    </IconButton>
-                  )}
-
-                  <IconButton
-                    size="2"
-                    variant="soft"
-                    color="red"
-                    onClick={() => setShowDeleteConfirmation(true)}
-                    title={t("torrent.remove")}
-                  >
-                    <TrashIcon width={16} height={16} />
-                  </IconButton>
-                </Flex>
-              </Flex>
-            </Flex>
-          </Box>
+          {renderTorrentInfo()}
         </Flex>
       </Card>
 
-      {/* Диалог подтверждения удаления */}
       <DeleteDialog
         mode="single"
         torrentName={name}

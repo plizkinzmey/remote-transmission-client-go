@@ -74,6 +74,25 @@ This is a Transmission BitTorrent client built with:
 - Backend: Добавляйте тесты рядом с файлами реализации
 - Frontend: Используйте React Testing Library для тестов компонентов
 
+### Использование Radix UI компонентов
+1. TextField.Root:
+   ```tsx
+   <TextField.Root
+     size="2"
+     style={{ width: "200px" }}
+     placeholder={t("torrents.search")}
+     value={searchTerm}
+     onChange={handleSearchChange}
+   >
+     <TextField.Slot>
+       <MagnifyingGlassIcon width={16} height={16} />
+     </TextField.Slot>
+   </TextField.Root>
+   ```
+   - Поддерживает controlled input (value и onChange)
+   - Поддерживает стандартные пропсы: size, placeholder, style
+   - TextField.Slot используется для иконок или других элементов внутри поля
+
 # Структура проекта Transmission Desktop Client
 
 ## Общее описание

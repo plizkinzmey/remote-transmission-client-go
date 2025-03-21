@@ -92,15 +92,16 @@ export const Header: React.FC<HeaderProps> = ({
     <Box className={styles.fixedHeader}>
       <Flex className={styles.controlPanel} justify="between" align="center">
         <Flex gap="3" align="center">
-          <TextField.Root size="2" style={{ width: "200px" }}>
+          <TextField.Root
+            size="2"
+            style={{ width: "200px" }}
+            placeholder={t("torrents.search")}
+            value={searchTerm}
+            onChange={handleSearchChange}
+          >
             <TextField.Slot>
               <MagnifyingGlassIcon width={16} height={16} />
             </TextField.Slot>
-            <TextField.Root
-              placeholder={t("torrents.search")}
-              value={searchTerm}
-              onChange={handleSearchChange}
-            />
           </TextField.Root>
 
           <IconButton

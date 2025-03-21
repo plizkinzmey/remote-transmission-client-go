@@ -173,33 +173,31 @@ export const Header: React.FC<HeaderProps> = ({
       </Flex>
 
       <Box className={styles.selectAllContainer}>
-        <Flex gap="4" align="center">
-          <Flex align="center" gap="2">
-            <Checkbox
-              size="1"
-              checked={
-                selectedTorrents.size > 0 &&
-                selectedTorrents.size === filteredTorrents.length
-              }
-              onCheckedChange={onSelectAll}
-              disabled={filteredTorrents.length === 0}
-            />
-            <Text size="1">
-              {selectedTorrents.size > 0
-                ? t(
-                    "torrents.selected",
-                    String(selectedTorrents.size),
-                    String(filteredTorrents.length)
-                  )
-                : t("torrents.selectAll")}
-            </Text>
-          </Flex>
-          <StatusFilter
-            selectedStatus={statusFilter}
-            onStatusChange={onStatusFilterChange}
-            hasNoTorrents={torrents.length === 0}
+        <Flex className={styles.selectAllWrapper}>
+          <Checkbox
+            size="1"
+            checked={
+              selectedTorrents.size > 0 &&
+              selectedTorrents.size === filteredTorrents.length
+            }
+            onCheckedChange={onSelectAll}
+            disabled={filteredTorrents.length === 0}
           />
+          <Text size="1">
+            {selectedTorrents.size > 0
+              ? t(
+                  "torrents.selected",
+                  String(selectedTorrents.size),
+                  String(filteredTorrents.length)
+                )
+              : t("torrents.selectAll")}
+          </Text>
         </Flex>
+        <StatusFilter
+          selectedStatus={statusFilter}
+          onStatusChange={onStatusFilterChange}
+          hasNoTorrents={torrents.length === 0}
+        />
       </Box>
 
       {error && (

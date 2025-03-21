@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
             onChange={handleSearchChange}
           >
             <TextField.Slot>
-              <MagnifyingGlassIcon width={16} height={16} />
+              <MagnifyingGlassIcon width={18} height={18} />
             </TextField.Slot>
           </TextField.Root>
           <IconButton
@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onAddTorrent}
             aria-label={t("add.title")}
           >
-            <PlusCircleIcon width={20} height={20} />
+            <PlusCircleIcon width={18} height={18} />
           </IconButton>
           <IconButton
             variant="ghost"
@@ -118,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
             {startLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PlayIcon width={20} height={20} />
+              <PlayIcon width={18} height={18} />
             )}
           </IconButton>
           <IconButton
@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
             {stopLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PauseIcon width={20} height={20} />
+              <PauseIcon width={18} height={18} />
             )}
           </IconButton>
           <IconButton
@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
           >
-            <SnailIcon style={{ width: 20, height: 20 }} />
+            <SnailIcon style={{ width: 18, height: 18 }} />
           </IconButton>
           <IconButton
             variant="ghost"
@@ -153,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
             {removeLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <TrashIcon width={20} height={20} />
+              <TrashIcon width={18} height={18} />
             )}
           </IconButton>
         </Flex>

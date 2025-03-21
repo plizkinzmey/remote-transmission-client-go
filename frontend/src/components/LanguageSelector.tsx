@@ -3,6 +3,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { CircleFlag } from "react-circle-flags";
 import { IconButton, Box } from "@radix-ui/themes";
 import { useLocalization } from "../contexts/LocalizationContext";
+import styles from "../styles/LanguageSelector.module.css";
 
 const languageToCountryCode: Record<string, string> = {
   en: "gb",
@@ -19,8 +20,8 @@ export const LanguageSelector: React.FC = () => {
         <IconButton variant="ghost" aria-label="Select language">
           <CircleFlag
             countryCode={languageToCountryCode[currentLanguage] || "gb"}
-            width={20}
-            height={20}
+            width={18}
+            height={18}
           />
         </IconButton>
       </DropdownMenu.Trigger>
@@ -31,7 +32,7 @@ export const LanguageSelector: React.FC = () => {
           align="end"
           sideOffset={5}
           style={{
-            backgroundColor: "var(--color-panel)",
+            backgroundColor: "var(--gray-1)",
             border: "1px solid var(--gray-5)",
             borderRadius: "6px",
             padding: "4px",
@@ -44,24 +45,13 @@ export const LanguageSelector: React.FC = () => {
             <DropdownMenu.Item
               key={lang.code}
               onSelect={() => setLanguage(lang.code)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                padding: "8px 12px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                userSelect: "none",
-                outline: "none",
-                gap: "8px",
-              }}
+              className={styles.languageItem}
             >
               <Box>
                 <CircleFlag
                   countryCode={languageToCountryCode[lang.code] || "gb"}
-                  width={20}
-                  height={20}
+                  width={18}
+                  height={18}
                 />
               </Box>
               <span>{lang.name}</span>

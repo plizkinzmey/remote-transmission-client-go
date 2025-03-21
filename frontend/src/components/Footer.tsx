@@ -74,7 +74,7 @@ export const Footer: React.FC<FooterProps> = ({
               <LoadingSpinner size="small" />
             ) : (
               <Flex align="center" gap="1">
-                <ArrowDownIcon width={16} height={16} />
+                <ArrowDownIcon width={18} height={18} />
                 <Text size="1" color="gray">
                   {formatSpeed(totalDownloadSpeed)}
                 </Text>
@@ -87,7 +87,7 @@ export const Footer: React.FC<FooterProps> = ({
               <LoadingSpinner size="small" />
             ) : (
               <Flex align="center" gap="1">
-                <ArrowUpIcon width={16} height={16} />
+                <ArrowUpIcon width={18} height={18} />
                 <Text size="1" color="gray">
                   {formatSpeed(totalUploadSpeed)}
                 </Text>

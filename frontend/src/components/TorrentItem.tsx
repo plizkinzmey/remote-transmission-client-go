@@ -261,14 +261,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 </Text>
                 <Flex gap="1" align="center">
                   <ArrowDownIcon
-                    width={14}
-                    height={14}
+                    width={18}
+                    height={18}
                     style={{ color: "var(--download-color)" }}
                   />
                   <Text size="1">{downloadSpeedFormatted}</Text>
                   <ArrowUpIcon
-                    width={14}
-                    height={14}
+                    width={18}
+                    height={18}
                     style={{ color: "var(--seed-color)" }}
                   />
                   <Text size="1">{uploadSpeedFormatted}</Text>
@@ -308,7 +308,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               onClick={() => setShowContent(true)}
               title={t("torrent.viewContent")}
             >
-              <FolderIcon className={styles.icon} />
+              <FolderIcon width={18} height={18} />
             </Button>
 
             {renderActionButton()}
@@ -322,7 +322,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 )}
                 active={isSlowMode}
               >
-                <SnailIcon />
+                <SnailIcon style={{ width: 18, height: 18 }} />
               </Button>
             )}
 
@@ -331,7 +331,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               onClick={() => setShowDeleteConfirmation(true)}
               title={t("torrent.remove")}
             >
-              <TrashIcon className={styles.icon} />
+              <TrashIcon width={18} height={18} />
             </Button>
           </Flex>
         </Flex>

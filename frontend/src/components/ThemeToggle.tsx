@@ -10,7 +10,6 @@ export const ThemeToggle: React.FC = () => {
   const { t } = useLocalization();
 
   const handleThemeChange = () => {
-    // Циклическое переключение темы: light -> dark -> auto -> light
     if (theme === "light") setTheme("dark");
     else if (theme === "dark") setTheme("auto");
     else setTheme("light");
@@ -19,11 +18,11 @@ export const ThemeToggle: React.FC = () => {
   const getIcon = () => {
     switch (theme) {
       case "light":
-        return <SunIcon width={20} height={20} />;
+        return <SunIcon width={18} height={18} />;
       case "dark":
-        return <MoonIcon width={20} height={20} />;
+        return <MoonIcon width={18} height={18} />;
       default:
-        return <AutoThemeIcon />;
+        return <AutoThemeIcon width={18} height={18} />;
     }
   };
 

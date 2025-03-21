@@ -91,4 +91,7 @@
   .cardCompleted { border-left: 3px solid var(--mint-8); }
   .cardChecking { border-left: 3px solid var(--amber-8); }
   .cardQueued { border-left: 3px solid var(--purple-8); }
+
+  .downloadIcon { color: var(--blue-8); }
+  .uploadIcon { color: var(--grass-8); }
 }

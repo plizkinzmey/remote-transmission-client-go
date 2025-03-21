@@ -54,7 +54,14 @@ type StatusType =
   | "completed"
   | "checking"
   | "queued";
-type ColorType = "blue" | "green" | "gray" | "amber" | "purple" | "red";
+type ColorType =
+  | "blue"
+  | "grass"
+  | "gray"
+  | "amber"
+  | "purple"
+  | "mint"
+  | "tomato";
 
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
@@ -132,8 +139,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   ): { text: string; color: ColorType } => {
     const statusMap: Record<StatusType, { color: ColorType }> = {
       downloading: { color: "blue" },
-      seeding: { color: "blue" },
-      completed: { color: "green" },
+      seeding: { color: "grass" },
+      completed: { color: "mint" },
       checking: { color: "amber" },
       queued: { color: "purple" },
       stopped: { color: "gray" },

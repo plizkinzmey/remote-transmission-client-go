@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
-import { Card, Flex, Box, Text, Progress, Checkbox } from "@radix-ui/themes";
-import { Button } from "./Button";
+import {
+  Card,
+  Flex,
+  Box,
+  Text,
+  Progress,
+  Checkbox,
+  IconButton,
+  Badge,
+} from "@radix-ui/themes";
 import { DeleteDialog } from "./DeleteDialog";
 import { TorrentContent } from "./TorrentContent";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -133,32 +141,34 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const renderActionButton = () => {
     if (isLoading) {
       return (
-        <Button variant="icon" disabled loading>
+        <IconButton disabled>
           <LoadingSpinner size="small" />
-        </Button>
+        </IconButton>
       );
     }
 
     if (isRunning) {
       return (
-        <Button
-          variant="icon"
+        <IconButton
+          size="2"
+          variant="soft"
           onClick={() => handleAction("stop")}
           title={t("torrent.stop")}
         >
-          <PauseIcon className={styles.icon} />
-        </Button>
+          <PauseIcon width={16} height={16} />
+        </IconButton>
       );
     }
 
     return (
-      <Button
-        variant="icon"
+      <IconButton
+        size="2"
+        variant="soft"
         onClick={() => handleAction("start")}
         title={t("torrent.start")}
       >
-        <PlayIcon className={styles.icon} />
-      </Button>
+        <PlayIcon width={16} height={16} />
+      </IconButton>
     );
   };
 
@@ -245,23 +255,19 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 {name}
               </Text>
 
-              <Box
-                style={{
-                  background: "var(--card-ratio-bg)",
-                  borderRadius: "12px",
-                  padding: "2px 8px",
-                }}
+              <Badge
+                variant="surface"
+                size="1"
+                title={t("torrent.uploadRatio")}
               >
-                <Text size="1" title={t("torrent.uploadRatio")}>
-                  {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
-                </Text>
-              </Box>
+                {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
+              </Badge>
             </Flex>
 
             <Flex gap="2" align="center" mb="2">
-              <Text size="1" style={{ color: getStatusColor(status) }}>
+              <Badge variant="soft" size="1" color={getProgressColor(status)}>
                 {getStatusText(status)}
-              </Text>
+              </Badge>
               <Text size="1">{progress.toFixed(1)}%</Text>
             </Flex>
             <Progress
@@ -285,14 +291,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 </Text>
                 <Flex gap="1" align="center">
                   <ArrowDownIcon
-                    width={18}
-                    height={18}
+                    width={16}
+                    height={16}
                     style={{ color: "var(--download-color)" }}
                   />
                   <Text size="1">{downloadSpeedFormatted}</Text>
                   <ArrowUpIcon
-                    width={18}
-                    height={18}
+                    width={16}
+                    height={16}
                     style={{ color: "var(--seed-color)" }}
                   />
                   <Text size="1">{uploadSpeedFormatted}</Text>
@@ -327,36 +333,40 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           </Box>
 
           <Flex direction="column" gap="2">
-            <Button
-              variant="icon"
+            <IconButton
+              size="2"
+              variant="soft"
               onClick={() => setShowContent(true)}
               title={t("torrent.viewContent")}
             >
-              <FolderIcon width={18} height={18} />
-            </Button>
+              <FolderIcon width={16} height={16} />
+            </IconButton>
 
             {renderActionButton()}
 
             {onSetSpeedLimit && (
-              <Button
-                variant="icon"
+              <IconButton
+                size="2"
+                variant="soft"
                 onClick={() => onSetSpeedLimit(id, !isSlowMode)}
                 title={t(
                   isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
                 )}
-                active={isSlowMode}
+                color={isSlowMode ? "amber" : undefined}
               >
-                <SnailIcon style={{ width: 18, height: 18 }} />
-              </Button>
+                <SnailIcon style={{ width: 16, height: 16 }} />
+              </IconButton>
             )}
 
-            <Button
-              variant="icon"
+            <IconButton
+              size="2"
+              variant="soft"
+              color="red"
               onClick={() => setShowDeleteConfirmation(true)}
               title={t("torrent.remove")}
             >
-              <TrashIcon width={18} height={18} />
-            </Button>
+              <TrashIcon width={16} height={16} />
+            </IconButton>
           </Flex>
         </Flex>
       </Card>

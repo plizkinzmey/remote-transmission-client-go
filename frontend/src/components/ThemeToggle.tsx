@@ -1,5 +1,5 @@
 import React from "react";
-import { IconButton } from "@radix-ui/themes";
+import { IconButton, DropdownMenu, Flex, Text } from "@radix-ui/themes";
 import { useTheme } from "../contexts/ThemeContext";
 import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { AutoThemeIcon } from "./icons/AutoThemeIcon";
@@ -8,12 +8,6 @@ import { useLocalization } from "../contexts/LocalizationContext";
 export const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
   const { t } = useLocalization();
-
-  const handleThemeChange = () => {
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("auto");
-    else setTheme("light");
-  };
 
   const getIcon = () => {
     switch (theme) {
@@ -38,12 +32,40 @@ export const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <IconButton
-      variant="ghost"
-      onClick={handleThemeChange}
-      aria-label={getTitle()}
-    >
-      {getIcon()}
-    </IconButton>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger>
+        <IconButton
+          size="2"
+          variant="soft"
+          color="gray"
+          aria-label={getTitle()}
+        >
+          {getIcon()}
+        </IconButton>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Content>
+        <DropdownMenu.Item onClick={() => setTheme("light")}>
+          <Flex gap="2" align="center">
+            <SunIcon width={18} height={18} />
+            <Text size="2">{t("settings.themeLight")}</Text>
+          </Flex>
+        </DropdownMenu.Item>
+
+        <DropdownMenu.Item onClick={() => setTheme("dark")}>
+          <Flex gap="2" align="center">
+            <MoonIcon width={18} height={18} />
+            <Text size="2">{t("settings.themeDark")}</Text>
+          </Flex>
+        </DropdownMenu.Item>
+
+        <DropdownMenu.Item onClick={() => setTheme("auto")}>
+          <Flex gap="2" align="center">
+            <AutoThemeIcon width={18} height={18} />
+            <Text size="2">{t("settings.themeAuto")}</Text>
+          </Flex>
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 };

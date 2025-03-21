@@ -16,19 +16,19 @@
   --header-input-bg: rgba(255, 255, 255, 0.1);
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
 
-  /* Other colors */
-  --hover-color: #2980b9;
-  --success-color: #27ae60;
-  --error-color: #e74c3c;
-  --modal-overlay: rgba(0, 0, 0, 0.5);
-  --modal-shadow: rgba(0, 0, 0, 0.1);
-
   /* Button states */
   --button-disabled-bg: #cbd5e1;
   --button-disabled-text: #94a3b8;
   --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
   --error-color-hover: #dc2626;
+
+  /* Other colors */
+  --hover-color: #2980b9;
+  --success-color: #27ae60;
+  --error-color: #e74c3c;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+  --modal-shadow: rgba(0, 0, 0, 0.1);
 
   /* Button colors */
   --accent-color: #3498db; /* Акцентный цвет для кнопок */
@@ -85,6 +85,9 @@
   --input-background: var(--background-primary);
   --focus-border: var(--accent-color);
   --accent-contrast: #ffffff;
+
+  /* Radix UI Theme Integration */
+  --header-icon-color: var(--header-button-icon);
 }
 
 :root[data-theme="dark"] {
@@ -100,7 +103,7 @@
   --header-text-secondary: rgba(255, 255, 255, 0.7);
   --header-border: rgba(255, 255, 255, 0.1);
   --header-button-bg: transparent;
-  --header-button-hover-bg: transparent;
+  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
   --header-button-icon: var(--text-primary);
   --header-input-bg: rgba(255, 255, 255, 0.05);
   --header-input-focus-bg: rgba(255, 255, 255, 0.1);
@@ -174,6 +177,9 @@
   --input-background: var(--background-primary);
   --focus-border: var(--accent-color);
   --accent-contrast: #ffffff;
+
+  /* Radix UI Theme Integration */
+  --header-icon-color: var(--header-button-icon);
 }
 
 :root {
@@ -241,4 +247,13 @@
 
 .status-slow {
   color: var(--warning-color);
+}
+
+/* Global Radix Theme Variables */
+.rt-ThemeLight {
+  --header-icon-color: var(--header-button-icon);
+}
+
+.rt-ThemeDark {
+  --header-icon-color: var(--header-button-icon);
 }

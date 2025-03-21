@@ -19,11 +19,10 @@ const StyledTrigger = styled(DropdownMenu.Trigger)`
   margin: 0;
   border: none;
   border-radius: 50%;
-  background-color: transparent;
+  background-color: var(--header-button-bg);
   color: var(--header-button-icon);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-sizing: border-box;
 
   &:hover {
     background-color: var(--header-button-hover-bg);
@@ -33,32 +32,22 @@ const StyledTrigger = styled(DropdownMenu.Trigger)`
     outline: none;
   }
 
-  &:active {
-    background-color: var(--header-button-hover-bg);
+  .rt-dark & {
+    --header-button-hover-bg: rgba(255, 255, 255, 0.1);
+  }
+
+  .rt-light & {
+    --header-button-hover-bg: rgba(0, 0, 0, 0.1);
   }
 `;
 
 const StyledContent = styled(DropdownMenu.Content)`
-  z-index: 99999;
   min-width: 150px;
-  background: var(--background-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
-  animation: scaleIn 0.1s ease-out;
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
+  box-shadow: var(--shadow-5);
 `;
 
 const StyledItem = styled(DropdownMenu.Item)`
@@ -67,35 +56,28 @@ const StyledItem = styled(DropdownMenu.Item)`
   width: 100%;
   padding: 8px 12px;
   border: none;
-  background: none;
-  color: var(--text-primary);
+  border-radius: 4px;
+  color: var(--color-text);
   cursor: pointer;
   user-select: none;
   outline: none;
-  border-radius: 4px;
+  gap: 8px;
 
   &:hover {
-    background: var(--background-hover);
+    background: var(--color-surface-hover);
   }
 
   &:focus {
-    outline: none;
-    background: var(--background-hover);
+    background: var(--color-surface-hover);
   }
+`;
 
-  .flag {
-    margin-right: 8px;
-    flex-shrink: 0;
-  }
-
-  .text {
-    flex: 1;
-  }
-
-  .check {
-    margin-left: 8px;
-    flex-shrink: 0;
-  }
+const FlagContainer = styled.div`
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 export const LanguageSelector: React.FC = () => {
@@ -103,27 +85,27 @@ export const LanguageSelector: React.FC = () => {
     useLocalization();
 
   return (
-    <DropdownMenu.Root modal={false}>
+    <DropdownMenu.Root>
       <StyledTrigger aria-label="Select language">
-        <CircleFlag
-          countryCode={languageToCountryCode[currentLanguage] || "gb"}
-          height="20"
-        />
+        <FlagContainer>
+          <CircleFlag
+            countryCode={languageToCountryCode[currentLanguage] || "gb"}
+            width={20}
+            height={20}
+          />
+        </FlagContainer>
       </StyledTrigger>
 
       <DropdownMenu.Portal>
-        <StyledContent align="end" sideOffset={5} className="dropdown-content">
+        <StyledContent align="end" sideOffset={5}>
           {availableLanguages.map((lang) => (
             <StyledItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
               <CircleFlag
                 countryCode={languageToCountryCode[lang.code] || "gb"}
-                height="20"
-                className="flag"
+                width={20}
+                height={20}
               />
-              <span className="text">{lang.name}</span>
-              {currentLanguage === lang.code && (
-                <span className="check">✓</span>
-              )}
+              <span>{lang.name}</span>
             </StyledItem>
           ))}
         </StyledContent>

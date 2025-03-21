@@ -1,10 +1,14 @@
 import React from "react";
 
-export const SnailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+export const SnailIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
+  className,
+  ...props
+}) => (
   <svg
     viewBox="0 0 512.002 512.002"
     width="24"
     height="24"
+    className={className}
     fill="currentColor"
     stroke="none"
     {...props}

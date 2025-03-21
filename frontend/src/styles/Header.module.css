@@ -36,3 +36,16 @@
   font-size: 14px;
   display: block;
 }
+
+/* Стили для иконок в хедере */
+:global(.icon-button) {
+  color: var(--header-button-icon) !important;
+}
+
+:global(.icon-button:hover) {
+  background-color: var(--header-button-hover-bg) !important;
+}
+
+:global(.header-icon) {
+  color: var(--header-button-icon);
+}

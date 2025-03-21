@@ -107,8 +107,9 @@ export const Header: React.FC<HeaderProps> = ({
             variant="ghost"
             onClick={onAddTorrent}
             aria-label={t("add.title")}
+            className="icon-button"
           >
-            <PlusCircleIcon width={20} height={20} />
+            <PlusCircleIcon className="header-icon" width={20} height={20} />
           </IconButton>
 
           <IconButton
@@ -116,11 +117,12 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onStartSelected}
             disabled={!hasSelectedTorrents || startLoading}
             aria-label={t("torrents.startSelected")}
+            className="icon-button"
           >
             {startLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PlayIcon width={20} height={20} />
+              <PlayIcon className="header-icon" width={20} height={20} />
             )}
           </IconButton>
 
@@ -129,11 +131,12 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onStopSelected}
             disabled={!hasSelectedTorrents || stopLoading}
             aria-label={t("torrents.stopSelected")}
+            className="icon-button"
           >
             {stopLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <PauseIcon width={20} height={20} />
+              <PauseIcon className="header-icon" width={20} height={20} />
             )}
           </IconButton>
 
@@ -145,8 +148,12 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
+            className="icon-button"
           >
-            <SnailIcon style={{ width: 20, height: 20 }} />
+            <SnailIcon
+              className="header-icon"
+              style={{ width: 20, height: 20 }}
+            />
           </IconButton>
 
           <IconButton
@@ -154,11 +161,12 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={handleRemoveClick}
             disabled={!hasSelectedTorrents || removeLoading}
             aria-label={t("remove.title")}
+            className="icon-button"
           >
             {removeLoading ? (
               <LoadingSpinner size="small" />
             ) : (
-              <TrashIcon width={20} height={20} />
+              <TrashIcon className="header-icon" width={20} height={20} />
             )}
           </IconButton>
         </Flex>

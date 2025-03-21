@@ -44,8 +44,8 @@ type Torrent struct {
 
 type TorrentRepository interface {
 	GetAll() ([]Torrent, error)
-	Add(url string) error
-	AddFile(filepath string) error
+	Add(url string, downloadDir string) error
+	AddFile(filepath string, downloadDir string) error
 	Remove(id int64, deleteData bool) error
 	Start(ids []int64) error
 	Stop(ids []int64) error
@@ -55,4 +55,7 @@ type TorrentRepository interface {
 	GetTorrentFiles(id int64) ([]TorrentFile, error)
 	SetFilesWanted(id int64, fileIds []int, wanted bool) error
 	SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error
+
+	// Новые методы для работы с каталогами
+	GetDefaultDownloadDir() (string, error)
 }

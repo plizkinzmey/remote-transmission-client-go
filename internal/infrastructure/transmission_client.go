@@ -176,25 +176,66 @@ func (c *TransmissionClient) Stop(ids []int64) error {
 	return nil
 }
 
-func (c *TransmissionClient) Add(url string) error {
+// GetDefaultDownloadDir возвращает каталог загрузки по умолчанию
+func (c *TransmissionClient) GetDefaultDownloadDir() (string, error) {
+	session, err := c.client.SessionArgumentsGet(c.ctx, []string{"download-dir"})
+	if err != nil {
+		return "", fmt.Errorf("failed to get default download directory: %w", err)
+	}
+
+	if session.DownloadDir == nil {
+		return "", fmt.Errorf("default download directory not available")
+	}
+
+	return *session.DownloadDir, nil
+}
+
+func (c *TransmissionClient) Add(url string, downloadDir string) error {
 	if strings.HasPrefix(url, "data:") {
 		// Если это base64-закодированный файл
-		return c.addFromBase64(url)
+		return c.addFromBase64(url, downloadDir)
+	}
+
+	// Создаем payload
+	payload := transmissionrpc.TorrentAddPayload{
+		Filename: &url,
+	}
+
+	// Добавляем директорию загрузки, если она указана
+	if downloadDir != "" {
+		payload.DownloadDir = &downloadDir
 	}
 
 	// Обычная ссылка или магнет-ссылка
-	_, err := c.client.TorrentAdd(c.ctx, transmissionrpc.TorrentAddPayload{
-		Filename: &url,
-	})
+	_, err := c.client.TorrentAdd(c.ctx, payload)
 	if err != nil {
 		return fmt.Errorf("failed to add torrent: %w", err)
 	}
 	return nil
 }
 
-func (c *TransmissionClient) AddFile(filepath string) error {
-	// Используем TorrentAddFile для добавления локального файла
-	_, err := c.client.TorrentAddFile(c.ctx, filepath)
+func (c *TransmissionClient) AddFile(filepath string, downloadDir string) error {
+	// Читаем файл
+	metainfo, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to read torrent file: %w", err)
+	}
+
+	// Кодируем в base64
+	metainfoB64 := base64.StdEncoding.EncodeToString(metainfo)
+
+	// Создаем payload
+	payload := transmissionrpc.TorrentAddPayload{
+		MetaInfo: &metainfoB64,
+	}
+
+	// Добавляем директорию загрузки, если она указана
+	if downloadDir != "" {
+		payload.DownloadDir = &downloadDir
+	}
+
+	// Добавляем торрент
+	_, err = c.client.TorrentAdd(c.ctx, payload)
 	if err != nil {
 		return fmt.Errorf("failed to add torrent from file: %w", err)
 	}
@@ -202,7 +243,7 @@ func (c *TransmissionClient) AddFile(filepath string) error {
 }
 
 // addFromBase64 обрабатывает base64-закодированный торрент файл
-func (c *TransmissionClient) addFromBase64(dataUrl string) error {
+func (c *TransmissionClient) addFromBase64(dataUrl string, downloadDir string) error {
 	// Извлекаем base64-данные из data URL
 	parts := strings.Split(dataUrl, ",")
 	if len(parts) != 2 {
@@ -215,20 +256,24 @@ func (c *TransmissionClient) addFromBase64(dataUrl string) error {
 		return fmt.Errorf("failed to decode base64 data: %w", err)
 	}
 
-	// Создаем временный файл
-	tmpDir, err := os.MkdirTemp("", "transmission-client")
+	// Создаем payload с метаинформацией
+	metainfoB64 := base64.StdEncoding.EncodeToString(data)
+	payload := transmissionrpc.TorrentAddPayload{
+		MetaInfo: &metainfoB64,
+	}
+
+	// Добавляем директорию загрузки, если она указана
+	if downloadDir != "" {
+		payload.DownloadDir = &downloadDir
+	}
+
+	// Добавляем торрент
+	_, err = c.client.TorrentAdd(c.ctx, payload)
 	if err != nil {
-		return fmt.Errorf("failed to create temp directory: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	tmpFile := filepath.Join(tmpDir, "temp.torrent")
-	if err := os.WriteFile(tmpFile, data, 0600); err != nil {
-		return fmt.Errorf("failed to write temp file: %w", err)
+		return fmt.Errorf("failed to add torrent: %w", err)
 	}
 
-	// Используем TorrentAddFile для добавления временного файла
-	return c.AddFile(tmpFile)
+	return nil
 }
 
 func (c *TransmissionClient) Remove(id int64, deleteData bool) error {

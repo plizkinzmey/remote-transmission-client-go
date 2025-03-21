@@ -210,9 +210,9 @@ export function useTorrentData() {
   }, [isInitialized, refreshSessionStats, refreshTorrents]);
 
   // Обработчик добавления торрента
-  const handleAddTorrent = async (url: string) => {
+  const handleAddTorrent = async (url: string, downloadDir: string = "") => {
     try {
-      await AddTorrentAPI(url);
+      await AddTorrentAPI(url, downloadDir);
       refreshTorrents();
       return true;
     } catch (error) {
@@ -223,9 +223,12 @@ export function useTorrentData() {
   };
 
   // Обработчик добавления торрента из файла
-  const handleAddTorrentFile = async (base64Content: string) => {
+  const handleAddTorrentFile = async (
+    base64Content: string,
+    downloadDir: string = ""
+  ) => {
     try {
-      await AddTorrentFile(base64Content);
+      await AddTorrentFile(base64Content, downloadDir);
       refreshTorrents();
       return true;
     } catch (error) {

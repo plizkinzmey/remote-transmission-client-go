@@ -130,15 +130,15 @@ func (a *App) GetTorrents() ([]domain.Torrent, error) {
 }
 
 // AddTorrent adds a new torrent by URL
-func (a *App) AddTorrent(url string) error {
+func (a *App) AddTorrent(url string, downloadDir string) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
 	}
-	return a.service.AddTorrent(url)
+	return a.service.AddTorrent(url, downloadDir)
 }
 
 // AddTorrentFile adds a torrent from a base64-encoded file
-func (a *App) AddTorrentFile(base64Content string) error {
+func (a *App) AddTorrentFile(base64Content string, downloadDir string) error {
 	if a.service == nil {
 		return fmt.Errorf(ErrServiceNotInitialized)
 	}
@@ -146,7 +146,7 @@ func (a *App) AddTorrentFile(base64Content string) error {
 	if !strings.HasPrefix(base64Content, "data:") {
 		base64Content = "data:application/x-bittorrent;base64," + base64Content
 	}
-	return a.service.AddTorrent(base64Content)
+	return a.service.AddTorrent(base64Content, downloadDir)
 }
 
 // RemoveTorrent removes a torrent by ID
@@ -218,6 +218,30 @@ func (a *App) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
 	return a.service.SetTorrentSpeedLimit(ids, isSlowMode)
 }
 
+// GetDefaultDownloadDir возвращает каталог загрузки по умолчанию из Transmission
+func (a *App) GetDefaultDownloadDir() (string, error) {
+	if a.service == nil {
+		return "", fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.GetDefaultDownloadDir()
+}
+
+// SaveDownloadPath сохраняет путь в историю путей скачивания
+func (a *App) SaveDownloadPath(path string) error {
+	if a.service == nil {
+		return fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.SaveDownloadPath(path)
+}
+
+// GetDownloadPaths возвращает список всех сохраненных путей скачивания
+func (a *App) GetDownloadPaths() ([]string, error) {
+	if a.service == nil {
+		return nil, fmt.Errorf(ErrServiceNotInitialized)
+	}
+	return a.service.GetDownloadPaths()
+}
+
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
 	if a.service == nil {
@@ -228,8 +252,15 @@ func (a *App) handleFileOpen(filePath string) {
 	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
 		fmt.Printf("Обработка торрент файла: %s\n", filePath)
 
+		// Получаем путь загрузки по умолчанию
+		defaultDir, err := a.GetDefaultDownloadDir()
+		if err != nil {
+			fmt.Printf("Ошибка получения директории по умолчанию: %v\n", err)
+			defaultDir = "" // Будет использован стандартный путь Transmission
+		}
+
 		// Добавляем торрент файл напрямую через сервис
-		err := a.service.AddTorrentFile(filePath)
+		err = a.service.AddTorrentFile(filePath, defaultDir)
 		if err != nil {
 			fmt.Printf("Ошибка добавления торрент файла: %v\n", err)
 		} else {

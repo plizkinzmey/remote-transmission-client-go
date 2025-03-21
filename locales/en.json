@@ -107,7 +107,10 @@
     "orClickToSelect": "or click to select file",
     "invalidUrl": "Invalid URL",
     "success": "Torrent added successfully",
-    "error": "Error adding torrent"
+    "error": "Error adding torrent",
+    "downloadPath": "Download folder",
+    "enterCustomPath": "Enter custom path",
+    "selectFromExisting": "Select from existing"
   },
 
   "remove": {

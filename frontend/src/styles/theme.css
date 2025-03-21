@@ -1,14 +1,10 @@
-/* Базовые цвета для обеих тем */
+/**
+ * Файл темизации для интеграции с RadixUI
+ * Определяет основные цветовые переменные и токены для использования в приложении
+ */
+
+/* Базовые цвета и переменные для интеграции с RadixUI */
 :root {
-  /* Общие цвета */
-  --accent-color: var(--accent-9);
-  --button-text: white;
-  --error-color: var(--tomato-9);
-  --warning-color: var(--amber-9);
-  --success-color: var(--grass-9);
-  --warning-color-hover: var(--amber-10);
-  --error-color-hover: var(--tomato-10);
-  
   /* Статусы торрентов */
   --status-downloading: var(--blue-9);
   --status-seeding: var(--grass-9);
@@ -17,119 +13,50 @@
   --status-checking: var(--amber-9);
   --status-queued: var(--slate-9);
   
-  /* Компоненты приложения */
-  --header-background: var(--slate-12);
-  --header-text: white;
-  --header-text-secondary: rgba(255, 255, 255, 0.7);
-  --header-button-bg: transparent;
-  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-button-icon: white;
-  --header-input-bg: rgba(255, 255, 255, 0.1);
-  --header-input-focus-bg: rgba(255, 255, 255, 0.15);
+  /* Общие цвета */
+  --download-color: var(--blue-9);
+  --seed-color: var(--grass-9);
+  --error-color: var(--tomato-9);
   
   /* Стили для TreeView */
-  --tree-line-color: var(--slate-8);
-  --tree-folder-bg: var(--slate-3);
-  --tree-folder-border: var(--blue-9);
-  --tree-progress-bg: var(--slate-5);
+  --tree-folder-bg: var(--gray-3);
+  --tree-progress-bg: var(--gray-5);
   --tree-progress-fill: var(--blue-9);
-  --tree-checkbox-bg: white;
-  --tree-checkbox-border: var(--slate-6);
-  
-  /* Утилитарные классы */
-  --accent-contrast: white;
-  --text-on-accent: white;
-  --background-tertiary: rgba(0, 0, 0, 0.1);
 }
 
-/* Переменные для светлой темы встроены в класс .rt-ThemeLight */
+/* Переменные для светлой темы */
 .rt-ThemeLight {
+  color-scheme: light;
+  
   /* Карточки торрентов */
-  --card-background: white;
-  --card-border: var(--slate-4);
-  --card-shadow: rgba(0, 0, 0, 0.1);
-  --card-text-primary: var(--slate-12);
-  --card-text-secondary: var(--slate-9);
-  --card-progress-bg: var(--slate-3);
-  --card-ratio-bg: var(--slate-3);
+  --card-background: var(--color-surface);
+  --card-border: var(--gray-4);
+  --card-text-primary: var(--gray-12);
+  --card-text-secondary: var(--gray-9);
+  --card-progress-bg: var(--gray-3);
+  --card-ratio-bg: var(--gray-3);
   
-  /* Действия с торрентами */
-  --action-icon-color: var(--slate-11);
-  --action-icon-hover: var(--slate-12);
-  
-  /* Состояния кнопок */
-  --button-disabled-bg: var(--slate-4);
-  --button-disabled-text: var(--slate-7);
-  --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
-  --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
-  
-  /* Цвета для контента */
-  --background-hover: var(--slate-3);
-  --focus-border: var(--accent-9);
-  --background-primary: white;
-  --background-secondary: var(--slate-2);
-  --text-primary: var(--slate-12);
-  --text-secondary: var(--slate-11);
-  --border-color: var(--slate-6);
-  
-  /* Модальные окна */
-  --modal-overlay: rgba(0, 0, 0, 0.5);
-  --modal-shadow: rgba(0, 0, 0, 0.1);
-  
-  /* Theme Toggle */
-  --toggle-background: rgba(0, 0, 0, 0.05);
-  --button-active-background: var(--accent-color);
-  --button-active-text: white;
-  --button-hover-background: rgba(0, 0, 0, 0.03);
-  
-  /* Дополнительные настройки для TreeView */
-  --tree-file-hover: var(--slate-3);
-  --background-tertiary: rgba(0, 0, 0, 0.05);
+  /* Утилитарные цвета */
+  --error-background: var(--tomato-3);
 }
 
-/* Переменные для темной темы встроены в класс .rt-ThemeDark */
+/* Переменные для темной темы */
 .rt-ThemeDark {
+  color-scheme: dark;
+  
   /* Карточки торрентов */
-  --card-background: var(--slate-3);
-  --card-border: var(--slate-6);
-  --card-shadow: rgba(0, 0, 0, 0.3);
+  --card-background: var(--color-surface);
+  --card-border: var(--gray-6);
   --card-text-primary: white;
-  --card-text-secondary: var(--slate-9);
-  --card-progress-bg: var(--slate-6);
-  --card-ratio-bg: var(--slate-6);
+  --card-text-secondary: var(--gray-9);
+  --card-progress-bg: var(--gray-6);
+  --card-ratio-bg: var(--gray-6);
   
-  /* Действия с торрентами */
-  --action-icon-color: var(--slate-9);
-  --action-icon-hover: var(--slate-8);
+  /* Утилитарные цвета */
+  --error-background: color-mix(in srgb, var(--tomato-9) 20%, black);
   
-  /* Состояния кнопок */
-  --button-disabled-bg: var(--slate-6);
-  --button-disabled-text: var(--slate-9);
-  --header-button-disabled-bg: rgba(255, 255, 255, 0.02);
-  --header-button-disabled-icon: rgba(255, 255, 255, 0.3);
-  
-  /* Цвета для контента */
-  --background-hover: var(--slate-5);
-  --focus-border: var(--accent-9);
-  --background-primary: var(--slate-1);
-  --background-secondary: var(--slate-3);
-  --text-primary: white;
-  --text-secondary: var(--slate-9);
-  --border-color: var(--slate-6);
-  
-  /* Модальные окна */
-  --modal-overlay: rgba(0, 0, 0, 0.7);
-  --modal-shadow: rgba(0, 0, 0, 0.3);
-  
-  /* Theme Toggle */
-  --toggle-background: rgba(255, 255, 255, 0.1);
-  --button-active-background: var(--accent-color);
-  --button-active-text: white;
-  --button-hover-background: rgba(255, 255, 255, 0.05);
-  
-  /* Дополнительные настройки для TreeView */
-  --tree-file-hover: var(--slate-4);
-  --background-tertiary: rgba(255, 255, 255, 0.1);
+  /* Переопределения для темной темы */
+  --tree-folder-bg: var(--gray-4);
 }
 
 /* Утилитарные классы */
@@ -142,24 +69,19 @@
   fill: currentColor;
 }
 
-.button-active {
-  background-color: var(--accent-color);
-  color: var(--button-text);
+/* Анимация загрузки */
+@keyframes placeholder-pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0.3; }
 }
 
-.status-slow {
-  color: var(--warning-color);
+.loading-placeholder {
+  animation: placeholder-pulse 1.5s ease-in-out infinite;
 }
 
-/* Стили для переключателя темы */
-:global(.header-icon) {
-  color: var(--header-button-icon);
-}
-
-:global(.icon-button) {
-  color: var(--header-button-icon) !important;
-}
-
-:global(.icon-button:hover) {
-  background-color: var(--header-button-hover-bg) !important;
+/* Класс для прозрачного элемента с контрастной рамкой */
+.ghost-item {
+  background-color: transparent;
+  border: 1px solid var(--gray-6);
 }

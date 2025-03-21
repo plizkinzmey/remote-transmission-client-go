@@ -6,7 +6,8 @@ import {
   Heading,
   ScrollArea,
   IconButton,
-  Checkbox as RadixCheckbox,
+  Checkbox,
+  Dialog,
 } from "@radix-ui/themes";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -413,7 +414,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
           <Flex align="center" gap="2" style={{ flex: 1, minWidth: 0 }}>
             <Box style={{ display: "flex", alignItems: "center" }}>
-              <RadixCheckbox
+              <Checkbox
                 checked={node.Wanted}
                 onCheckedChange={(checked) => toggleNode(node, !!checked)}
                 ref={(el) => {
@@ -527,7 +528,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
             marginBottom: "16px",
           }}
         >
-          <RadixCheckbox
+          <Checkbox
             checked={allChecked}
             onCheckedChange={toggleAll}
             ref={(el) => {
@@ -545,23 +546,38 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     );
   };
 
+  // Добавим CSS глобально для TorrentContent при монтировании
   useEffect(() => {
-    // Добавляем CSS для стилизации индетерминированных чекбоксов
-    if (!document.getElementById("indeterminate-checkbox-style")) {
+    // Добавляем CSS для стилизации индетерминированных чекбоксов и других элементов
+    if (!document.getElementById("torrent-content-style")) {
       const style = document.createElement("style");
-      style.id = "indeterminate-checkbox-style";
+      style.id = "torrent-content-style";
       style.textContent = `
         .indeterminate-checkbox [data-state="checked"] {
-          background-color: var(--accent-color);
+          background-color: var(--accent-9);
           opacity: 0.7;
         }
         .file-node-content:hover {
-          background-color: var(--tree-file-hover);
+          background-color: var(--gray-3);
+        }
+        .torrent-content-overlay {
+          z-index: 1100 !important;
         }
       `;
       document.head.appendChild(style);
     }
 
+    // Блокируем прокрутку основного содержимого при открытом окне
+    document.body.style.overflow = "hidden";
+
+    // Очистка при размонтировании
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Загрузка файлов
+  useEffect(() => {
     const loadFiles = async () => {
       try {
         setLoading(true);
@@ -581,56 +597,59 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
   }, [id, t]);
 
   return (
-    <Box
-      position="fixed"
-      top="0"
-      bottom="0"
-      left="0"
-      right="0"
-      style={{
-        backgroundColor: "var(--background-primary)",
-        zIndex: 1000,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Flex
-        justify="between"
-        align="center"
-        px="5"
-        py="3"
+    <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Content
+        className="torrent-content-overlay"
         style={{
-          borderBottom: "1px solid var(--border-color)",
+          width: "90vw",
+          height: "90vh",
+          maxWidth: "none",
+          padding: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <Heading
-          size="4"
+        <Flex
+          justify="between"
+          align="center"
+          px="5"
+          py="3"
           style={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            borderBottom: "1px solid var(--gray-5)",
           }}
         >
-          {name}
-        </Heading>
-        <IconButton
-          variant="ghost"
-          size="2"
-          onClick={onClose}
-          aria-label={t("common.close")}
-        >
-          <XMarkIcon width={20} height={20} />
-        </IconButton>
-      </Flex>
+          <Heading
+            size="4"
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {name}
+          </Heading>
+          <IconButton
+            variant="ghost"
+            size="2"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
+            <XMarkIcon width={20} height={20} />
+          </IconButton>
+        </Flex>
 
-      <ScrollArea
-        style={{
-          flex: 1,
-          padding: "20px",
-        }}
-      >
-        {renderContent()}
-      </ScrollArea>
-    </Box>
+        <Box style={{ flex: 1, overflow: "hidden" }}>
+          <ScrollArea
+            scrollbars="both"
+            style={{
+              height: "100%",
+              padding: "20px",
+            }}
+          >
+            {renderContent()}
+          </ScrollArea>
+        </Box>
+      </Dialog.Content>
+    </Dialog.Root>
   );
 };

@@ -277,18 +277,44 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               style={{ marginBottom: "12px" }}
               color={getProgressColor(status)}
             />
-            <Flex wrap="wrap" gap="3">
-              <Flex gap="1" align="center">
-                <Text size="1" weight="medium">
-                  {t("torrent.size")}:
-                </Text>
-                <Text size="1">{sizeFormatted}</Text>
+            <Flex wrap="wrap" gap="3" justify="between">
+              <Flex wrap="wrap" gap="3">
+                <Flex gap="1" align="center">
+                  <Text size="1" weight="medium">
+                    {t("torrent.size")}:
+                  </Text>
+                  <Text size="1">{sizeFormatted}</Text>
+                </Flex>
+
+                <Flex gap="1" align="center">
+                  <Text size="1" weight="medium">
+                    {t("torrent.seeds")}:
+                  </Text>
+                  <Text size="1">
+                    {normalizeValue(seedsConnected)}/
+                    {normalizeValue(seedsTotal)}
+                  </Text>
+                </Flex>
+
+                <Flex gap="1" align="center">
+                  <Text size="1" weight="medium">
+                    {t("torrent.peers")}:
+                  </Text>
+                  <Text size="1">
+                    {normalizeValue(peersConnected)}/
+                    {normalizeValue(peersTotal)}
+                  </Text>
+                </Flex>
+
+                <Flex gap="1" align="center">
+                  <Text size="1" weight="medium">
+                    {t("torrent.uploaded")}:
+                  </Text>
+                  <Text size="1">{uploadedFormatted}</Text>
+                </Flex>
               </Flex>
 
-              <Flex gap="1" align="center">
-                <Text size="1" weight="medium">
-                  {t("torrent.speed")}:
-                </Text>
+              <Flex justify="between" gap="3" align="center">
                 <Flex gap="1" align="center">
                   <ArrowDownIcon
                     width={16}
@@ -303,71 +329,46 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                   />
                   <Text size="1">{uploadSpeedFormatted}</Text>
                 </Flex>
-              </Flex>
 
-              <Flex gap="1" align="center">
-                <Text size="1" weight="medium">
-                  {t("torrent.seeds")}:
-                </Text>
-                <Text size="1">
-                  {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
-                </Text>
-              </Flex>
+                <Flex gap="2">
+                  <IconButton
+                    size="2"
+                    variant="soft"
+                    onClick={() => setShowContent(true)}
+                    title={t("torrent.viewContent")}
+                  >
+                    <FolderIcon width={16} height={16} />
+                  </IconButton>
 
-              <Flex gap="1" align="center">
-                <Text size="1" weight="medium">
-                  {t("torrent.peers")}:
-                </Text>
-                <Text size="1">
-                  {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
-                </Text>
-              </Flex>
+                  {renderActionButton()}
 
-              <Flex gap="1" align="center">
-                <Text size="1" weight="medium">
-                  {t("torrent.uploaded")}:
-                </Text>
-                <Text size="1">{uploadedFormatted}</Text>
+                  {onSetSpeedLimit && (
+                    <IconButton
+                      size="2"
+                      variant="soft"
+                      onClick={() => onSetSpeedLimit(id, !isSlowMode)}
+                      title={t(
+                        isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
+                      )}
+                      color={isSlowMode ? "amber" : undefined}
+                    >
+                      <SnailIcon style={{ width: 16, height: 16 }} />
+                    </IconButton>
+                  )}
+
+                  <IconButton
+                    size="2"
+                    variant="soft"
+                    color="red"
+                    onClick={() => setShowDeleteConfirmation(true)}
+                    title={t("torrent.remove")}
+                  >
+                    <TrashIcon width={16} height={16} />
+                  </IconButton>
+                </Flex>
               </Flex>
             </Flex>
           </Box>
-
-          <Flex direction="column" gap="2">
-            <IconButton
-              size="2"
-              variant="soft"
-              onClick={() => setShowContent(true)}
-              title={t("torrent.viewContent")}
-            >
-              <FolderIcon width={16} height={16} />
-            </IconButton>
-
-            {renderActionButton()}
-
-            {onSetSpeedLimit && (
-              <IconButton
-                size="2"
-                variant="soft"
-                onClick={() => onSetSpeedLimit(id, !isSlowMode)}
-                title={t(
-                  isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
-                )}
-                color={isSlowMode ? "amber" : undefined}
-              >
-                <SnailIcon style={{ width: 16, height: 16 }} />
-              </IconButton>
-            )}
-
-            <IconButton
-              size="2"
-              variant="soft"
-              color="red"
-              onClick={() => setShowDeleteConfirmation(true)}
-              title={t("torrent.remove")}
-            >
-              <TrashIcon width={16} height={16} />
-            </IconButton>
-          </Flex>
         </Flex>
       </Card>
 

@@ -1,86 +1,83 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useState,
-  useMemo,
+  useEffect,
+  useCallback,
 } from "react";
 import { Theme as RadixTheme } from "@radix-ui/themes";
-import { LoadConfig, Initialize } from "../../wailsjs/go/main/App";
 
-type ThemeType = "light" | "dark" | "auto";
+export type ThemeType = "light" | "dark" | "auto";
 
-interface ThemeContextType {
+interface ThemeContextProps {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
+
+// Отдельная функция для получения системной темы
+const getSystemTheme = (): "light" | "dark" => {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [themeState, setThemeState] = useState<ThemeType>("light");
+  const [themeState, setThemeState] = useState<ThemeType>(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return (savedTheme as ThemeType) || "auto";
+  });
 
-  // Загрузка темы при монтировании
+  // Сохраняем тему в localStorage при изменении
   useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const savedConfig = await LoadConfig();
-        if (savedConfig?.theme) {
-          setThemeState(savedConfig.theme as ThemeType);
-        }
-      } catch (error) {
-        console.error("Failed to load theme:", error);
-      }
-    };
-    loadTheme();
+    localStorage.setItem("theme", themeState);
+  }, [themeState]);
+
+  // Мемоизированная функция для установки темы
+  const setTheme = useCallback((theme: ThemeType) => {
+    setThemeState(theme);
   }, []);
 
-  // Обновление темы с сохранением в конфиг
-  const setTheme = async (newTheme: ThemeType) => {
-    try {
-      const currentConfig = await LoadConfig();
-      const updatedConfig = {
-        ...currentConfig,
-        theme: newTheme,
-      };
-      await Initialize(JSON.stringify(updatedConfig));
-      setThemeState(newTheme);
-    } catch (error) {
-      console.error("Failed to save theme:", error);
-      // Всё равно меняем тему локально, даже если сохранение не удалось
-      setThemeState(newTheme);
-    }
-  };
-
-  useEffect(() => {
-    const htmlElement = document.documentElement;
-
+  // Обработчик изменения системной темы
+  const handleSystemThemeChange = useCallback(() => {
+    // Если текущая тема "auto", форсируем обновление
     if (themeState === "auto") {
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      htmlElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    } else {
-      htmlElement.setAttribute("data-theme", themeState);
+      setThemeState("auto");
     }
   }, [themeState]);
 
-  const contextValue = useMemo(
-    () => ({ theme: themeState, setTheme }),
-    [themeState]
-  );
+  // Подписка на изменения системной темы
+  useEffect(() => {
+    if (themeState === "auto") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
 
-  const getSystemTheme = () => {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  };
+      return () => {
+        mediaQuery.removeEventListener("change", handleSystemThemeChange);
+      };
+    }
+  }, [themeState, handleSystemThemeChange]);
 
+  // Определяем текущую тему
   const currentTheme = themeState === "auto" ? getSystemTheme() : themeState;
+
+  // Мемоизируем контекстное значение
+  const contextValue = React.useMemo(
+    () => ({ theme: themeState, setTheme }),
+    [themeState, setTheme]
+  );
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      <RadixTheme appearance={currentTheme}>{children}</RadixTheme>
+      <RadixTheme
+        appearance={currentTheme === "light" ? "light" : "dark"}
+        scaling="100%"
+      >
+        {children}
+      </RadixTheme>
     </ThemeContext.Provider>
   );
 };

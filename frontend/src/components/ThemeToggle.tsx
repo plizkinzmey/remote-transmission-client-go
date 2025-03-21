@@ -2,6 +2,7 @@ import React from "react";
 import styled from "@emotion/styled";
 import { useTheme } from "../contexts/ThemeContext";
 import { useLocalization } from "../contexts/LocalizationContext";
+import { IconButton } from "@radix-ui/themes";
 
 const ToggleContainer = styled.div`
   position: relative;
@@ -17,6 +18,18 @@ const ToggleContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
+
+  .rt-ThemeLight & {
+    --toggle-background: rgba(0, 0, 0, 0.05);
+    --text-secondary: rgba(0, 0, 0, 0.6);
+    --border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .rt-ThemeDark & {
+    --toggle-background: rgba(255, 255, 255, 0.1);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --border-color: rgba(255, 255, 255, 0.1);
+  }
 `;
 
 // Иконки теперь встроены в контейнер и не движутся вместе с кнопкой
@@ -48,12 +61,12 @@ const Slider = styled.div<{ position: "light" | "auto" | "dark" }>`
   }};
   width: 20px; // Уменьшаем с 28px до 20px для соответствия иконкам
   height: 20px; // Уменьшаем с 28px до 20px для соответствия иконкам
-  background: var(--button-active-background);
+  background: var(--accent-color, #3498db);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--button-active-text);
+  color: white;
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 2;
 `;
@@ -146,17 +159,19 @@ export const ThemeToggle: React.FC = () => {
   };
 
   return (
-    <ToggleContainer onClick={nextTheme} title={getTitle()}>
-      <IconContainer>
-        <SunIcon />
-      </IconContainer>
-      <IconContainer>
-        <SystemIcon />
-      </IconContainer>
-      <IconContainer>
-        <MoonIcon />
-      </IconContainer>
-      <Slider position={theme}>{getActiveIcon()}</Slider>
-    </ToggleContainer>
+    <IconButton variant="ghost" className="icon-button">
+      <ToggleContainer onClick={nextTheme} title={getTitle()}>
+        <IconContainer>
+          <SunIcon />
+        </IconContainer>
+        <IconContainer>
+          <SystemIcon />
+        </IconContainer>
+        <IconContainer>
+          <MoonIcon />
+        </IconContainer>
+        <Slider position={theme}>{getActiveIcon()}</Slider>
+      </ToggleContainer>
+    </IconButton>
   );
 };

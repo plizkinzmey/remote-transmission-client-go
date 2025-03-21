@@ -1,236 +1,138 @@
-:root[data-theme="light"] {
-  --background-primary: #ffffff;
-  --background-secondary: #f8f9fa;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --border-color: #e1e4e8;
-
-  /* Header colors */
-  --header-background: #2c3e50;
-  --header-text: #ffffff;
+/* Базовые цвета для обеих тем */
+:root {
+  /* Общие цвета */
+  --accent-color: var(--accent-9);
+  --button-text: white;
+  --error-color: var(--tomato-9);
+  --warning-color: var(--amber-9);
+  --success-color: var(--grass-9);
+  --warning-color-hover: var(--amber-10);
+  --error-color-hover: var(--tomato-10);
+  
+  /* Статусы торрентов */
+  --status-downloading: var(--blue-9);
+  --status-seeding: var(--grass-9);
+  --status-stopped: var(--gray-9);
+  --status-completed: var(--mint-9);
+  --status-checking: var(--amber-9);
+  --status-queued: var(--slate-9);
+  
+  /* Компоненты приложения */
+  --header-background: var(--slate-12);
+  --header-text: white;
   --header-text-secondary: rgba(255, 255, 255, 0.7);
-  --header-border: rgba(255, 255, 255, 0.1);
   --header-button-bg: transparent;
   --header-button-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-button-icon: #ffffff;
+  --header-button-icon: white;
   --header-input-bg: rgba(255, 255, 255, 0.1);
   --header-input-focus-bg: rgba(255, 255, 255, 0.15);
+  
+  /* Стили для TreeView */
+  --tree-line-color: var(--slate-8);
+  --tree-folder-bg: var(--slate-3);
+  --tree-folder-border: var(--blue-9);
+  --tree-progress-bg: var(--slate-5);
+  --tree-progress-fill: var(--blue-9);
+  --tree-checkbox-bg: white;
+  --tree-checkbox-border: var(--slate-6);
+  
+  /* Утилитарные классы */
+  --accent-contrast: white;
+  --text-on-accent: white;
+  --background-tertiary: rgba(0, 0, 0, 0.1);
+}
 
-  /* Button states */
-  --button-disabled-bg: #cbd5e1;
-  --button-disabled-text: #94a3b8;
+/* Переменные для светлой темы встроены в класс .rt-ThemeLight */
+.rt-ThemeLight {
+  /* Карточки торрентов */
+  --card-background: white;
+  --card-border: var(--slate-4);
+  --card-shadow: rgba(0, 0, 0, 0.1);
+  --card-text-primary: var(--slate-12);
+  --card-text-secondary: var(--slate-9);
+  --card-progress-bg: var(--slate-3);
+  --card-ratio-bg: var(--slate-3);
+  
+  /* Действия с торрентами */
+  --action-icon-color: var(--slate-11);
+  --action-icon-hover: var(--slate-12);
+  
+  /* Состояния кнопок */
+  --button-disabled-bg: var(--slate-4);
+  --button-disabled-text: var(--slate-7);
   --header-button-disabled-bg: rgba(255, 255, 255, 0.05);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.4);
-  --error-color-hover: #dc2626;
-
-  /* Other colors */
-  --hover-color: #2980b9;
-  --success-color: #27ae60;
-  --error-color: #e74c3c;
+  
+  /* Цвета для контента */
+  --background-hover: var(--slate-3);
+  --focus-border: var(--accent-9);
+  --background-primary: white;
+  --background-secondary: var(--slate-2);
+  --text-primary: var(--slate-12);
+  --text-secondary: var(--slate-11);
+  --border-color: var(--slate-6);
+  
+  /* Модальные окна */
   --modal-overlay: rgba(0, 0, 0, 0.5);
   --modal-shadow: rgba(0, 0, 0, 0.1);
-
-  /* Button colors */
-  --accent-color: #3498db; /* Акцентный цвет для кнопок */
-  --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
-
-  /* Torrent card colors */
-  --card-background: #ffffff;
-  --card-border: #e5e7eb;
-  --card-shadow: rgba(0, 0, 0, 0.1);
-  --card-text-primary: #2c3e50;
-  --card-text-secondary: #6b7280;
-  --card-progress-bg: #ecf0f1;
-  --card-ratio-bg: #f0f0f0;
-
-  /* Status colors */
-  --status-downloading: #3498db;
-  --status-seeding: #27ae60;
-  --status-stopped: #7f8c8d;
-  --status-completed: #2ecc71;
-  --status-checking: #f39c12;
-  --status-queued: #95a5a6;
-  --warning-color: #f59e0b;
-  --warning-color-hover: #d97706;
-  --text-on-accent: #ffffff;
-
-  /* Torrent Actions */
-  --action-icon-color: #1e293b;
-  --action-icon-hover: #1e293b;
-
-  /* Accent colors */
-  --accent-color-light: rgba(52, 152, 219, 0.2);
-
-  /* TorrentContent specific */
-  --tree-line-color: #94a3b8;
-  --tree-folder-bg: #f8f9fa;
-  --tree-folder-border: #3498db;
-  --tree-file-hover: #f1f3f5;
-  --tree-progress-bg: #ecf0f1;
-  --tree-progress-fill: #3498db;
-  --tree-checkbox-bg: #ffffff;
-  --tree-checkbox-border: #cbd5e1;
-
+  
   /* Theme Toggle */
   --toggle-background: rgba(0, 0, 0, 0.05);
   --button-active-background: var(--accent-color);
-  --button-active-text: var(--accent-contrast);
+  --button-active-text: white;
   --button-hover-background: rgba(0, 0, 0, 0.03);
-
-  /* Settings Tabs */
-  --sidebar-background: var(--background-secondary);
-  --tab-active-background: var(--accent-color);
-  --tab-active-text: var(--accent-contrast);
-  --tab-hover-background: rgba(0, 0, 0, 0.03);
-  --input-background: var(--background-primary);
-  --focus-border: var(--accent-color);
-  --accent-contrast: #ffffff;
-
-  /* Radix UI Theme Integration */
-  --header-icon-color: var(--header-button-icon);
+  
+  /* Дополнительные настройки для TreeView */
+  --tree-file-hover: var(--slate-3);
+  --background-tertiary: rgba(0, 0, 0, 0.05);
 }
 
-:root[data-theme="dark"] {
-  --background-primary: #1a1a1a;
-  --background-secondary: #2d2d2d;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --border-color: #404040;
-
-  /* Header colors */
-  --header-background: #000000;
-  --header-text: #ffffff;
-  --header-text-secondary: rgba(255, 255, 255, 0.7);
-  --header-border: rgba(255, 255, 255, 0.1);
-  --header-button-bg: transparent;
-  --header-button-hover-bg: rgba(255, 255, 255, 0.1);
-  --header-button-icon: var(--text-primary);
-  --header-input-bg: rgba(255, 255, 255, 0.05);
-  --header-input-focus-bg: rgba(255, 255, 255, 0.1);
-
-  /* Other colors */
-  --hover-color: #2980b9;
-  --success-color: #27ae60;
-  --error-color: #e74c3c;
-  --modal-overlay: rgba(0, 0, 0, 0.7);
-  --modal-shadow: rgba(0, 0, 0, 0.3);
-
-  /* Button states */
-  --button-disabled-bg: #374151;
-  --button-disabled-text: #6b7280;
+/* Переменные для темной темы встроены в класс .rt-ThemeDark */
+.rt-ThemeDark {
+  /* Карточки торрентов */
+  --card-background: var(--slate-3);
+  --card-border: var(--slate-6);
+  --card-shadow: rgba(0, 0, 0, 0.3);
+  --card-text-primary: white;
+  --card-text-secondary: var(--slate-9);
+  --card-progress-bg: var(--slate-6);
+  --card-ratio-bg: var(--slate-6);
+  
+  /* Действия с торрентами */
+  --action-icon-color: var(--slate-9);
+  --action-icon-hover: var(--slate-8);
+  
+  /* Состояния кнопок */
+  --button-disabled-bg: var(--slate-6);
+  --button-disabled-text: var(--slate-9);
   --header-button-disabled-bg: rgba(255, 255, 255, 0.02);
   --header-button-disabled-icon: rgba(255, 255, 255, 0.3);
-  --error-color-hover: #b91c1c;
-
-  /* Button colors */
-  --accent-color: #3498db; /* Акцентный цвет для кнопок */
-  --button-text: #ffffff;  /* белый текст для кнопок на цветном фоне */
-
-  /* Torrent card colors */
-  --card-background: #2d2d2d;
-  --card-border: #404040;
-  --card-shadow: rgba(0, 0, 0, 0.3);
-  --card-text-primary: #ffffff;
-  --card-text-secondary: #a0a0a0;
-  --card-progress-bg: #404040;
-  --card-ratio-bg: #404040;
-
-  /* Status colors - немного ярче для темной темы */
-  --status-downloading: #3498db;
-  --status-seeding: #2ecc71;
-  --status-stopped: #95a5a6;
-  --status-completed: #27ae60;
-  --status-checking: #f39c12;
-  --status-queued: #bdc3c7;
-  --warning-color: #fbbf24;
-  --warning-color-hover: #f59e0b;
-  --text-on-accent: #ffffff;
-
-  /* Torrent Actions */
-  --action-icon-color: #94a3b8;
-  --action-icon-hover: #cbd5e1;
-
-  /* Accent colors */
-  --accent-color-light: rgba(52, 152, 219, 0.15);
-
-  /* TorrentContent specific */
-  --tree-line-color: #475569;
-  --tree-folder-bg: #2d2d2d;
-  --tree-folder-border: #3498db;
-  --tree-file-hover: #363636;
-  --tree-progress-bg: #404040;
-  --tree-progress-fill: #3498db;
-  --tree-checkbox-bg: #2d2d2d;
-  --tree-checkbox-border: #4a5568;
-
+  
+  /* Цвета для контента */
+  --background-hover: var(--slate-5);
+  --focus-border: var(--accent-9);
+  --background-primary: var(--slate-1);
+  --background-secondary: var(--slate-3);
+  --text-primary: white;
+  --text-secondary: var(--slate-9);
+  --border-color: var(--slate-6);
+  
+  /* Модальные окна */
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+  --modal-shadow: rgba(0, 0, 0, 0.3);
+  
   /* Theme Toggle */
   --toggle-background: rgba(255, 255, 255, 0.1);
   --button-active-background: var(--accent-color);
-  --button-active-text: var(--accent-contrast);
+  --button-active-text: white;
   --button-hover-background: rgba(255, 255, 255, 0.05);
-
-  /* Settings Tabs */
-  --sidebar-background: var(--background-secondary);
-  --tab-active-background: var(--accent-color);
-  --tab-active-text: var(--accent-contrast);
-  --tab-hover-background: rgba(255, 255, 255, 0.05);
-  --input-background: var(--background-primary);
-  --focus-border: var(--accent-color);
-  --accent-contrast: #ffffff;
-
-  /* Radix UI Theme Integration */
-  --header-icon-color: var(--header-button-icon);
-}
-
-:root {
-  /* TorrentContent */
-  --background-tertiary: rgba(0, 0, 0, 0.1);
-  --border-color: rgba(0, 0, 0, 0.1);
-  --error-color: #dc3545;
-
-  /* Theme Toggle */
-  --toggle-background: rgba(0, 0, 0, 0.05);
-  --button-active-background: var(--accent-color);
-  --button-active-text: #ffffff;
-  --text-secondary: rgba(0, 0, 0, 0.6);
-  --button-hover-background: var(--background-hover);
-
-  /* Settings Tabs */
-  --sidebar-background: var(--background-secondary);
-  --tab-active-background: var(--accent-color);
-  --tab-active-text: var(--accent-contrast);
-  --tab-hover-background: var(--background-hover);
-  --input-background: var(--background-primary);
-  --focus-border: var(--accent-color);
-  --success-color: #27ae60;
-  --error-color: #e74c3c;
-  --accent-contrast: #ffffff;
-}
-
-[data-theme="dark"] {
-  /* TorrentContent */
+  
+  /* Дополнительные настройки для TreeView */
+  --tree-file-hover: var(--slate-4);
   --background-tertiary: rgba(255, 255, 255, 0.1);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --error-color: #ff4d4d;
-
-  /* Theme Toggle */
-  --toggle-background: rgba(255, 255, 255, 0.1);
-  --button-active-background: var(--accent-color);
-  --button-active-text: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  --button-hover-background: rgba(255, 255, 255, 0.05);
-
-  /* Settings Tabs */
-  --sidebar-background: var(--background-secondary);
-  --tab-active-background: var(--accent-color);
-  --tab-active-text: var(--accent-contrast);
-  --tab-hover-background: rgba(255, 255, 255, 0.05);
-  --input-background: var(--background-primary);
-  --focus-border: var(--accent-color);
-  --success-color: #2ecc71;
-  --error-color: #e74c3c;
 }
 
+/* Утилитарные классы */
 .icon-snail {
   width: 20px;
   height: 20px;
@@ -242,18 +144,22 @@
 
 .button-active {
   background-color: var(--accent-color);
-  color: var(--text-on-accent);
+  color: var(--button-text);
 }
 
 .status-slow {
   color: var(--warning-color);
 }
 
-/* Global Radix Theme Variables */
-.rt-ThemeLight {
-  --header-icon-color: var(--header-button-icon);
+/* Стили для переключателя темы */
+:global(.header-icon) {
+  color: var(--header-button-icon);
 }
 
-.rt-ThemeDark {
-  --header-icon-color: var(--header-button-icon);
+:global(.icon-button) {
+  color: var(--header-button-icon) !important;
+}
+
+:global(.icon-button:hover) {
+  background-color: var(--header-button-hover-bg) !important;
 }

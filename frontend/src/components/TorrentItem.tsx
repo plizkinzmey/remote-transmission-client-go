@@ -189,6 +189,26 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     }
   };
 
+  // Функция для определения цвета прогресс-бара
+  const getProgressColor = (
+    status: string
+  ): "blue" | "green" | "gray" | "amber" | "purple" => {
+    switch (status) {
+      case "downloading":
+        return "blue";
+      case "seeding":
+        return "green";
+      case "completed":
+        return "green";
+      case "checking":
+        return "amber";
+      case "queued":
+        return "purple";
+      default:
+        return "gray";
+    }
+  };
+
   return (
     <>
       <Card
@@ -244,9 +264,13 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               </Text>
               <Text size="1">{progress.toFixed(1)}%</Text>
             </Flex>
-
-            <Progress value={progress} style={{ marginBottom: "12px" }} />
-
+            <Progress
+              size="1"
+              variant="surface"
+              value={progress}
+              style={{ marginBottom: "12px" }}
+              color={getProgressColor(status)}
+            />
             <Flex wrap="wrap" gap="3">
               <Flex gap="1" align="center">
                 <Text size="1" weight="medium">

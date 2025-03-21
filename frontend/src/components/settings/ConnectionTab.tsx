@@ -95,24 +95,22 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
         </Box>
       </Flex>
 
-      <Flex direction="column" gap="2" mt="2">
-        <Box>
-          <Button
-            size="1"
-            variant="soft"
-            onClick={handleTestConnection}
-            disabled={isTestingConnection}
-          >
-            {isTestingConnection
-              ? t("settings.testing")
-              : t("settings.testConnection")}
-          </Button>
-        </Box>
+      <Flex align="center" gap="3" mt="2">
+        <Button
+          size="1"
+          variant="soft"
+          onClick={handleTestConnection}
+          disabled={isTestingConnection}
+        >
+          {isTestingConnection
+            ? t("settings.testing")
+            : t("settings.testConnection")}
+        </Button>
+
         {connectionStatus !== "none" && (
           <Text
             size="1"
             color={connectionStatus === "success" ? "green" : "red"}
-            mb="2"
           >
             {statusMessage}
           </Text>

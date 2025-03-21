@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Flex,
+  Text,
+  Heading,
+  ScrollArea,
+  IconButton,
+  Checkbox as RadixCheckbox,
+} from "@radix-ui/themes";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
@@ -7,8 +16,6 @@ import {
   FolderIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
-import styled from "@emotion/styled";
-import styles from "../styles/TorrentContent.module.css";
 import { GetTorrentFiles, SetFilesWanted } from "../../wailsjs/go/main/App";
 
 interface TorrentContentProps {
@@ -39,188 +46,6 @@ interface FileNode {
   expanded?: boolean;
   indeterminate?: boolean; // Добавляем новое свойство
 }
-
-// Styled components
-const Container = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--background-primary);
-  z-index: 1000;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
-`;
-
-const Title = styled.h2`
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: calc(100% - 50px);
-`;
-
-const Content = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  background-color: var(--background-primary);
-  color: var(--text-primary);
-`;
-
-const FileTree = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const FileNodeContainer = styled.div<{ depth: number; isDirectory: boolean }>`
-  margin-left: ${(props) => props.depth * 24}px;
-  margin-bottom: 2px;
-`;
-
-const FileNodeContent = styled.div<{ isDirectory: boolean }>`
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) 120px 100px;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-`;
-
-const FileChildren = styled.div<{ isExpanded: boolean }>`
-  display: ${(props) => (props.isExpanded ? "block" : "none")};
-  margin-left: 27px;
-`;
-
-const ExpandButton = styled.button<{ isExpanded: boolean }>`
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  transform: rotate(${(props) => (props.isExpanded ? "0deg" : "-90deg")});
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const IconWrapper = styled.div<{ isDirectory: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: ${(props) =>
-    props.isDirectory ? "var(--text-primary)" : "var(--text-secondary)"};
-
-  svg {
-    width: 20px;
-    height: 20px;
-  }
-`;
-
-const Checkbox = styled.input`
-  margin: 0;
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--accent-color);
-  border: 1px solid var(--tree-checkbox-border);
-  background-color: var(--tree-checkbox-bg);
-
-  &:indeterminate {
-    accent-color: var(--accent-color);
-  }
-`;
-
-const FileName = styled.span`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding-right: 8px;
-  color: var(--text-primary);
-`;
-
-const FileProgress = styled.div<{ progress: number }>`
-  width: 100px;
-  height: 4px;
-  background-color: var(--tree-progress-bg);
-  border-radius: 2px;
-  position: relative;
-
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: ${(props) => props.progress}%;
-    background-color: var(--tree-progress-fill);
-    border-radius: 2px;
-  }
-`;
-
-const FileSize = styled.span`
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  text-align: right;
-  white-space: nowrap;
-`;
-
-const SelectAllContainer = styled.div`
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background-color: var(--background-secondary);
-  border-radius: 4px;
-`;
-
-const SelectAllLabel = styled.span`
-  margin-left: 8px;
-  color: var(--text-primary);
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  svg {
-    width: 24px;
-    height: 24px;
-  }
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
 
 const processTreeNodes = (nodes: FileNode[]): FileNode[] => {
   return nodes.map((node) => {
@@ -525,95 +350,218 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
   const renderFileNode = (node: FileNode, depth: number = 0) => {
     return (
-      <FileNodeContainer
+      <Box
         key={node.Path}
-        depth={depth}
-        isDirectory={!!node.isDirectory}
+        style={{
+          marginLeft: `${depth * 24}px`,
+          marginBottom: "2px",
+        }}
       >
-        <FileNodeContent isDirectory={!!node.isDirectory}>
+        <Flex
+          align="center"
+          gap="2"
+          style={{
+            padding: "8px",
+            borderRadius: "4px",
+            backgroundColor: node.isDirectory
+              ? "var(--tree-folder-bg)"
+              : "transparent",
+          }}
+          className="file-node-content"
+        >
           {node.isDirectory ? (
-            <ExpandButton
-              isExpanded={!!node.expanded}
-              onClick={() => toggleExpand(node)}
-              aria-label={node.expanded ? "Свернуть" : "Развернуть"}
+            <Box
+              style={{
+                width: "24px",
+                display: "flex",
+                justifyContent: "center",
+              }}
             >
-              <ChevronDownIcon />
-            </ExpandButton>
+              <IconButton
+                size="1"
+                variant="ghost"
+                onClick={() => toggleExpand(node)}
+                aria-label={node.expanded ? "Свернуть" : "Развернуть"}
+                style={{
+                  transform: node.expanded ? "rotate(0deg)" : "rotate(-90deg)",
+                  transition: "transform 0.2s",
+                }}
+              >
+                <ChevronDownIcon width={16} height={16} />
+              </IconButton>
+            </Box>
           ) : (
-            <div style={{ width: "24px" }} />
+            <Box style={{ width: "24px" }} />
           )}
 
-          <IconWrapper isDirectory={!!node.isDirectory}>
-            {node.isDirectory ? <FolderIcon /> : <DocumentIcon />}
-          </IconWrapper>
+          <Box
+            style={{
+              width: "24px",
+              display: "flex",
+              justifyContent: "center",
+              color: node.isDirectory
+                ? "var(--text-primary)"
+                : "var(--text-secondary)",
+            }}
+          >
+            {node.isDirectory ? (
+              <FolderIcon width={20} height={20} />
+            ) : (
+              <DocumentIcon width={20} height={20} />
+            )}
+          </Box>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Checkbox
-              type="checkbox"
-              checked={node.Wanted}
-              ref={(el) => {
-                if (el) {
-                  el.indeterminate = !!node.indeterminate;
-                }
+          <Flex align="center" gap="2" style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ display: "flex", alignItems: "center" }}>
+              <RadixCheckbox
+                checked={node.Wanted}
+                onCheckedChange={(checked) => toggleNode(node, !!checked)}
+                ref={(el) => {
+                  if (el && node.indeterminate) {
+                    // Используем класс для стилизации вместо прямого изменения style
+                    el.classList.add("indeterminate-checkbox");
+                  }
+                }}
+                className={node.indeterminate ? "indeterminate-checkbox" : ""}
+              />
+            </Box>
+
+            <Text
+              size="1"
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
               }}
-              onChange={(e) => toggleNode(node, e.target.checked)}
-            />
-            <FileName title={node.Name}>{node.Name}</FileName>
-          </div>
+              title={node.Name}
+            >
+              {node.Name}
+            </Text>
+          </Flex>
 
-          <FileProgress
-            progress={node.Progress ?? 0}
-            title={`${(node.Progress ?? 0).toFixed(1)}%`}
-          />
-          <FileSize>{formatFileSize(node.Size)}</FileSize>
-        </FileNodeContent>
+          <Box style={{ width: "100px" }}>
+            <Box
+              style={{
+                width: "100px",
+                height: "4px",
+                backgroundColor: "var(--tree-progress-bg)",
+                borderRadius: "2px",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <Box
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  height: "100%",
+                  width: `${node.Progress ?? 0}%`,
+                  backgroundColor: "var(--tree-progress-fill)",
+                  borderRadius: "2px",
+                }}
+              />
+            </Box>
+          </Box>
 
-        {node.isDirectory && node.children && (
-          <FileChildren isExpanded={!!node.expanded}>
+          <Text
+            size="1"
+            color="gray"
+            style={{ width: "100px", textAlign: "right", whiteSpace: "nowrap" }}
+          >
+            {formatFileSize(node.Size)}
+          </Text>
+        </Flex>
+
+        {node.isDirectory && node.children && node.expanded && (
+          <Box>
             {node.children.map((child) => renderFileNode(child, depth + 1))}
-          </FileChildren>
+          </Box>
         )}
-      </FileNodeContainer>
+      </Box>
     );
   };
 
   const renderContent = () => {
     if (loading) {
       return (
-        <div className={styles["loading-container"]}>
-          <LoadingSpinner size="large" className={styles["loading-spinner"]} />
-          <div className={styles["loading-text"]}>
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          style={{ height: "100%" }}
+        >
+          <LoadingSpinner size="large" />
+          <Text size="2" color="gray" style={{ marginTop: "16px" }}>
             {t("torrent.loadingFiles")}
-          </div>
-        </div>
+          </Text>
+        </Flex>
       );
     }
 
     if (error) {
-      return <div className={styles["error-message"]}>{error}</div>;
+      return (
+        <Box
+          style={{
+            padding: "16px",
+            borderRadius: "6px",
+            backgroundColor: "var(--error-background)",
+            color: "var(--error-color)",
+          }}
+        >
+          <Text>{error}</Text>
+        </Box>
+      );
     }
 
     return (
-      <div>
-        <SelectAllContainer>
-          <Checkbox
-            type="checkbox"
+      <Box>
+        <Flex
+          align="center"
+          gap="2"
+          style={{
+            padding: "12px",
+            borderRadius: "6px",
+            backgroundColor: "var(--background-secondary)",
+            marginBottom: "16px",
+          }}
+        >
+          <RadixCheckbox
             checked={allChecked}
+            onCheckedChange={toggleAll}
             ref={(el) => {
-              if (el) {
-                el.indeterminate = indeterminate;
+              if (el && indeterminate) {
+                el.classList.add("indeterminate-checkbox");
               }
             }}
-            onChange={toggleAll}
+            className={indeterminate ? "indeterminate-checkbox" : ""}
           />
-          <SelectAllLabel>{t("torrent.selectAll")}</SelectAllLabel>
-        </SelectAllContainer>
-        <FileTree>{fileTree.map((node) => renderFileNode(node))}</FileTree>
-      </div>
+          <Text size="2">{t("torrent.selectAll")}</Text>
+        </Flex>
+
+        <Box>{fileTree.map((node) => renderFileNode(node))}</Box>
+      </Box>
     );
   };
 
   useEffect(() => {
+    // Добавляем CSS для стилизации индетерминированных чекбоксов
+    if (!document.getElementById("indeterminate-checkbox-style")) {
+      const style = document.createElement("style");
+      style.id = "indeterminate-checkbox-style";
+      style.textContent = `
+        .indeterminate-checkbox [data-state="checked"] {
+          background-color: var(--accent-color);
+          opacity: 0.7;
+        }
+        .file-node-content:hover {
+          background-color: var(--tree-file-hover);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     const loadFiles = async () => {
       try {
         setLoading(true);
@@ -629,19 +577,60 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
         setLoading(false);
       }
     };
-
     loadFiles();
-  }, [id]);
+  }, [id, t]);
 
   return (
-    <Container>
-      <Header>
-        <Title>{name}</Title>
-        <CloseButton onClick={onClose} aria-label={t("common.close")}>
-          <XMarkIcon />
-        </CloseButton>
-      </Header>
-      <Content>{renderContent()}</Content>
-    </Container>
+    <Box
+      position="fixed"
+      top="0"
+      bottom="0"
+      left="0"
+      right="0"
+      style={{
+        backgroundColor: "var(--background-primary)",
+        zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Flex
+        justify="between"
+        align="center"
+        px="5"
+        py="3"
+        style={{
+          borderBottom: "1px solid var(--border-color)",
+        }}
+      >
+        <Heading
+          size="4"
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {name}
+        </Heading>
+        <IconButton
+          variant="ghost"
+          size="2"
+          onClick={onClose}
+          aria-label={t("common.close")}
+        >
+          <XMarkIcon width={20} height={20} />
+        </IconButton>
+      </Flex>
+
+      <ScrollArea
+        style={{
+          flex: 1,
+          padding: "20px",
+        }}
+      >
+        {renderContent()}
+      </ScrollArea>
+    </Box>
   );
 };

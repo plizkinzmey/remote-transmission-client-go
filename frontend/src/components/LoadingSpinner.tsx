@@ -1,41 +1,16 @@
 import React from "react";
-import styled from "@emotion/styled";
+import { Flex } from "@radix-ui/themes";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
-const SpinnerWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const StyledSpinner = styled(ArrowPathIcon)`
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-  color: var(--text-primary);
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const LoadingText = styled.span`
-  color: var(--text-secondary);
-  margin-left: 8px;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: default;
-`;
-
-export const LoadingSpinner: React.FC<{
+interface LoadingSpinnerProps {
   className?: string;
   size?: "small" | "medium" | "large";
-}> = ({ className, size = "medium" }) => {
+}
+
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  className,
+  size = "medium",
+}) => {
   const getSize = () => {
     switch (size) {
       case "small":
@@ -48,11 +23,32 @@ export const LoadingSpinner: React.FC<{
   };
 
   return (
-    <SpinnerWrapper>
-      <StyledSpinner
-        className={className}
-        style={{ width: getSize(), height: getSize() }}
+    <Flex justify="center" align="center" className={className}>
+      <ArrowPathIcon
+        width={getSize()}
+        height={getSize()}
+        style={{
+          animation: "spin 1s linear infinite",
+          color: "var(--text-primary)",
+        }}
       />
-    </SpinnerWrapper>
+    </Flex>
   );
 };
+
+// Добавляем глобальную анимацию вращения если её еще нет в CSS
+if (!document.querySelector("#spin-keyframes")) {
+  const style = document.createElement("style");
+  style.id = "spin-keyframes";
+  style.textContent = `
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}

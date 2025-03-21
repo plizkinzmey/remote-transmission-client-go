@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Card, Flex, Box, Text, Progress, Checkbox } from "@radix-ui/themes";
 import { Button } from "./Button";
 import { DeleteDialog } from "./DeleteDialog";
 import { TorrentContent } from "./TorrentContent";
@@ -170,107 +171,171 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     return value < 0 ? 0 : value;
   };
 
+  // Функция для определения цвета статуса
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "downloading":
+        return "var(--status-downloading)";
+      case "seeding":
+        return "var(--status-seeding)";
+      case "completed":
+        return "var(--status-completed)";
+      case "checking":
+        return "var(--status-checking)";
+      case "queued":
+        return "var(--status-queued)";
+      default:
+        return "var(--status-stopped)";
+    }
+  };
+
   return (
     <>
-      <div className={styles.container} data-status={status}>
-        <label className={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => onSelect(id)}
-            aria-label={t("torrents.selectTorrent", name)}
-          />
-        </label>
+      <Card
+        variant="surface"
+        style={{
+          marginBottom: "8px",
+          borderLeft: `4px solid ${getStatusColor(status)}`,
+          padding: "12px",
+        }}
+      >
+        <Flex gap="3" align="start">
+          <Box pt="1">
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onSelect(id)}
+              aria-label={t("torrents.selectTorrent", name)}
+            />
+          </Box>
 
-        <div className={styles.info}>
-          <div className={styles.topRow}>
-            <h3 className={styles.name} title={name}>
-              {name}
-            </h3>
-            <div
-              className={styles.ratioContainer}
-              title={t("torrent.uploadRatio")}
-            >
-              <span className={styles.ratio}>
-                {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
-              </span>
-            </div>
-          </div>
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <Flex justify="between" align="start" mb="2">
+              <Text
+                as="span"
+                size="2"
+                weight="medium"
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                }}
+                title={name}
+              >
+                {name}
+              </Text>
 
-          <div className={styles.statusContainer}>
-            <span className={getStatusClassName(status)}>
-              {getStatusText(status)}
-            </span>
-            <span className={styles.progressPercentage}>
-              {progress.toFixed(1)}%
-            </span>
-          </div>
+              <Box
+                style={{
+                  background: "var(--card-ratio-bg)",
+                  borderRadius: "12px",
+                  padding: "2px 8px",
+                }}
+              >
+                <Text size="1" title={t("torrent.uploadRatio")}>
+                  {t("torrent.ratio")}: {normalizeValue(uploadRatio).toFixed(2)}
+                </Text>
+              </Box>
+            </Flex>
 
-          <div className={styles.progressContainer}>
-            <progress className={styles.progress} value={progress} max="100" />
-          </div>
+            <Flex gap="2" align="center" mb="2">
+              <Text size="1" style={{ color: getStatusColor(status) }}>
+                {getStatusText(status)}
+              </Text>
+              <Text size="1">{progress.toFixed(1)}%</Text>
+            </Flex>
 
-          <div className={styles.statsContainer}>
-            <span className={styles.size} style={{ pointerEvents: "none" }}>
-              <span className={styles.paramName}>{t("torrent.size")}:</span>{" "}
-              {sizeFormatted}
-            </span>
-            <span className={styles.speed} style={{ pointerEvents: "none" }}>
-              <span className={styles.paramName}>{t("torrent.speed")}:</span>{" "}
-              <ArrowDownIcon
-                className={`${styles.speedIcon} ${styles.downloadIcon}`}
-              />{" "}
-              {downloadSpeedFormatted}{" "}
-              <ArrowUpIcon
-                className={`${styles.speedIcon} ${styles.uploadIcon}`}
-              />{" "}
-              {uploadSpeedFormatted}
-            </span>
-            <span className={styles.seeds} style={{ pointerEvents: "none" }}>
-              <span className={styles.paramName}>{t("torrent.seeds")}:</span>{" "}
-              {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
-            </span>
-            <span className={styles.peers} style={{ pointerEvents: "none" }}>
-              <span className={styles.paramName}>{t("torrent.peers")}:</span>{" "}
-              {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
-            </span>
-            <span className={styles.uploaded} style={{ pointerEvents: "none" }}>
-              <span className={styles.paramName}>{t("torrent.uploaded")}:</span>{" "}
-              {uploadedFormatted}
-            </span>
-          </div>
-        </div>
+            <Progress value={progress} style={{ marginBottom: "12px" }} />
 
-        <div className={styles.actions}>
-          <Button
-            variant="icon"
-            onClick={() => setShowContent(true)}
-            title={t("torrent.viewContent")}
-          >
-            <FolderIcon className={styles.icon} />
-          </Button>
-          {renderActionButton()}
-          {onSetSpeedLimit && (
+            <Flex wrap="wrap" gap="3">
+              <Flex gap="1" align="center">
+                <Text size="1" weight="medium">
+                  {t("torrent.size")}:
+                </Text>
+                <Text size="1">{sizeFormatted}</Text>
+              </Flex>
+
+              <Flex gap="1" align="center">
+                <Text size="1" weight="medium">
+                  {t("torrent.speed")}:
+                </Text>
+                <Flex gap="1" align="center">
+                  <ArrowDownIcon
+                    width={14}
+                    height={14}
+                    style={{ color: "var(--download-color)" }}
+                  />
+                  <Text size="1">{downloadSpeedFormatted}</Text>
+                  <ArrowUpIcon
+                    width={14}
+                    height={14}
+                    style={{ color: "var(--seed-color)" }}
+                  />
+                  <Text size="1">{uploadSpeedFormatted}</Text>
+                </Flex>
+              </Flex>
+
+              <Flex gap="1" align="center">
+                <Text size="1" weight="medium">
+                  {t("torrent.seeds")}:
+                </Text>
+                <Text size="1">
+                  {normalizeValue(seedsConnected)}/{normalizeValue(seedsTotal)}
+                </Text>
+              </Flex>
+
+              <Flex gap="1" align="center">
+                <Text size="1" weight="medium">
+                  {t("torrent.peers")}:
+                </Text>
+                <Text size="1">
+                  {normalizeValue(peersConnected)}/{normalizeValue(peersTotal)}
+                </Text>
+              </Flex>
+
+              <Flex gap="1" align="center">
+                <Text size="1" weight="medium">
+                  {t("torrent.uploaded")}:
+                </Text>
+                <Text size="1">{uploadedFormatted}</Text>
+              </Flex>
+            </Flex>
+          </Box>
+
+          <Flex direction="column" gap="2">
             <Button
               variant="icon"
-              onClick={() => onSetSpeedLimit(id, !isSlowMode)}
-              title={t(
-                isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
-              )}
-              data-active={isSlowMode}
+              onClick={() => setShowContent(true)}
+              title={t("torrent.viewContent")}
             >
-              <SnailIcon className={styles.icon} />
+              <FolderIcon className={styles.icon} />
             </Button>
-          )}
-          <Button
-            variant="icon"
-            onClick={() => setShowDeleteConfirmation(true)}
-            title={t("torrent.remove")}
-          >
-            <TrashIcon className={styles.icon} />
-          </Button>
-        </div>
-      </div>
+
+            {renderActionButton()}
+
+            {onSetSpeedLimit && (
+              <Button
+                variant="icon"
+                onClick={() => onSetSpeedLimit(id, !isSlowMode)}
+                title={t(
+                  isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed"
+                )}
+                active={isSlowMode}
+              >
+                <SnailIcon />
+              </Button>
+            )}
+
+            <Button
+              variant="icon"
+              onClick={() => setShowDeleteConfirmation(true)}
+              title={t("torrent.remove")}
+            >
+              <TrashIcon className={styles.icon} />
+            </Button>
+          </Flex>
+        </Flex>
+      </Card>
 
       {/* Диалог подтверждения удаления */}
       <DeleteDialog

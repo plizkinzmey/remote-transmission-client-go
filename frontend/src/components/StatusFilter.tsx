@@ -16,7 +16,6 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
   const { t } = useLocalization();
 
   const statuses = [
-    { id: null, label: "all" },
     { id: "downloading", label: "downloading" },
     { id: "seeding", label: "seeding" },
     { id: "stopped", label: "stopped" },
@@ -26,15 +25,20 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
     { id: "slow", label: "slow" },
   ];
 
+  const handleFilterClick = (id: string) => {
+    onStatusChange(selectedStatus === id ? null : id);
+  };
+
   return (
-    <Flex gap="1" align="center">
+    <Flex gap="3" align="center" style={{ margin: "0 8px" }}>
       {statuses.map(({ id, label }) => (
         <Button
           key={label}
           size="1"
           variant={selectedStatus === id ? "soft" : "ghost"}
           disabled={hasNoTorrents}
-          onClick={() => onStatusChange(id)}
+          onClick={() => handleFilterClick(id)}
+          style={{ minWidth: "auto", padding: "0 12px" }}
         >
           {t(`filters.${label}`)}
         </Button>

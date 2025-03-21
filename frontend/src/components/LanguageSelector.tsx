@@ -1,12 +1,12 @@
 import React from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import ReactCountryFlag from "react-country-flag";
+import { CircleFlag } from "react-circle-flags";
 import styled from "@emotion/styled";
 import { useLocalization } from "../contexts/LocalizationContext";
 
 const languageToCountryCode: Record<string, string> = {
-  en: "GB",
-  ru: "RU",
+  en: "gb",
+  ru: "ru",
 };
 
 const StyledTrigger = styled(DropdownMenu.Trigger)`
@@ -18,7 +18,7 @@ const StyledTrigger = styled(DropdownMenu.Trigger)`
   padding: 8px;
   margin: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 50%;
   background-color: transparent;
   color: var(--header-button-icon);
   cursor: pointer;
@@ -26,7 +26,7 @@ const StyledTrigger = styled(DropdownMenu.Trigger)`
   box-sizing: border-box;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--header-button-hover-bg);
   }
 
   &:focus {
@@ -34,7 +34,7 @@ const StyledTrigger = styled(DropdownMenu.Trigger)`
   }
 
   &:active {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: var(--header-button-hover-bg);
   }
 `;
 
@@ -105,10 +105,9 @@ export const LanguageSelector: React.FC = () => {
   return (
     <DropdownMenu.Root modal={false}>
       <StyledTrigger aria-label="Select language">
-        <ReactCountryFlag
-          countryCode={languageToCountryCode[currentLanguage] || "GB"}
-          svg
-          style={{ width: "20px", height: "20px" }}
+        <CircleFlag
+          countryCode={languageToCountryCode[currentLanguage] || "gb"}
+          height="20"
         />
       </StyledTrigger>
 
@@ -116,10 +115,9 @@ export const LanguageSelector: React.FC = () => {
         <StyledContent align="end" sideOffset={5} className="dropdown-content">
           {availableLanguages.map((lang) => (
             <StyledItem key={lang.code} onSelect={() => setLanguage(lang.code)}>
-              <ReactCountryFlag
-                countryCode={languageToCountryCode[lang.code] || "GB"}
-                svg
-                style={{ width: "20px", height: "20px" }}
+              <CircleFlag
+                countryCode={languageToCountryCode[lang.code] || "gb"}
+                height="20"
                 className="flag"
               />
               <span className="text">{lang.name}</span>

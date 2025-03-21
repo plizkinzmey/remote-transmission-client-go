@@ -19,22 +19,24 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
     { id: null, label: "all" },
     { id: "downloading", label: "downloading" },
     { id: "seeding", label: "seeding" },
-    { id: "paused", label: "paused" },
+    { id: "stopped", label: "stopped" },
+    { id: "checking", label: "checking" },
+    { id: "queued", label: "queued" },
     { id: "completed", label: "completed" },
     { id: "slow", label: "slow" },
   ];
 
   return (
-    <Flex gap="2" align="center">
+    <Flex gap="1" align="center">
       {statuses.map(({ id, label }) => (
         <Button
           key={label}
           size="1"
-          variant={selectedStatus === id ? "solid" : "ghost"}
-          onClick={() => onStatusChange(id)}
+          variant={selectedStatus === id ? "soft" : "ghost"}
           disabled={hasNoTorrents}
+          onClick={() => onStatusChange(id)}
         >
-          {t(`status.${label}`)}
+          {t(`filters.${label}`)}
         </Button>
       ))}
     </Flex>

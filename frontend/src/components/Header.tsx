@@ -82,8 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const newTerm = event.target.value;
-      setSearchTerm(newTerm);
+      setSearchTerm(event.target.value);
     },
     [setSearchTerm]
   );
@@ -93,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
       <Flex className={styles.controlPanel} justify="between" align="center">
         <Flex gap="3" align="center">
           <TextField.Root
-            size="2"
+            size="1"
             style={{ width: "200px" }}
             placeholder={t("torrents.search")}
             value={searchTerm}
@@ -178,36 +177,41 @@ export const Header: React.FC<HeaderProps> = ({
       </Flex>
 
       <Box className={styles.selectAllContainer}>
-        <Flex align="center" gap="2">
-          <Checkbox
-            checked={
-              selectedTorrents.size > 0 &&
-              selectedTorrents.size === filteredTorrents.length
-            }
-            onCheckedChange={onSelectAll}
-            disabled={filteredTorrents.length === 0}
-          />
-          <Text size="2">
-            {selectedTorrents.size > 0
-              ? t(
-                  "torrents.selected",
-                  selectedTorrents.size,
-                  filteredTorrents.length
-                )
-              : t("torrents.selectAll")}
-          </Text>
-        </Flex>
+        <Flex gap="4" align="center">
+          <Flex align="center" gap="2">
+            <Checkbox
+              size="1"
+              checked={
+                selectedTorrents.size > 0 &&
+                selectedTorrents.size === filteredTorrents.length
+              }
+              onCheckedChange={onSelectAll}
+              disabled={filteredTorrents.length === 0}
+            />
+            <Text size="1">
+              {selectedTorrents.size > 0
+                ? t(
+                    "torrents.selected",
+                    String(selectedTorrents.size),
+                    String(filteredTorrents.length)
+                  )
+                : t("torrents.selectAll")}
+            </Text>
+          </Flex>
 
-        <StatusFilter
-          selectedStatus={statusFilter}
-          onStatusChange={onStatusFilterChange}
-          hasNoTorrents={torrents.length === 0}
-        />
+          <StatusFilter
+            selectedStatus={statusFilter}
+            onStatusChange={onStatusFilterChange}
+            hasNoTorrents={torrents.length === 0}
+          />
+        </Flex>
       </Box>
 
       {error && (
         <Box className={styles.errorMessage}>
-          <Text color="red">{error}</Text>
+          <Text color="red" size="1">
+            {error}
+          </Text>
         </Box>
       )}
 

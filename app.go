@@ -8,6 +8,7 @@ import (
 	"transmission-client-go/internal/application"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
+	"transmission-client-go/internal/infrastructure/transmission"
 )
 
 // App struct
@@ -76,7 +77,7 @@ func (a *App) Initialize(configJson string) error {
 	}
 
 	// Create client with config
-	client, err := infrastructure.NewTransmissionClient(infrastructure.TransmissionConfig{
+	client, err := transmission.NewTransmissionClient(transmission.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
 		Username: config.Username,
@@ -180,7 +181,7 @@ func (a *App) TestConnection(configJson string) error {
 		return err
 	}
 
-	client, err := infrastructure.NewTransmissionClient(infrastructure.TransmissionConfig{
+	client, err := transmission.NewTransmissionClient(transmission.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
 		Username: config.Username,
@@ -252,7 +253,7 @@ func (a *App) RemoveDownloadPath(path string) error {
 
 // getLocalizedError возвращает локализованное сообщение об ошибке
 func (a *App) getLocalizedError(err error) string {
-	if locErr, ok := err.(*infrastructure.LocalizedError); ok {
+	if locErr, ok := err.(*transmission.LocalizedError); ok {
 		// Получаем локализованное сообщение используя метод Translate
 		currentConfig, configErr := a.LoadConfig()
 		if configErr != nil {
@@ -287,7 +288,7 @@ func (a *App) handleFileOpen(filePath string) {
 
 		// Получаем путь загрузки по умолчанию
 		defaultDir, err := a.GetDefaultDownloadDir()
-		if err != nil {
+		if (err != nil) {
 			fmt.Printf("Ошибка получения директории по умолчанию: %v\n", err)
 			defaultDir = "" // Будет использован стандартный путь Transmission
 		}

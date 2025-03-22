@@ -1,11 +1,13 @@
 package application
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
+	"transmission-client-go/internal/infrastructure/transmission"
 )
 
 const (
@@ -31,7 +33,7 @@ func (s *TorrentService) UpdateConfig(config *domain.Config) {
 
 func (s *TorrentService) GetAllTorrents() ([]domain.Torrent, error) {
 	torrents, err := s.repo.GetAll()
-	if err != nil {
+	if (err != nil) {
 		return nil, err
 	}
 
@@ -60,7 +62,7 @@ func (s *TorrentService) GetDefaultDownloadDir() (string, error) {
 	}
 
 	// Если нет, получаем из Transmission и сохраняем
-	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	client, ok := s.repo.(*transmission.TransmissionClient)
 	if !ok {
 		return "", fmt.Errorf("repository does not support getting default download directory")
 	}
@@ -82,7 +84,7 @@ func (s *TorrentService) GetDefaultDownloadDir() (string, error) {
 // SaveDownloadPath сохраняет путь загрузки в историю
 func (s *TorrentService) SaveDownloadPath(path string) error {
 	if s.config == nil {
-		return fmt.Errorf(ErrConfigNotInited)
+		return errors.New(ErrConfigNotInited)
 	}
 
 	// Проверяем, что путь не пустой
@@ -126,7 +128,7 @@ func (s *TorrentService) fetchDefaultPathIfEmpty() string {
 
 // fetchPathFromClient пытается получить путь напрямую из клиента Transmission
 func (s *TorrentService) fetchPathFromClient() string {
-	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	client, ok := s.repo.(*transmission.TransmissionClient)
 	if !ok {
 		return ""
 	}
@@ -162,7 +164,7 @@ func (s *TorrentService) addUniquePathsFromHistory(result []string) []string {
 // GetDownloadPaths возвращает список сохраненных путей загрузки
 func (s *TorrentService) GetDownloadPaths() ([]string, error) {
 	if s.config == nil {
-		return nil, fmt.Errorf(ErrConfigNotInited)
+		return nil, errors.New(ErrConfigNotInited)
 	}
 
 	// Создаем результирующий список
@@ -200,7 +202,7 @@ func (s *TorrentService) AddTorrent(url string, downloadDir string) error {
 		_ = s.SaveDownloadPath(downloadDir)
 	}
 
-	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	client, ok := s.repo.(*transmission.TransmissionClient)
 	if !ok {
 		return fmt.Errorf("repository does not support setting download directory")
 	}
@@ -219,7 +221,7 @@ func (s *TorrentService) AddTorrentFile(filepath string, downloadDir string) err
 		_ = s.SaveDownloadPath(downloadDir)
 	}
 
-	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	client, ok := s.repo.(*transmission.TransmissionClient)
 	if !ok {
 		return fmt.Errorf("repository does not support setting download directory")
 	}
@@ -283,7 +285,7 @@ func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) erro
 // RemoveDownloadPath удаляет путь из истории путей скачивания
 func (s *TorrentService) RemoveDownloadPath(path string) error {
 	if s.config == nil {
-		return fmt.Errorf(ErrConfigNotInited)
+		return errors.New(ErrConfigNotInited)
 	}
 
 	// Проверяем, что путь не является путем по умолчанию
@@ -319,7 +321,7 @@ func (s *TorrentService) ValidateDownloadPath(path string) error {
 	}
 
 	// Проверяем путь через клиент Transmission
-	client, ok := s.repo.(*infrastructure.TransmissionClient)
+	client, ok := s.repo.(*transmission.TransmissionClient)
 	if !ok {
 		return fmt.Errorf("repository does not support path validation")
 	}

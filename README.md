@@ -2,10 +2,6 @@
 
 [English](#english) | [Русский](#русский)
 
-<div align="center">
-  <img src="build/appicon.png" alt="Transmission Client Logo" width="128">
-</div>
-
 ---
 
 # English

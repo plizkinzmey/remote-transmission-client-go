@@ -1,4 +1,4 @@
-# Transmission Client Go
+# Remote Transmission Client Go
 
 [English](#english) | [Русский](#русский)
 
@@ -68,7 +68,7 @@ For detailed development instructions, see our [Installation & Setup Guide](docs
 
 # Русский
 
-Современный десктопный клиент для Transmission BitTorrent, построенный на Go и React с использованием фреймворка Wails.
+Современный десктопный клиент для Remote Transmission BitTorrent, построенный на Go и React с использованием фреймворка Wails.
 
 ## Возможности
 

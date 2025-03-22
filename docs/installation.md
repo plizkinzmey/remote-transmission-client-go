@@ -1,146 +1,147 @@
-# Руководство по установке и настройке
+# Installation & Setup
 
-## Требования
+This guide provides step-by-step instructions for installing and setting up the Transmission Client Go application.
 
-- Go 1.24 или выше
-- Node.js 16+ и npm
-- Запущенный и доступный демон Transmission
-- Установленный Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
+## System Requirements
 
-## Установка для разработки
+- **Operating System**: macOS (10.13+)
+- **Transmission**: Transmission BitTorrent client running on a local or remote server
+- **Disk Space**: ~50MB for the application
 
-### 1. Клонирование репозитория
+## Installation Methods
 
-```bash
-git clone https://github.com/yourusername/transmission-client-go.git
-cd transmission-client-go
-```
+### Method 1: Download Pre-built Application
 
-### 2. Установка зависимостей
+1. Go to the [Releases](https://github.com/organization/transmission-client-go/releases) page
+2. Download the latest version for macOS
+3. Open the downloaded DMG file
+4. Drag the application to your Applications folder
+5. Open the application from your Applications folder
 
-```bash
-# Установка зависимостей фронтенда
-cd frontend
-npm install
-cd ..
+### Method 2: Build from Source
 
-# Установка Go зависимостей
-go mod download
-```
+#### Prerequisites
 
-### 3. Режим разработки
+- Go 1.24+
+- Node.js 16+
+- Wails CLI
 
-```bash
-wails dev
-```
+#### Installing Go
 
-Это запустит приложение в режиме разработки с горячей перезагрузкой.
+1. Download the macOS installer from the [Go website](https://golang.org/dl/)
+2. Follow the installation instructions
+3. Verify your installation by opening Terminal and running:
+   ```bash
+   go version
+   ```
 
-### 4. Сборка для продакшн
+#### Installing Node.js
 
-```bash
-wails build
-```
+1. Download the macOS installer from the [Node.js website](https://nodejs.org/)
+2. Follow the installation instructions
+3. Verify your installation by opening Terminal and running:
+   ```bash
+   node --version
+   npm --version
+   ```
 
-Собранное приложение будет доступно в каталоге `build/bin`.
+#### Installing Wails
 
-## Сборка для разных платформ
+1. Open Terminal and run:
+   ```bash
+   go install github.com/wailsapp/wails/v2/cmd/wails@latest
+   ```
+2. Verify your installation by running:
+   ```bash
+   wails version
+   ```
 
-### macOS
+#### Building the Application
 
-```bash
-wails build -platform darwin/universal
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/organization/transmission-client-go.git
+   cd transmission-client-go
+   ```
 
-Это создаст универсальное приложение для macOS, работающее как на Intel, так и на Apple Silicon.
+2. Install frontend dependencies:
+   ```bash
+   cd frontend
+   npm install
+   cd ..
+   ```
 
-### Windows
+3. Build the application:
+   ```bash
+   wails build
+   ```
 
-```bash
-wails build -platform windows/amd64
-```
+4. The built application will be available in the `build/bin` directory
 
-### Linux
+## Configuration
 
-```bash
-wails build -platform linux/amd64
-```
+### First-time Setup
 
-## Настройка файловых ассоциаций
+1. Launch the application
+2. You will be prompted to set up a connection to your Transmission server
+3. Enter the following information:
+   - **Host**: Hostname or IP address of your Transmission server
+   - **Port**: Port number of the Transmission RPC interface (default: 9091)
+   - **Username**: Username for authentication (if enabled)
+   - **Password**: Password for authentication (if enabled)
+   - **Language**: Choose your preferred language
 
-Приложение сконфигурировано для ассоциации с файлами `.torrent`. После установки приложения:
+### Advanced Configuration
 
-- **macOS**: Приложение автоматически ассоциируется с .torrent файлами или можно настроить вручную через контекстное меню файла -> Информация -> Открывать в программе
-- **Windows**: Необходимо выбрать приложение при первом открытии .torrent файла
+#### Configuring Speed Limits
 
-## Настройки Transmission
+1. Open the application
+2. Click the Settings icon in the top right corner
+3. Go to the "Limits" tab
+4. Configure the following settings:
+   - **Slow Mode Speed Limit**: The speed limit when slow mode is enabled
+   - **Max Upload Ratio**: The maximum upload ratio before seeding stops
 
-### Демон Transmission
+#### Customizing the Interface
 
-- Хост: Имя хоста, где запущен демон Transmission
-- Порт: По умолчанию 9091
-- Имя пользователя и пароль: Если включена аутентификация
-- HTTPS: Для безопасных соединений
+1. Open the application
+2. Click the theme toggle in the top right corner to switch between light and dark themes
+3. Use the language selector to change the application language
 
-### Настройки приложения
+## Troubleshooting
 
-Настройки сохраняются безопасно с использованием системного хранилища ключей:
+### Connection Issues
 
-1. Запустите приложение
-2. Нажмите на Настройки
-3. Введите данные для подключения к демону Transmission
-4. Нажмите Сохранить
+If you have trouble connecting to your Transmission server:
 
-## Управление темами
+1. Verify that your Transmission server is running
+2. Check that the RPC interface is enabled in your Transmission settings
+3. Ensure that your firewall allows connections to the Transmission RPC port
+4. Verify that the authentication credentials are correct
 
-Приложение поддерживает светлую и темную темы. Для переключения:
+### Application Not Starting
 
-1. Запустите приложение
-2. Нажмите на Настройки
-3. Выберите нужную тему из выпадающего списка
-4. Сохраните настройки
+If the application fails to start:
 
-## Смена языка
+1. Check your system logs for error messages
+2. Ensure that you meet the minimum system requirements
+3. Try reinstalling the application
 
-Для изменения языка интерфейса:
+## Updating
 
-1. Откройте настройки приложения
-2. Выберите нужный язык из выпадающего списка
-3. Сохраните настройки
+To update to a newer version:
 
-## Устранение неполадок
+1. Download the latest version from the [Releases](https://github.com/organization/transmission-client-go/releases) page
+2. Replace your existing installation with the new version
 
-### Частые проблемы
+Your settings and preferences will be preserved when updating.
 
-1. Ошибка подключения
-   - Убедитесь, что демон Transmission запущен
-   - Проверьте учетные данные
-   - Убедитесь, что брандмауэр разрешает соединение
-   - Проверьте правильность адреса и порта
+## Uninstallation
 
-2. Проблемы сборки
-   - Обновите Wails CLI
-   - Очистите директорию сборки
-   - Проверьте версии Go и Node.js
-   - Запустите `go mod tidy` для обновления зависимостей
+To uninstall the application:
 
-3. Проблемы с файловыми ассоциациями
-   - В macOS: Проверьте права доступа приложения
-   - В Windows: Повторно зарегистрируйте приложение как обработчик .torrent файлов
-
-### Логи
-
-- В режиме разработки логи доступны в консоли
-- Расположение логов в продакшн-версии:
-  - macOS: ~/Library/Logs/transmission-client-go/
-  - Linux: ~/.local/share/transmission-client-go/logs/
-  - Windows: %APPDATA%\transmission-client-go\logs\
-
-## Обновление приложения
-
-Для обновления до последней версии:
-
-1. Сделайте резервную копию ваших настроек
-2. Получите последние изменения из репозитория
-3. Соберите приложение заново
-4. Замените установленную версию
+1. Drag the application from your Applications folder to the Trash
+2. To remove all application data and settings, delete the following folder:
+   ```
+   ~/Library/Application Support/transmission-client-go
+   ```

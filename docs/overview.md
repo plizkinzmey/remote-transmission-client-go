@@ -1,85 +1,74 @@
-# Transmission Client Go Overview
+# Project Overview
 
 ## Introduction
 
-Transmission Client Go — это современное десктопное приложение, предоставляющее удобный пользовательский интерфейс для управления торрентами через Transmission BitTorrent клиент. Построенное на Go и React, оно сочетает мощь нативных десктопных приложений с гибкостью веб-технологий.
+Transmission Client Go is a modern desktop client application for Transmission BitTorrent, designed to provide a user-friendly interface for managing torrents. Built on Go and React with the Wails framework, it offers a seamless experience for users who want an efficient way to interact with their Transmission server.
 
 ## Key Features
 
-- Современный десктопный интерфейс для Transmission
-- Безопасное хранение учетных данных с использованием системного хранилища ключей
-- Мониторинг состояния торрентов в реальном времени
-- Поддержка добавления и управления торрентами
-- Функциональность поиска и фильтрации
-- Безопасное взаимодействие с демоном Transmission
-- Поддержка нескольких платформ (macOS, Windows, Linux)
-- Мультиязычный интерфейс (русский и английский)
-- Светлая и тёмная темы оформления
-- Ассоциация файлов .torrent с приложением
+### User Interface
+
+- **Modern Design**: Clean and intuitive interface built with React
+- **Responsive Layout**: Adapts to different window sizes
+- **Dark/Light Theme**: Support for both dark and light themes
+- **Localization**: Full support for English and Russian languages
+
+### Torrent Management
+
+- **Torrent List**: View all your torrents with detailed information
+- **Add Torrents**: Add torrents via URL or local file
+- **File Management**: Select which files to download within torrents
+- **Batch Operations**: Perform operations on multiple torrents at once
+- **Detailed Information**: View comprehensive stats for each torrent
+
+### Performance Controls
+
+- **Speed Throttling**: Limit download and upload speeds
+- **Auto-stop Seeding**: Configure maximum upload ratio to automatically stop seeding
+- **Download Path Management**: Manage and save download paths for easy access
+
+### Integration
+
+- **macOS Native Integration**: Support for macOS file associations and system events
+- **Secure Connection**: Connect to your Transmission server securely
 
 ## Technology Stack
 
-### Backend:
-- Go 1.24.0
-- Wails v2 (фреймворк для десктопных приложений)
-- TransmissionRPC библиотека для взаимодействия с демоном Transmission
-- Интеграция с системным хранилищем ключей для безопасного хранения учетных данных
-
-### Frontend:
-- React 18
-- TypeScript
-- Vite
-- CSS Modules для стилизации
-- React Context API для управления состоянием
-
-## User Interface
-
-Интерфейс приложения разделен на несколько ключевых компонентов:
-
-1. **Header** — верхняя панель с кнопками управления и поиском
-2. **Torrent List** — список торрентов с детальной информацией о каждом
-3. **Status Filter** — фильтрация торрентов по их статусу
-4. **Settings** — настройки подключения к серверу Transmission
-5. **Add Torrent** — модальное окно для добавления новых торрентов
+- **Backend**: Go programming language
+- **Frontend**: React with TypeScript
+- **Framework**: Wails (Go + Web Technologies)
+- **State Management**: React Context API
+- **Styling**: CSS Modules
+- **Localization**: Custom localization system with JSON-based translations
+- **Building**: Wails build system with Vite
 
 ## Architecture
 
-Приложение следует принципам Чистой Архитектуры с четко разделенными слоями:
+The application follows a clean architecture approach with clear separation of concerns:
 
-- Domain Layer (основная бизнес-логика)
-- Application Layer (варианты использования)
-- Infrastructure Layer (интеграция с внешними сервисами)
-- Presentation Layer (UI компоненты)
+- **Domain Layer**: Core business logic and entities
+- **Application Layer**: Application services that orchestrate the domain
+- **Infrastructure Layer**: External services implementation
+- **User Interface Layer**: React components and views
 
-Более подробную архитектурную информацию можно найти в [architecture.md](architecture.md).
+For more detailed information about the architecture, please refer to the [Architecture Document](architecture.md).
 
-## File Structure
+## Target Audience
 
-```
-├── app.go                 # Основная логика приложения
-├── main.go                # Точка входа в приложение
-├── wails.json             # Конфигурация Wails
-├── build/                 # Каталог для сборки
-├── frontend/              # React приложение
-├── internal/              # Внутренняя логика приложения
-│   ├── application/       # Слой приложения
-│   ├── domain/            # Слой домена
-│   └── infrastructure/    # Инфраструктурный слой
-└── locales/               # Файлы локализации
-```
+This application is designed for:
 
-## Localization
+- Users who prefer a desktop application over web interfaces
+- Users who want a modern, feature-rich client for Transmission
+- macOS users who want native integration with their operating system
 
-Приложение поддерживает несколько языков через систему локализации:
-- English (default)
-- Русский
+## Current Status
 
-Локализация управляется через JSON-файлы в директории `locales/`.
+The application is currently in active development with a focus on macOS support. It includes all the essential features for torrent management while maintaining a user-friendly interface.
 
-## Theming
+## Future Plans
 
-Пользователи могут переключаться между светлой и темной темами. Тема сохраняется между сеансами и может автоматически соответствовать системным настройкам.
-
-## File Associations
-
-Приложение ассоциировано с файлами .torrent, что позволяет открывать торрент-файлы напрямую через интерфейс операционной системы.
+- Additional filtering and sorting options
+- Advanced scheduling features
+- Remote server management
+- Statistics and reporting
+- Additional platform support

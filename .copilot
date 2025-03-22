@@ -19,7 +19,15 @@ This is a Transmission BitTorrent client built with:
 
 2. `frontend/` - React TypeScript UI
    - `src/components/` - React components
+   - `src/contexts/` - React contexts
+   - `src/hooks/` - Custom hooks
    - `src/styles/` - CSS modules
+
+### Documentation:
+- `docs/overview.md` - Project overview
+- `docs/architecture.md` - Technical architecture
+- `docs/installation.md` - Installation guide
+- `docs/user-guide.md` - User documentation
 
 ## Common Tasks
 
@@ -28,15 +36,34 @@ This is a Transmission BitTorrent client built with:
    - Add domain entities in `internal/domain/`
    - Implement services in `internal/application/`
    - Add infrastructure code in `internal/infrastructure/`
+   - Update `app.go` to expose new functionality to frontend
 
 2. For frontend features:
    - Create components in `frontend/src/components/`
    - Add styles in `frontend/src/styles/`
    - Update App.tsx for routing/integration
+   - Use hooks from `frontend/src/hooks/` for data management
+
+### Localization
+1. Add new strings to:
+   - `locales/en.json` for English
+   - `locales/ru.json` for Russian
+2. Use the localization context in React components:
+   ```typescript
+   const { translate } = useLocalization();
+   return <div>{translate("key.name")}</div>;
+   ```
 
 ### Testing
 - Backend: Add tests alongside the implementation files
 - Frontend: Use React Testing Library for component tests
+
+### Architecture Principles
+- Follow Clean Architecture principles
+- Keep domain layer independent of frameworks
+- Use interfaces for dependency inversion
+- Add localization for all user-facing strings
+- Handle errors properly with localized messages
 
 ---
 # Русский
@@ -55,7 +82,15 @@ This is a Transmission BitTorrent client built with:
 
 2. `frontend/` - React TypeScript UI
    - `src/components/` - React компоненты
+   - `src/contexts/` - React контексты
+   - `src/hooks/` - Пользовательские хуки
    - `src/styles/` - CSS модули
+
+### Документация:
+- `docs/overview.ru.md` - Обзор проекта
+- `docs/architecture.ru.md` - Техническая архитектура
+- `docs/installation.ru.md` - Руководство по установке
+- `docs/user-guide.ru.md` - Пользовательская документация
 
 ## Частые задачи
 
@@ -64,34 +99,34 @@ This is a Transmission BitTorrent client built with:
    - Добавьте сущности домена в `internal/domain/`
    - Реализуйте сервисы в `internal/application/`
    - Добавьте инфраструктурный код в `internal/infrastructure/`
+   - Обновите `app.go` для предоставления новой функциональности фронтенду
 
 2. Для frontend функций:
    - Создайте компоненты в `frontend/src/components/`
    - Добавьте стили в `frontend/src/styles/`
    - Обновите App.tsx для маршрутизации/интеграции
+   - Используйте хуки из `frontend/src/hooks/` для управления данными
+
+### Локализация
+1. Добавляйте новые строки в:
+   - `locales/en.json` для английского
+   - `locales/ru.json` для русского
+2. Используйте контекст локализации в React компонентах:
+   ```typescript
+   const { translate } = useLocalization();
+   return <div>{translate("key.name")}</div>;
+   ```
 
 ### Тестирование
 - Backend: Добавляйте тесты рядом с файлами реализации
 - Frontend: Используйте React Testing Library для тестов компонентов
 
-### Использование Radix UI компонентов
-1. TextField.Root:
-   ```tsx
-   <TextField.Root
-     size="2"
-     style={{ width: "200px" }}
-     placeholder={t("torrents.search")}
-     value={searchTerm}
-     onChange={handleSearchChange}
-   >
-     <TextField.Slot>
-       <MagnifyingGlassIcon width={16} height={16} />
-     </TextField.Slot>
-   </TextField.Root>
-   ```
-   - Поддерживает controlled input (value и onChange)
-   - Поддерживает стандартные пропсы: size, placeholder, style
-   - TextField.Slot используется для иконок или других элементов внутри поля
+### Принципы архитектуры
+- Следуйте принципам Чистой Архитектуры
+- Сохраняйте доменный слой независимым от фреймворков
+- Используйте интерфейсы для инверсии зависимостей
+- Добавляйте локализацию для всех строк пользовательского интерфейса
+- Правильно обрабатывайте ошибки с локализованными сообщениями
 
 # Структура проекта Transmission Desktop Client
 

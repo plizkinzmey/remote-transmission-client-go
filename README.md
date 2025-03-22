@@ -125,9 +125,3 @@ For detailed development instructions, see our [Installation & Setup Guide](docs
 ├── locales/               # Файлы локализации
 └── docs/                  # Документация
 ```
-
-## License | Лицензия
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-Этот проект лицензирован под MIT License - подробности см. в файле LICENSE.

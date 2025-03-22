@@ -25,7 +25,7 @@ The main interface of Transmission Client Go is divided into several areas:
 - **Header**: Contains the application title, theme toggle, language selector, and settings button
 - **Status Filter**: Allows you to filter torrents by their status (All, Downloading, Seeding, etc.)
 - **Torrent List**: Displays all your torrents with key information about each one
-- **Footer**: Shows session statistics such as download/upload speeds and total completed
+- **Footer**: Shows session statistics such as download/upload speeds and free disk space
 
 ## Managing Torrents
 
@@ -37,7 +37,7 @@ There are two ways to add torrents:
 
 1. Click the "+" button in the header
 2. Select the "URL" tab
-3. Enter the torrent URL
+3. Enter the torrent URL (magnet link or direct .torrent URL)
 4. Select a download directory
 5. Click "Add Torrent"
 
@@ -45,38 +45,29 @@ There are two ways to add torrents:
 
 1. Click the "+" button in the header
 2. Select the "File" tab
-3. Click "Choose File" and select a torrent file from your computer
+3. Click the file drop area or drag a .torrent file into it
 4. Select a download directory
 5. Click "Add Torrent"
 
 You can also add torrent files by dragging them onto the application window or by opening .torrent files with the application from Finder.
 
-### Viewing Torrent Details
-
-To view detailed information about a torrent:
-
-1. Click on a torrent in the torrent list
-2. This will open a detailed view showing:
-   - General information (size, progress, ratio, etc.)
-   - File list with individual file progress
-   - Peer information
-
 ### Selecting Files to Download
 
-If you don't want to download all files in a torrent:
+To select which files to download within a torrent:
 
-1. Click on a torrent to view its details
-2. In the "Files" tab, you will see a list of all files in the torrent
-3. Uncheck the files you don't want to download
-4. Click "Apply Changes"
+1. In the torrent card, click the folder icon button
+2. In the opened file view, you'll see all files in the torrent
+3. Use the checkboxes to select or deselect files you want to download
+4. Changes are applied automatically
 
 ### Managing Download Location
 
 To manage your download locations:
 
-1. When adding a torrent, click the dropdown next to the download directory field
+1. When adding a torrent, use the dropdown next to the download directory field
 2. You can select from previously used directories or enter a new one
-3. The application remembers your recent download locations for quick access
+3. To enter a custom path, click "Enter Custom Path"
+4. To remove a saved path, click the trash icon next to it in the dropdown
 
 ## Torrent Operations
 
@@ -84,26 +75,28 @@ To manage your download locations:
 
 To start or stop torrents:
 
-1. Select one or more torrents in the list by clicking on them (hold Ctrl or Cmd to select multiple)
-2. Right-click and select "Start" or "Stop" from the context menu
-3. Alternatively, use the start and stop buttons in the toolbar
+1. Select one or more torrents in the list by clicking their checkboxes
+2. Use the start (play) or stop (pause) buttons in the header
+3. Alternatively, you can use the start/stop button on individual torrent cards
 
 ### Removing Torrents
 
 To remove torrents:
 
-1. Select one or more torrents in the list
-2. Right-click and select "Remove" from the context menu
+1. Select one or more torrents in the list by clicking their checkboxes
+2. Click the delete button in the header
 3. Choose whether to also delete the downloaded files
 4. Confirm your choice
+
+You can also remove a single torrent by clicking the trash icon on its card.
 
 ### Limiting Download Speed
 
 To enable slow mode for specific torrents:
 
 1. Select one or more torrents in the list
-2. Right-click and select "Enable Slow Mode" from the context menu
-3. The selected torrents will now use the speed limit defined in your settings
+2. Click the snail icon in the header to toggle slow mode
+3. You can also toggle slow mode for a single torrent by clicking the snail icon on its card
 
 ## Application Settings
 
@@ -132,10 +125,13 @@ To configure speed limits:
 
 #### Changing the Theme
 
-To switch between light and dark themes:
+To switch between light, dark, and system themes:
 
 1. Click the theme toggle button in the header
-2. The application will immediately switch to the selected theme
+2. The theme will cycle through three options:
+   - **Light Theme**: Fixed light appearance
+   - **Dark Theme**: Fixed dark appearance
+   - **System Theme**: Automatically follows your system preferences
 
 #### Changing the Language
 
@@ -144,16 +140,6 @@ To change the application language:
 1. Click the language selector in the header
 2. Select your preferred language from the dropdown
 3. The interface will update to display text in the selected language
-
-## Keyboard Shortcuts
-
-For more efficient usage, the application supports the following keyboard shortcuts:
-
-- **Ctrl/Cmd + A**: Select all torrents
-- **Delete**: Remove selected torrents
-- **Space**: Start/Stop selected torrents
-- **Ctrl/Cmd + +**: Add new torrent
-- **Ctrl/Cmd + S**: Enable/Disable slow mode for selected torrents
 
 ## Appendix
 
@@ -172,5 +158,5 @@ The footer of the application displays session statistics:
 
 - **Download Speed**: Current aggregate download speed
 - **Upload Speed**: Current aggregate upload speed
-- **Completed**: Total data downloaded in the current session
-- **Active**: Number of active torrents
+- **Free Space**: Available disk space in the download directory
+- **Transmission Version**: Version of the connected Transmission server

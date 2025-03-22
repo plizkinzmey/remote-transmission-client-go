@@ -20,8 +20,8 @@ interface SettingsProps {
 }
 
 const defaultSettings: ConnectionConfig = {
-  host: "localhost",
-  port: 9091,
+  host: "",
+  port: undefined,
   username: "",
   password: "",
   maxUploadRatio: 0,

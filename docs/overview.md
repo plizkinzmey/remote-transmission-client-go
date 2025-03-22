@@ -9,7 +9,6 @@ Transmission Client Go is a modern desktop client application for Transmission B
 ### User Interface
 
 - **Modern Design**: Clean and intuitive interface built with React
-- **Responsive Layout**: Adapts to different window sizes
 - **Dark/Light Theme**: Support for both dark and light themes
 - **Localization**: Full support for English and Russian languages
 

@@ -56,10 +56,12 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
             <TextField.Root
               type="number"
               size="1"
+              value={settings.port ?? ""}
               placeholder={t("settings.portPlaceholder")}
-              value={settings.port}
               onChange={(e) =>
-                onSettingsChange({ port: parseInt(e.target.value) || 0 })
+                onSettingsChange({
+                  port: e.target.value ? parseInt(e.target.value) : undefined,
+                })
               }
             />
           </Box>

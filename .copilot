@@ -13,21 +13,43 @@ This is a Transmission BitTorrent client built with:
 
 ### Key Components:
 1. `internal/` - Backend implementation
-   - `domain/` - Core business logic and interfaces
-   - `application/` - Use cases and services
-   - `infrastructure/` - External services integration
+   - `domain/` - Core business entities and interfaces
+     - `torrent.go` - Torrent model, statuses and repository interface
+     - `config.go` - Application configuration model
+     - `session_stats.go` - Transmission session statistics
+   - `application/` - Services and use cases
+     - `torrent_service.go` - Business logic for torrent operations
+   - `infrastructure/` - External services implementation
+     - `transmission_client.go` - Implementation of Transmission RPC API
+     - `config_service.go` - Configuration persistence
+     - `localization_service.go` - Translation service
+     - `encryption_service.go` - Secure storage for credentials
 
 2. `frontend/` - React TypeScript UI
-   - `src/components/` - React components
-   - `src/contexts/` - React contexts
-   - `src/hooks/` - Custom hooks
+   - `src/components/` - UI components (TorrentList, TorrentItem, etc.)
+   - `src/contexts/` - React contexts (Theme, Localization)
+   - `src/hooks/` - Custom hooks (useTorrentData, useBulkOperations)
    - `src/styles/` - CSS modules
+
+3. `locales/` - Translation files
+   - `en.json` - English translations
+   - `ru.json` - Russian translations
 
 ### Documentation:
 - `docs/overview.md` - Project overview
 - `docs/architecture.md` - Technical architecture
 - `docs/installation.md` - Installation guide
 - `docs/user-guide.md` - User documentation
+
+## Key Features
+
+- Torrent management (add, remove, start, stop)
+- File selection within torrents
+- Speed control with configurable throttling
+- Upload ratio limitation
+- Theme switching (light/dark/auto)
+- Full localization (English, Russian)
+- macOS native integration
 
 ## Common Tasks
 
@@ -41,8 +63,8 @@ This is a Transmission BitTorrent client built with:
 2. For frontend features:
    - Create components in `frontend/src/components/`
    - Add styles in `frontend/src/styles/`
-   - Update App.tsx for routing/integration
-   - Use hooks from `frontend/src/hooks/` for data management
+   - Update App.tsx for integration
+   - Use hooks and contexts for state management
 
 ### Localization
 1. Add new strings to:
@@ -53,10 +75,6 @@ This is a Transmission BitTorrent client built with:
    const { translate } = useLocalization();
    return <div>{translate("key.name")}</div>;
    ```
-
-### Testing
-- Backend: Add tests alongside the implementation files
-- Frontend: Use React Testing Library for component tests
 
 ### Architecture Principles
 - Follow Clean Architecture principles
@@ -76,21 +94,43 @@ This is a Transmission BitTorrent client built with:
 
 ### Ключевые компоненты:
 1. `internal/` - Реализация бэкенда
-   - `domain/` - Основная бизнес-логика и интерфейсы
-   - `application/` - Сценарии использования и сервисы
-   - `infrastructure/` - Интеграция с внешними сервисами
+   - `domain/` - Основные бизнес-сущности и интерфейсы
+     - `torrent.go` - Модель торрента, статусы и интерфейс репозитория
+     - `config.go` - Модель конфигурации приложения
+     - `session_stats.go` - Статистика сессии Transmission
+   - `application/` - Сервисы и варианты использования
+     - `torrent_service.go` - Бизнес-логика для операций с торрентами
+   - `infrastructure/` - Реализация внешних сервисов
+     - `transmission_client.go` - Реализация Transmission RPC API
+     - `config_service.go` - Хранение конфигурации
+     - `localization_service.go` - Сервис переводов
+     - `encryption_service.go` - Безопасное хранение учетных данных
 
 2. `frontend/` - React TypeScript UI
-   - `src/components/` - React компоненты
-   - `src/contexts/` - React контексты
-   - `src/hooks/` - Пользовательские хуки
+   - `src/components/` - UI компоненты (TorrentList, TorrentItem и др.)
+   - `src/contexts/` - React контексты (Theme, Localization)
+   - `src/hooks/` - Пользовательские хуки (useTorrentData, useBulkOperations)
    - `src/styles/` - CSS модули
+
+3. `locales/` - Файлы переводов
+   - `en.json` - Английские переводы
+   - `ru.json` - Русские переводы
 
 ### Документация:
 - `docs/overview.ru.md` - Обзор проекта
 - `docs/architecture.ru.md` - Техническая архитектура
 - `docs/installation.ru.md` - Руководство по установке
 - `docs/user-guide.ru.md` - Пользовательская документация
+
+## Основные возможности
+
+- Управление торрентами (добавление, удаление, запуск, остановка)
+- Выбор файлов внутри торрентов
+- Управление скоростью с настраиваемым ограничением
+- Ограничение рейтинга отдачи
+- Переключение тем (светлая/темная/авто)
+- Полная локализация (английский, русский)
+- Нативная интеграция с macOS
 
 ## Частые задачи
 
@@ -104,8 +144,8 @@ This is a Transmission BitTorrent client built with:
 2. Для frontend функций:
    - Создайте компоненты в `frontend/src/components/`
    - Добавьте стили в `frontend/src/styles/`
-   - Обновите App.tsx для маршрутизации/интеграции
-   - Используйте хуки из `frontend/src/hooks/` для управления данными
+   - Обновите App.tsx для интеграции
+   - Используйте хуки и контексты для управления состоянием
 
 ### Локализация
 1. Добавляйте новые строки в:
@@ -117,148 +157,9 @@ This is a Transmission BitTorrent client built with:
    return <div>{translate("key.name")}</div>;
    ```
 
-### Тестирование
-- Backend: Добавляйте тесты рядом с файлами реализации
-- Frontend: Используйте React Testing Library для тестов компонентов
-
 ### Принципы архитектуры
 - Следуйте принципам Чистой Архитектуры
 - Сохраняйте доменный слой независимым от фреймворков
 - Используйте интерфейсы для инверсии зависимостей
 - Добавляйте локализацию для всех строк пользовательского интерфейса
 - Правильно обрабатывайте ошибки с локализованными сообщениями
-
-# Структура проекта Transmission Desktop Client
-
-## Общее описание
-Transmission Desktop Client — это десктопное приложение для управления торрент-клиентом Transmission, разработанное с использованием фреймворка Wails (Go + React). Приложение следует принципам Чистой Архитектуры с четким разделением на слои.
-
-## Архитектура проекта
-
-### Обзор технологического стека
-- **Backend**: Go
-- **Frontend**: React + TypeScript
-- **Framework**: Wails (связывает Go и веб-интерфейс)
-- **Управление торрентами**: Transmission RPC API
-- **Локализация**: Мультиязычность (ru, en)
-- **Темы оформления**: Светлая/Темная/Авто
-
-### Структура проекта
-```
-├── app.go                 # Точка интеграции Wails (связь Go и React)
-├── main.go                # Основная точка входа приложения
-├── internal/              # Внутренние пакеты приложения
-│   ├── domain/            # Доменная логика и основные сущности
-│   ├── application/       # Бизнес-логика и use cases
-│   └── infrastructure/    # Внешние сервисы и репозитории
-├── frontend/              # React приложение
-│   ├── src/               # Исходный код React
-│   │   ├── components/    # UI компоненты
-│   │   ├── contexts/      # React контексты
-│   │   ├── hooks/         # Пользовательские хуки
-│   │   └── styles/        # CSS модули
-│   └── wailsjs/          # Сгенерированный код для интеграции с Wails
-└── locales/              # Файлы локализации
-```
-
-## Слои архитектуры
-
-### 1. Доменный слой (Domain Layer)
-**Местоположение:** `internal/domain/`
-
-Содержит основные бизнес-сущности и интерфейсы:
-- `torrent.go`: Определяет модель торрента и статусы
-- `config.go`: Конфигурация приложения
-- `session_stats.go`: Статистика сессии Transmission
-- Интерфейс `TorrentRepository` для абстракции доступа к данным
-
-### 2. Слой приложения (Application Layer)
-**Местоположение:** `internal/application/`
-
-Реализует варианты использования приложения:
-- `torrent_service.go`: Сервис для работы с торрентами
-- Оркестрирует взаимодействие между доменными объектами и инфраструктурой
-- Содержит бизнес-логику управления торрентами
-
-### 3. Инфраструктурный слой (Infrastructure Layer)
-**Местоположение:** `internal/infrastructure/`
-
-Отвечает за интеграцию с внешними сервисами:
-- `transmission_client.go`: Клиент для взаимодействия с Transmission RPC API
-- `config_service.go`: Сервис для работы с конфигурацией приложения
-- `encryption_service.go`: Шифрование чувствительных данных
-- `localization_service.go`: Управление переводами
-
-### 4. Слой представления (Presentation Layer)
-**Backend часть:** `app.go`
-- Экспортирует Go-методы для использования во Frontend
-- Связывает бэкенд и фронтенд через Wails
-
-**Frontend часть:** `frontend/src/`
-- React-приложение с компонентным подходом
-- Использует генерируемый Wails-код для вызова Go-функций
-
-## Взаимодействие Frontend и Backend
-
-### Механизм взаимодействия
-1. **Wails Runtime Bridge**: Создаёт JavaScript-обёртки для Go-функций
-2. **Генерируемый код**: Wails генерирует TypeScript интерфейсы и функции в `frontend/wailsjs/go/`
-3. **Вызовы из React**: Frontend-код вызывает Go-функции через сгенерированные обёртки
-
-### Основной поток данных
-1. Пользователь взаимодействует с React-интерфейсом
-2. React-код вызывает методы из `wailsjs/go/main/App.js`
-3. Wails перенаправляет вызов в соответствующий метод в `app.go`
-4. `app.go` делегирует выполнение в сервисный слой (`application`)
-5. Сервисный слой работает с инфраструктурой и доменными моделями
-6. Результаты проходят тот же путь в обратном направлении
-
-### Ключевые API точки (app.go):
-- `Initialize`: Инициализация клиента Transmission
-- `GetTorrents`: Получение списка торрентов
-- `AddTorrent`: Добавление торрента по URL
-- `AddTorrentFile`: Добавление торрента из файла
-- `RemoveTorrent`: Удаление торрента
-- `StartTorrents`/`StopTorrents`: Управление статусом торрентов
-- `GetSessionStats`: Получение статистики сессии
-- `GetTorrentFiles`: Получение списка файлов в торренте
-- `SetFilesWanted`: Управление загружаемыми файлами
-
-## Управление состоянием во Frontend
-
-### Пользовательские хуки:
-- `useTorrentData`: Управляет загрузкой и обновлением данных о торрентах
-- `useBulkOperations`: Обеспечивает массовые операции с торрентами
-
-### React Contexts:
-- `ThemeContext`: Управление темой приложения
-- `LocalizationContext`: Управление локализацией
-
-## Локализация
-- Поддерживаются языки: русский и английский
-- Файлы локализации: `locales/en.json`, `locales/ru.json`
-- `LocalizationService` в Go обеспечивает доступ к переводам
-- `LocalizationContext` в React обеспечивает доставку переводов в UI
-
-## Темы оформления
-- Темная и светлая темы реализованы через CSS-переменные
-- `theme.css` содержит основные цветовые переменные
-- `ThemeProvider` управляет переключением тем
-
-## Файловые ассоциации
-- Приложение поддерживает открытие .torrent файлов
-- Обработка происходит через метод `handleFileOpen` в `app.go`
-
-## Особенности архитектуры
-1. **Чистая Архитектура**: Зависимости направлены внутрь, доменный слой не зависит от внешних фреймворков
-2. **Разделение ответственности**: Каждый слой имеет свою четкую роль
-3. **Интерфейсы репозиториев**: Абстрагируют доступ к данным
-4. **Контексты React**: Управление глобальным состоянием UI
-5. **Компонентный подход**: UI разбит на переиспользуемые компоненты
-
-## Ключевые модули
-1. **Transmission Client**: Взаимодействие с Transmission через RPC API
-2. **Torrent Service**: Бизнес-логика для управления торрентами
-3. **Localization Service**: Управление переводами
-4. **Config Service**: Управление конфигурацией
-5. **React Components**: UI компоненты для отображения данных

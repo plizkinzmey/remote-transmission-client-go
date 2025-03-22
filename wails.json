@@ -11,8 +11,8 @@
     "email": "plizkinzmey@icloud.com"
   },
   "info": {
-    "productName": "Transmission Client",
-    "comments": "Transmission Desktop Client",
+    "productName": "Transmission Desktop Client",
+    "productVersion": "0.0.1",
     "fileAssociations": [
       {
         "ext": "torrent",

@@ -17,7 +17,7 @@ type ThemeType = "light" | "dark" | "auto";
 // Интерфейс для настроек подключения (используется в окне настроек)
 export interface ConnectionConfig {
   host: string;
-  port: number;
+  port?: number;
   username: string;
   password: string;
   maxUploadRatio: number;

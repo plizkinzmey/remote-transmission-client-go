@@ -40,7 +40,11 @@
     "ratioLimit": "Ratio Limit",
     "slowSpeedUnit": "Speed unit",
     "KiB/s": "KiB/s",
-    "MiB/s": "MiB/s"
+    "MiB/s": "MiB/s",
+    "hostPlaceholder": "Example: localhost or 192.168.1.100",
+    "portPlaceholder": "9091",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password"
   },
 
   "torrents": {

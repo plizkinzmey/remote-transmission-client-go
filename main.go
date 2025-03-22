@@ -31,8 +31,8 @@ func main() {
 		OnStartup:        app.startup,
 		Mac: &mac.Options{
 			About: &mac.AboutInfo{
-				Title:   "Transmission Client",
-				Message: "Desktop client for Transmission",
+				Title:   "Transmission Desktop Client",
+				Message: "Version: 0.0.1",
 				Icon:    nil,
 			},
 			OnFileOpen: app.handleFileOpen,

@@ -40,7 +40,11 @@
     "ratioLimit": "Ограничение рейтинга",
     "slowSpeedUnit": "Единица измерения",
     "KiB/s": "КиБ/с",
-    "MiB/s": "МиБ/с"
+    "MiB/s": "МиБ/с",
+    "hostPlaceholder": "Например: localhost или 192.168.1.100",
+    "portPlaceholder": "9091",
+    "usernamePlaceholder": "Введите имя пользователя",
+    "passwordPlaceholder": "Введите пароль"
   },
 
   "torrents": {

@@ -141,5 +141,5 @@
 1. Перетащите приложение из папки "Программы" в Корзину
 2. Чтобы удалить все данные и настройки приложения, удалите следующую папку:
    ```
-   ~/Library/Application Support/transmission-client-go
+   ~/Library/Application Support/transmission-client
    ```

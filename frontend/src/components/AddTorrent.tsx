@@ -205,14 +205,25 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
     }
   };
 
-  // Если torrentFile передан, переключаем вкладку и сохраняем имя файла
+  // Если torrentFile передан, переключаем вкладку и читаем файл
   useEffect(() => {
     if (torrentFile) {
       setActiveTab("file");
-      // Извлекаем имя файла из пути (поддерживает как "/" так и "\")
       const parts = torrentFile.split(/[\\/]/);
       setSelectedFileName(parts[parts.length - 1]);
-      // Не вызываем onAddFile, диалог остаётся открытым для выбора пути и подтверждения пользователем
+
+      // Читаем файл через fetch и обрабатываем его через handleFile
+      fetch(`file://${torrentFile}`)
+        .then((response) => response.blob())
+        .then((blob) => {
+          const file = new File([blob], parts[parts.length - 1], {
+            type: "application/x-bittorrent",
+          });
+          handleFile(file);
+        })
+        .catch((error) => {
+          console.error("Ошибка при чтении файла:", error);
+        });
     }
   }, [torrentFile]);
 

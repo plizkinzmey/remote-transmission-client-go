@@ -11,6 +11,7 @@ import (
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
 	"transmission-client-go/internal/infrastructure/transmission"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
 )
 

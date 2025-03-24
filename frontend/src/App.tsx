@@ -173,7 +173,7 @@ function App() {
         )}
         {showAddTorrent && (
           <AddTorrent
-            torrentFile={torrentFilePath || undefined} // заменено: теперь при отсутствии файла передается undefined
+            torrentFile={torrentFilePath || undefined} // передаётся путь, если есть
             onAdd={handleAddTorrent}
             onAddFile={handleAddTorrentFile}
             onClose={() => {

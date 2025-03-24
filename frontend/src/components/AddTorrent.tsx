@@ -59,6 +59,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   onAdd,
   onAddFile,
   onClose,
+  torrentFile,
 }) => {
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [url, setUrl] = useState("");
@@ -203,6 +204,17 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       setCustomPath(downloadPath);
     }
   };
+
+  // Если torrentFile передан, переключаем вкладку и сохраняем имя файла
+  useEffect(() => {
+    if (torrentFile) {
+      setActiveTab("file");
+      // Извлекаем имя файла из пути (поддерживает как "/" так и "\")
+      const parts = torrentFile.split(/[\\/]/);
+      setSelectedFileName(parts[parts.length - 1]);
+      // Не вызываем onAddFile, диалог остаётся открытым для выбора пути и подтверждения пользователем
+    }
+  }, [torrentFile]);
 
   return (
     <Portal>

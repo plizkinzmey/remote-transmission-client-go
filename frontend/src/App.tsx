@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { EventsOn } from "../wailsjs/runtime";
 import "@radix-ui/themes/styles.css";
 import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
@@ -107,6 +108,13 @@ function App() {
   const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {
     handleTorrentSpeedLimit([id], isSlowMode);
   };
+
+  useEffect(() => {
+    EventsOn("torrent-opened", (torrentPath: string) => {
+      console.log("Получен путь к торрент-файлу:", torrentPath);
+      // Optionally, add further logic to handle the torrent file (e.g., update state or trigger actions)
+    });
+  }, []);
 
   return (
     <ThemeProvider>

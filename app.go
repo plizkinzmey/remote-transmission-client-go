@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time" // уже добавлено
 	"transmission-client-go/internal/application"
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
@@ -21,6 +22,7 @@ type App struct {
 	service             *application.TorrentService
 	configService       *infrastructure.ConfigService
 	localizationService *infrastructure.LocalizationService
+	pendingTorrentFile  string
 }
 
 // Error constants
@@ -47,6 +49,15 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Независимо от состояния сервиса, через 1 сек решил отправить событие, если pendingTorrentFile установлен.
+	go func() {
+		time.Sleep(1 * time.Second) // задержка 1 секунда
+		if a.pendingTorrentFile != "" {
+			runtime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
+			a.pendingTorrentFile = ""
+		}
+	}()
 
 	// Try to initialize with saved settings
 	config, err := a.LoadConfig()
@@ -282,14 +293,8 @@ func (a *App) ValidateDownloadPath(path string) error {
 
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
-	if a.service == nil {
-		log.Print("Сервис не инициализирован, файл не будет обработан")
-		return
-	}
-
 	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
 		log.Print("Получен торрент файл: ", filePath)
-		// Вместо непосредственного добавления, уведомляем фронтенд для показа диалога добавления
-		runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
+		a.pendingTorrentFile = filePath
 	}
 }

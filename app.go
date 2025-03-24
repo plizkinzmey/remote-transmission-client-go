@@ -11,6 +11,7 @@ import (
 	"transmission-client-go/internal/domain"
 	"transmission-client-go/internal/infrastructure"
 	"transmission-client-go/internal/infrastructure/transmission"
+	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
 )
 
 // App struct
@@ -286,29 +287,8 @@ func (a *App) handleFileOpen(filePath string) {
 	}
 
 	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
-		log.Print("Обработка торрент файла: ", filePath)
-
-		// Получаем путь загрузки по умолчанию
-		defaultDir, err := a.GetDefaultDownloadDir()
-		if err != nil {
-			log.Print("Ошибка получения директории по умолчанию: ", err)
-			defaultDir = "" // Будет использован стандартный путь Transmission
-		}
-
-		// Проверяем путь перед добавлением торрента
-		if defaultDir != "" {
-			if err := a.ValidateDownloadPath(defaultDir); err != nil {
-				log.Print("Ошибка валидации пути по умолчанию: ", err)
-				defaultDir = "" // Будет использован стандартный путь Transmission
-			}
-		}
-
-		// Добавляем торрент файл напрямую через сервис
-		err = a.service.AddTorrentFile(filePath, defaultDir)
-		if err != nil {
-			log.Print("Ошибка добавления торрент файла: ", err)
-		} else {
-			log.Print("Торрент файл успешно добавлен: ", filePath)
-		}
+		log.Print("Получен торрент файл: ", filePath)
+		// Вместо непосредственного добавления, уведомляем фронтенд для показа диалога добавления
+		runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
 	}
 }

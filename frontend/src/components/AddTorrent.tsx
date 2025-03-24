@@ -20,10 +20,11 @@ import {
   RemoveDownloadPath,
 } from "../../wailsjs/go/main/App";
 
-interface AddTorrentProps {
-  onAdd: (url: string, downloadDir: string) => void;
-  onAddFile: (base64Content: string, downloadDir: string) => void;
+export interface AddTorrentProps {
+  onAdd: (url: string, downloadDir?: string) => Promise<boolean>;
+  onAddFile: (base64Content: string, downloadDir?: string) => Promise<boolean>;
   onClose: () => void;
+  torrentFile?: string; // добавлено для передачи пути торрент файла
 }
 
 const FileInputArea = ({

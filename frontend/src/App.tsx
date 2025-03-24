@@ -45,6 +45,7 @@ function App() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAddTorrent, setShowAddTorrent] = useState(false);
+  const [torrentFilePath, setTorrentFilePath] = useState<string | null>(null);
 
   // Используем хук для работы с данными торрентов
   const {
@@ -112,7 +113,8 @@ function App() {
   useEffect(() => {
     EventsOn("torrent-opened", (torrentPath: string) => {
       console.log("Получен путь к торрент-файлу:", torrentPath);
-      // Optionally, add further logic to handle the torrent file (e.g., update state or trigger actions)
+      setTorrentFilePath(torrentPath);
+      setShowAddTorrent(true);
     });
   }, []);
 
@@ -171,9 +173,13 @@ function App() {
         )}
         {showAddTorrent && (
           <AddTorrent
+            torrentFile={torrentFilePath || undefined} // заменено: теперь при отсутствии файла передается undefined
             onAdd={handleAddTorrent}
             onAddFile={handleAddTorrentFile}
-            onClose={() => setShowAddTorrent(false)}
+            onClose={() => {
+              setShowAddTorrent(false);
+              setTorrentFilePath(null);
+            }}
           />
         )}
       </div>

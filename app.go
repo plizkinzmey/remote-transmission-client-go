@@ -295,6 +295,11 @@ func (a *App) ValidateDownloadPath(path string) error {
 func (a *App) handleFileOpen(filePath string) {
 	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
 		log.Print("Получен торрент файл: ", filePath)
+		// Устанавливаем pendingTorrentFile для обработки при запуске
 		a.pendingTorrentFile = filePath
+		// Генерируем событие torrent-opened, если приложение уже запущено
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
+		}
 	}
 }

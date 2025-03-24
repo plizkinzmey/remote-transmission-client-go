@@ -14,6 +14,8 @@ import (
 	"transmission-client-go/internal/infrastructure/transmission"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
+	"encoding/base64" // добавлено
+	"os" // добавлено
 )
 
 // App struct
@@ -302,4 +304,13 @@ func (a *App) handleFileOpen(filePath string) {
 			runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
 		}
 	}
+}
+
+// ReadFile читает содержимое файла и возвращает его в формате Base64
+func (a *App) ReadFile(filePath string) (string, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("не удалось прочитать файл: %w", err)
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
 }

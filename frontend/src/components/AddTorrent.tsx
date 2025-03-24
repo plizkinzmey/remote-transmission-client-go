@@ -18,6 +18,7 @@ import {
   GetDownloadPaths,
   ValidateDownloadPath,
   RemoveDownloadPath,
+  ReadFile,
 } from "../../wailsjs/go/main/App";
 
 export interface AddTorrentProps {
@@ -212,17 +213,13 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       const parts = torrentFile.split(/[\\/]/);
       setSelectedFileName(parts[parts.length - 1]);
 
-      // Читаем файл через fetch и обрабатываем его через handleFile
-      fetch(`file://${torrentFile}`)
-        .then((response) => response.blob())
-        .then((blob) => {
-          const file = new File([blob], parts[parts.length - 1], {
-            type: "application/x-bittorrent",
-          });
-          handleFile(file);
+      // Используем Wails API для чтения файла
+      ReadFile(torrentFile)
+        .then((base64Content: string) => {
+          setSelectedFileData(base64Content);
         })
-        .catch((error) => {
-          console.error("Ошибка при чтении файла:", error);
+        .catch((error: Error) => {
+          console.error("Ошибка при чтении файла через Wails API:", error);
         });
     }
   }, [torrentFile]);

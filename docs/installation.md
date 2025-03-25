@@ -1,6 +1,6 @@
 # Installation & Setup
 
-This guide provides step-by-step instructions for installing and setting up the Transmission Client Go application.
+This guide provides step-by-step instructions for installing and setting up the Remote Transmission Desktop Client application.
 
 ## System Requirements
 
@@ -118,6 +118,8 @@ If you have trouble connecting to your Transmission server:
 2. Check that the RPC interface is enabled in your Transmission settings
 3. Ensure that your firewall allows connections to the Transmission RPC port
 4. Verify that the authentication credentials are correct
+
+Note: Remote Transmission Desktop Client features an automatic reconnection system that will attempt to restore the connection if it is lost. You will see a reconnection spinner with an explanatory message when this happens.
 
 ### Application Not Starting
 

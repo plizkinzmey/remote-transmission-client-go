@@ -1,10 +1,10 @@
 # Architecture
 
-This document describes the architectural design of the Transmission Client Go application.
+This document describes the architectural design of the Remote Transmission Desktop Client application.
 
 ## Overview
 
-Transmission Client Go follows the principles of Clean Architecture, with a clear separation of concerns between the different layers of the application. The architecture is designed to be maintainable, testable, and flexible.
+Remote Transmission Desktop Client follows the principles of Clean Architecture, with a clear separation of concerns between the different layers of the application. The architecture is designed to be maintainable, testable, and flexible.
 
 ## Architecture Layers
 
@@ -27,8 +27,9 @@ The application layer orchestrates the flow of data between the domain and infra
 
 **Key Components:**
 - `application/torrent_service.go`: Service for managing torrents and implementing business rules
+- Connection management with automatic reconnection and timeout handling
 
-This layer coordinates the work of domain entities and infrastructure services to accomplish specific tasks, such as adding torrents, managing download paths, and controlling upload ratios.
+This layer coordinates the work of domain entities and infrastructure services to accomplish specific tasks, such as adding torrents, managing download paths, controlling upload ratios, and handling connection issues.
 
 ### 3. Infrastructure Layer
 

@@ -1,6 +1,6 @@
 # User Guide
 
-This guide provides detailed instructions on how to use the Transmission Client Go application.
+This guide provides detailed instructions on how to use the Remote Transmission Desktop Client application.
 
 ## Getting Started
 
@@ -18,9 +18,19 @@ After installing the application, the first step is to connect to your Transmiss
 4. Click "Test Connection" to verify your settings
 5. Once the connection is successful, click "Save" to proceed
 
+### Connection Status and Reconnection
+
+The application includes an automatic reconnection system:
+
+1. If connection to the Transmission server is lost, a reconnection spinner will appear
+2. The spinner includes a message explaining the possible causes of the connection issue
+3. The application will automatically attempt to reconnect
+4. You can continue using the application once the connection is restored
+5. No manual intervention is required for reconnection
+
 ### Main Interface Overview
 
-The main interface of Transmission Client Go is divided into several areas:
+The main interface of Remote Transmission Desktop Client is divided into several areas:
 
 - **Header**: Contains the application title, theme toggle, language selector, and settings button
 - **Status Filter**: Allows you to filter torrents by their status (All, Downloading, Seeding, etc.)

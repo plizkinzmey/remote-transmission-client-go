@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Transmission Client Go is a modern desktop client application for Transmission BitTorrent, designed to provide a user-friendly interface for managing torrents. Built on Go and React with the Wails framework, it offers a seamless experience for users who want an efficient way to interact with their Transmission server.
+Remote Transmission Desktop Client is a modern desktop client application for Transmission BitTorrent, designed to provide a user-friendly interface for managing torrents. Built on Go and React with the Wails framework, it offers a seamless experience for users who want an efficient way to interact with their Transmission server.
 
 ## Key Features
 
@@ -19,6 +19,12 @@ Transmission Client Go is a modern desktop client application for Transmission B
 - **File Management**: Select which files to download within torrents
 - **Batch Operations**: Perform operations on multiple torrents at once
 - **Detailed Information**: View comprehensive stats for each torrent
+
+### Connection Features
+
+- **Automatic Reconnection**: Smart reconnection system with timeout management
+- **Connection Status Feedback**: Visual indication of connection state with informative messages
+- **Timeout Handling**: Graceful handling of connection timeouts with user-friendly notifications
 
 ### Performance Controls
 

@@ -1,4 +1,4 @@
-# Remote Transmission Client Go
+# Remote Transmission Desktop Client
 
 [English](#english) | [Русский](#русский)
 
@@ -11,6 +11,7 @@ A modern desktop client for Transmission BitTorrent, built with Go and React usi
 ## Features
 
 - Intuitive and responsive user interface
+- Smart reconnection system with timeout handling
 - Support for adding torrents via URL or file
 - Detailed torrent information and file management
 - Speed control with configurable throttling
@@ -73,6 +74,7 @@ For detailed development instructions, see our [Installation & Setup Guide](docs
 ## Возможности
 
 - Интуитивно понятный и отзывчивый пользовательский интерфейс
+- Интеллектуальная система переподключения с обработкой таймаутов
 - Поддержка добавления торрентов через URL или файл
 - Подробная информация о торрентах и управление файлами
 - Контроль скорости с настраиваемым ограничением

@@ -141,6 +141,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "settings.testError",
         "settings.testing",
         "settings.testConnection",
+        "errors.timeoutExplanation", // Добавил ключ для предзагрузки перевода таймаута
       ];
 
       try {

@@ -114,7 +114,7 @@ export function useTorrentData() {
   // Функция для обновления списка торрентов с таймаутом
   const refreshTorrents = useCallback(async () => {
     if (isFirstLoad) {
-      setIsLoading(true); // Показываем спиннер только при первом запуске
+      setIsLoading(true); // Показываем спиннер загрузки торрентов только при первом запуске
     }
 
     try {
@@ -122,15 +122,14 @@ export function useTorrentData() {
       setTorrents(response);
       setError(null);
       setIsReconnecting(false);
-      setIsFirstLoad(false); // После первого успешного обновления отключаем спиннер загрузки
+      setIsFirstLoad(false); // После первого успешного обновления отключаем спиннер загрузки торрентов
     } catch (error) {
       console.error("Failed to fetch torrents:", error);
       setError(t("errors.timeoutExplanation"));
-      setIsReconnecting(true);
-      await reconnect();
+      setIsReconnecting(true); // Устанавливаем реконнект только при таймауте
     } finally {
       if (isFirstLoad) {
-        setIsLoading(false); // Отключаем спиннер загрузки только при первом запуске
+        setIsLoading(false); // Отключаем спиннер загрузки торрентов только при первом запуске
       }
     }
   }, [t, isFirstLoad]);
@@ -138,7 +137,7 @@ export function useTorrentData() {
   // Инициализация приложения при загрузке
   useEffect(() => {
     const initializeApp = async () => {
-      setIsReconnecting(true); // Устанавливаем true только при инициализации
+      setIsLoading(true); // Показываем спиннер загрузки торрентов при старте
       try {
         const savedConfig = await withTimeout(LoadConfig(), 1 * 60 * 1000, t); // Таймаут 1 минута
         if (savedConfig) {
@@ -157,19 +156,18 @@ export function useTorrentData() {
             await refreshSessionStats();
             await refreshTorrents();
             setIsInitialized(true);
-            setIsReconnecting(false); // Устанавливаем false при успешной инициализации
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
             setError(t("errors.timeoutExplanation"));
-            setIsReconnecting(true); // Устанавливаем true при ошибке
-            await reconnect();
+            setIsReconnecting(true); // Устанавливаем реконнект только при ошибке
           }
         }
       } catch (error) {
         console.error("Failed to load config:", error);
         setError(t("errors.timeoutExplanation"));
-        setIsReconnecting(true); // Устанавливаем true при ошибке
-        await reconnect();
+        setIsReconnecting(true); // Устанавливаем реконнект только при ошибке
+      } finally {
+        setIsLoading(false); // Отключаем спиннер загрузки торрентов после завершения инициализации
       }
     };
     initializeApp();

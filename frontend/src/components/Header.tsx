@@ -39,7 +39,7 @@ interface HeaderProps {
   filteredTorrents: Array<any>;
   selectedTorrents: Set<number>;
   onSelectAll: () => void;
-  error: string | null;
+  error?: string; // Сделал свойство error необязательным
   statusFilter: string | null;
   onStatusFilterChange: (status: string | null) => void;
   torrents: Array<any>;

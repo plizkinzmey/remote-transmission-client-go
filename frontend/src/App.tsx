@@ -9,6 +9,8 @@ import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useTorrentData } from "./hooks/useTorrentData";
 import { useBulkOperations } from "./hooks/useBulkOperations";
+import { LoadingSpinner } from "./components/LoadingSpinner"; // Импорт компонента LoadingSpinner
+import { useLocalization } from "./contexts/LocalizationContext"; // Импорт контекста локализации
 import styles from "./styles/App.module.css";
 import "./App.css";
 import "./styles/theme.css";
@@ -41,6 +43,8 @@ export interface ConfigData extends ConnectionConfig, UIConfig {}
  * а также компоненты для отображения UI.
  */
 function App() {
+  const { t } = useLocalization(); // Получение функции локализации
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -55,6 +59,7 @@ function App() {
     hasSelectedTorrents,
     sessionStats,
     isLoading,
+    isReconnecting, // Добавлено получение isReconnecting
     handleTorrentSelect,
     handleSelectAll,
     refreshTorrents,
@@ -136,34 +141,43 @@ function App() {
           filteredTorrents={filteredTorrents}
           selectedTorrents={selectedTorrents}
           onSelectAll={handleSelectAllAdapter}
-          error={error}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
           torrents={torrents}
           onSetSpeedLimit={handleSetSpeedLimit}
           isSlowModeEnabled={selectedHaveSlowMode}
         />
-        <div className={styles.content}>
-          <div className={styles.scrollableContent}>
-            <TorrentList
-              torrents={filteredTorrents}
-              searchTerm={searchTerm}
-              selectedTorrents={selectedTorrents}
-              onSelect={handleTorrentSelect}
-              onRemove={handleRemoveTorrent}
-              onStart={handleStartTorrent}
-              onStop={handleStopTorrent}
-              isLoading={isLoading}
-              onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
+        {isReconnecting && (
+          <div className={styles.reconnectingOverlay}>
+            <div>
+              <LoadingSpinner size="large" />
+              <p>{t("errors.timeoutExplanation")}</p>
+            </div>
+          </div>
+        )}
+        {!isReconnecting && (
+          <div className={styles.content}>
+            <div className={styles.scrollableContent}>
+              <TorrentList
+                torrents={filteredTorrents}
+                searchTerm={searchTerm}
+                selectedTorrents={selectedTorrents}
+                onSelect={handleTorrentSelect}
+                onRemove={handleRemoveTorrent}
+                onStart={handleStartTorrent}
+                onStop={handleStopTorrent}
+                isLoading={isLoading}
+                onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
+              />
+            </div>
+            <Footer
+              totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
+              totalUploadSpeed={sessionStats?.TotalUploadSpeed}
+              freeSpace={sessionStats?.FreeSpace}
+              transmissionVersion={sessionStats?.TransmissionVersion}
             />
           </div>
-          <Footer
-            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
-            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
-            freeSpace={sessionStats?.FreeSpace}
-            transmissionVersion={sessionStats?.TransmissionVersion}
-          />
-        </div>
+        )}
         {/* Модальные окна */}
         {showSettings && (
           <Settings

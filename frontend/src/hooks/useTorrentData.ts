@@ -23,6 +23,20 @@ interface SessionStatsData {
   TransmissionVersion: string;
 }
 
+// Функция для создания таймаута
+const withTimeout = <T>(
+  promise: Promise<T>,
+  timeout: number,
+  t: (key: string) => string
+): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(t("errors.timeout"))), timeout)
+    ),
+  ]);
+};
+
 /**
  * Хук для работы с данными торрентов и управления соединением
  */
@@ -38,11 +52,9 @@ export function useTorrentData() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [config, setConfig] = useState<ConfigData | null>(null);
-  const maxReconnectAttempts = 3;
 
   // Обработчик выбора/снятия выбора с торрента
   const handleTorrentSelect = (id: number) => {
@@ -70,12 +82,6 @@ export function useTorrentData() {
 
   // Функция для попытки переподключения к серверу
   const reconnect = async () => {
-    if (reconnectAttempts >= maxReconnectAttempts) {
-      setError(t("errors.maxReconnectAttempts"));
-      setIsReconnecting(false);
-      return;
-    }
-
     setIsReconnecting(true);
     try {
       const savedConfig = await LoadConfig();
@@ -83,12 +89,10 @@ export function useTorrentData() {
         await Initialize(JSON.stringify(savedConfig));
         setError(null);
         setIsReconnecting(false);
-        setReconnectAttempts(0);
         return true;
       }
     } catch (error) {
       console.error("Reconnection attempt failed:", error);
-      setReconnectAttempts((prev) => prev + 1);
       return false;
     }
   };
@@ -107,50 +111,36 @@ export function useTorrentData() {
     }
   }, [isInitialized]);
 
-  // Функция для обновления списка торрентов
+  // Функция для обновления списка торрентов с таймаутом
   const refreshTorrents = useCallback(async () => {
     if (isFirstLoad) {
-      setIsLoading(true);
+      setIsLoading(true); // Показываем спиннер только при первом запуске
     }
 
     try {
-      const response = await GetTorrents();
+      const response = await withTimeout(GetTorrents(), 1 * 60 * 1000, t); // Таймаут 1 минута
       setTorrents(response);
       setError(null);
-      setReconnectAttempts(0);
       setIsReconnecting(false);
-      setIsFirstLoad(false);
+      setIsFirstLoad(false); // После первого успешного обновления отключаем спиннер загрузки
     } catch (error) {
       console.error("Failed to fetch torrents:", error);
-      if (!isReconnecting) {
-        setError(
-          t(
-            "errors.connectionLost",
-            String(reconnectAttempts + 1),
-            String(maxReconnectAttempts)
-          )
-        );
-        const reconnected = await reconnect();
-        if (!reconnected) {
-          setError(
-            t(
-              "errors.reconnectFailed",
-              String(reconnectAttempts + 1),
-              String(maxReconnectAttempts)
-            )
-          );
-        }
-      }
+      setError(t("errors.timeoutExplanation"));
+      setIsReconnecting(true);
+      await reconnect();
     } finally {
-      setIsLoading(false);
+      if (isFirstLoad) {
+        setIsLoading(false); // Отключаем спиннер загрузки только при первом запуске
+      }
     }
-  }, [isReconnecting, reconnectAttempts, t, isFirstLoad]);
+  }, [t, isFirstLoad]);
 
   // Инициализация приложения при загрузке
   useEffect(() => {
     const initializeApp = async () => {
+      setIsReconnecting(true); // Устанавливаем true только при инициализации
       try {
-        const savedConfig = await LoadConfig();
+        const savedConfig = await withTimeout(LoadConfig(), 1 * 60 * 1000, t); // Таймаут 1 минута
         if (savedConfig) {
           const config: ConfigData = {
             ...savedConfig,
@@ -167,19 +157,19 @@ export function useTorrentData() {
             await refreshSessionStats();
             await refreshTorrents();
             setIsInitialized(true);
+            setIsReconnecting(false); // Устанавливаем false при успешной инициализации
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
-            setError(t("errors.connectionFailed", String(initError)));
-            return false;
+            setError(t("errors.timeoutExplanation"));
+            setIsReconnecting(true); // Устанавливаем true при ошибке
+            await reconnect();
           }
-        } else {
-          return false;
         }
-        return true;
       } catch (error) {
         console.error("Failed to load config:", error);
-        setError(t("errors.failedToLoadConfig", String(error)));
-        return false;
+        setError(t("errors.timeoutExplanation"));
+        setIsReconnecting(true); // Устанавливаем true при ошибке
+        await reconnect();
       }
     };
     initializeApp();
@@ -341,6 +331,7 @@ export function useTorrentData() {
     hasSelectedTorrents,
     sessionStats,
     isLoading: isLoading && isFirstLoad,
+    isReconnecting, // Добавлено возвращение isReconnecting
     config,
     handleTorrentSelect,
     handleSelectAll,

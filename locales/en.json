@@ -161,7 +161,8 @@
     "directoryNotAccessible": "Directory is not accessible",
     "parentDirectoryNotExists": "Parent directory does not exist",
     "invalidPath": "Invalid path",
-    "emptyPath": "Path cannot be empty"
+    "emptyPath": "Path cannot be empty",
+    "timeoutExplanation": "No access to the Transmission service or a large torrent is being processed. Check your connection or wait for reconnection."
   },
 
   "language": {

@@ -19,7 +19,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:     "Transmission Desktop Client",
+		Title:     "Remote Transmission Desktop Client",
 		Width:     960,
 		Height:    768,
 		MinWidth:  960,
@@ -31,8 +31,8 @@ func main() {
 		OnStartup:        app.startup,
 		Mac: &mac.Options{
 			About: &mac.AboutInfo{
-				Title:   "Transmission Desktop Client",
-				Message: "Version: 0.0.1",
+				Title:   "Remote Transmission Desktop Client",
+				Message: "Version: 0.0.2",
 				Icon:    nil,
 			},
 			OnFileOpen: app.handleFileOpen,

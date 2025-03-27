@@ -10,7 +10,7 @@ A modern desktop client for Transmission BitTorrent, built with Go and React usi
 
 ## Features
 
-- Intuitive and responsive user interface
+- Intuitive and responsive user interfaceeeeee
 - Smart reconnection system with timeout handling
 - Support for adding torrents via URL or file
 - Detailed torrent information and file management

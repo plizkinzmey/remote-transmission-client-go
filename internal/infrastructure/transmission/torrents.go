@@ -18,6 +18,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
 		"rateDownload", "rateUpload", "downloadedEver",
 		"downloadLimit", "uploadLimit", "downloadLimited", "uploadLimited",
+		"recheckProgress", // Добавляем поле для отслеживания прогресса проверки
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
@@ -29,7 +30,14 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		totalSize, downloadedSize := getTorrentSizes(t)
 		uploadRatio, uploadedBytes := getUploadInfo(&t)
 		downloadSpeed, uploadSpeed := getSpeedInfo(&t)
-		progress := *t.PercentDone * 100
+
+		// Расчет прогресса в зависимости от статуса
+		var progress float64
+		if status == domain.StatusChecking && t.RecheckProgress != nil {
+			progress = *t.RecheckProgress * 100
+		} else {
+			progress = *t.PercentDone * 100
+		}
 
 		var sizeFormatted string
 		if status == domain.StatusDownloading {
@@ -240,6 +248,15 @@ func (c *TransmissionClient) SetSpeedLimitFromConfig(ids []int64, config domain.
 	return c.SetTorrentSpeedLimit(ids, 0, 0)
 }
 
+// VerifyTorrent запускает процесс проверки целостности данных торрента
+func (c *TransmissionClient) VerifyTorrent(id int64) error {
+	err := c.client.TorrentVerifyIDs(c.ctx, []int64{id})
+	if err != nil {
+		return fmt.Errorf("failed to verify torrent: %w", err)
+	}
+	return nil
+}
+
 // mapStatus преобразует статус торрента
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
 	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {
@@ -249,10 +266,12 @@ func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Tor
 	switch status {
 	case transmissionrpc.TorrentStatusStopped:
 		return domain.StatusStopped
-	case transmissionrpc.TorrentStatusCheckWait, transmissionrpc.TorrentStatusCheck:
+	case transmissionrpc.TorrentStatusCheckWait:
+		return domain.StatusQueuedCheck
+	case transmissionrpc.TorrentStatusCheck:
 		return domain.StatusChecking
 	case transmissionrpc.TorrentStatusDownloadWait:
-		return domain.StatusQueued
+		return domain.StatusQueuedDown
 	case transmissionrpc.TorrentStatusDownload:
 		return domain.StatusDownloading
 	case transmissionrpc.TorrentStatusSeedWait:

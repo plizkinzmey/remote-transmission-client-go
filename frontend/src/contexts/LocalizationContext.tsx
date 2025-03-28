@@ -109,6 +109,8 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "torrent.status.checking",
         "torrent.status.queued",
         "torrent.status.completed",
+        "torrent.status.queuedCheck",
+        "torrent.status.queuedDownload",
         "torrent.start",
         "torrent.stop",
         "torrent.remove",
@@ -120,6 +122,8 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "torrent.speed",
         "torrent.slowSpeed",
         "torrent.normalSpeed",
+        "torrent.verify",
+        "torrent.verifying",
         "header.slowSpeed",
         "header.normalSpeed",
         "torrents.search",
@@ -141,7 +145,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         "settings.testError",
         "settings.testing",
         "settings.testConnection",
-        "errors.timeoutExplanation", // Добавил ключ для предзагрузки перевода таймаута
+        "errors.timeoutExplanation",
       ];
 
       try {

@@ -77,15 +77,19 @@
     "viewContent": "Просмотр файлов",
     "removeWithData": "Удалить с данными",
     "slowSpeed": "Замедлить",
-    "normalSpeed": "Нормальная скорость",
+    "normalSpeed": "Обычная скорость",
+    "verify": "Проверить",
+    "verifying": "Проверка...",
     "status": {
       "stopped": "Остановлен",
       "downloading": "Загрузка",
       "seeding": "Раздача",
       "checking": "Проверка",
       "queued": "В очереди",
-      "completed": "Завершен",
-      "slow": "Замедлен"
+      "completed": "Завершён",
+      "slow": "Замедлен",
+      "queuedCheck": "Ожидает проверки",
+      "queuedDownload": "Ожидает загрузки"
     }
   },
 
@@ -150,6 +154,7 @@
     "failedToLoadFiles": "Не удалось загрузить список файлов: {0}",
     "failedToUpdateFile": "Не удалось обновить состояние файла: {0}",
     "failedToUpdateFiles": "Не удалось обновить состояние файлов: {0}",
+    "failedToVerifyTorrent": "Не удалось проверить торрент: {0}",
     "downloadPathEmpty": "Путь загрузки не может быть пустым",
     "downloadPathNotExists": "Директория не существует: {0}",
     "downloadPathNoAccess": "Нет доступа к директории: {0}",
@@ -192,6 +197,8 @@
     "completed": "Завершен",
     "checking": "Проверяется",
     "queued": "В очереди",
-    "slow": "Замедлен"
+    "slow": "Замедлен",
+    "queuedCheck": "Ожидает проверки",
+    "queuedDownload": "Ожидает загрузки"
   }
 }

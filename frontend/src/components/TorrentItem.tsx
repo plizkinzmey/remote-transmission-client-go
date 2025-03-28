@@ -20,6 +20,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   FolderIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { SnailIcon } from "./icons/SnailIcon";
 import styles from "../styles/TorrentItem.module.css";
@@ -41,6 +42,7 @@ interface TorrentItemProps {
   onRemove: (id: number, deleteData: boolean) => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
+  onVerify?: (id: number) => void;
   downloadSpeedFormatted: string;
   uploadSpeedFormatted: string;
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
@@ -80,6 +82,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   onRemove,
   onStart,
   onStop,
+  onVerify,
   downloadSpeedFormatted,
   uploadSpeedFormatted,
   onSetSpeedLimit,
@@ -89,13 +92,25 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastAction, setLastAction] = useState<"start" | "stop" | null>(null);
-  const [lastStatus, setLastStatus] = useState(status);
+  const [lastAction, setLastAction] = useState<
+    "start" | "stop" | "verify" | null
+  >(null);
 
   const isRunning = ["downloading", "seeding"].includes(status);
+  const isChecking = status === "checking";
+  const isQueued = status === "queuedCheck" || status === "queuedDownload";
+
+  // Состояние, при котором карточка должна быть заблокирована
+  const isBlocked = isChecking || isQueued;
 
   useEffect(() => {
     if (!isLoading || !lastAction) return;
+
+    if (lastAction === "verify" && isChecking) {
+      setIsLoading(false);
+      setLastAction(null);
+      return;
+    }
 
     const canPerformAction =
       (lastAction === "start" && status === "stopped") ||
@@ -104,31 +119,21 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
     if (!canPerformAction) {
       setIsLoading(false);
       setLastAction(null);
-      return;
     }
+  }, [status, lastAction, isLoading, isChecking]);
 
-    if (lastStatus !== status) {
-      const isActionComplete =
-        (lastAction === "start" &&
-          ["downloading", "seeding"].includes(status)) ||
-        (lastAction === "stop" && status === "stopped");
+  const handleAction = (action: "start" | "stop" | "verify") => {
+    if (isChecking) return;
 
-      if (isActionComplete) {
-        setIsLoading(false);
-        setLastAction(null);
-      }
-    }
-
-    setLastStatus(status);
-  }, [status, lastAction, lastStatus, isLoading]);
-
-  const handleAction = (action: "start" | "stop") => {
     setIsLoading(true);
     setLastAction(action);
+
     if (action === "start") {
       onStart(id);
-    } else {
+    } else if (action === "stop") {
       onStop(id);
+    } else if (action === "verify" && onVerify) {
+      onVerify(id);
     }
   };
 
@@ -137,18 +142,20 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const getStatusData = (
     status: string
   ): { text: string; color: ColorType } => {
-    const statusMap: Record<StatusType, { color: ColorType }> = {
+    const statusMap: Record<string, { color: ColorType }> = {
       downloading: { color: "blue" },
       seeding: { color: "grass" },
       completed: { color: "mint" },
       checking: { color: "amber" },
       queued: { color: "purple" },
+      queuedCheck: { color: "purple" },
+      queuedDownload: { color: "purple" },
       stopped: { color: "gray" },
     };
 
     return {
       text: t(`torrent.status.${status}`),
-      color: statusMap[status as StatusType]?.color || "gray",
+      color: statusMap[status]?.color || "gray",
     };
   };
 
@@ -159,7 +166,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   };
 
   const renderActionButton = () => {
-    if (isLoading) {
+    if (isLoading && lastAction !== "verify") {
       return (
         <IconButton disabled variant="soft" color="gray">
           <LoadingSpinner size="small" />
@@ -175,6 +182,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           color="amber"
           onClick={() => handleAction("stop")}
           title={t("torrent.stop")}
+          disabled={isBlocked}
         >
           <PauseIcon width={16} height={16} />
         </IconButton>
@@ -188,8 +196,42 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="grass"
         onClick={() => handleAction("start")}
         title={t("torrent.start")}
+        disabled={isBlocked}
       >
         <PlayIcon width={16} height={16} />
+      </IconButton>
+    );
+  };
+
+  const renderVerifyButton = () => {
+    if (!onVerify) return null;
+
+    if (isChecking || isQueued) {
+      return (
+        <IconButton
+          size="2"
+          variant="solid"
+          color="amber"
+          disabled
+          title={t(
+            isChecking ? "torrent.verifying" : `torrent.status.${status}`
+          )}
+        >
+          <LoadingSpinner size="small" />
+        </IconButton>
+      );
+    }
+
+    return (
+      <IconButton
+        size="2"
+        variant="soft"
+        color="orange"
+        onClick={() => handleAction("verify")}
+        title={t("torrent.verify")}
+        disabled={isLoading || isBlocked}
+      >
+        <CheckCircleIcon width={16} height={16} />
       </IconButton>
     );
   };
@@ -204,6 +246,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
+        disabled={isChecking || status === "queuedCheck"}
       >
         <SnailIcon style={{ width: 16, height: 16 }} />
       </IconButton>
@@ -298,12 +341,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="indigo"
         onClick={() => setShowContent(true)}
         title={t("torrent.viewContent")}
+        disabled={isBlocked}
       >
         <FolderIcon width={16} height={16} />
       </IconButton>
 
       {renderActionButton()}
       {renderSpeedLimitButton()}
+      {renderVerifyButton()}
 
       <IconButton
         size="2"
@@ -311,6 +356,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="red"
         onClick={() => setShowDeleteConfirmation(true)}
         title={t("torrent.remove")}
+        disabled={isBlocked}
       >
         <TrashIcon width={16} height={16} />
       </IconButton>
@@ -327,6 +373,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               checked={selected}
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}
+              disabled={isBlocked}
             />
           </Box>
           {renderTorrentInfo()}

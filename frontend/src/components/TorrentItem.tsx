@@ -246,7 +246,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-        disabled={isChecking}
+        disabled={isChecking || status === "queuedCheck"}
       >
         <SnailIcon style={{ width: 16, height: 16 }} />
       </IconButton>

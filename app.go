@@ -315,3 +315,11 @@ func (a *App) ReadFile(filePath string) (string, error) {
 	}
 	return base64.StdEncoding.EncodeToString(data), nil
 }
+
+// VerifyTorrent запускает проверку целостности торрента
+func (a *App) VerifyTorrent(id int64) error {
+	if a.service == nil {
+		return errors.New(ErrServiceNotInitialized)
+	}
+	return a.service.VerifyTorrent(id)
+}

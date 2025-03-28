@@ -68,6 +68,7 @@ function App() {
     handleRemoveTorrent,
     handleStartTorrent,
     handleStopTorrent,
+    handleVerifyTorrent,
     handleSettingsSave,
     handleSetSpeedLimit: handleTorrentSpeedLimit,
     config,
@@ -96,6 +97,8 @@ function App() {
       !statusFilter ||
       (statusFilter === "slow"
         ? torrent.IsSlowMode
+        : statusFilter === "queued"
+        ? ["queued", "queuedCheck", "queuedDownload"].includes(torrent.Status)
         : torrent.Status === statusFilter);
     return matchesSearch && matchesStatus;
   });
@@ -166,6 +169,7 @@ function App() {
                 onRemove={handleRemoveTorrent}
                 onStart={handleStartTorrent}
                 onStop={handleStopTorrent}
+                onVerify={handleVerifyTorrent}
                 isLoading={isLoading}
                 onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
               />

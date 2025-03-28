@@ -20,7 +20,12 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
     { id: "seeding", label: "seeding", color: "grass" },
     { id: "stopped", label: "stopped", color: "gray" },
     { id: "checking", label: "checking", color: "amber" },
-    { id: "queued", label: "queued", color: "purple" },
+    {
+      id: "queued",
+      label: "queued",
+      color: "purple",
+      matchStatuses: ["queued", "queuedCheck", "queuedDownload"],
+    },
     { id: "completed", label: "completed", color: "mint" },
     { id: "slow", label: "slow", color: "orange" },
   ] as const;

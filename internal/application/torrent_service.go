@@ -33,7 +33,7 @@ func (s *TorrentService) UpdateConfig(config *domain.Config) {
 
 func (s *TorrentService) GetAllTorrents() ([]domain.Torrent, error) {
 	torrents, err := s.repo.GetAll()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 
@@ -327,4 +327,9 @@ func (s *TorrentService) ValidateDownloadPath(path string) error {
 	}
 
 	return client.ValidateDownloadPath(absPath)
+}
+
+// VerifyTorrent запускает процесс проверки целостности данных торрента
+func (s *TorrentService) VerifyTorrent(id int64) error {
+	return s.repo.VerifyTorrent(id)
 }

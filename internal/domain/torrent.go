@@ -9,6 +9,8 @@ const (
 	StatusCompleted   TorrentStatus = "completed"
 	StatusChecking    TorrentStatus = "checking"
 	StatusQueued      TorrentStatus = "queued"
+	StatusQueuedCheck TorrentStatus = "queuedCheck"    // Очередь на проверку
+	StatusQueuedDown  TorrentStatus = "queuedDownload" // Очередь на загрузку
 )
 
 // Структура для представления файла в торренте
@@ -55,6 +57,9 @@ type TorrentRepository interface {
 	GetTorrentFiles(id int64) ([]TorrentFile, error)
 	SetFilesWanted(id int64, fileIds []int, wanted bool) error
 	SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error
+
+	// Метод для верификации торрента
+	VerifyTorrent(id int64) error
 
 	// Новые методы для работы с каталогами
 	GetDefaultDownloadDir() (string, error)

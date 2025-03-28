@@ -99,52 +99,60 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const isRunning = ["downloading", "seeding"].includes(status);
   const isChecking = status === "checking";
 
+  // Сбрасываем состояние верификации, когда статус изменился с "checking" на любой другой
   useEffect(() => {
-    if (!isLoading || !lastAction) return;
-
-    // Особое поведение для верификации - только останавливаем загрузку, когда статус меняется на checking
-    if (lastAction === "verify") {
-      if (status === "checking") {
-        setIsVerifying(true);
-        setIsLoading(false);
-      }
-      // Если статус изменился с checking на любой другой, значит верификация завершена
-      if (isVerifying && lastStatus === "checking" && status !== "checking") {
-        setIsVerifying(false);
-        setLastAction(null);
-      }
-      setLastStatus(status);
-      return;
-    }
-
-    const canPerformAction =
-      (lastAction === "start" && status === "stopped") ||
-      (lastAction === "stop" && ["downloading", "seeding"].includes(status));
-
-    if (!canPerformAction) {
-      setIsLoading(false);
+    // Если статус изменился с checking на любой другой - верификация завершена
+    if (isVerifying && status !== "checking") {
+      setIsVerifying(false);
       setLastAction(null);
-      return;
     }
 
-    if (lastStatus !== status) {
-      const isActionComplete =
-        (lastAction === "start" &&
-          ["downloading", "seeding"].includes(status)) ||
-        (lastAction === "stop" && status === "stopped");
-
-      if (isActionComplete) {
-        setIsLoading(false);
-        setLastAction(null);
-      }
+    // Если статус стал checking и последнее действие было verify - устанавливаем флаг верификации
+    if (!isVerifying && status === "checking" && lastAction === "verify") {
+      setIsVerifying(true);
+      setIsLoading(false);
     }
 
     setLastStatus(status);
-  }, [status, lastAction, lastStatus, isLoading, isVerifying]);
+  }, [status, isVerifying, lastAction]);
+
+  // Обработка действий с торрентом (старт, стоп, проверка)
+  useEffect(() => {
+    if (!isLoading || !lastAction) return;
+
+    // Если действие не verify, то обрабатываем как обычно
+    if (lastAction !== "verify") {
+      const canPerformAction =
+        (lastAction === "start" && status === "stopped") ||
+        (lastAction === "stop" && ["downloading", "seeding"].includes(status));
+      
+      if (!canPerformAction) {
+        setIsLoading(false);
+        setLastAction(null);
+        return;
+      }
+
+      if (lastStatus !== status) {
+        const isActionComplete =
+          (lastAction === "start" && ["downloading", "seeding"].includes(status)) ||
+          (lastAction === "stop" && status === "stopped");
+
+        if (isActionComplete) {
+          setIsLoading(false);
+          setLastAction(null);
+        }
+      }
+    } else {
+      // Для верификации ждем когда статус станет checking
+      if (status === "checking") {
+        setIsLoading(false);
+      }
+    }
+  }, [status, lastAction, lastStatus, isLoading]);
 
   const handleAction = (action: "start" | "stop" | "verify") => {
     if (isVerifying && action !== "verify") return; // Блокируем другие действия во время верификации
-
+    
     setIsLoading(true);
     setLastAction(action);
 
@@ -296,13 +304,32 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <Text size="1">{progress.toFixed(1)}%</Text>
         </Flex>
 
-        <Progress
-          size="1"
-          variant="surface"
-          value={progress}
-          className={styles.progressWrapper}
-          color={color}
-        />
+        {isVerifying || isChecking ? (
+          <Box className={styles.verificationProgress}>
+            <Progress
+              size="1"
+              variant="surface"
+              value={progress}
+              className={styles.progressWrapper}
+              color="amber"
+              style={{ 
+                animation: 'pulse 1.5s infinite ease-in-out',
+                background: 'rgba(255, 214, 0, 0.15)' 
+              }}
+            />
+            <Text size="1" style={{ marginTop: '4px', color: 'var(--amber-9)', textAlign: 'center' }}>
+              {t("torrent.verifying")}...
+            </Text>
+          </Box>
+        ) : (
+          <Progress
+            size="1"
+            variant="surface"
+            value={progress}
+            className={styles.progressWrapper}
+            color={color}
+          />
+        )}
 
         {renderStats()}
       </Box>

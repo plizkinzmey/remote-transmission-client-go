@@ -60,6 +60,23 @@
   margin-bottom: 12px;
 }
 
+/* Стили для индикатора верификации */
+.verificationProgress {
+  margin-bottom: 12px;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
 /* Иконки */
 .downloadIcon { color: var(--blue-9); }
 .uploadIcon { color: var(--grass-9); }

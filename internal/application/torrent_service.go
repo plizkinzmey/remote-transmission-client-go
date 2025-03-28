@@ -328,3 +328,8 @@ func (s *TorrentService) ValidateDownloadPath(path string) error {
 
 	return client.ValidateDownloadPath(absPath)
 }
+
+// VerifyTorrent запускает процесс проверки целостности данных торрента
+func (s *TorrentService) VerifyTorrent(id int64) error {
+	return s.repo.VerifyTorrent(id)
+}

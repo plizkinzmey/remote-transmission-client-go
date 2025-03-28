@@ -78,6 +78,8 @@
     "removeWithData": "Remove with Data",
     "slowSpeed": "Slow Down",
     "normalSpeed": "Normal Speed",
+    "verify": "Verify",
+    "verifying": "Verifying...",
     "status": {
       "stopped": "Stopped",
       "downloading": "Downloading",
@@ -150,6 +152,7 @@
     "failedToLoadFiles": "Failed to load file list: {0}",
     "failedToUpdateFile": "Failed to update file state: {0}",
     "failedToUpdateFiles": "Failed to update files state: {0}",
+    "failedToVerifyTorrent": "Failed to verify torrent: {0}",
     "downloadPathEmpty": "Download path cannot be empty",
     "downloadPathNotExists": "Directory does not exist: {0}",
     "downloadPathNoAccess": "Cannot access directory: {0}",

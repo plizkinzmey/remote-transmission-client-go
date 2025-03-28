@@ -13,6 +13,7 @@ import {
   StopTorrents,
   GetSessionStats,
   SetTorrentSpeedLimit,
+  VerifyTorrent,
 } from "../../wailsjs/go/main/App";
 
 // Интерфейс для статистики сессии
@@ -318,6 +319,19 @@ export function useTorrentData() {
     }
   };
 
+  // Обработчик верификации торрента
+  const handleVerifyTorrent = async (id: number) => {
+    try {
+      await VerifyTorrent(id);
+      refreshTorrents();
+      return true;
+    } catch (error) {
+      console.error("Failed to verify torrent:", error);
+      setError(t("errors.failedToVerifyTorrent", String(error)));
+      return false;
+    }
+  };
+
   // Флаг наличия выбранных торрентов
   const hasSelectedTorrents = selectedTorrents.size > 0;
 
@@ -341,5 +355,6 @@ export function useTorrentData() {
     handleStopTorrent,
     handleSettingsSave,
     handleSetSpeedLimit,
+    handleVerifyTorrent,
   };
 }

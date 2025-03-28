@@ -240,6 +240,15 @@ func (c *TransmissionClient) SetSpeedLimitFromConfig(ids []int64, config domain.
 	return c.SetTorrentSpeedLimit(ids, 0, 0)
 }
 
+// VerifyTorrent запускает процесс проверки целостности данных торрента
+func (c *TransmissionClient) VerifyTorrent(id int64) error {
+	err := c.client.TorrentVerifyIDs(c.ctx, []int64{id})
+	if err != nil {
+		return fmt.Errorf("failed to verify torrent: %w", err)
+	}
+	return nil
+}
+
 // mapStatus преобразует статус торрента
 func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Torrent) domain.TorrentStatus {
 	if status == transmissionrpc.TorrentStatusStopped && torrent.PercentDone != nil && *torrent.PercentDone == 1.0 {

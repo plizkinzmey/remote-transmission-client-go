@@ -56,6 +56,9 @@ type TorrentRepository interface {
 	SetFilesWanted(id int64, fileIds []int, wanted bool) error
 	SetTorrentSpeedLimit(ids []int64, downloadLimit int64, uploadLimit int64) error
 
+	// Метод для верификации торрента
+	VerifyTorrent(id int64) error
+
 	// Новые методы для работы с каталогами
 	GetDefaultDownloadDir() (string, error)
 }

@@ -92,67 +92,35 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [lastAction, setLastAction] = useState<"start" | "stop" | "verify" | null>(null);
-  const [lastStatus, setLastStatus] = useState(status);
+  const [lastAction, setLastAction] = useState<
+    "start" | "stop" | "verify" | null
+  >(null);
 
   const isRunning = ["downloading", "seeding"].includes(status);
   const isChecking = status === "checking";
 
-  // Сбрасываем состояние верификации, когда статус изменился с "checking" на любой другой
-  useEffect(() => {
-    // Если статус изменился с checking на любой другой - верификация завершена
-    if (isVerifying && status !== "checking") {
-      setIsVerifying(false);
-      setLastAction(null);
-    }
-
-    // Если статус стал checking и последнее действие было verify - устанавливаем флаг верификации
-    if (!isVerifying && status === "checking" && lastAction === "verify") {
-      setIsVerifying(true);
-      setIsLoading(false);
-    }
-
-    setLastStatus(status);
-  }, [status, isVerifying, lastAction]);
-
-  // Обработка действий с торрентом (старт, стоп, проверка)
   useEffect(() => {
     if (!isLoading || !lastAction) return;
 
-    // Если действие не verify, то обрабатываем как обычно
-    if (lastAction !== "verify") {
-      const canPerformAction =
-        (lastAction === "start" && status === "stopped") ||
-        (lastAction === "stop" && ["downloading", "seeding"].includes(status));
-      
-      if (!canPerformAction) {
-        setIsLoading(false);
-        setLastAction(null);
-        return;
-      }
-
-      if (lastStatus !== status) {
-        const isActionComplete =
-          (lastAction === "start" && ["downloading", "seeding"].includes(status)) ||
-          (lastAction === "stop" && status === "stopped");
-
-        if (isActionComplete) {
-          setIsLoading(false);
-          setLastAction(null);
-        }
-      }
-    } else {
-      // Для верификации ждем когда статус станет checking
-      if (status === "checking") {
-        setIsLoading(false);
-      }
+    if (lastAction === "verify" && isChecking) {
+      setIsLoading(false);
+      setLastAction(null);
+      return;
     }
-  }, [status, lastAction, lastStatus, isLoading]);
+
+    const canPerformAction =
+      (lastAction === "start" && status === "stopped") ||
+      (lastAction === "stop" && ["downloading", "seeding"].includes(status));
+
+    if (!canPerformAction) {
+      setIsLoading(false);
+      setLastAction(null);
+    }
+  }, [status, lastAction, isLoading, isChecking]);
 
   const handleAction = (action: "start" | "stop" | "verify") => {
-    if (isVerifying && action !== "verify") return; // Блокируем другие действия во время верификации
-    
+    if (isChecking) return;
+
     setIsLoading(true);
     setLastAction(action);
 
@@ -208,7 +176,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           color="amber"
           onClick={() => handleAction("stop")}
           title={t("torrent.stop")}
-          disabled={isVerifying}
+          disabled={isChecking}
         >
           <PauseIcon width={16} height={16} />
         </IconButton>
@@ -222,7 +190,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="grass"
         onClick={() => handleAction("start")}
         title={t("torrent.start")}
-        disabled={isVerifying || isChecking}
+        disabled={isChecking}
       >
         <PlayIcon width={16} height={16} />
       </IconButton>
@@ -232,7 +200,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const renderVerifyButton = () => {
     if (!onVerify) return null;
 
-    if (isVerifying) {
+    if (isChecking) {
       return (
         <IconButton
           size="2"
@@ -253,7 +221,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="orange"
         onClick={() => handleAction("verify")}
         title={t("torrent.verify")}
-        disabled={isChecking || isLoading}
+        disabled={isLoading}
       >
         <CheckCircleIcon width={16} height={16} />
       </IconButton>
@@ -270,7 +238,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-        disabled={isVerifying}
+        disabled={isChecking}
       >
         <SnailIcon style={{ width: 16, height: 16 }} />
       </IconButton>
@@ -304,32 +272,13 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <Text size="1">{progress.toFixed(1)}%</Text>
         </Flex>
 
-        {isVerifying || isChecking ? (
-          <Box className={styles.verificationProgress}>
-            <Progress
-              size="1"
-              variant="surface"
-              value={progress}
-              className={styles.progressWrapper}
-              color="amber"
-              style={{ 
-                animation: 'pulse 1.5s infinite ease-in-out',
-                background: 'rgba(255, 214, 0, 0.15)' 
-              }}
-            />
-            <Text size="1" style={{ marginTop: '4px', color: 'var(--amber-9)', textAlign: 'center' }}>
-              {t("torrent.verifying")}...
-            </Text>
-          </Box>
-        ) : (
-          <Progress
-            size="1"
-            variant="surface"
-            value={progress}
-            className={styles.progressWrapper}
-            color={color}
-          />
-        )}
+        <Progress
+          size="1"
+          variant="surface"
+          value={progress}
+          className={styles.progressWrapper}
+          color={color}
+        />
 
         {renderStats()}
       </Box>
@@ -384,7 +333,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="indigo"
         onClick={() => setShowContent(true)}
         title={t("torrent.viewContent")}
-        disabled={isVerifying}
+        disabled={isChecking}
       >
         <FolderIcon width={16} height={16} />
       </IconButton>
@@ -399,7 +348,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         color="red"
         onClick={() => setShowDeleteConfirmation(true)}
         title={t("torrent.remove")}
-        disabled={isVerifying}
+        disabled={isChecking}
       >
         <TrashIcon width={16} height={16} />
       </IconButton>
@@ -416,7 +365,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               checked={selected}
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}
-              disabled={isVerifying}
+              disabled={isChecking}
             />
           </Box>
           {renderTorrentInfo()}

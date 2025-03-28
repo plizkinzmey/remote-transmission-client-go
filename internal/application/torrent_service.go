@@ -33,7 +33,7 @@ func (s *TorrentService) UpdateConfig(config *domain.Config) {
 
 func (s *TorrentService) GetAllTorrents() ([]domain.Torrent, error) {
 	torrents, err := s.repo.GetAll()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 

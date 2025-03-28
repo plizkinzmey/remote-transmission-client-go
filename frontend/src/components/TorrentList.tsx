@@ -33,6 +33,7 @@ interface TorrentListProps {
   onRemove: (id: number, deleteData: boolean) => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
+  onVerify?: (id: number) => void;
   isLoading?: boolean;
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
 }
@@ -49,6 +50,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
   onRemove,
   onStart,
   onStop,
+  onVerify,
   isLoading = false,
   onSetSpeedLimit,
 }) => {
@@ -92,6 +94,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
           onRemove={onRemove}
           onStart={onStart}
           onStop={onStop}
+          onVerify={onVerify}
           onSetSpeedLimit={onSetSpeedLimit}
           isSlowMode={torrent.IsSlowMode}
         />

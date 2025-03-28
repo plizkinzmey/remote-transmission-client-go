@@ -68,6 +68,7 @@ function App() {
     handleRemoveTorrent,
     handleStartTorrent,
     handleStopTorrent,
+    handleVerifyTorrent,
     handleSettingsSave,
     handleSetSpeedLimit: handleTorrentSpeedLimit,
     config,
@@ -166,6 +167,7 @@ function App() {
                 onRemove={handleRemoveTorrent}
                 onStart={handleStartTorrent}
                 onStop={handleStopTorrent}
+                onVerify={handleVerifyTorrent}
                 isLoading={isLoading}
                 onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
               />

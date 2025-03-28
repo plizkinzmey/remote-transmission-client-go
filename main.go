@@ -32,7 +32,7 @@ func main() {
 		Mac: &mac.Options{
 			About: &mac.AboutInfo{
 				Title:   "Remote Transmission Desktop Client",
-				Message: "Version: 0.0.2",
+				Message: "Version: 0.0.3",
 				Icon:    nil,
 			},
 			OnFileOpen: app.handleFileOpen,

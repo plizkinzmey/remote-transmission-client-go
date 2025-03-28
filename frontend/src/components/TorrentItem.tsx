@@ -142,26 +142,20 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   const getStatusData = (
     status: string
   ): { text: string; color: ColorType } => {
-    // Если статус - один из типов очереди, используем общий цвет purple
-    if (status === "queuedCheck" || status === "queuedDownload") {
-      return {
-        text: t(`torrent.status.${status}`),
-        color: "purple",
-      };
-    }
-
-    const statusMap: Record<StatusType, { color: ColorType }> = {
+    const statusMap: Record<string, { color: ColorType }> = {
       downloading: { color: "blue" },
       seeding: { color: "grass" },
       completed: { color: "mint" },
       checking: { color: "amber" },
       queued: { color: "purple" },
+      queuedCheck: { color: "purple" },
+      queuedDownload: { color: "purple" },
       stopped: { color: "gray" },
     };
 
     return {
       text: t(`torrent.status.${status}`),
-      color: statusMap[status as StatusType]?.color || "gray",
+      color: statusMap[status]?.color || "gray",
     };
   };
 

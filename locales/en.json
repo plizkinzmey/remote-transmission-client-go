@@ -87,7 +87,9 @@
       "checking": "Checking",
       "queued": "Queued",
       "completed": "Completed",
-      "slow": "Slowed Down"
+      "slow": "Slowed Down",
+      "queuedCheck": "Queued for checking",
+      "queuedDownload": "Queued for download"
     }
   },
 

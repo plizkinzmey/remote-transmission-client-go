@@ -267,11 +267,11 @@ func mapStatus(status transmissionrpc.TorrentStatus, torrent transmissionrpc.Tor
 	case transmissionrpc.TorrentStatusStopped:
 		return domain.StatusStopped
 	case transmissionrpc.TorrentStatusCheckWait:
-		return domain.StatusQueued
+		return domain.StatusQueuedCheck
 	case transmissionrpc.TorrentStatusCheck:
 		return domain.StatusChecking
 	case transmissionrpc.TorrentStatusDownloadWait:
-		return domain.StatusQueued
+		return domain.StatusQueuedDown
 	case transmissionrpc.TorrentStatusDownload:
 		return domain.StatusDownloading
 	case transmissionrpc.TorrentStatusSeedWait:

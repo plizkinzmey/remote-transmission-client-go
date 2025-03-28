@@ -41,7 +41,9 @@
 .cardError::before { background-color: var(--tomato-9); }
 .cardCompleted::before { background-color: var(--mint-9); }
 .cardChecking::before { background-color: var(--amber-9); }
-.cardQueued::before { background-color: var(--purple-9); }
+.cardQueued::before, 
+.cardQueuedCheck::before,
+.cardQueuedDownload::before { background-color: var(--purple-9); }
 
 /* Контент */
 .contentBox {
@@ -103,7 +105,9 @@
   .cardError::before { background-color: var(--tomato-8); }
   .cardCompleted::before { background-color: var(--mint-8); }
   .cardChecking::before { background-color: var(--amber-8); }
-  .cardQueued::before { background-color: var(--purple-8); }
+  .cardQueued::before,
+  .cardQueuedCheck::before,
+  .cardQueuedDownload::before { background-color: var(--purple-8); }
 
   .downloadIcon { color: var(--blue-8); }
   .uploadIcon { color: var(--grass-8); }

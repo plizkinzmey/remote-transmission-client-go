@@ -86,8 +86,10 @@
       "seeding": "Раздача",
       "checking": "Проверка",
       "queued": "В очереди",
-      "completed": "Завершен",
-      "slow": "Замедлен"
+      "completed": "Завершён",
+      "slow": "Замедлен",
+      "queuedCheck": "Ожидает проверки",
+      "queuedDownload": "Ожидает загрузки"
     }
   },
 
@@ -195,6 +197,8 @@
     "completed": "Завершен",
     "checking": "Проверяется",
     "queued": "В очереди",
-    "slow": "Замедлен"
+    "slow": "Замедлен",
+    "queuedCheck": "Ожидает проверки",
+    "queuedDownload": "Ожидает загрузки"
   }
 }

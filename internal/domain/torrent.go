@@ -9,6 +9,8 @@ const (
 	StatusCompleted   TorrentStatus = "completed"
 	StatusChecking    TorrentStatus = "checking"
 	StatusQueued      TorrentStatus = "queued"
+	StatusQueuedCheck TorrentStatus = "queuedCheck"    // Очередь на проверку
+	StatusQueuedDown  TorrentStatus = "queuedDownload" // Очередь на загрузку
 )
 
 // Структура для представления файла в торренте

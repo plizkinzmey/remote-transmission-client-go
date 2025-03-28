@@ -97,6 +97,8 @@ function App() {
       !statusFilter ||
       (statusFilter === "slow"
         ? torrent.IsSlowMode
+        : statusFilter === "queued"
+        ? ["queued", "queuedCheck", "queuedDownload"].includes(torrent.Status)
         : torrent.Status === statusFilter);
     return matchesSearch && matchesStatus;
   });

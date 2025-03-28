@@ -18,6 +18,7 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"leftUntilDone", "desiredAvailable", "haveValid", "sizeWhenDone",
 		"rateDownload", "rateUpload", "downloadedEver",
 		"downloadLimit", "uploadLimit", "downloadLimited", "uploadLimited",
+		"recheckProgress", // Добавляем поле для отслеживания прогресса проверки
 	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
@@ -29,7 +30,14 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		totalSize, downloadedSize := getTorrentSizes(t)
 		uploadRatio, uploadedBytes := getUploadInfo(&t)
 		downloadSpeed, uploadSpeed := getSpeedInfo(&t)
-		progress := *t.PercentDone * 100
+
+		// Расчет прогресса в зависимости от статуса
+		var progress float64
+		if status == domain.StatusChecking && t.RecheckProgress != nil {
+			progress = *t.RecheckProgress * 100
+		} else {
+			progress = *t.PercentDone * 100
+		}
 
 		var sizeFormatted string
 		if status == domain.StatusDownloading {

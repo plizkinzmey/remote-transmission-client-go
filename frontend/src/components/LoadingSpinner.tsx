@@ -21,9 +21,18 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         return "24px";
     }
   };
+  
+  // Формируем классы для тестирования
+  const sizeClass = size || "medium";
+  const spinnerClasses = ["spinner", sizeClass, className].filter(Boolean).join(' ');
 
   return (
-    <Flex justify="center" align="center" className={className}>
+    <Flex 
+      justify="center" 
+      align="center" 
+      className={spinnerClasses}
+      data-testid="loading-spinner"
+    >
       <ArrowPathIcon
         width={getSize()}
         height={getSize()}
@@ -37,7 +46,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 };
 
 // Добавляем глобальную анимацию вращения если её еще нет в CSS
-if (!document.querySelector("#spin-keyframes")) {
+if (typeof document !== 'undefined' && !document.querySelector("#spin-keyframes")) {
   const style = document.createElement("style");
   style.id = "spin-keyframes";
   style.textContent = `

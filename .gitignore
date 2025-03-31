@@ -55,3 +55,6 @@ yarn-error.log*
 # Wails generated files
 frontend/wailsjs/
 wails.exe
+
+# Local directory
+/tasks

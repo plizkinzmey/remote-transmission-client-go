@@ -6,12 +6,14 @@ interface StatusFilterProps {
   selectedStatus: string | null;
   onStatusChange: (status: string | null) => void;
   hasNoTorrents: boolean;
+  isReconnecting?: boolean;
 }
 
 export const StatusFilter: React.FC<StatusFilterProps> = ({
   selectedStatus,
   onStatusChange,
   hasNoTorrents,
+  isReconnecting = false,
 }) => {
   const { t } = useLocalization();
 
@@ -42,7 +44,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
           size="1"
           color={color}
           variant={selectedStatus === id ? "solid" : "soft"}
-          disabled={hasNoTorrents}
+          disabled={hasNoTorrents || isReconnecting}
           onClick={() => handleFilterClick(id)}
           style={{ minWidth: "auto", padding: "0 12px" }}
         >

@@ -132,6 +132,11 @@ func (a *App) GetSystemLanguage() string {
 	return a.localizationService.GetSystemLocale()
 }
 
+// GetAllTranslationKeys returns all translation keys for the specified locale
+func (a *App) GetAllTranslationKeys(locale string) []string {
+	return a.localizationService.GetAllTranslationKeys(locale)
+}
+
 // GetSessionStats returns statistics about the current session
 func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 	if a.service == nil {

@@ -90,80 +90,41 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     return cachedTranslation;
   };
 
-  // Предзагружаем общие переводы при изменении языка
+  // Предзагружаем все переводы при изменении языка
   useEffect(() => {
-    const preloadCommonTranslations = async () => {
+    const preloadAllTranslations = async () => {
       setIsTranslationReady(false);
-      const commonKeys = [
-        "app.title",
-        "filters.downloading",
-        "filters.seeding",
-        "filters.stopped",
-        "filters.checking",
-        "filters.queued",
-        "filters.completed",
-        "filters.slow",
-        "torrent.status.stopped",
-        "torrent.status.downloading",
-        "torrent.status.seeding",
-        "torrent.status.checking",
-        "torrent.status.queued",
-        "torrent.status.completed",
-        "torrent.status.queuedCheck",
-        "torrent.status.queuedDownload",
-        "torrent.start",
-        "torrent.stop",
-        "torrent.remove",
-        "torrent.ratio",
-        "torrent.seeds",
-        "torrent.peers",
-        "torrent.uploaded",
-        "torrent.size",
-        "torrent.speed",
-        "torrent.slowSpeed",
-        "torrent.normalSpeed",
-        "torrent.verify",
-        "torrent.verifying",
-        "header.slowSpeed",
-        "header.normalSpeed",
-        "torrents.search",
-        "torrents.selectAll",
-        "torrents.selected",
-        "torrents.startSelected",
-        "torrents.stopSelected",
-        "add.title",
-        "settings.title",
-        "remove.title",
-        "remove.cancel",
-        "remove.confirm",
-        "remove.withData",
-        "remove.confirmation",
-        "remove.selectedConfirmation",
-        "remove.selectedCount",
-        "remove.message",
-        "settings.testSuccess",
-        "settings.testError",
-        "settings.testing",
-        "settings.testConnection",
-        "errors.timeoutExplanation",
-      ];
-
+      
       try {
+        // Импортируем функцию для получения всех ключей переводов
+        const { GetAllTranslationKeys } = await import("../../wailsjs/go/main/App");
+        
+        // Получаем все ключи переводов для текущего языка
+        const allKeys = await GetAllTranslationKeys(languageState);
+        
+        // Загружаем переводы для всех ключей
         const newTranslations: Record<string, string> = {};
-        await Promise.all(
-          commonKeys.map(async (key) => {
-            try {
-              // Передаём пустой массив для третьего параметра
-              const translation = await GetTranslation(key, languageState, []);
-              newTranslations[key] = translation;
-            } catch (error) {
-              console.error(
-                `Failed to preload translation for key: ${key}`,
-                error
-              );
-            }
-          })
-        );
+        
+        // Разбиваем загрузку на части, чтобы не перегружать систему
+        const chunkSize = 50;
+        for (let i = 0; i < allKeys.length; i += chunkSize) {
+          const chunk = allKeys.slice(i, i + chunkSize);
+          
+          await Promise.all(
+            chunk.map(async (key: string) => {
+              try {
+                // Передаём пустой массив для третьего параметра
+                const translation = await GetTranslation(key, languageState, []);
+                newTranslations[key] = translation;
+              } catch (error) {
+                console.error(
+                  `Failed to preload translation for key: ${key}`,
+                  error
+                );
+              }
+            })
+          );
+        }
 
         setTranslationsCache((prev) => ({
           ...prev,
@@ -172,12 +133,59 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
         setIsTranslationReady(true);
       } catch (error) {
         console.error("Failed to preload translations:", error);
+        
+        // В случае ошибки загружаем основные ключи вручную
+        try {
+          const fallbackKeys = [
+            "app.title",
+            "filters.downloading",
+            "filters.seeding",
+            "filters.stopped",
+            "filters.checking",
+            "filters.queued",
+            "filters.completed",
+            "filters.slow",
+            "torrent.status.stopped",
+            "torrent.status.downloading",
+            "torrent.status.seeding",
+            "torrent.status.checking",
+            "torrent.status.queued",
+            "torrent.status.completed",
+            "torrent.status.queuedCheck",
+            "torrent.status.queuedDownload",
+            "torrent.start",
+            "torrent.stop",
+            "torrent.remove",
+            "settings.title",
+            "errors.timeoutExplanation",
+          ];
+          
+          const fallbackTranslations: Record<string, string> = {};
+          await Promise.all(
+            fallbackKeys.map(async (key) => {
+              try {
+                const translation = await GetTranslation(key, languageState, []);
+                fallbackTranslations[key] = translation;
+              } catch (err) {
+                console.error(`Failed to load fallback translation for key: ${key}`, err);
+              }
+            })
+          );
+          
+          setTranslationsCache((prev) => ({
+            ...prev,
+            ...fallbackTranslations,
+          }));
+        } catch (fallbackError) {
+          console.error("Failed to load fallback translations:", fallbackError);
+        }
+        
         setIsTranslationReady(true); // Продолжаем даже при ошибке
       }
     };
 
     if (languageState) {
-      preloadCommonTranslations();
+      preloadAllTranslations();
     }
   }, [languageState]);
 
@@ -202,24 +210,56 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
     loadAvailableLanguages();
   }, []);
 
-  // Load language from config
+  // Инициализация языка при загрузке приложения
   useEffect(() => {
-    const loadLanguageFromConfig = async () => {
+    const initializeLanguage = async () => {
       try {
-        const config = await LoadConfig();
-        if (config?.language) {
-          setLanguageState(config.language);
+        // Сначала загружаем доступные языки
+        const codes = await GetAvailableLanguages();
+        const langs = await Promise.all(
+          codes.map(async (code: string) => ({
+            code,
+            name: await GetTranslation(`language.${code}`, code, []),
+          }))
+        );
+        setAvailableLanguages(langs);
+        
+        // Затем загружаем сохраненный язык
+        const savedConfig = await LoadConfig();
+        if (savedConfig && savedConfig.language) {
+          // Проверяем, что сохраненный язык доступен
+          if (codes.includes(savedConfig.language)) {
+            setLanguageState(savedConfig.language);
+          } else {
+            // Если сохраненный язык недоступен, используем системный
+            const systemLang = await GetSystemLanguage();
+            // Проверяем, что системный язык доступен
+            if (systemLang && codes.includes(systemLang)) {
+              setLanguageState(systemLang);
+            } else {
+              setLanguageState("en"); // Используем английский по умолчанию
+            }
+          }
         } else {
+          // Если язык не сохранен, используем системный
           const systemLang = await GetSystemLanguage();
-          setLanguageState(systemLang);
+          // Проверяем, что системный язык доступен
+          if (systemLang && codes.includes(systemLang)) {
+            setLanguageState(systemLang);
+          } else {
+            setLanguageState("en"); // Используем английский по умолчанию
+          }
         }
       } catch (error) {
-        console.error("Failed to load language from config:", error);
+        console.error("Failed to initialize language:", error);
+        setLanguageState("en"); // Используем английский по умолчанию при ошибке
+        setAvailableLanguages([{ code: "en", name: "English" }, { code: "ru", name: "Русский" }]);
       } finally {
         setIsLoading(false);
       }
     };
-    loadLanguageFromConfig();
+
+    initializeLanguage();
   }, []);
 
   // Update window title when language changes

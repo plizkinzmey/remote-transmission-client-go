@@ -207,3 +207,36 @@ func (s *LocalizationService) GetSystemLocale() string {
 	// Default to fallback locale if system locale is not detected or not supported
 	return s.fallbackLocale
 }
+
+// GetAllTranslationKeys returns all translation keys from the specified locale
+func (s *LocalizationService) GetAllTranslationKeys(locale string) []string {
+	// If locale is not supported, use fallback locale
+	if _, ok := s.translations[locale]; !ok {
+		locale = s.fallbackLocale
+	}
+
+	// Extract all keys from the translations map
+	keys := make([]string, 0)
+	s.extractKeys(s.translations[locale], "", &keys)
+
+	return keys
+}
+
+// extractKeys recursively extracts all keys from a nested map
+func (s *LocalizationService) extractKeys(obj map[string]any, prefix string, keys *[]string) {
+	for key, value := range obj {
+		// Build the current key path
+		currentKey := key
+		if prefix != "" {
+			currentKey = prefix + "." + key
+		}
+
+		// If value is a map, recursively extract keys
+		if nestedMap, ok := value.(map[string]any); ok {
+			s.extractKeys(nestedMap, currentKey, keys)
+		} else {
+			// If value is a string, add the key to the result
+			*keys = append(*keys, currentKey)
+		}
+	}
+}

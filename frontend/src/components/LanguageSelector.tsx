@@ -20,6 +20,7 @@ export const LanguageSelector: React.FC = () => {
           variant="soft"
           color="gray"
           aria-label="Select language"
+          // Кнопка выбора языка должна быть доступна всегда
         >
           <CircleFlag
             countryCode={languageToCountryCode[currentLanguage] || "gb"}

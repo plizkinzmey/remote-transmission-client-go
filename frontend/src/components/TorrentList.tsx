@@ -35,6 +35,7 @@ interface TorrentListProps {
   onStop: (id: number) => void;
   onVerify?: (id: number) => void;
   isLoading?: boolean;
+  isReconnecting?: boolean;
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
 }
 
@@ -52,6 +53,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
   onStop,
   onVerify,
   isLoading = false,
+  isReconnecting = false,
   onSetSpeedLimit,
 }) => {
   const { t } = useLocalization();
@@ -63,13 +65,19 @@ export const TorrentList: React.FC<TorrentListProps> = ({
 
   // Функция для рендеринга содержимого списка
   const renderContent = () => {
-    if (isLoading) {
+    // Не показываем спиннер загрузки при отсутствии соединения
+    if (isLoading && !isReconnecting) {
       return (
         <div className={styles.loadingContainer}>
           <LoadingSpinner size="large" />
           <div className={styles.loadingText}>{t("torrents.loading")}</div>
         </div>
       );
+    }
+
+    // Не показываем сообщение "Торренты не добавлены" при ошибке соединения
+    if (isReconnecting) {
+      return null;
     }
 
     if (filteredTorrents.length > 0) {

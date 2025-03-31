@@ -39,6 +39,7 @@ export const ThemeToggle: React.FC = () => {
           variant="soft"
           color="gray"
           aria-label={getTitle()}
+          // Кнопка переключения темы должна быть доступна всегда
         >
           {getIcon()}
         </IconButton>

@@ -45,6 +45,7 @@ interface HeaderProps {
   torrents: Array<any>;
   onSetSpeedLimit: (isSlowMode: boolean) => void;
   isSlowModeEnabled?: boolean;
+  isReconnecting?: boolean; // Добавлено свойство для отслеживания состояния подключения
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -68,6 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
   torrents,
   onSetSpeedLimit,
   isSlowModeEnabled = false,
+  isReconnecting = false,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -97,6 +99,8 @@ export const Header: React.FC<HeaderProps> = ({
             placeholder={t("torrents.search")}
             value={searchTerm}
             onChange={handleSearchChange}
+            disabled={isReconnecting}
+            title={isReconnecting ? t("errors.noConnectionSearch") : ""}
           >
             <TextField.Slot>
               <MagnifyingGlassIcon width={18} height={18} />
@@ -109,6 +113,8 @@ export const Header: React.FC<HeaderProps> = ({
             color="blue"
             onClick={onAddTorrent}
             aria-label={t("add.title")}
+            disabled={isReconnecting}
+            title={isReconnecting ? t("errors.noConnectionAction") : t("add.title")}
           >
             <PlusCircleIcon width={18} height={18} />
           </IconButton>
@@ -118,8 +124,9 @@ export const Header: React.FC<HeaderProps> = ({
             variant="soft"
             color="grass"
             onClick={onStartSelected}
-            disabled={!hasSelectedTorrents || startLoading}
+            disabled={!hasSelectedTorrents || startLoading || isReconnecting}
             aria-label={t("torrents.startSelected")}
+            title={isReconnecting ? t("errors.noConnectionAction") : t("torrents.startSelected")}
           >
             {startLoading ? (
               <LoadingSpinner size="small" />
@@ -133,8 +140,9 @@ export const Header: React.FC<HeaderProps> = ({
             variant="solid"
             color="amber"
             onClick={onStopSelected}
-            disabled={!hasSelectedTorrents || stopLoading}
+            disabled={!hasSelectedTorrents || stopLoading || isReconnecting}
             aria-label={t("torrents.stopSelected")}
+            title={isReconnecting ? t("errors.noConnectionAction") : t("torrents.stopSelected")}
           >
             {stopLoading ? (
               <LoadingSpinner size="small" />
@@ -148,10 +156,11 @@ export const Header: React.FC<HeaderProps> = ({
             variant={isSlowModeEnabled ? "solid" : "soft"}
             color={isSlowModeEnabled ? "orange" : "blue"}
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
-            disabled={!hasSelectedTorrents}
+            disabled={!hasSelectedTorrents || isReconnecting}
             aria-label={t(
               isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed"
             )}
+            title={isReconnecting ? t("errors.noConnectionAction") : t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")}
           >
             <SnailIcon style={{ width: 18, height: 18 }} />
           </IconButton>
@@ -161,8 +170,9 @@ export const Header: React.FC<HeaderProps> = ({
             variant="soft"
             color="red"
             onClick={handleRemoveClick}
-            disabled={!hasSelectedTorrents || removeLoading}
+            disabled={!hasSelectedTorrents || removeLoading || isReconnecting}
             aria-label={t("remove.title")}
+            title={isReconnecting ? t("errors.noConnectionAction") : t("remove.title")}
           >
             {removeLoading ? (
               <LoadingSpinner size="small" />
@@ -182,6 +192,7 @@ export const Header: React.FC<HeaderProps> = ({
               color="indigo"
               onClick={onSettings}
               aria-label={t("settings.title")}
+              // Кнопка настроек должна быть доступна всегда
             >
               <Cog6ToothIcon width={20} height={20} />
             </IconButton>
@@ -213,7 +224,8 @@ export const Header: React.FC<HeaderProps> = ({
         <StatusFilter
           selectedStatus={statusFilter}
           onStatusChange={onStatusFilterChange}
-          hasNoTorrents={torrents.length === 0}
+          hasNoTorrents={torrents.length === 0 || isReconnecting}
+          isReconnecting={isReconnecting}
         />
       </Box>
 

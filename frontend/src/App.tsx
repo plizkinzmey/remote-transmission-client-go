@@ -149,39 +149,39 @@ function App() {
           torrents={torrents}
           onSetSpeedLimit={handleSetSpeedLimit}
           isSlowModeEnabled={selectedHaveSlowMode}
+          isReconnecting={isReconnecting}
         />
         {isReconnecting && (
-          <div className={styles.reconnectingOverlay}>
-            <div>
-              <LoadingSpinner size="large" />
+          <div className={styles.connectionStatus}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <LoadingSpinner size="medium" />
               <p>{t("errors.timeoutExplanation")}</p>
             </div>
           </div>
         )}
-        {!isReconnecting && (
-          <div className={styles.content}>
-            <div className={styles.scrollableContent}>
-              <TorrentList
-                torrents={filteredTorrents}
-                searchTerm={searchTerm}
-                selectedTorrents={selectedTorrents}
-                onSelect={handleTorrentSelect}
-                onRemove={handleRemoveTorrent}
-                onStart={handleStartTorrent}
-                onStop={handleStopTorrent}
-                onVerify={handleVerifyTorrent}
-                isLoading={isLoading}
-                onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
-              />
-            </div>
-            <Footer
-              totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
-              totalUploadSpeed={sessionStats?.TotalUploadSpeed}
-              freeSpace={sessionStats?.FreeSpace}
-              transmissionVersion={sessionStats?.TransmissionVersion}
+        <div className={styles.content}>
+          <div className={styles.scrollableContent}>
+            <TorrentList
+              torrents={filteredTorrents}
+              searchTerm={searchTerm}
+              selectedTorrents={selectedTorrents}
+              onSelect={handleTorrentSelect}
+              onRemove={handleRemoveTorrent}
+              onStart={handleStartTorrent}
+              onStop={handleStopTorrent}
+              onVerify={handleVerifyTorrent}
+              isLoading={isLoading}
+              isReconnecting={isReconnecting}
+              onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
             />
           </div>
-        )}
+          <Footer
+            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
+            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
+            freeSpace={sessionStats?.FreeSpace}
+            transmissionVersion={sessionStats?.TransmissionVersion}
+          />
+        </div>
         {/* Модальные окна */}
         {showSettings && (
           <Settings

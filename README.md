@@ -17,7 +17,7 @@ A modern desktop client for Transmission BitTorrent, built with Go and React usi
 - Speed control with configurable throttling
 - Full localization support (English and Russian)
 - Dark and light theme support
-- macOS native integration
+- macOS integration
 
 ## Documentation
 
@@ -80,7 +80,7 @@ For detailed development instructions, see our [Installation & Setup Guide](docs
 - Контроль скорости с настраиваемым ограничением
 - Полная поддержка локализации (английский и русский)
 - Поддержка темной и светлой темы
-- Нативная интеграция с macOS
+- Интеграция с macOS
 
 ## Документация
 

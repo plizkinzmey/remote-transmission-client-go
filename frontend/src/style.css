@@ -6,6 +6,12 @@
     url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
+/* Глобальное правило для запрета выделения текста по умолчанию */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 :root {
   font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -50,6 +56,62 @@ button, input, select, textarea {
 .modal-title,
 .status-message,
 .footer-text,
+
+/* Числовые данные торрентов */
+.torrent-size,
+.torrent-seeds,
+.torrent-peers,
+.torrent-ratio,
+.torrent-progress,
+.torrent-speed,
+.download-speed,
+.upload-speed,
+.torrent-uploaded,
+.torrent-eta,
+.torrent-added,
+.torrent-completed,
+.torrent-hash,
+.torrent-priority,
+
+/* Предотвращение выделения числовых данных в компонентах */
+.rt-Text[size="1"]:not(.selectable-text),
+.rt-Text[size="2"]:not(.selectable-text),
+.rt-Text[size="3"]:not(.selectable-text),
+.rt-Badge,
+
+/* Предотвращение выделения для статистики торрентов */
+.rt-Flex .rt-Badge[variant="surface"],
+.rt-Flex .rt-Badge[variant="soft"],
+.rt-Flex .rt-Badge[variant="outline"],
+
+/* Предотвращение выделения для числовых данных в статистике */
+.rt-Flex .rt-Text:not(.selectable-text),
+.rt-Card .rt-Text:not(.selectable-text),
+.rt-Dialog .rt-Text:not(.selectable-text),
+
+/* Предотвращение выделения для числовых данных в карточках торрентов */
+.rt-Flex[gap="1"] .rt-Text[size="1"],
+.rt-Flex[gap="3"] .rt-Text[size="1"],
+
+/* Предотвращение выделения для скорости загрузки и отдачи в футере */
+.rt-Flex[align="center"] .rt-Text[color="gray"],
+.rt-Flex[align="center"] .rt-Text[size="1"]:not(.selectable-text),
+.rt-Flex[align="center"] .rt-Text[size="2"]:not(.selectable-text),
+
+/* Предотвращение выделения для скорости загрузки и отдачи в карточках торрентов */
+.rt-Flex[gap="1"][align="center"] .rt-Text[size="1"],
+
+/* Предотвращение выделения для прогресса и соотношения */
+.rt-Progress + .rt-Flex .rt-Text:not(.selectable-text),
+.rt-Progress-indicator,
+.rt-Progress-value,
+
+/* Предотвращение выделения для информационных панелей */
+.info-panel .rt-Text:not(.selectable-text),
+.stats-panel .rt-Text:not(.selectable-text),
+.details-panel .rt-Text:not(.selectable-text),
+.file-list .rt-Text:not(.selectable-text),
+
 h1, h2, h3, h4, h5, h6,
 button,
 .button-text {
@@ -57,14 +119,20 @@ button,
   -webkit-user-select: none;
 }
 
-/* Разрешаем выделение только в полях ввода и текстовых областях */
+/* Разрешаем выделение только в полях ввода, текстовых областях и специальных элементах */
 input[type="text"],
 input[type="password"],
+input[type="email"],
 input[type="number"],
+input[type="search"],
+input[type="tel"],
 input[type="url"],
-textarea {
+textarea,
+[contenteditable="true"],
+.selectable-text {
   user-select: text;
   -webkit-user-select: text;
+  cursor: text;
 }
 
 /* Глобальные стили для текстовых элементов */

@@ -167,7 +167,9 @@
     "parentDirectoryNotExists": "Parent directory does not exist",
     "invalidPath": "Invalid path",
     "emptyPath": "Path cannot be empty",
-    "timeoutExplanation": "No access to the Transmission service or a large torrent is being processed. Check your connection or wait for reconnection."
+    "timeoutExplanation": "No access to the Transmission service or a large torrent is being processed. Check your connection or wait for reconnection.",
+    "noConnectionSearch": "Search unavailable: no connection to server",
+    "noConnectionAction": "Action unavailable: no connection to server"
   },
 
   "language": {

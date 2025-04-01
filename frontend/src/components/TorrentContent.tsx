@@ -422,6 +422,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
             <Text
               size="1"
+              className="selectable-text"
               style={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",

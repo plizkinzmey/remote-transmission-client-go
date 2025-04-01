@@ -140,6 +140,7 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
       } catch (error) {
         console.error("Failed to preload translations:", error);
 
+
         // В случае ошибки пытаемся загрузить хотя бы минимальный набор переводов
         try {
           const { GetAllTranslationKeys } = await import(
@@ -229,7 +230,6 @@ export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
           }))
         );
         setAvailableLanguages(langs);
-
         // Затем загружаем сохраненный язык
         const savedConfig = await LoadConfig();
         if (savedConfig && savedConfig.language) {

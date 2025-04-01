@@ -41,10 +41,16 @@
     "slowSpeedUnit": "Единица измерения",
     "KiB/s": "КиБ/с",
     "MiB/s": "МиБ/с",
+    "firstStartTitle": "Начальная настройка",
+    "firstStartMessage": "Добро пожаловать! Пожалуйста, настройте подключение к серверу Transmission.",
     "hostPlaceholder": "Например: localhost или 192.168.1.100",
     "portPlaceholder": "9091",
-    "usernamePlaceholder": "Введите имя пользователя",
-    "passwordPlaceholder": "Введите пароль"
+    "usernamePlaceholder": "Имя пользователя (если требуется)",
+    "passwordPlaceholder": "Пароль (если требуется)",
+    "hostRequired": "Хост обязателен для заполнения",
+    "invalidPort": "Порт должен быть числом от 1 до 65535",
+    "invalidRatio": "Рейтинг должен быть положительным числом",
+    "invalidSpeed": "Скорость должна быть положительным числом"
   },
 
   "torrents": {

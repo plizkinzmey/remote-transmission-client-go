@@ -84,9 +84,27 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
+	// Если нет обязательных полей, возвращаем ошибку
+	if config.Host == "" {
+		return fmt.Errorf("host is required")
+	}
+
 	// If language is not set in the config, detect system language
 	if config.Language == "" {
 		config.Language = a.localizationService.GetSystemLocale()
+	}
+
+	// If theme is not set, use default
+	if config.Theme == "" {
+		config.Theme = "light"
+	}
+
+	// Ensure default values for optional fields
+	if config.Port == 0 {
+		config.Port = 9091
+	}
+	if config.SlowSpeedUnit == "" {
+		config.SlowSpeedUnit = "KiB/s"
 	}
 
 	// Save the configuration

@@ -3,6 +3,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 :root {
@@ -45,7 +47,16 @@ body {
 }
 
 /* Allow text selection in specific elements */
-input, textarea {
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+[contenteditable="true"],
+.selectable-text {
   user-select: text;
   -webkit-user-select: text;
   -webkit-app-region: no-drag;
@@ -83,6 +94,13 @@ button {
 .no-select {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Allow text selection for specific elements that need to be copyable */
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 #app {

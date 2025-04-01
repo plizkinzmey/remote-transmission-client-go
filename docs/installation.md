@@ -1,12 +1,10 @@
-# Installation & Setup
-
-This guide provides step-by-step instructions for installing and setting up the Remote Transmission Desktop Client application.
+# Installation & Setup Guide
 
 ## System Requirements
 
 - **Operating System**: macOS (10.13+)
 - **Transmission**: Transmission BitTorrent client running on a local or remote server
-- **Disk Space**: ~50MB for the application
+- **Disk Space**: ~20MB for the application
 
 ## Installation Methods
 
@@ -14,9 +12,15 @@ This guide provides step-by-step instructions for installing and setting up the 
 
 1. Go to the [Releases](https://github.com/organization/transmission-client-go/releases) page
 2. Download the latest version for macOS
-3. Open the downloaded DMG file
+3. Open the downloaded archive
 4. Drag the application to your Applications folder
-5. Open the application from your Applications folder
+5. **Important**: For first launch:
+   - Open Terminal
+   - Run the following command to allow unsigned application execution:
+     ```bash
+     xattr -dr com.apple.quarantine /Applications/RemTransClient.app
+     ```
+   - Now you can open the application by double-clicking it in the Applications folder
 
 ### Method 2: Build from Source
 
@@ -78,57 +82,6 @@ This guide provides step-by-step instructions for installing and setting up the 
 
 4. The built application will be available in the `build/bin` directory
 
-## Configuration
-
-### First-time Setup
-
-1. Launch the application
-2. You will be prompted to set up a connection to your Transmission server
-3. Enter the following information:
-   - **Host**: Hostname or IP address of your Transmission server
-   - **Port**: Port number of the Transmission RPC interface (default: 9091)
-   - **Username**: Username for authentication (if enabled)
-   - **Password**: Password for authentication (if enabled)
-   - **Language**: Choose your preferred language
-
-### Advanced Configuration
-
-#### Configuring Speed Limits
-
-1. Open the application
-2. Click the Settings icon in the top right corner
-3. Go to the "Limits" tab
-4. Configure the following settings:
-   - **Slow Mode Speed Limit**: The speed limit when slow mode is enabled
-   - **Max Upload Ratio**: The maximum upload ratio before seeding stops
-
-#### Customizing the Interface
-
-1. Open the application
-2. Click the theme toggle in the top right corner to switch between light and dark themes
-3. Use the language selector to change the application language
-
-## Troubleshooting
-
-### Connection Issues
-
-If you have trouble connecting to your Transmission server:
-
-1. Verify that your Transmission server is running
-2. Check that the RPC interface is enabled in your Transmission settings
-3. Ensure that your firewall allows connections to the Transmission RPC port
-4. Verify that the authentication credentials are correct
-
-Note: Remote Transmission Desktop Client features an automatic reconnection system that will attempt to restore the connection if it is lost. You will see a reconnection spinner with an explanatory message when this happens.
-
-### Application Not Starting
-
-If the application fails to start:
-
-1. Check your system logs for error messages
-2. Ensure that you meet the minimum system requirements
-3. Try reinstalling the application
-
 ## Updating
 
 To update to a newer version:
@@ -145,5 +98,5 @@ To uninstall the application:
 1. Drag the application from your Applications folder to the Trash
 2. To remove all application data and settings, delete the following folder:
    ```
-   ~/Library/Application Support/transmission-client-go
+   ~/Library/Application Support/transmission-client
    ```

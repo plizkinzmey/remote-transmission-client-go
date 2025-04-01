@@ -1,10 +1,10 @@
 # Architecture
 
-This document describes the architectural design of the Remote Transmission Desktop Client application.
+This document describes the architectural design of the Remote Transmission Desktop Client.
 
 ## Overview
 
-Remote Transmission Desktop Client follows the principles of Clean Architecture, with a clear separation of concerns between the different layers of the application. The architecture is designed to be maintainable, testable, and flexible.
+Remote Transmission Desktop Client follows Clean Architecture principles, with clear separation of concerns between different application layers. The architecture is designed to ensure maintainability, testability, and flexibility.
 
 ## Architecture Layers
 
@@ -45,18 +45,18 @@ The infrastructure layer implements the interfaces defined in the domain layer. 
 
 The user interface layer handles the presentation logic and user interaction. In this application, it consists of:
 
-- **Backend UI Integration**: `app.go` serves as the bridge between the Go backend and the React frontend
-- **Frontend**: React components in the `frontend/src` directory
+- **Backend UI Integration**: `app.go` serves as the bridge between the Go backend and React frontend
+- **Frontend**: React components in `frontend/src`
 
 ## Data Flow
 
-The typical data flow in the application follows these steps:
+A typical data flow in the application follows these steps:
 
-1. User interacts with the UI (React frontend)
-2. UI calls methods exposed by `app.go`
-3. App delegates to the application service layer
+1. User interacts with UI (React frontend)
+2. UI calls methods provided by `app.go`
+3. App delegates the request to the application service layer
 4. Application layer coordinates with domain and infrastructure layers
-5. Results flow back up through the layers to the UI
+5. Results flow back through the layers to the UI
 
 ## Key Design Patterns
 
@@ -106,18 +106,18 @@ The frontend follows a component-based architecture using React and TypeScript:
 
 ## Communication Between Frontend and Backend
 
-Communication between the React frontend and the Go backend is facilitated by the Wails framework:
+Communication between the React frontend and Go backend is facilitated by the Wails framework:
 
-1. Go functions are exposed via the `Bind` parameter in `main.go`
+1. Go functions are provided via the `Bind` parameter in `main.go`
 2. TypeScript bindings are generated in `frontend/wailsjs/go/`
-3. Frontend components call these bindings to invoke Go functions
+3. Frontend components call these bindings to execute Go functions
 
 ## Error Handling
 
 The application implements a comprehensive error handling strategy:
 
 - Domain errors are defined in the domain layer
-- Infrastructure errors are mapped to domain errors when appropriate
+- Infrastructure errors are converted to domain errors when necessary
 - Application services handle and translate errors for the UI
 - Localized error messages are provided to the user
 
@@ -126,7 +126,7 @@ The application implements a comprehensive error handling strategy:
 Configuration is managed through:
 
 - Local storage for user preferences
-- Secure storage for sensitive information like credentials
+- Secure storage for sensitive data such as credentials
 - Runtime configuration for application settings
 
 ## Localization
@@ -134,11 +134,11 @@ Configuration is managed through:
 The application supports multiple languages through:
 
 - JSON translation files in the `locales` directory
-- A localization service in the infrastructure layer
-- React components that consume translations via a context
+- Localization service in the infrastructure layer
+- React components that use translations through context
 
 ## Security Considerations
 
 - Credentials are stored securely using platform-specific encryption
-- Communication with the Transmission server uses authentication
+- Communication with Transmission server uses authentication
 - Input validation is performed at multiple levels

@@ -1,6 +1,6 @@
 # User Guide
 
-This guide provides detailed instructions on how to use the Remote Transmission Desktop Client application.
+This guide provides detailed instructions on how to use the Remote Transmission Desktop Client.
 
 ## Getting Started
 
@@ -35,7 +35,7 @@ The main interface of Remote Transmission Desktop Client is divided into several
 - **Header**: Contains the application title, theme toggle, language selector, and settings button
 - **Status Filter**: Allows you to filter torrents by their status (All, Downloading, Seeding, etc.)
 - **Torrent List**: Displays all your torrents with key information about each one
-- **Footer**: Shows session statistics such as download/upload speeds and free disk space
+- **Footer**: Shows session statistics such as download/upload speeds, free disk space, Transmission server version
 
 ## Managing Torrents
 
@@ -72,7 +72,7 @@ To select which files to download within a torrent:
 
 ### Managing Download Location
 
-To manage your download locations:
+To manage download locations:
 
 1. When adding a torrent, use the dropdown next to the download directory field
 2. You can select from previously used directories or enter a new one
@@ -97,8 +97,7 @@ To remove torrents:
 2. Click the delete button in the header
 3. Choose whether to also delete the downloaded files
 4. Confirm your choice
-
-You can also remove a single torrent by clicking the trash icon on its card.
+5. You can also remove a single torrent by clicking the trash icon on its card.
 
 ### Limiting Download Speed
 

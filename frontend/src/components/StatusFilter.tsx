@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocalization } from "../contexts/LocalizationContext";
 import { Button, Flex } from "@radix-ui/themes";
 
@@ -6,14 +6,14 @@ interface StatusFilterProps {
   selectedStatus: string | null;
   onStatusChange: (status: string | null) => void;
   hasNoTorrents: boolean;
-  isReconnecting?: boolean;
+  isReconnecting: boolean;
 }
 
 export const StatusFilter: React.FC<StatusFilterProps> = ({
   selectedStatus,
   onStatusChange,
   hasNoTorrents,
-  isReconnecting = false,
+  isReconnecting
 }) => {
   const { t } = useLocalization();
 
@@ -32,6 +32,12 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
     { id: "slow", label: "slow", color: "orange" },
   ] as const;
 
+  useEffect(() => {
+    if (isReconnecting && selectedStatus) {
+      onStatusChange(null);
+    }
+  }, [isReconnecting, selectedStatus, onStatusChange]);
+
   const handleFilterClick = (id: string) => {
     onStatusChange(selectedStatus === id ? null : id);
   };
@@ -47,6 +53,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
           disabled={hasNoTorrents || isReconnecting}
           onClick={() => handleFilterClick(id)}
           style={{ minWidth: "auto", padding: "0 12px" }}
+          title={isReconnecting ? t("errors.needConnection") : undefined}
         >
           {t(`filters.${label}`)}
         </Button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   Button as RadixButton,
@@ -7,11 +7,12 @@ import {
   Box,
   Text,
 } from "@radix-ui/themes";
-import { LoadConfig } from "../../../wailsjs/go/main/App";
+import { LoadConfig, SaveAllSettings } from "../../../wailsjs/go/main/App";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ConnectionTab } from "./ConnectionTab";
 import { LimitsTab } from "./LimitsTab";
+import { PathsTab, PathsTabRef } from "./PathsTab";
 import { ConnectionConfig } from "../../App";
 import { LanguageSelector } from "../LanguageSelector";
 
@@ -42,6 +43,10 @@ export const Settings: React.FC<SettingsProps> = ({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [initialLanguage] = useState(currentLanguage); // Запоминаем начальный язык
+
+  // Ссылка на компонент PathsTab для доступа к его методам
+  const pathsTabRef = useRef<PathsTabRef>(null);
+  const [hasPendingPathsChanges, setHasPendingPathsChanges] = useState(false);
 
   const loadSavedSettings = useCallback(async () => {
     if (isFirstStart) {
@@ -121,7 +126,6 @@ export const Settings: React.FC<SettingsProps> = ({
         console.log(
           `Language changed from ${initialLanguage} to ${currentLanguage} during first start`
         );
-
         // Особая логика для первого запуска с изменением языка
         // Сначала сохраняем настройки, затем переключаем язык обратно и потом устанавливаем язык через API
         const success = await onSave(settings);
@@ -129,10 +133,35 @@ export const Settings: React.FC<SettingsProps> = ({
           onClose();
         }
       } else {
-        // Стандартная логика для обычного сохранения
-        const success = await onSave(settings);
-        if (success) {
+        // Получаем изменения путей, если есть
+        let pathChanges = null;
+        if (hasPendingPathsChanges && pathsTabRef.current) {
+          const changes = pathsTabRef.current.getPathChanges();
+          pathChanges = {
+            pathsToAdd: changes.pathsToAdd || [],
+            pathsToRemove: changes.pathsToRemove || [],
+            defaultPath: changes.defaultPath || "",
+          };
+          console.log("Сохранение изменений путей:", pathChanges);
+        } else {
+          // Если изменений путей нет, передаем пустой объект вместо null
+          pathChanges = {
+            pathsToAdd: [],
+            pathsToRemove: [],
+            defaultPath: "",
+          };
+        }
+
+        // Сохраняем все настройки в одной транзакции через новый метод
+        try {
+          await SaveAllSettings(settings, pathChanges);
           onClose();
+        } catch (error) {
+          console.error("Failed to save settings:", error);
+          setErrors((prev) => ({
+            ...prev,
+            submit: t("settings.savingError"),
+          }));
         }
       }
     } catch (error) {
@@ -153,7 +182,17 @@ export const Settings: React.FC<SettingsProps> = ({
     isFirstStart,
     currentLanguage,
     initialLanguage,
+    hasPendingPathsChanges,
+    pathsTabRef,
   ]);
+
+  const handleCancel = useCallback(() => {
+    // Если есть ожидающие изменения в путях, сбрасываем их
+    if (hasPendingPathsChanges && pathsTabRef.current) {
+      pathsTabRef.current.resetChanges();
+    }
+    onClose();
+  }, [hasPendingPathsChanges, onClose]);
 
   if (isLoading) {
     return (
@@ -168,14 +207,17 @@ export const Settings: React.FC<SettingsProps> = ({
   return (
     <Dialog.Root
       open
-      onOpenChange={(open) => !open && !isFirstStart && !isSaving && onClose()}
+      onOpenChange={(open) =>
+        !open && !isFirstStart && !isSaving && handleCancel()
+      }
     >
       <Dialog.Content style={{ maxWidth: 500 }}>
         <Flex justify="between" align="center">
           <Dialog.Title>
             {isFirstStart ? t("settings.firstStartTitle") : t("settings.title")}
           </Dialog.Title>
-          <LanguageSelector />
+          {/* Показываем селектор языка только при первичной настройке */}
+          {isFirstStart && <LanguageSelector />}
         </Flex>
 
         {isFirstStart && (
@@ -205,16 +247,28 @@ export const Settings: React.FC<SettingsProps> = ({
                   {t("settings.tabConnection")}
                 </RadixTabs.Trigger>
                 {!isFirstStart && (
-                  <RadixTabs.Trigger
-                    value="limits"
-                    style={{
-                      whiteSpace: "normal",
-                      minHeight: "32px",
-                      height: "auto",
-                    }}
-                  >
-                    {t("settings.tabLimits")}
-                  </RadixTabs.Trigger>
+                  <>
+                    <RadixTabs.Trigger
+                      value="limits"
+                      style={{
+                        whiteSpace: "normal",
+                        minHeight: "32px",
+                        height: "auto",
+                      }}
+                    >
+                      {t("settings.tabLimits")}
+                    </RadixTabs.Trigger>
+                    <RadixTabs.Trigger
+                      value="paths"
+                      style={{
+                        whiteSpace: "normal",
+                        minHeight: "32px",
+                        height: "auto",
+                      }}
+                    >
+                      {t("settings.tabPaths")}
+                    </RadixTabs.Trigger>
+                  </>
                 )}
               </RadixTabs.List>
 
@@ -227,13 +281,23 @@ export const Settings: React.FC<SettingsProps> = ({
               </RadixTabs.Content>
 
               {!isFirstStart && (
-                <RadixTabs.Content value="limits">
-                  <LimitsTab
-                    settings={settings}
-                    onSettingsChange={handleSettingsChange}
-                    errors={errors}
-                  />
-                </RadixTabs.Content>
+                <>
+                  <RadixTabs.Content value="limits">
+                    <LimitsTab
+                      settings={settings}
+                      onSettingsChange={handleSettingsChange}
+                      errors={errors}
+                    />
+                  </RadixTabs.Content>
+
+                  <RadixTabs.Content value="paths">
+                    <PathsTab
+                      ref={pathsTabRef}
+                      errors={errors}
+                      onPathsChanged={setHasPendingPathsChanges}
+                    />
+                  </RadixTabs.Content>
+                </>
               )}
             </Flex>
           </RadixTabs.Root>
@@ -244,7 +308,7 @@ export const Settings: React.FC<SettingsProps> = ({
             <RadixButton
               size="1"
               variant="soft"
-              onClick={onClose}
+              onClick={handleCancel}
               disabled={isSaving}
             >
               {t("settings.cancel")}

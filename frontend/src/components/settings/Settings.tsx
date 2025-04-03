@@ -44,6 +44,17 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [initialLanguage] = useState(currentLanguage); // Запоминаем начальный язык
 
+  const [isConnectionValid, setIsConnectionValid] = useState(false);
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
+
+  const handleConnectionTest = useCallback(
+    (success: boolean, errorMessage?: string) => {
+      setIsConnectionValid(success);
+      setConnectionErrorMessage(errorMessage || "");
+    },
+    []
+  );
+
   // Ссылка на компонент PathsTab для доступа к его методам
   const pathsTabRef = useRef<PathsTabRef>(null);
   const [hasPendingPathsChanges, setHasPendingPathsChanges] = useState(false);
@@ -155,21 +166,52 @@ export const Settings: React.FC<SettingsProps> = ({
         // Сохраняем все настройки в одной транзакции через новый метод
         try {
           await SaveAllSettings(settings, pathChanges);
+          // После успешного сохранения настроек закрываем диалог
           onClose();
         } catch (error) {
           console.error("Failed to save settings:", error);
-          setErrors((prev) => ({
-            ...prev,
-            submit: t("settings.savingError"),
-          }));
+          // Проверяем, является ли ошибка ошибкой неинициализированного сервиса
+          const errorStr = String(error);
+          if (errorStr.includes("service not initialized")) {
+            // Если сервис не инициализирован, пробуем сначала инициализировать соединение
+            try {
+              // Используем onSave для инициализации соединения
+              const success = await onSave(settings);
+              if (success) {
+                // Если соединение успешно инициализировано, пробуем снова сохранить все настройки
+                await SaveAllSettings(settings, pathChanges);
+                onClose();
+                return;
+              }
+            } catch (initError) {
+              console.error("Failed to initialize connection:", initError);
+              // Если инициализация не удалась, показываем ошибку инициализации
+              setConnectionErrorMessage(
+                t("errors.failedToInitializeConnection", {
+                  0: String(initError),
+                })
+              );
+            }
+          } else {
+            // Для других ошибок используем существующий ключ локализации
+            setConnectionErrorMessage(
+              t("errors.failedToUpdateSettings", { 0: String(error) })
+            );
+          }
+          setIsConnectionValid(false);
+          // Важно: сбрасываем состояние сохранения, чтобы кнопка стала активной
+          setIsSaving(false);
+          // Прерываем выполнение, чтобы не попасть во внешний finally блок
+          return;
         }
       }
     } catch (error) {
       console.error("Error saving settings:", error);
-      setErrors((prev) => ({
-        ...prev,
-        submit: t("settings.savingError"),
-      }));
+      // Используем существующий ключ локализации для ошибки
+      setConnectionErrorMessage(
+        t("errors.failedToUpdateSettings", { 0: String(error) })
+      );
+      setIsConnectionValid(false);
     } finally {
       setIsSaving(false);
     }
@@ -226,11 +268,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </Text>
         )}
 
-        {errors.submit && (
-          <Text as="p" size="2" mb="4" color="red">
-            {errors.submit}
-          </Text>
-        )}
+        {/* Убираем отображение ошибки submit здесь, так как теперь она будет отображаться в компоненте ConnectionTab */}
 
         <Box mt="4">
           <RadixTabs.Root defaultValue="connection">
@@ -276,6 +314,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <ConnectionTab
                   settings={settings}
                   onSettingsChange={handleSettingsChange}
+                  onConnectionTest={handleConnectionTest}
                   errors={errors}
                 />
               </RadixTabs.Content>
@@ -303,6 +342,8 @@ export const Settings: React.FC<SettingsProps> = ({
           </RadixTabs.Root>
         </Box>
 
+        {/* Убираем дублирование ошибки - выводим только в одном месте */}
+
         <Flex justify="end" mt="4" gap="2">
           {!isFirstStart && (
             <RadixButton
@@ -318,7 +359,7 @@ export const Settings: React.FC<SettingsProps> = ({
             size="1"
             variant="solid"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || (isFirstStart && !isConnectionValid)}
           >
             {isSaving ? t("settings.saving") : t("settings.save")}
           </RadixButton>

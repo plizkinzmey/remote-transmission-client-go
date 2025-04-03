@@ -21,6 +21,10 @@ func (c *TransmissionClient) GetAll() ([]domain.Torrent, error) {
 		"recheckProgress", // Добавляем поле для отслеживания прогресса проверки
 	}, nil)
 	if err != nil {
+		// Проверяем на ошибку авторизации
+		if strings.Contains(err.Error(), "401: Unauthorized") {
+			return nil, &AuthenticationError{message: errAuthenticationRequired}
+		}
 		return nil, fmt.Errorf("failed to get torrents: %w", err)
 	}
 

@@ -526,6 +526,10 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 	originalPaths := make([]string, len(s.config.DownloadPaths))
 	copy(originalPaths, s.config.DownloadPaths)
 	originalDefaultPath := s.config.DefaultDownloadPath
+	originalHost := s.config.Host
+	originalPort := s.config.Port
+	originalUsername := s.config.Username
+	originalPassword := s.config.Password
 
 	// Обновляем настройки соединения
 	s.config.Host = connectionConfig.Host
@@ -592,13 +596,42 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		s.config.DownloadPaths = s.config.DownloadPaths[:10]
 	}
 
+	// Проверяем, изменились ли настройки соединения
+	connectionChanged := s.config.Host != originalHost ||
+		s.config.Port != originalPort ||
+		s.config.Username != originalUsername ||
+		s.config.Password != originalPassword
+
+	// Проверяем, изменились ли настройки соединения (дублирование удалено)
+	// Переменная connectionChanged уже объявлена выше
+
 	// Сохраняем конфигурацию одной операцией
 	configService := infrastructure.NewConfigService()
 	if err := configService.SaveConfig(s.config); err != nil {
 		// В случае ошибки восстанавливаем оригинальное состояние
 		s.config.DownloadPaths = originalPaths
 		s.config.DefaultDownloadPath = originalDefaultPath
+		s.config.Host = originalHost
+		s.config.Port = originalPort
+		s.config.Username = originalUsername
+		s.config.Password = originalPassword
 		return fmt.Errorf("failed to save config: %w", err)
+	}
+
+	// Если изменились настройки соединения, обновляем клиент Transmission
+	if connectionChanged {
+		client, err := transmission.NewTransmissionClient(transmission.TransmissionConfig{
+			Host:     s.config.Host,
+			Port:     s.config.Port,
+			Username: s.config.Username,
+			Password: s.config.Password,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to initialize transmission client: %w", err)
+		}
+
+		// Обновляем репозиторий в сервисе
+		s.repo = client
 	}
 
 	return nil

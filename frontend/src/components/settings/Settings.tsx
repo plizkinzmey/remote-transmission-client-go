@@ -170,7 +170,7 @@ export const Settings: React.FC<SettingsProps> = ({
           onClose();
         } catch (error) {
           console.error("Failed to save settings:", error);
-          // Проверяем, содержит ли ошибка сообщение о неинициализированном сервисе
+          // Проверяем, является ли ошибка ошибкой неинициализированного сервиса
           const errorStr = String(error);
           if (errorStr.includes("service not initialized")) {
             // Если сервис не инициализирован, пробуем сначала инициализировать соединение
@@ -186,11 +186,17 @@ export const Settings: React.FC<SettingsProps> = ({
             } catch (initError) {
               console.error("Failed to initialize connection:", initError);
               // Если инициализация не удалась, показываем ошибку инициализации
-              setConnectionErrorMessage(t("errors.failedToInitializeConnection", { 0: String(initError) }));
+              setConnectionErrorMessage(
+                t("errors.failedToInitializeConnection", {
+                  0: String(initError),
+                })
+              );
             }
           } else {
             // Для других ошибок используем существующий ключ локализации
-            setConnectionErrorMessage(t("errors.failedToUpdateSettings", { 0: String(error) }));
+            setConnectionErrorMessage(
+              t("errors.failedToUpdateSettings", { 0: String(error) })
+            );
           }
           setIsConnectionValid(false);
           // Важно: сбрасываем состояние сохранения, чтобы кнопка стала активной
@@ -202,7 +208,9 @@ export const Settings: React.FC<SettingsProps> = ({
     } catch (error) {
       console.error("Error saving settings:", error);
       // Используем существующий ключ локализации для ошибки
-      setConnectionErrorMessage(t("errors.failedToUpdateSettings", { 0: String(error) }));
+      setConnectionErrorMessage(
+        t("errors.failedToUpdateSettings", { 0: String(error) })
+      );
       setIsConnectionValid(false);
     } finally {
       setIsSaving(false);

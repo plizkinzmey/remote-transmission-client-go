@@ -10,6 +10,7 @@ const (
 	errInvalidDrive            = "invalid drive: %s"
 	errConfigNotInitialized    = "config is not initialized"
 	errAuthenticationRequired  = "authentication required"
+	errServiceNotInitialized   = "service not initialized"
 )
 
 // LocalizedError представляет ошибку с ключом локализации
@@ -28,4 +29,18 @@ type AuthenticationError struct {
 
 func (e *AuthenticationError) Error() string {
 	return e.message
+}
+
+// ServiceNotInitializedError представляет ошибку неинициализированного сервиса
+type ServiceNotInitializedError struct {
+	message string
+}
+
+func (e *ServiceNotInitializedError) Error() string {
+	return e.message
+}
+
+// NewServiceNotInitializedError создает новую ошибку неинициализированного сервиса
+func NewServiceNotInitializedError() *ServiceNotInitializedError {
+	return &ServiceNotInitializedError{message: errServiceNotInitialized}
 }

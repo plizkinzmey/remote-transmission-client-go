@@ -188,7 +188,10 @@
     "emptyPath": "Path cannot be empty",
     "timeoutExplanation": "No access to the Transmission service or a large torrent is being processed. Check your connection or wait for reconnection.",
     "noConnectionSearch": "Search unavailable: no connection to server",
-    "noConnectionAction": "Action unavailable: no connection to server"
+    "noConnectionAction": "Action unavailable: no connection to server",
+    "connectionAuthRequired": "Authentication required. Please enter valid username and password.",
+    "connectionRefused": "Failed to connect to the server. Check if Transmission is running and the host and port are correct.",
+    "connectionTimeout": "Connection timed out. Please check your network connection."
   },
 
   "language": {

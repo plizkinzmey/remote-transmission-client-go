@@ -14,6 +14,7 @@ import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { FolderIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Portal } from "./Portal";
+import styles from "../styles/AddTorrent.module.css";
 import {
   GetDownloadPaths,
   ValidateDownloadPath,
@@ -328,26 +329,18 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                       <Select.Root
                         value={downloadPath}
                         onValueChange={handlePathChange}
+                        size="1"
                       >
                         <Select.Trigger />
                         <Select.Content>
                           {downloadPaths.map((path) => (
-                            <Flex key={path} justify="between" align="center">
-                              <Select.Item value={path}>{path}</Select.Item>
-                              {path !== defaultPath && (
-                                <IconButton
-                                  size="1"
-                                  variant="soft"
-                                  color="red"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemovePath(path);
-                                  }}
-                                >
-                                  <TrashIcon width={16} height={16} />
-                                </IconButton>
-                              )}
-                            </Flex>
+                            <Select.Item
+                              key={path}
+                              value={path}
+                              className={styles.selectItem}
+                            >
+                              {path}
+                            </Select.Item>
                           ))}
                         </Select.Content>
                       </Select.Root>

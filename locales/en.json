@@ -130,6 +130,7 @@
     "add": "Add",
     "cancel": "Cancel",
     "dropFile": "Drop your torrent file here",
+    "dropTorrentHere": "Drop torrent file here to add it",
     "orClickToSelect": "or click to select file",
     "invalidUrl": "Invalid URL",
     "success": "Torrent added successfully",

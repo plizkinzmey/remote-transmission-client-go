@@ -6,11 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"transmission-client-go/internal/domain"
-	"errors"
 )
-
-// ErrConfigNotExists возвращается, когда файл конфигурации не существует
-var ErrConfigNotExists = errors.New("config file does not exist")
 
 // ConfigFormat представляет формат файла конфигурации
 type ConfigFormat struct {
@@ -39,7 +35,8 @@ func (s *ConfigService) LoadConfig() (*domain.Config, error) {
 
 	// Проверяем, существует ли файл конфигурации
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, ErrConfigNotExists
+		// Если файла нет, возвращаем nil (используем дефолтные настройки)
+		return nil, nil
 	}
 
 	// Читаем файл конфигурации
@@ -111,17 +108,6 @@ func (s *ConfigService) SaveConfig(config *domain.Config) error {
 	}
 
 	return nil
-}
-
-// ConfigExists проверяет существование файла конфигурации
-func (s *ConfigService) ConfigExists() (bool, error) {
-	configPath, err := s.getConfigPath()
-	if err != nil {
-		return false, err
-	}
-	
-	_, err = os.Stat(configPath)
-	return !os.IsNotExist(err), nil
 }
 
 // getConfigPath возвращает путь к файлу конфигурации

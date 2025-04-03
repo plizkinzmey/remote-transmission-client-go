@@ -7,13 +7,11 @@ import { TestConnection } from "../../../wailsjs/go/main/App";
 interface ConnectionTabProps {
   settings: ConnectionConfig;
   onSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
-  errors?: {[key: string]: string};
 }
 
 export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   settings,
   onSettingsChange,
-  errors = {},
 }) => {
   const { t } = useLocalization();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -49,13 +47,7 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
               placeholder={t("settings.hostPlaceholder")}
               value={settings.host}
               onChange={(e) => onSettingsChange({ host: e.target.value })}
-              color={errors.host ? "red" : undefined}
             />
-            {errors.host && (
-              <Text size="1" color="red">
-                {errors.host}
-              </Text>
-            )}
           </Box>
           <Box style={{ width: "100px" }}>
             <Text as="label" size="1" weight="medium">
@@ -71,13 +63,7 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
                   port: e.target.value ? parseInt(e.target.value) : undefined,
                 })
               }
-              color={errors.port ? "red" : undefined}
             />
-            {errors.port && (
-              <Text size="1" color="red">
-                {errors.port}
-              </Text>
-            )}
           </Box>
         </Flex>
       </Flex>

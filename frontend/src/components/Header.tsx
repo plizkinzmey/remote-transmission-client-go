@@ -46,7 +46,6 @@ interface HeaderProps {
   onSetSpeedLimit: (isSlowMode: boolean) => void;
   isSlowModeEnabled?: boolean;
   isReconnecting: boolean;
-  isFirstStart?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -71,7 +70,6 @@ export const Header: React.FC<HeaderProps> = ({
   onSetSpeedLimit,
   isSlowModeEnabled = false,
   isReconnecting,
-  isFirstStart = false,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -184,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <Flex gap="2" align="center">
           <Flex gap="4" align="center">
-            {!isFirstStart && <LanguageSelector />}
+            <LanguageSelector />
             <ThemeToggle />
             <IconButton
               size="2"

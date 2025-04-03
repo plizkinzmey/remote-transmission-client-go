@@ -42,17 +42,20 @@ const withTimeout = <T>(
  * Хук для работы с данными торрентов и управления соединением
  */
 export function useTorrentData() {
-  const { t, currentLanguage: languageState } = useLocalization();
+  const { t } = useLocalization();
   const [torrents, setTorrents] = useState<TorrentData[]>([]);
-  const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(null);
-  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(new Set());
+  const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(
+    null
+  );
+  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
+    new Set()
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [config, setConfig] = useState<ConfigData | null>(null);
-  const [isSettingsSaving, setIsSettingsSaving] = useState(false);
 
   // Обработчик выбора/снятия выбора с торрента
   const handleTorrentSelect = (id: number) => {
@@ -135,40 +138,39 @@ export function useTorrentData() {
   // Инициализация приложения при загрузке
   useEffect(() => {
     const initializeApp = async () => {
-      setIsLoading(true);
+      setIsLoading(true); // Показываем спиннер загрузки торрентов при старте
       try {
-        const savedConfig = await LoadConfig();
+        const savedConfig = await withTimeout(LoadConfig(), 1 * 60 * 1000, t); // Таймаут 1 минута
         if (savedConfig) {
           const config: ConfigData = {
             ...savedConfig,
             theme: (savedConfig.theme || "light") as "light" | "dark" | "auto",
-            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as "KiB/s" | "MiB/s",
+            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
+              | "KiB/s"
+              | "MiB/s",
           };
 
           setConfig(config);
 
-          // Пытаемся подключиться только если есть конфигурация
           try {
             await Initialize(JSON.stringify(config));
             await refreshSessionStats();
             await refreshTorrents();
             setIsInitialized(true);
-            setError(null);
           } catch (initError) {
             console.error("Failed to connect with saved settings:", initError);
             setError(t("errors.timeoutExplanation"));
-            setIsReconnecting(true);
+            setIsReconnecting(true); // Устанавливаем реконнект только при ошибке
           }
         }
       } catch (error) {
-        // Если конфигурации нет или произошла ошибка при загрузке,
-        // просто игнорируем - это нормальный кейс при первом запуске
-        console.log("No configuration found or failed to load:", error);
+        console.error("Failed to load config:", error);
+        setError(t("errors.timeoutExplanation"));
+        setIsReconnecting(true); // Устанавливаем реконнект только при ошибке
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Отключаем спиннер загрузки торрентов после завершения инициализации
       }
     };
-
     initializeApp();
   }, [refreshSessionStats, refreshTorrents, t]);
 
@@ -281,45 +283,39 @@ export function useTorrentData() {
   // Обработчик сохранения настроек
   const handleSettingsSave = async (connectionSettings: ConnectionConfig) => {
     try {
-      setIsSettingsSaving(true);
-      
-      // При первом запуске у нас нет текущего конфига, используем значения по умолчанию
-      // но сохраняем текущий язык если он есть
+      // Загружаем текущий конфиг для сохранения UI настроек
+      const currentConfig = await LoadConfig();
       const uiSettings: UIConfig = {
-        language: config?.language || languageState || "en",
-        theme: (config?.theme || "light") as "light" | "dark" | "auto",
+        language: currentConfig?.language || "en",
+        theme: (currentConfig?.theme || "light") as "light" | "dark" | "auto",
       };
 
-      // Создаем полный конфиг
+      // Создаем полный конфиг, объединяя настройки подключения и UI
       const fullConfig: ConfigData = {
         ...connectionSettings,
         ...uiSettings,
       };
 
-      // Инициализация с новыми настройками
       await Initialize(JSON.stringify(fullConfig));
-      
-      // Сброс состояния
-      setError(null);
-      setIsReconnecting(false);
-      setConfig(fullConfig);
       setIsInitialized(true);
+      setError(null);
+      setConfig(fullConfig);
 
-      // Обновляем данные последовательно
-      try {
-        await refreshSessionStats();
-        await refreshTorrents();
-        return true;
-      } catch (error) {
-        console.error("Failed to refresh data after settings save:", error);
-        return false;
+      // Если есть замедленные торренты, применяем к ним новые настройки скорости
+      const slowedTorrents = torrents
+        .filter((t) => t.IsSlowMode)
+        .map((t) => t.ID);
+      if (slowedTorrents.length > 0) {
+        await handleSetSpeedLimit(slowedTorrents, true);
       }
+
+      await refreshSessionStats();
+      await refreshTorrents();
+      return true;
     } catch (error) {
-      console.error("Failed to save settings:", error);
+      console.error("Failed to update settings:", error);
       setError(t("errors.failedToUpdateSettings", String(error)));
       return false;
-    } finally {
-      setIsSettingsSaving(false);
     }
   };
 

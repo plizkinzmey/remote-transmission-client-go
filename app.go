@@ -84,27 +84,9 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
-	// Если нет обязательных полей, возвращаем ошибку
-	if config.Host == "" {
-		return fmt.Errorf("host is required")
-	}
-
 	// If language is not set in the config, detect system language
 	if config.Language == "" {
 		config.Language = a.localizationService.GetSystemLocale()
-	}
-
-	// If theme is not set, use default
-	if config.Theme == "" {
-		config.Theme = "light"
-	}
-
-	// Ensure default values for optional fields
-	if config.Port == 0 {
-		config.Port = 9091
-	}
-	if config.SlowSpeedUnit == "" {
-		config.SlowSpeedUnit = "KiB/s"
 	}
 
 	// Save the configuration
@@ -268,14 +250,6 @@ func (a *App) GetDefaultDownloadDir() (string, error) {
 	return a.service.GetDefaultDownloadDir()
 }
 
-// SetDefaultDownloadPath устанавливает указанный путь как путь загрузки по умолчанию
-func (a *App) SetDefaultDownloadPath(path string) error {
-	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
-	}
-	return a.service.SetDefaultDownloadPath(path)
-}
-
 // SaveDownloadPath сохраняет путь в историю путей скачивания
 func (a *App) SaveDownloadPath(path string) error {
 	if a.service == nil {
@@ -298,22 +272,6 @@ func (a *App) RemoveDownloadPath(path string) error {
 		return errors.New(ErrServiceNotInitialized)
 	}
 	return a.service.RemoveDownloadPath(path)
-}
-
-// SavePathsChanges сохраняет изменения путей атомарно
-func (a *App) SavePathsChanges(pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
-	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
-	}
-	return a.service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
-}
-
-// GetPathsState возвращает текущее состояние путей
-func (a *App) GetPathsState() (*domain.PathsState, error) {
-	if a.service == nil {
-		return nil, errors.New(ErrServiceNotInitialized)
-	}
-	return a.service.GetPathsState()
 }
 
 // getLocalizedError возвращает локализованное сообщение об ошибке
@@ -369,72 +327,4 @@ func (a *App) VerifyTorrent(id int64) error {
 		return errors.New(ErrServiceNotInitialized)
 	}
 	return a.service.VerifyTorrent(id)
-}
-
-// SaveAllSettings сохраняет все настройки в одной транзакции
-func (a *App) SaveAllSettings(connectionSettings map[string]interface{}, pathChanges map[string]interface{}) error {
-	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
-	}
-
-	// Создаем конфиг из полученных данных
-	config := domain.ConnectionConfig{}
-
-	if host, ok := connectionSettings["host"].(string); ok {
-		config.Host = host
-	}
-	if port, ok := connectionSettings["port"].(float64); ok {
-		config.Port = int(port)
-	}
-	if username, ok := connectionSettings["username"].(string); ok {
-		config.Username = username
-	}
-	if password, ok := connectionSettings["password"].(string); ok {
-		config.Password = password
-	}
-	if ratio, ok := connectionSettings["maxUploadRatio"].(float64); ok {
-		config.MaxUploadRatio = ratio
-	}
-	if limit, ok := connectionSettings["slowSpeedLimit"].(float64); ok {
-		config.SlowSpeedLimit = int(limit)
-	}
-	if unit, ok := connectionSettings["slowSpeedUnit"].(string); ok {
-		config.SlowSpeedUnit = unit
-	}
-
-	// Извлекаем изменения путей
-	var pathsToAdd, pathsToRemove []string
-	var defaultPath string
-
-	if pathChanges != nil {
-		if pathsToAddAny, ok := pathChanges["pathsToAdd"]; ok && pathsToAddAny != nil {
-			if pathsToAddList, ok := pathsToAddAny.([]interface{}); ok {
-				pathsToAdd = make([]string, len(pathsToAddList))
-				for i, p := range pathsToAddList {
-					if pStr, ok := p.(string); ok {
-						pathsToAdd[i] = pStr
-					}
-				}
-			}
-		}
-
-		if pathsToRemoveAny, ok := pathChanges["pathsToRemove"]; ok && pathsToRemoveAny != nil {
-			if pathsToRemoveList, ok := pathsToRemoveAny.([]interface{}); ok {
-				pathsToRemove = make([]string, len(pathsToRemoveList))
-				for i, p := range pathsToRemoveList {
-					if pStr, ok := p.(string); ok {
-						pathsToRemove[i] = pStr
-					}
-				}
-			}
-		}
-
-		if defaultPathAny, ok := pathChanges["defaultPath"]; ok && defaultPathAny != nil {
-			if dpStr, ok := defaultPathAny.(string); ok {
-				defaultPath = dpStr
-			}
-		}
-	}
-
-	return a.service.SaveSettingsWithPaths(config, pathsToAdd, pathsToRemove, defaultPath)
 }

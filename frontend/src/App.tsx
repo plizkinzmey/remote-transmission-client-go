@@ -52,6 +52,11 @@ function App() {
   const [showAddTorrent, setShowAddTorrent] = useState(false);
   const [torrentFilePath, setTorrentFilePath] = useState<string | null>(null);
   const [isFirstStart, setIsFirstStart] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [torrentFileData, setTorrentFileData] = useState<{
+    name: string;
+    data: string;
+  } | null>(null);
 
   // Используем хук для работы с данными торрентов
   const {
@@ -164,6 +169,48 @@ function App() {
     handleTorrentSpeedLimit([id], isSlowMode);
   };
 
+  // Обработчик события при перетаскивании файла над окном программы
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!isDragging) {
+      setIsDragging(true);
+    }
+  };
+
+  // Обработчик события при уходе перетаскиваемого файла из окна программы
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node) || !e.relatedTarget) {
+      return;
+    }
+    setIsDragging(false);
+  };
+
+  // Обработчик события при сбросе файла в окно программы
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const torrentFile = files.find((file) => file.name.endsWith(".torrent"));
+
+    if (torrentFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Content = reader.result as string;
+        const base64Data = base64Content.split(",")[1];
+
+        // Открываем диалог добавления торрента с данными файла
+        setTorrentFileData({
+          name: torrentFile.name,
+          data: base64Data,
+        });
+        setShowAddTorrent(true);
+      };
+      reader.readAsDataURL(torrentFile);
+    }
+  };
+
   useEffect(() => {
     EventsOn("torrent-opened", (torrentPath: string) => {
       console.log("Получен путь к торрент-файлу:", torrentPath);
@@ -174,7 +221,19 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className={styles.appContainer}>
+      <div
+        className={styles.appContainer}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDragging && (
+          <div className={styles.dragOverlay}>
+            <div className={styles.dropIndicator}>
+              {t("add.dropTorrentHere")}
+            </div>
+          </div>
+        )}
         <Header
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -253,11 +312,13 @@ function App() {
         {showAddTorrent && (
           <AddTorrent
             torrentFile={torrentFilePath || undefined} // передаётся путь, если есть
+            torrentFileData={torrentFileData || undefined} // передаются данные перетаскиваемого файла
             onAdd={handleAddTorrent}
             onAddFile={handleAddTorrentFile}
             onClose={() => {
               setShowAddTorrent(false);
               setTorrentFilePath(null);
+              setTorrentFileData(null); // сбрасываем данные о файле при закрытии окна
             }}
           />
         )}

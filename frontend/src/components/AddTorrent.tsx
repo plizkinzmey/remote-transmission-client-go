@@ -26,7 +26,11 @@ export interface AddTorrentProps {
   onAdd: (url: string, downloadDir?: string) => Promise<boolean>;
   onAddFile: (base64Content: string, downloadDir?: string) => Promise<boolean>;
   onClose: () => void;
-  torrentFile?: string; // добавлено для передачи пути торрент файла
+  torrentFile?: string; // путь к торрент-файлу
+  torrentFileData?: {
+    name: string;
+    data: string;
+  }; // данные торрент-файла (для перетаскивания)
 }
 
 const FileInputArea = ({
@@ -62,6 +66,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   onAddFile,
   onClose,
   torrentFile,
+  torrentFileData,
 }) => {
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [url, setUrl] = useState("");
@@ -224,6 +229,15 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
         });
     }
   }, [torrentFile]);
+
+  // Если torrentFileData передан, переключаем вкладку и устанавливаем данные файла
+  useEffect(() => {
+    if (torrentFileData) {
+      setActiveTab("file");
+      setSelectedFileName(torrentFileData.name);
+      setSelectedFileData(torrentFileData.data);
+    }
+  }, [torrentFileData]);
 
   return (
     <Portal>

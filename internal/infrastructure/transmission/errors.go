@@ -9,6 +9,7 @@ const (
 	errDirectoryNotAccessible  = "directory is not accessible"
 	errInvalidDrive            = "invalid drive: %s"
 	errConfigNotInitialized    = "config is not initialized"
+	errAuthenticationRequired  = "authentication required"
 )
 
 // LocalizedError представляет ошибку с ключом локализации
@@ -18,4 +19,13 @@ type LocalizedError struct {
 
 func (e *LocalizedError) Error() string {
 	return e.key
+}
+
+// AuthenticationError представляет ошибку аутентификации
+type AuthenticationError struct {
+	message string
+}
+
+func (e *AuthenticationError) Error() string {
+	return e.message
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TextField, Flex, Text, Grid, Box, Button } from "@radix-ui/themes";
 import { ConnectionConfig } from "../../App";
 import { useLocalization } from "../../contexts/LocalizationContext";
@@ -7,12 +7,14 @@ import { TestConnection } from "../../../wailsjs/go/main/App";
 interface ConnectionTabProps {
   settings: ConnectionConfig;
   onSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
-  errors?: {[key: string]: string};
+  onConnectionTest?: (success: boolean, errorMessage?: string) => void;
+  errors?: { [key: string]: string };
 }
 
 export const ConnectionTab: React.FC<ConnectionTabProps> = ({
   settings,
   onSettingsChange,
+  onConnectionTest,
   errors = {},
 }) => {
   const { t } = useLocalization();
@@ -28,13 +30,42 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
       await TestConnection(JSON.stringify(settings));
       setConnectionStatus("success");
       setStatusMessage(t("settings.testSuccess"));
+      // Уведомляем родительский компонент об успешном подключении
+      if (onConnectionTest) {
+        onConnectionTest(true);
+      }
     } catch (error) {
       setConnectionStatus("error");
-      setStatusMessage(t("settings.testError"));
+      let errorMessage = t("settings.testError");
+
+      // Проверяем, содержит ли ошибка информацию об аутентификации
+      const errorStr = String(error);
+      if (errorStr.includes("errors.connectionAuthRequired")) {
+        errorMessage = t("errors.connectionAuthRequired");
+      } else if (errorStr.includes("connection refused")) {
+        errorMessage = t("errors.connectionRefused");
+      } else if (errorStr.includes("timeout")) {
+        errorMessage = t("errors.connectionTimeout");
+      }
+
+      setStatusMessage(errorMessage);
+      // Уведомляем родительский компонент о неудачном подключении
+      if (onConnectionTest) {
+        onConnectionTest(false, errorMessage);
+      }
     } finally {
       setIsTestingConnection(false);
     }
   };
+
+  // Сбрасываем статус соединения при изменении настроек
+  useEffect(() => {
+    setConnectionStatus("none");
+    setStatusMessage("");
+    if (onConnectionTest) {
+      onConnectionTest(false);
+    }
+  }, [settings.host, settings.port, settings.username, settings.password]);
 
   return (
     <Grid columns="1" gap="3">
@@ -111,25 +142,31 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
         </Box>
       </Flex>
 
-      <Flex align="center" gap="3" mt="2">
-        <Button
-          size="1"
-          variant="soft"
-          onClick={handleTestConnection}
-          disabled={isTestingConnection}
-        >
-          {isTestingConnection
-            ? t("settings.testing")
-            : t("settings.testConnection")}
-        </Button>
-
-        {connectionStatus !== "none" && (
-          <Text
+      <Flex direction="column" gap="2">
+        <Box>
+          <Button
             size="1"
-            color={connectionStatus === "success" ? "green" : "red"}
+            variant="soft"
+            onClick={handleTestConnection}
+            disabled={isTestingConnection || !settings.host}
           >
-            {statusMessage}
-          </Text>
+            {isTestingConnection
+              ? t("settings.testing")
+              : t("settings.testConnection")}
+          </Button>
+        </Box>
+
+        {/* Отображаем сообщение об ошибке/успехе под кнопкой */}
+        {connectionStatus !== "none" && (
+          <Box mt="1" style={{ maxWidth: "400px" }}>
+            <Text
+              size="1"
+              color={connectionStatus === "success" ? "green" : "red"}
+              style={{ wordBreak: "break-word" }}
+            >
+              {statusMessage}
+            </Text>
+          </Box>
         )}
       </Flex>
     </Grid>

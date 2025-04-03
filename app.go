@@ -233,7 +233,15 @@ func (a *App) TestConnection(configJson string) error {
 	}
 	// Try to get torrents as a connection test
 	_, err = client.GetAll()
-	return err
+	if err != nil {
+		// Проверяем на ошибку аутентификации
+		if _, ok := err.(*transmission.AuthenticationError); ok {
+			// Возвращаем локализованную ошибку для UI
+			return errors.New("errors.connectionAuthRequired")
+		}
+		return err
+	}
+	return nil
 }
 
 // GetTorrentFiles returns the list of files in a torrent

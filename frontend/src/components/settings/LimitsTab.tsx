@@ -6,11 +6,13 @@ import { useLocalization } from "../../contexts/LocalizationContext";
 interface LimitsTabProps {
   settings: ConnectionConfig;
   onSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
+  errors?: {[key: string]: string};
 }
 
 export const LimitsTab: React.FC<LimitsTabProps> = ({
   settings,
   onSettingsChange,
+  errors = {},
 }) => {
   const { t } = useLocalization();
 
@@ -37,7 +39,13 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             placeholder="0"
             value={settings.maxUploadRatio || ""}
             onChange={(e) => handleMaxUploadRatioChange(e.target.value)}
+            color={errors.maxUploadRatio ? "red" : undefined}
           />
+          {errors.maxUploadRatio && (
+            <Text size="1" color="red">
+              {errors.maxUploadRatio}
+            </Text>
+          )}
         </Box>
       </Flex>
 
@@ -53,7 +61,13 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
               placeholder="0"
               value={settings.slowSpeedLimit || ""}
               onChange={(e) => handleSpeedLimitChange(e.target.value)}
+              color={errors.slowSpeedLimit ? "red" : undefined}
             />
+            {errors.slowSpeedLimit && (
+              <Text size="1" color="red">
+                {errors.slowSpeedLimit}
+              </Text>
+            )}
           </Box>
           <Box>
             <Select.Root

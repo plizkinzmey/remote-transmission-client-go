@@ -84,9 +84,27 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
+	// Если нет обязательных полей, возвращаем ошибку
+	if config.Host == "" {
+		return fmt.Errorf("host is required")
+	}
+
 	// If language is not set in the config, detect system language
 	if config.Language == "" {
 		config.Language = a.localizationService.GetSystemLocale()
+	}
+
+	// If theme is not set, use default
+	if config.Theme == "" {
+		config.Theme = "light"
+	}
+
+	// Ensure default values for optional fields
+	if config.Port == 0 {
+		config.Port = 9091
+	}
+	if config.SlowSpeedUnit == "" {
+		config.SlowSpeedUnit = "KiB/s"
 	}
 
 	// Save the configuration
@@ -140,7 +158,7 @@ func (a *App) GetAllTranslationKeys(locale string) []string {
 // GetSessionStats returns statistics about the current session
 func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 	if a.service == nil {
-		return nil, errors.New(ErrServiceNotInitialized) // заменено
+		return nil, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetSessionStats()
 }
@@ -148,7 +166,7 @@ func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
-		return nil, errors.New(ErrServiceNotInitialized)
+		return nil, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetAllTorrents()
 }
@@ -156,7 +174,7 @@ func (a *App) GetTorrents() ([]domain.Torrent, error) {
 // AddTorrent adds a new torrent by URL
 func (a *App) AddTorrent(url string, downloadDir string) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.AddTorrent(url, downloadDir)
 }
@@ -164,7 +182,7 @@ func (a *App) AddTorrent(url string, downloadDir string) error {
 // AddTorrentFile adds a torrent from a base64-encoded file
 func (a *App) AddTorrentFile(base64Content string, downloadDir string) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	// Add the data URL prefix if it doesn't exist
 	if !strings.HasPrefix(base64Content, "data:") {
@@ -176,7 +194,7 @@ func (a *App) AddTorrentFile(base64Content string, downloadDir string) error {
 // RemoveTorrent removes a torrent by ID
 func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.RemoveTorrent(id, deleteData)
 }
@@ -184,7 +202,7 @@ func (a *App) RemoveTorrent(id int64, deleteData bool) error {
 // StartTorrents starts the selected torrents
 func (a *App) StartTorrents(ids []int64) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.StartTorrents(ids)
 }
@@ -192,7 +210,7 @@ func (a *App) StartTorrents(ids []int64) error {
 // StopTorrents stops the selected torrents
 func (a *App) StopTorrents(ids []int64) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.StopTorrents(ids)
 }
@@ -215,13 +233,21 @@ func (a *App) TestConnection(configJson string) error {
 	}
 	// Try to get torrents as a connection test
 	_, err = client.GetAll()
-	return err
+	if err != nil {
+		// Проверяем на ошибку аутентификации
+		if _, ok := err.(*transmission.AuthenticationError); ok {
+			// Возвращаем локализованную ошибку для UI
+			return errors.New("errors.connectionAuthRequired")
+		}
+		return err
+	}
+	return nil
 }
 
 // GetTorrentFiles returns the list of files in a torrent
 func (a *App) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
 	if a.service == nil {
-		return nil, errors.New(ErrServiceNotInitialized)
+		return nil, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetTorrentFiles(id)
 }
@@ -229,7 +255,7 @@ func (a *App) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
 // SetFilesWanted sets whether files should be downloaded
 func (a *App) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.SetFilesWanted(id, fileIds, wanted)
 }
@@ -237,7 +263,7 @@ func (a *App) SetFilesWanted(id int64, fileIds []int, wanted bool) error {
 // SetTorrentSpeedLimit sets the speed limit for the given torrents
 func (a *App) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.SetTorrentSpeedLimit(ids, isSlowMode)
 }
@@ -245,15 +271,23 @@ func (a *App) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) error {
 // GetDefaultDownloadDir возвращает каталог загрузки по умолчанию из Transmission
 func (a *App) GetDefaultDownloadDir() (string, error) {
 	if a.service == nil {
-		return "", errors.New(ErrServiceNotInitialized)
+		return "", transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetDefaultDownloadDir()
+}
+
+// SetDefaultDownloadPath устанавливает указанный путь как путь загрузки по умолчанию
+func (a *App) SetDefaultDownloadPath(path string) error {
+	if a.service == nil {
+		return transmission.NewServiceNotInitializedError()
+	}
+	return a.service.SetDefaultDownloadPath(path)
 }
 
 // SaveDownloadPath сохраняет путь в историю путей скачивания
 func (a *App) SaveDownloadPath(path string) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.SaveDownloadPath(path)
 }
@@ -261,7 +295,7 @@ func (a *App) SaveDownloadPath(path string) error {
 // GetDownloadPaths возвращает список всех сохраненных путей скачивания
 func (a *App) GetDownloadPaths() ([]string, error) {
 	if a.service == nil {
-		return nil, errors.New(ErrServiceNotInitialized)
+		return nil, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetDownloadPaths()
 }
@@ -269,9 +303,25 @@ func (a *App) GetDownloadPaths() ([]string, error) {
 // RemoveDownloadPath удаляет путь из истории путей скачивания
 func (a *App) RemoveDownloadPath(path string) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.RemoveDownloadPath(path)
+}
+
+// SavePathsChanges сохраняет изменения путей атомарно
+func (a *App) SavePathsChanges(pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
+	if a.service == nil {
+		return transmission.NewServiceNotInitializedError()
+	}
+	return a.service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
+}
+
+// GetPathsState возвращает текущее состояние путей
+func (a *App) GetPathsState() (*domain.PathsState, error) {
+	if a.service == nil {
+		return nil, transmission.NewServiceNotInitializedError()
+	}
+	return a.service.GetPathsState()
 }
 
 // getLocalizedError возвращает локализованное сообщение об ошибке
@@ -290,7 +340,7 @@ func (a *App) getLocalizedError(err error) string {
 // ValidateDownloadPath проверяет существование и доступность пути для скачивания
 func (a *App) ValidateDownloadPath(path string) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	if err := a.service.ValidateDownloadPath(path); err != nil {
 		// Возвращаем локализованное сообщение об ошибке
@@ -324,7 +374,83 @@ func (a *App) ReadFile(filePath string) (string, error) {
 // VerifyTorrent запускает проверку целостности торрента
 func (a *App) VerifyTorrent(id int64) error {
 	if a.service == nil {
-		return errors.New(ErrServiceNotInitialized)
+		return transmission.NewServiceNotInitializedError()
 	}
 	return a.service.VerifyTorrent(id)
+}
+
+// SaveAllSettings сохраняет все настройки в одной транзакции
+func (a *App) SaveAllSettings(connectionSettings map[string]interface{}, pathChanges map[string]interface{}) error {
+	if a.service == nil {
+		return transmission.NewServiceNotInitializedError()
+	}
+
+	// Создаем конфиг из полученных данных
+	config := domain.ConnectionConfig{}
+
+	if host, ok := connectionSettings["host"].(string); ok {
+		config.Host = host
+	}
+	if port, ok := connectionSettings["port"].(float64); ok {
+		config.Port = int(port)
+	}
+	if username, ok := connectionSettings["username"].(string); ok {
+		config.Username = username
+	}
+	if password, ok := connectionSettings["password"].(string); ok {
+		config.Password = password
+	}
+	if ratio, ok := connectionSettings["maxUploadRatio"].(float64); ok {
+		config.MaxUploadRatio = ratio
+	}
+	if limit, ok := connectionSettings["slowSpeedLimit"].(float64); ok {
+		config.SlowSpeedLimit = int(limit)
+	}
+	if unit, ok := connectionSettings["slowSpeedUnit"].(string); ok {
+		config.SlowSpeedUnit = unit
+	}
+
+	// Извлекаем изменения путей
+	var pathsToAdd, pathsToRemove []string
+	var defaultPath string
+
+	if pathChanges != nil {
+		if pathsToAddAny, ok := pathChanges["pathsToAdd"]; ok && pathsToAddAny != nil {
+			if pathsToAddList, ok := pathsToAddAny.([]interface{}); ok {
+				pathsToAdd = make([]string, len(pathsToAddList))
+				for i, p := range pathsToAddList {
+					if pStr, ok := p.(string); ok {
+						pathsToAdd[i] = pStr
+					}
+				}
+			}
+		}
+
+		if pathsToRemoveAny, ok := pathChanges["pathsToRemove"]; ok && pathsToRemoveAny != nil {
+			if pathsToRemoveList, ok := pathsToRemoveAny.([]interface{}); ok {
+				pathsToRemove = make([]string, len(pathsToRemoveList))
+				for i, p := range pathsToRemoveList {
+					if pStr, ok := p.(string); ok {
+						pathsToRemove[i] = pStr
+					}
+				}
+			}
+		}
+
+		if defaultPathAny, ok := pathChanges["defaultPath"]; ok && defaultPathAny != nil {
+			if dpStr, ok := defaultPathAny.(string); ok {
+				defaultPath = dpStr
+			}
+		}
+	}
+
+	return a.service.SaveSettingsWithPaths(config, pathsToAdd, pathsToRemove, defaultPath)
+}
+
+// GetTorrentDownloadDirectory возвращает каталог, в который загружается/загружен торрент
+func (a *App) GetTorrentDownloadDirectory(id int64) (string, error) {
+	if a.service == nil {
+		return "", transmission.NewServiceNotInitializedError()
+	}
+	return a.service.GetTorrentDownloadDirectory(id)
 }

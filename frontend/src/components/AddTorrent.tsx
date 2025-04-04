@@ -14,6 +14,7 @@ import { useLocalization } from "../contexts/LocalizationContext";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { FolderIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Portal } from "./Portal";
+import styles from "../styles/AddTorrent.module.css";
 import {
   GetDownloadPaths,
   ValidateDownloadPath,
@@ -25,7 +26,11 @@ export interface AddTorrentProps {
   onAdd: (url: string, downloadDir?: string) => Promise<boolean>;
   onAddFile: (base64Content: string, downloadDir?: string) => Promise<boolean>;
   onClose: () => void;
-  torrentFile?: string; // добавлено для передачи пути торрент файла
+  torrentFile?: string; // путь к торрент-файлу
+  torrentFileData?: {
+    name: string;
+    data: string;
+  }; // данные торрент-файла (для перетаскивания)
 }
 
 const FileInputArea = ({
@@ -61,6 +66,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   onAddFile,
   onClose,
   torrentFile,
+  torrentFileData,
 }) => {
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [url, setUrl] = useState("");
@@ -224,6 +230,15 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
     }
   }, [torrentFile]);
 
+  // Если torrentFileData передан, переключаем вкладку и устанавливаем данные файла
+  useEffect(() => {
+    if (torrentFileData) {
+      setActiveTab("file");
+      setSelectedFileName(torrentFileData.name);
+      setSelectedFileData(torrentFileData.data);
+    }
+  }, [torrentFileData]);
+
   return (
     <Portal>
       <Dialog.Root open onOpenChange={() => onClose()}>
@@ -328,26 +343,18 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                       <Select.Root
                         value={downloadPath}
                         onValueChange={handlePathChange}
+                        size="1"
                       >
                         <Select.Trigger />
                         <Select.Content>
                           {downloadPaths.map((path) => (
-                            <Flex key={path} justify="between" align="center">
-                              <Select.Item value={path}>{path}</Select.Item>
-                              {path !== defaultPath && (
-                                <IconButton
-                                  size="1"
-                                  variant="soft"
-                                  color="red"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemovePath(path);
-                                  }}
-                                >
-                                  <TrashIcon width={16} height={16} />
-                                </IconButton>
-                              )}
-                            </Flex>
+                            <Select.Item
+                              key={path}
+                              value={path}
+                              className={styles.selectItem}
+                            >
+                              {path}
+                            </Select.Item>
                           ))}
                         </Select.Content>
                       </Select.Root>

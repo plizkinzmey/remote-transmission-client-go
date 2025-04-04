@@ -1,0 +1,42 @@
+/* Стили для компонента StatusMessage */
+.statusContainer {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.expandableMessage {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
+  display: inline-block;
+}
+
+.expandableMessage:hover {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Анимация появления текста статуса */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animated {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Стили для разных типов статусов */
+.success {
+  color: var(--grass-9);
+}
+
+.error {
+  color: var(--tomato-9);
+}
+
+.info {
+  color: var(--blue-9);
+}

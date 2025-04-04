@@ -15,6 +15,7 @@ import { LimitsTab } from "./LimitsTab";
 import { PathsTab, PathsTabRef } from "./PathsTab";
 import { ConnectionConfig } from "../../App";
 import { LanguageSelector } from "../LanguageSelector";
+import StatusMessage from "../StatusMessage";
 
 interface SettingsProps {
   onSave: (settings: ConnectionConfig) => Promise<boolean>;
@@ -50,9 +51,15 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleConnectionTest = useCallback(
     (success: boolean, errorMessage?: string) => {
       setIsConnectionValid(success);
-      setConnectionErrorMessage(errorMessage || "");
+      // Если тест успешен, показываем сообщение об успехе
+      if (success) {
+        setConnectionErrorMessage(t("settings.testSuccess"));
+      } else {
+        // Иначе показываем сообщение об ошибке
+        setConnectionErrorMessage(errorMessage || "");
+      }
     },
-    []
+    [t]
   );
 
   // Ссылка на компонент PathsTab для доступа к его методам
@@ -280,7 +287,19 @@ export const Settings: React.FC<SettingsProps> = ({
           </Text>
         )}
 
-        {/* Убираем отображение ошибки submit здесь, так как теперь она будет отображаться в компоненте ConnectionTab */}
+        {/* Всегда отображаем блок для StatusMessage с фиксированной высотой для предотвращения "скачков" */}
+        <StatusMessage
+          status={
+            connectionErrorMessage
+              ? isConnectionValid
+                ? "success"
+                : "error"
+              : "none"
+          }
+          message={connectionErrorMessage}
+          fixedHeight={true}
+          height="48px"
+        />
 
         <Box mt="4">
           <RadixTabs.Root defaultValue="connection">
@@ -353,8 +372,6 @@ export const Settings: React.FC<SettingsProps> = ({
             </Flex>
           </RadixTabs.Root>
         </Box>
-
-        {/* Убираем дублирование ошибки - выводим только в одном месте */}
 
         <Flex justify="end" mt="4" gap="2">
           {!isFirstStart && (

@@ -13,6 +13,21 @@ import styles from "../styles/StatusMessage.module.css";
 export type StatusType = "success" | "error" | "info" | "none";
 
 /**
+ * Типы цветов, поддерживаемых Radix UI для Text компонента
+ */
+type RadixTextColor = "green" | "red" | "blue" | undefined;
+
+/**
+ * Маппинг типов статусов на соответствующие цвета Radix UI
+ */
+const statusColorMap: Record<StatusType, RadixTextColor> = {
+  success: "green",
+  error: "red",
+  info: "blue",
+  none: undefined,
+};
+
+/**
  * Интерфейс пропсов компонента StatusMessage
  */
 export interface StatusMessageProps {
@@ -26,6 +41,8 @@ export interface StatusMessageProps {
   height?: string;
   /** Применить ли анимацию появления */
   animated?: boolean;
+  /** Максимальное количество строк для отображения */
+  maxLines?: 1 | 2;
 }
 
 /**
@@ -36,8 +53,9 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
   status,
   message,
   fixedHeight = true,
-  height = "48px",
+  height = "60px", // Увеличили высоту по умолчанию для двух строк
   animated = true,
+  maxLines = 2, // По умолчанию разрешаем 2 строки
 }) => {
   // Если статус "none", возвращаем пустой блок с фиксированной высотой (если включено)
   if (status === "none") {
@@ -63,22 +81,29 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
       icon = <InfoCircledIcon width={16} height={16} className={styles.info} />;
   }
 
+  // Задаем дополнительные стили в зависимости от maxLines
+  const textStyle = {
+    lineClamp: maxLines,
+    WebkitLineClamp: maxLines,
+  };
+
   return (
     <Box
       className={fixedHeight ? styles.statusContainer : undefined}
       style={fixedHeight ? { height } : undefined}
     >
       <Flex
-        align="center"
+        align="start"
         gap="1"
-        className={animated ? styles.animated : undefined}
+        className={`${styles.messageContainer} ${animated ? styles.animated : ""}`}
       >
         {icon}
         <Text
           size="1"
-          color={status as any} // 'success', 'error', 'info' совместимы с цветами Radix UI
+          color={statusColorMap[status]}
           className={styles.expandableMessage}
-          title={message} // Полное сообщение будет доступно при наведении
+          title={message}
+          style={textStyle}
         >
           {message}
         </Text>

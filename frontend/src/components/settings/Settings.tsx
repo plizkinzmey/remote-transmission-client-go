@@ -298,7 +298,8 @@ export const Settings: React.FC<SettingsProps> = ({
           }
           message={connectionErrorMessage}
           fixedHeight={true}
-          height="48px"
+          height="60px" // Увеличили высоту для поддержки двух строк
+          maxLines={2} // Разрешаем отображение до двух строк текста
         />
 
         <Box mt="4">

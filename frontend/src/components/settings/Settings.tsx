@@ -249,11 +249,23 @@ export const Settings: React.FC<SettingsProps> = ({
   return (
     <Dialog.Root
       open
-      onOpenChange={(open) =>
-        !open && !isFirstStart && !isSaving && handleCancel()
-      }
+      onOpenChange={(open) => {
+        // Предотвращаем закрытие диалога, если это не явное действие пользователя
+        if (!open && !isFirstStart && !isSaving) {
+          handleCancel();
+        }
+        // Если диалог пытается закрыться, но это первый запуск или идет сохранение,
+        // возвращаем false, чтобы предотвратить закрытие
+        return !(isFirstStart || isSaving);
+      }}
     >
-      <Dialog.Content style={{ maxWidth: 500 }}>
+      <Dialog.Content
+        style={{ maxWidth: 500 }}
+        onPointerDownOutside={(e) => {
+          // Предотвращаем закрытие диалога при клике вне его
+          e.preventDefault();
+        }}
+      >
         <Flex justify="between" align="center">
           <Dialog.Title>
             {isFirstStart ? t("settings.firstStartTitle") : t("settings.title")}

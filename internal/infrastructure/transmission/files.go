@@ -234,11 +234,11 @@ func (c *TransmissionClient) GetTorrentDownloadDirectory(id int64) (string, erro
 	}
 
 	if len(torrents) == 0 {
-		return "", fmt.Errorf("torrent not found")
+		return "", fmt.Errorf("torrent with id %d not found", id)
 	}
 
 	t := torrents[0]
-
+	
 	if t.DownloadDir == nil {
 		return "", fmt.Errorf("download directory information not available")
 	}

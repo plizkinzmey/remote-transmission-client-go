@@ -98,6 +98,7 @@
     "normalSpeed": "Обычная скорость",
     "verify": "Проверить",
     "verifying": "Проверка...",
+    "downloadDirectory": "Директория загрузки",
     "status": {
       "stopped": "Остановлен",
       "downloading": "Загрузка",

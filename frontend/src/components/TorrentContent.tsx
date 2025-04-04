@@ -17,7 +17,11 @@ import {
   FolderIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
-import { GetTorrentFiles, SetFilesWanted } from "../../wailsjs/go/main/App";
+import {
+  GetTorrentFiles,
+  SetFilesWanted,
+  GetTorrentDownloadDirectory,
+} from "../../wailsjs/go/main/App";
 
 interface TorrentContentProps {
   id: number;
@@ -258,6 +262,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [allChecked, setAllChecked] = useState(true);
   const [indeterminate, setIndeterminate] = useState(false);
+  const [downloadDir, setDownloadDir] = useState<string>("");
 
   const updateAllCheckedState = (nodes: FileNode[]): void => {
     let allWanted = true;
@@ -590,6 +595,20 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     loadFiles();
   }, [id, t]);
 
+  // Загрузка директории загрузки торрента
+  useEffect(() => {
+    const loadDownloadDirectory = async () => {
+      try {
+        const directory = await GetTorrentDownloadDirectory(id);
+        setDownloadDir(directory);
+      } catch (err) {
+        console.error("Failed to load torrent download directory:", err);
+        // Не показываем ошибку, т.к. это не критическая информация
+      }
+    };
+    loadDownloadDirectory();
+  }, [id]);
+
   return (
     <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Content
@@ -631,6 +650,36 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
             <XMarkIcon width={20} height={20} />
           </IconButton>
         </Flex>
+
+        {downloadDir && (
+          <Box
+            px="5"
+            py="2"
+            style={{
+              borderBottom: "1px solid var(--gray-5)",
+              backgroundColor: "var(--background-secondary)",
+            }}
+          >
+            <Flex align="center" gap="2">
+              <FolderIcon width={16} height={16} />
+              <Text size="2" color="gray">
+                {t("torrent.downloadDirectory", "Директория загрузки")}:
+              </Text>
+              <Text
+                size="2"
+                className="selectable-text"
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={downloadDir}
+              >
+                {downloadDir}
+              </Text>
+            </Flex>
+          </Box>
+        )}
 
         <Box style={{ flex: 1, overflow: "hidden" }}>
           <ScrollArea

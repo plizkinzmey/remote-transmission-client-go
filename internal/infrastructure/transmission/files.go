@@ -15,7 +15,7 @@ func (c *TransmissionClient) GetTorrentFiles(id int64) ([]domain.TorrentFile, er
 		"files", "fileStats", "name",
 	}, []int64{id})
 
-	if (err != nil) {
+	if err != nil {
 		return nil, fmt.Errorf("failed to get torrent files: %w", err)
 	}
 
@@ -224,4 +224,24 @@ func (c *TransmissionClient) GetDownloadPaths(config *domain.Config) ([]string, 
 	}
 
 	return result, nil
+}
+
+// GetTorrentDownloadDirectory возвращает каталог, в который загружается/загружен торрент
+func (c *TransmissionClient) GetTorrentDownloadDirectory(id int64) (string, error) {
+	torrents, err := c.client.TorrentGet(c.ctx, []string{"downloadDir"}, []int64{id})
+	if err != nil {
+		return "", fmt.Errorf("failed to get torrent download directory: %w", err)
+	}
+
+	if len(torrents) == 0 {
+		return "", fmt.Errorf("torrent not found")
+	}
+
+	t := torrents[0]
+
+	if t.DownloadDir == nil {
+		return "", fmt.Errorf("download directory information not available")
+	}
+
+	return *t.DownloadDir, nil
 }

@@ -180,10 +180,22 @@ function App() {
   // Обработчик события при уходе перетаскиваемого файла из окна программы
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (e.currentTarget.contains(e.relatedTarget as Node) || !e.relatedTarget) {
-      return;
+    
+    // Проверяем, что курсор действительно покинул область окна
+    // Используем координаты события для более надежного определения
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // Если курсор находится за пределами элемента, сбрасываем состояние
+    if (
+      x <= rect.left ||
+      x >= rect.right ||
+      y <= rect.top ||
+      y >= rect.bottom
+    ) {
+      setIsDragging(false);
     }
-    setIsDragging(false);
   };
 
   // Обработчик события при сбросе файла в окно программы

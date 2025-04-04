@@ -98,6 +98,7 @@
     "normalSpeed": "Normal Speed",
     "verify": "Verify",
     "verifying": "Verifying...",
+    "downloadDirectory": "Download directory",
     "status": {
       "stopped": "Stopped",
       "downloading": "Downloading",

@@ -636,3 +636,8 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 
 	return nil
 }
+
+// GetTorrentDownloadDirectory возвращает директорию, в которой находится/скачивается торрент
+func (s *TorrentService) GetTorrentDownloadDirectory(id int64) (string, error) {
+	return s.repo.GetTorrentDownloadDirectory(id)
+}

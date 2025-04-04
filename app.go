@@ -446,3 +446,11 @@ func (a *App) SaveAllSettings(connectionSettings map[string]interface{}, pathCha
 
 	return a.service.SaveSettingsWithPaths(config, pathsToAdd, pathsToRemove, defaultPath)
 }
+
+// GetTorrentDownloadDirectory возвращает каталог, в который загружается/загружен торрент
+func (a *App) GetTorrentDownloadDirectory(id int64) (string, error) {
+	if a.service == nil {
+		return "", transmission.NewServiceNotInitializedError()
+	}
+	return a.service.GetTorrentDownloadDirectory(id)
+}

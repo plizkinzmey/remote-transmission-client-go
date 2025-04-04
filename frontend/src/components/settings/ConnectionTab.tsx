@@ -3,6 +3,7 @@ import { TextField, Flex, Text, Grid, Box, Button } from "@radix-ui/themes";
 import { ConnectionConfig } from "../../App";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { TestConnection } from "../../../wailsjs/go/main/App";
+import StatusMessage, { StatusType } from "../StatusMessage";
 
 interface ConnectionTabProps {
   settings: ConnectionConfig;
@@ -19,9 +20,7 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
 }) => {
   const { t } = useLocalization();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "success" | "error" | "none"
-  >("none");
+  const [connectionStatus, setConnectionStatus] = useState<StatusType>("none");
   const [statusMessage, setStatusMessage] = useState("");
 
   const handleTestConnection = async () => {
@@ -155,19 +154,7 @@ export const ConnectionTab: React.FC<ConnectionTabProps> = ({
               : t("settings.testConnection")}
           </Button>
         </Box>
-
-        {/* Отображаем сообщение об ошибке/успехе под кнопкой */}
-        {connectionStatus !== "none" && (
-          <Box mt="1" style={{ maxWidth: "400px" }}>
-            <Text
-              size="1"
-              color={connectionStatus === "success" ? "green" : "red"}
-              style={{ wordBreak: "break-word" }}
-            >
-              {statusMessage}
-            </Text>
-          </Box>
-        )}
+        {/* Удаляем блок отображения сообщений об ошибках - теперь они будут только вверху формы */}
       </Flex>
     </Grid>
   );

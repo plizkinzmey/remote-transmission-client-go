@@ -1,6 +1,6 @@
-import '@testing-library/jest-dom';
-import { afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import "@testing-library/jest-dom";
+import { afterEach, vi } from "vitest";
+import { cleanup } from "@testing-library/react";
 
 // Очистка после каждого теста
 afterEach(() => {
@@ -20,7 +20,7 @@ const wailsMock = {
 };
 
 // Создаем моки для Wails API
-vi.mock('../../wailsjs/runtime', () => ({
+vi.mock("../../wailsjs/runtime", () => ({
   LogDebug: wailsMock.LogDebug,
   LogInfo: wailsMock.LogInfo,
   LogWarning: wailsMock.LogWarning,
@@ -32,7 +32,7 @@ vi.mock('../../wailsjs/runtime', () => ({
 }));
 
 // Создаем моки для Go функций
-vi.mock('../../wailsjs/go/main/App', () => ({
+vi.mock("../../wailsjs/go/main/App", () => ({
   LoadConfig: vi.fn(),
   SaveAllSettings: vi.fn(),
   GetTorrents: vi.fn(),
@@ -45,12 +45,12 @@ vi.mock('../../wailsjs/go/main/App', () => ({
 }));
 
 // Мок для CSS модулей
-vi.mock('../styles/StatusMessage.module.css', () => ({
-  statusContainer: 'statusContainer-mock',
-  messageContainer: 'messageContainer-mock',
-  animated: 'animated-mock',
-  success: 'success-mock',
-  error: 'error-mock',
-  info: 'info-mock',
-  expandableMessage: 'expandableMessage-mock',
+vi.mock("../styles/StatusMessage.module.css", () => ({
+  statusContainer: "statusContainer-mock",
+  messageContainer: "messageContainer-mock",
+  animated: "animated-mock",
+  success: "success-mock",
+  error: "error-mock",
+  info: "info-mock",
+  expandableMessage: "expandableMessage-mock",
 }));

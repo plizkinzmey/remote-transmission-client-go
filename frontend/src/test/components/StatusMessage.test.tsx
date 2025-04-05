@@ -23,8 +23,16 @@ vi.mock("@radix-ui/themes", () => {
         {children}
       </div>
     ),
-    Text: (props: any) => (
-      <span {...props} data-color={props.color} data-testid="message-text" />
+    Text: ({ className, children, style, ...props }: any) => (
+      <span
+        className={className}
+        data-testid="status-message-text"
+        data-color={props.color}
+        style={style}
+        {...props}
+      >
+        {children}
+      </span>
     ),
   };
 });
@@ -160,41 +168,25 @@ describe("StatusMessage", () => {
   });
 
   it("applies maxLines setting correctly", () => {
-    const { container } = render(
-      <StatusMessage status="info" message="Test" maxLines={1} />
-    );
+    render(<StatusMessage status="info" message="Test" maxLines={1} />);
 
-    const messageText =
-      container.querySelector("[data-testid='message-text']") ||
-      container.querySelector(".expandableMessage-mock") ||
-      container.querySelector("span"); // Используем универсальный селектор
+    // Используем единый надежный селектор с data-testid
+    const messageText = screen.getByTestId("status-message-text");
 
     // Проверяем стиль для ограничения строк
-    if (messageText) {
-      expect(messageText).toHaveAttribute(
-        "style",
-        expect.stringContaining("-webkit-line-clamp: 1")
-      );
-    }
+    expect(messageText).toHaveStyle("line-clamp: 1");
+    expect(messageText).toHaveStyle("-webkit-line-clamp: 1");
   });
 
   it("uses default maxLines value of 2", () => {
-    const { container } = render(
-      <StatusMessage status="info" message="Test" />
-    );
+    render(<StatusMessage status="info" message="Test" />);
 
-    const messageText =
-      container.querySelector("[data-testid='message-text']") ||
-      container.querySelector(".expandableMessage-mock") ||
-      container.querySelector("span"); // Используем универсальный селектор
+    // Используем единый надежный селектор с data-testid
+    const messageText = screen.getByTestId("status-message-text");
 
     // Проверяем стиль для ограничения строк
-    if (messageText) {
-      expect(messageText).toHaveAttribute(
-        "style",
-        expect.stringContaining("-webkit-line-clamp: 2")
-      );
-    }
+    expect(messageText).toHaveStyle("line-clamp: 2");
+    expect(messageText).toHaveStyle("-webkit-line-clamp: 2");
   });
 
   it("sets correct text color based on status", () => {

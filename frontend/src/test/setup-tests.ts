@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 // Мок для функций Wails
-const wailsMock = {
+const wailsMocks = {
   LogDebug: vi.fn(),
   LogInfo: vi.fn(),
   LogWarning: vi.fn(),
@@ -21,14 +21,14 @@ const wailsMock = {
 
 // Создаем моки для Wails API
 vi.mock("../../wailsjs/runtime", () => ({
-  LogDebug: wailsMock.LogDebug,
-  LogInfo: wailsMock.LogInfo,
-  LogWarning: wailsMock.LogWarning,
-  LogError: wailsMock.LogError,
-  EventsOn: wailsMock.EventsOn,
-  EventsOff: wailsMock.EventsOff,
-  EventsOnce: wailsMock.EventsOnce,
-  EventsEmit: wailsMock.EventsEmit,
+  LogDebug: wailsMocks.LogDebug,
+  LogInfo: wailsMocks.LogInfo,
+  LogWarning: wailsMocks.LogWarning,
+  LogError: wailsMocks.LogError,
+  EventsOn: wailsMocks.EventsOn,
+  EventsOff: wailsMocks.EventsOff,
+  EventsOnce: wailsMocks.EventsOnce,
+  EventsEmit: wailsMocks.EventsEmit,
 }));
 
 // Создаем моки для Go функций

@@ -1,7 +1,7 @@
 import React from "react";
 import { Progress } from "@radix-ui/themes";
-import { getStatusData } from "../../utils/torrentStatus";
-import styles from "../../styles/TorrentItem.module.css";
+import { getStatusData } from "../../../utils/torrentStatus";
+import styles from "./TorrentItemProgress.module.css";
 
 interface TorrentItemProgressProps {
   progress: number;

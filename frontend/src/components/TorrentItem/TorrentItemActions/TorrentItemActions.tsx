@@ -1,14 +1,14 @@
 import React from "react";
 import { Flex, IconButton } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
-import { LoadingSpinner } from "../LoadingSpinner";
+import { useLocalization } from "../../../contexts/LocalizationContext";
+import { LoadingSpinner } from "../../LoadingSpinner";
 import {
   isBlocked,
   isRunning,
   isChecking,
   isQueued,
-} from "../../utils/torrentStatus";
-import { SnailIcon } from "../icons/SnailIcon";
+} from "../../../utils/torrentStatus";
+import { SnailIcon } from "../../icons/SnailIcon";
 import {
   PlayIcon,
   PauseIcon,
@@ -16,7 +16,7 @@ import {
   FolderIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import styles from "../../styles/TorrentItem.module.css";
+import styles from "./TorrentItemActions.module.css";
 
 interface TorrentItemActionsProps {
   id: number;

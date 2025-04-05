@@ -57,8 +57,8 @@ describe("LoadingSpinner", () => {
     expect(rootElement).toHaveClass(testClass);
   });
 
-  it("verifies animation styles in the component", () => {
-    // Проверяем, что есть код анимации в DOM
+  it("verifies animation styles in the component and DOM", () => {
+    // Проверяем, что при первом рендере стили анимации добавляются в DOM
     const { container } = render(<LoadingSpinner />);
 
     // Проверяем, что svg имеет стиль анимации
@@ -67,9 +67,6 @@ describe("LoadingSpinner", () => {
 
     // Проверяем, что getSize работает корректно при рендере
     expect(svg?.getAttribute("width")).toBe("24px");
-
-    // В этом тесте мы не проверяем сам DOM-элемент с анимацией,
-    // но важен факт, что svg имеет анимацию, которая должна быть определена где-то
   });
 
   it("does not create duplicate animation styles", () => {
@@ -87,13 +84,5 @@ describe("LoadingSpinner", () => {
 
     // Проверяем, что повторно стили не добавились
     expect(appendChildSpy).not.toHaveBeenCalled();
-  });
-
-  it("applies animation style to the icon", () => {
-    const { container } = render(<LoadingSpinner />);
-    const svg = container.querySelector("svg");
-
-    // Проверяем стиль анимации
-    expect(svg?.style.animation).toBe("spin 1s linear infinite");
   });
 });

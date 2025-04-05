@@ -44,13 +44,15 @@ vi.mock("../../wailsjs/go/main/App", () => ({
   GetSessionStats: vi.fn(),
 }));
 
-// Мок для CSS модулей
+// Мок для CSS модулей - важно использовать правильный путь и формат с default экспортом
 vi.mock("../styles/StatusMessage.module.css", () => ({
-  statusContainer: "statusContainer-mock",
-  messageContainer: "messageContainer-mock",
-  animated: "animated-mock",
-  success: "success-mock",
-  error: "error-mock",
-  info: "info-mock",
-  expandableMessage: "expandableMessage-mock",
+  default: {
+    statusContainer: "statusContainer-mock",
+    messageContainer: "messageContainer-mock",
+    animated: "animated-mock",
+    success: "success-mock",
+    error: "error-mock",
+    info: "info-mock",
+    expandableMessage: "expandableMessage-mock",
+  },
 }));

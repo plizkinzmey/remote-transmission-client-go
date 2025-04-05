@@ -53,7 +53,7 @@ export default defineConfig({
       all: true,
       lines: 70,
       functions: 70,
-      branches: 60,
+      branches: 70, // Изменено с 60 на 70 для унификации требований
       statements: 70,
       skipFull: false, // показывать файлы со 100% покрытием
       reportsDirectory: "./coverage",

@@ -84,5 +84,9 @@ describe("LoadingSpinner", () => {
 
     // Проверяем, что повторно стили не добавились
     expect(appendChildSpy).not.toHaveBeenCalled();
+
+    // Дополнительно проверяем, что в DOM существует только один элемент с id 'spin-keyframes'
+    const styleElements = document.querySelectorAll("style#spin-keyframes");
+    expect(styleElements.length).toBe(1);
   });
 });

@@ -12,7 +12,7 @@ vi.mock("@radix-ui/themes", () => {
       <div
         className={className}
         style={style}
-        data-testid="box-container"
+        data-testid="status-box-container"
         {...props}
       >
         {children}
@@ -92,12 +92,10 @@ describe("StatusMessage", () => {
 
   it("returns empty box with fixed height when status is none", () => {
     const height = "30px";
-    const { container } = render(
-      <StatusMessage status="none" message="" height={height} />
-    );
+    render(<StatusMessage status="none" message="" height={height} />);
 
-    // Проверяем наличие пустого блока с заданной высотой
-    const emptyBox = container.firstChild as HTMLElement;
+    // Проверяем наличие пустого блока с заданной высотой, используя data-testid
+    const emptyBox = screen.getByTestId("status-box-container");
     expect(emptyBox).toHaveStyle(`height: ${height}`);
   });
 
@@ -120,7 +118,7 @@ describe("StatusMessage", () => {
     );
 
     // Проверяем Box контейнер
-    const boxContainer = screen.getByTestId("box-container");
+    const boxContainer = screen.getByTestId("status-box-container");
     expect(boxContainer).toHaveClass(styles.statusContainer);
 
     // Проверяем Flex контейнер и его классы
@@ -139,7 +137,7 @@ describe("StatusMessage", () => {
     );
 
     // Проверяем Box контейнер
-    const boxContainer = screen.getByTestId("box-container");
+    const boxContainer = screen.getByTestId("status-box-container");
     expect(boxContainer).toHaveClass(styles.statusContainer);
 
     // Проверяем Flex контейнер и его классы
@@ -150,20 +148,18 @@ describe("StatusMessage", () => {
 
   it("applies custom height when provided", () => {
     const height = "40px";
-    const { container } = render(
-      <StatusMessage status="info" message="Test" height={height} />
-    );
+    render(<StatusMessage status="info" message="Test" height={height} />);
 
-    const messageContainer = container.firstChild as HTMLElement;
+    // Используем специфичный data-testid вместо container.firstChild
+    const messageContainer = screen.getByTestId("status-box-container");
     expect(messageContainer).toHaveStyle(`height: ${height}`);
   });
 
   it("sets default height of 60px if not specified", () => {
-    const { container } = render(
-      <StatusMessage status="info" message="Test" />
-    );
+    render(<StatusMessage status="info" message="Test" />);
 
-    const messageContainer = container.firstChild as HTMLElement;
+    // Используем специфичный data-testid вместо container.firstChild
+    const messageContainer = screen.getByTestId("status-box-container");
     expect(messageContainer).toHaveStyle("height: 60px");
   });
 
@@ -209,11 +205,9 @@ describe("StatusMessage", () => {
   });
 
   it("renders without fixed height when fixedHeight is false", () => {
-    const { container } = render(
-      <StatusMessage status="info" message="Test" fixedHeight={false} />
-    );
+    render(<StatusMessage status="info" message="Test" fixedHeight={false} />);
 
-    const messageContainer = container.firstChild as HTMLElement;
+    const messageContainer = screen.getByTestId("status-box-container");
     expect(messageContainer).not.toHaveStyle("height: 60px");
   });
 });

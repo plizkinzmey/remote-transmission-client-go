@@ -209,17 +209,17 @@ describe("App - Модальные окна", () => {
     mockHandleSettingsSave.mockResolvedValue(true);
 
     const { container } = render(<App />);
-    
+
     // Используем waitFor для ожидания появления модального окна
     let settingsModal: HTMLElement | null;
     await waitFor(() => {
       settingsModal = container.querySelector('[data-testid="settings-modal"]');
       expect(settingsModal).not.toBeNull();
     });
-    
+
     // Кликаем по модальному окну для сохранения настроек
     await act(async () => {
-      settingsModal?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     // Проверяем, что handleSettingsSave был вызван с правильными параметрами
@@ -258,17 +258,17 @@ describe("App - Модальные окна", () => {
     mockHandleSettingsSave.mockResolvedValue(false);
 
     const { container } = render(<App />);
-    
+
     // Используем waitFor для ожидания появления модального окна
     let settingsModal: HTMLElement | null;
     await waitFor(() => {
       settingsModal = container.querySelector('[data-testid="settings-modal"]');
       expect(settingsModal).not.toBeNull();
     });
-    
+
     // Кликаем по модальному окну для сохранения настроек
     await act(async () => {
-      settingsModal?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     // Проверяем, что handleSettingsSave был вызван
@@ -296,17 +296,21 @@ describe("App - Модальные окна", () => {
     });
 
     const { container } = render(<App />);
-    
+
     // Используем waitFor для ожидания появления модального окна
     let addTorrentModal: HTMLElement | null;
     await waitFor(() => {
-      addTorrentModal = container.querySelector('[data-testid="add-torrent-modal"]');
+      addTorrentModal = container.querySelector(
+        '[data-testid="add-torrent-modal"]'
+      );
       expect(addTorrentModal).not.toBeNull();
     });
-    
+
     // Кликаем по модальному окну для добавления торрента
     await act(async () => {
-      addTorrentModal?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      addTorrentModal?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true })
+      );
     });
 
     // Проверяем, что handleAddTorrent и handleAddTorrentFile были вызваны
@@ -318,5 +322,46 @@ describe("App - Модальные окна", () => {
 
     // Проверяем, что окно закрылось
     expect(mockCloseAddTorrent).toHaveBeenCalledTimes(1);
+  });
+
+  it("корректно обрабатывает ошибки при сохранении настроек", async () => {
+    // Настраиваем useModals с showSettings = true
+    vi.mocked(useModals).mockReturnValue({
+      showSettings: true,
+      showAddTorrent: false,
+      torrentFilePath: null,
+      isFirstStart: true,
+      torrentFileData: null,
+      checkFirstStart: mockCheckFirstStart,
+      handleSuccessfulSettingsSave: mockHandleSuccessfulSettingsSave,
+      openSettings: mockOpenSettings,
+      closeSettings: mockCloseSettings,
+      openAddTorrent: mockOpenAddTorrent,
+      closeAddTorrent: mockCloseAddTorrent,
+      handleTorrentFileDrop: mockHandleTorrentFileDrop,
+    });
+
+    // Имитируем ошибку при сохранении настроек
+    mockHandleSettingsSave.mockRejectedValue(new Error("Test error"));
+
+    const { container } = render(<App />);
+
+    // Ожидаем появления модального окна
+    let settingsModal: HTMLElement | null;
+    await waitFor(() => {
+      settingsModal = container.querySelector('[data-testid="settings-modal"]');
+      expect(settingsModal).not.toBeNull();
+    });
+
+    // Кликаем по модальному окну для сохранения настроек
+    await act(async () => {
+      settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    // Проверяем, что handleSettingsSave был вызван
+    expect(mockHandleSettingsSave).toHaveBeenCalledTimes(1);
+
+    // Проверяем, что handleSuccessfulSettingsSave не был вызван при ошибке
+    expect(mockHandleSuccessfulSettingsSave).not.toHaveBeenCalled();
   });
 });

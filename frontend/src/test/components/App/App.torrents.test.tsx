@@ -11,7 +11,11 @@ vi.mock("../../../hooks/useFilteredTorrents");
 
 // Мокируем компоненты, которые не тестируются в этом файле
 vi.mock("../../../components/Header", () => ({
-  Header: () => <div data-testid="header-component">Header Mocked</div>,
+  Header: ({ isSlowModeEnabled }: any) => (
+    <div data-testid="header-component" data-slow-mode={isSlowModeEnabled}>
+      Header Mocked
+    </div>
+  ),
 }));
 
 vi.mock("../../../components/TorrentList", () => ({
@@ -193,5 +197,33 @@ describe("App - Взаимодействие с торрентами", () => {
 
     // Проверяем, что refreshTorrents был вызван при монтировании
     expect(mockRefreshTorrents).toHaveBeenCalledTimes(1);
+  });
+
+  it("корректно определяет наличие замедленных торрентов среди выбранных", () => {
+    // Мокируем выбранные торренты с включенным режимом замедления
+    vi.mocked(useTorrentData).mockReturnValue({
+      ...vi.mocked(useTorrentData)(),
+      selectedTorrents: new Set([2]), // выбран торрент с ID 2, у которого IsSlowMode: true
+    });
+
+    render(<App />);
+
+    // Проверяем, что в Header передается правильное значение isSlowModeEnabled
+    const header = screen.getByTestId("header-component");
+    expect(header).toHaveAttribute("data-slow-mode", "true");
+  });
+
+  it("корректно определяет отсутствие замедленных торрентов среди выбранных", () => {
+    // Мокируем выбранные торренты без режима замедления
+    vi.mocked(useTorrentData).mockReturnValue({
+      ...vi.mocked(useTorrentData)(),
+      selectedTorrents: new Set([1]), // выбран торрент с ID 1, у которого IsSlowMode: false
+    });
+
+    render(<App />);
+
+    // Проверяем, что в Header передается правильное значение isSlowModeEnabled
+    const header = screen.getByTestId("header-component");
+    expect(header).toHaveAttribute("data-slow-mode", "false");
   });
 });

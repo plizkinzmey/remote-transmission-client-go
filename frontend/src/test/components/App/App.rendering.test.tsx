@@ -32,7 +32,22 @@ vi.mock("../../../components/TorrentList", () => ({
 }));
 
 vi.mock("../../../components/Footer", () => ({
-  Footer: () => <div data-testid="footer-component">Footer Mocked</div>,
+  Footer: ({
+    totalDownloadSpeed,
+    totalUploadSpeed,
+    freeSpace,
+    transmissionVersion,
+  }: any) => (
+    <div
+      data-testid="footer-component"
+      data-download-speed={totalDownloadSpeed}
+      data-upload-speed={totalUploadSpeed}
+      data-free-space={freeSpace}
+      data-version={transmissionVersion}
+    >
+      Footer Mocked
+    </div>
+  ),
 }));
 
 vi.mock("../../../components/ConnectionStatus", () => ({
@@ -217,5 +232,26 @@ describe("App - Рендеринг компонента", () => {
 
     // Проверяем, что окно добавления торрента отображается
     expect(screen.getByTestId("add-torrent-component")).toBeInTheDocument();
+  });
+
+  it("корректно передает данные сессии в Footer", () => {
+    // Мокируем useTorrentData с непустым sessionStats
+    vi.mocked(useTorrentData).mockReturnValue({
+      ...vi.mocked(useTorrentData)(),
+      sessionStats: {
+        TotalDownloadSpeed: 1024,
+        TotalUploadSpeed: 2048,
+        FreeSpace: 1073741824,
+        TransmissionVersion: "3.0.0",
+      },
+    });
+
+    render(<App />);
+
+    const footer = screen.getByTestId("footer-component");
+    expect(footer).toHaveAttribute("data-download-speed", "1024");
+    expect(footer).toHaveAttribute("data-upload-speed", "2048");
+    expect(footer).toHaveAttribute("data-free-space", "1073741824");
+    expect(footer).toHaveAttribute("data-version", "3.0.0");
   });
 });

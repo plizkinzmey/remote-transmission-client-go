@@ -1,6 +1,9 @@
 import "@testing-library/jest-dom";
 import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
+import "./mocks/app-mocks"; // Импортируем наши моки для разных путей импорта
+import "./mocks/localization-context-mock"; // Импортируем мок для контекста локализации
+import "./mocks/theme-mock"; // Импортируем мок для контекста темы
 
 // Очистка после каждого теста
 afterEach(() => {
@@ -17,6 +20,14 @@ beforeAll(() => {
       writable: true,
     });
   }
+
+  // Мок для ResizeObserver (необходим для Radix UI)
+  class ResizeObserverMock {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
+  window.ResizeObserver = ResizeObserverMock;
 
   // Определяем надежный мок для matchMedia
   Object.defineProperty(window, "matchMedia", {
@@ -80,7 +91,7 @@ beforeAll(() => {
   }
 });
 
-// Мок для функций Wails
+// Мок для функций Wails runtime
 const wailsMocks = {
   LogDebug: vi.fn(),
   LogInfo: vi.fn(),
@@ -92,7 +103,7 @@ const wailsMocks = {
   EventsEmit: vi.fn(),
 };
 
-// Создаем моки для Wails API
+// Создаем моки для Wails runtime API
 vi.mock("../../wailsjs/runtime", () => ({
   LogDebug: wailsMocks.LogDebug,
   LogInfo: wailsMocks.LogInfo,
@@ -102,19 +113,6 @@ vi.mock("../../wailsjs/runtime", () => ({
   EventsOff: wailsMocks.EventsOff,
   EventsOnce: wailsMocks.EventsOnce,
   EventsEmit: wailsMocks.EventsEmit,
-}));
-
-// Создаем моки для Go функций
-vi.mock("../../wailsjs/go/main/App", () => ({
-  LoadConfig: vi.fn(),
-  SaveAllSettings: vi.fn(),
-  GetTorrents: vi.fn(),
-  TestConnection: vi.fn(),
-  AddTorrent: vi.fn(),
-  StartTorrents: vi.fn(),
-  StopTorrents: vi.fn(),
-  RemoveTorrents: vi.fn(),
-  GetSessionStats: vi.fn(),
 }));
 
 // Мок для CSS модулей - важно использовать правильный путь и формат с default экспортом

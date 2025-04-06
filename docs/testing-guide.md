@@ -4,16 +4,35 @@ This guide describes the principles and practices for testing frontend component
 
 ## Contents
 
-- [Technology Stack](#technology-stack)
-- [Test Structure](#test-structure)
-- [Coverage Requirements](#coverage-requirements)
-- [Mocks and Stubs](#mocks-and-stubs)
-- [Test Naming](#test-naming)
-- [Selectors in Tests](#selectors-in-tests)
-- [Testing Components with Portals](#testing-components-with-portals)
-- [Style Testing](#style-testing)
-- [Running Tests](#running-tests)
-- [Common Issues and Solutions](#common-issues-and-solutions)
+- [Frontend Testing Guide](#frontend-testing-guide)
+  - [Contents](#contents)
+  - [Technology Stack](#technology-stack)
+  - [Test Structure](#test-structure)
+  - [Coverage Requirements](#coverage-requirements)
+  - [Mocks and Stubs](#mocks-and-stubs)
+    - [CSS Modules](#css-modules)
+    - [External Dependencies](#external-dependencies)
+    - [Wails API and Go Functions](#wails-api-and-go-functions)
+  - [Test Naming](#test-naming)
+  - [Selectors in Tests](#selectors-in-tests)
+    - [Preferred selectors (in order of priority):](#preferred-selectors-in-order-of-priority)
+    - [Avoid:](#avoid)
+  - [Testing Components with Portals](#testing-components-with-portals)
+    - [Finding Elements in Portals](#finding-elements-in-portals)
+    - [Waiting for Portal Content](#waiting-for-portal-content)
+    - [Mocking Portal Components](#mocking-portal-components)
+    - [Testing Portal Events](#testing-portal-events)
+    - [Common Issues](#common-issues)
+    - [Example Test](#example-test)
+    - [Best Practices](#best-practices)
+  - [Style Testing](#style-testing)
+  - [Running Tests](#running-tests)
+    - [Running all tests:](#running-all-tests)
+    - [Running tests with coverage report:](#running-tests-with-coverage-report)
+    - [Running specific tests:](#running-specific-tests)
+  - [Common Issues and Solutions](#common-issues-and-solutions)
+    - [1. CSS Module Issues](#1-css-module-issues)
+    - [2. Re-rendering Issues](#2-re-rendering-issues)
 
 ## Technology Stack
 
@@ -165,7 +184,7 @@ screen.getByRole("button", { name: "Save" })
 
 ## Testing Components with Portals
 
-Components that use portals (like modals from Radix UI) render content outside the regular DOM hierarchy, which requires special testing approaches:
+Components that use portals (like modals, dialogs, or tooltips from Radix UI) render content outside the regular DOM hierarchy, which requires special testing approaches.
 
 ### Finding Elements in Portals
 
@@ -203,9 +222,9 @@ const modal = document.querySelector('[data-testid="modal-content"]');
 expect(modal).not.toBeNull();
 ```
 
-### Mocking Portal Components for Testing
+### Mocking Portal Components
 
-For components like Radix UI that use portals internally, you can mock them to avoid portal behavior:
+For components like Radix UI that use portals internally, you can mock them to simplify testing:
 
 ```typescript
 // Mock Dialog.Portal component from Radix UI
@@ -218,14 +237,76 @@ vi.mock('@radix-ui/react-dialog', async () => {
 });
 ```
 
-### Events in Portal Components
+### Testing Portal Events
 
-When triggering events on elements inside portals, ensure they bubble correctly:
+When testing events on elements inside portals:
+
+1. Use `act()` to wrap state updates:
+
+```typescript
+await act(async () => {
+  fireEvent.click(openModalButton);
+});
+```
+
+2. Ensure events bubble correctly:
 
 ```typescript
 // Add the bubbles: true option to ensure events propagate correctly
 portalElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+// Or when using fireEvent:
+fireEvent(element, new MouseEvent('click', { bubbles: true }));
 ```
+
+### Common Issues
+
+1. **Event Bubbling**: Events in portals need `bubbles: true` to propagate correctly
+
+2. **State Updates**: Always wrap portal-related state changes in `act()`
+
+3. **Cleanup**: Ensure portals are properly cleaned up after tests:
+
+```typescript
+afterEach(() => {
+  cleanup(); // Will remove portal elements
+});
+```
+
+### Example Test
+
+Here's a complete example of testing a modal component that uses a portal:
+
+```typescript
+describe('Modal Component', () => {
+  it('opens and closes correctly', async () => {
+    render(<Modal />);
+    
+    // Open modal
+    await act(async () => {
+      fireEvent.click(screen.getByText('Open Modal'));
+    });
+
+    // Check modal content (in portal)
+    const modalContent = within(document.body).getByTestId('modal-content');
+    expect(modalContent).toBeInTheDocument();
+
+    // Close modal
+    await act(async () => {
+      fireEvent.click(within(document.body).getByText('Close'));
+    });
+
+    expect(modalContent).not.toBeInTheDocument();
+  });
+});
+```
+
+### Best Practices
+
+1. Always use `act()` when triggering state changes in portals
+2. Use document-level queries to find portal content
+3. Add proper cleanup in `afterEach`
+4. Mock portal components when possible to simplify tests
+5. Add proper test IDs to portal content
 
 ## Style Testing
 
@@ -277,4 +358,3 @@ For errors related to component updates after actions:
 
 - Use `rerender` from React Testing Library
 - Ensure all state updates are wrapped in `act()`
-```

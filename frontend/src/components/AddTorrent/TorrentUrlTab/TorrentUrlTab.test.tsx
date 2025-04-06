@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { TorrentUrlTab } from "./TorrentUrlTab";
+import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 
 describe("TorrentUrlTab Component", () => {
   const mockOnUrlChange = vi.fn();
@@ -9,15 +11,25 @@ describe("TorrentUrlTab Component", () => {
     vi.clearAllMocks();
   });
 
+  const renderComponent = (props = {}) => {
+    render(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <TorrentUrlTab onUrlChange={mockOnUrlChange} {...props} />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+  };
+
   it("отображает поле ввода URL", () => {
-    render(<TorrentUrlTab onUrlChange={mockOnUrlChange} />);
+    renderComponent();
 
     const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
     expect(urlInput).toBeInTheDocument();
   });
 
   it("вызывает onUrlChange при изменении URL", () => {
-    render(<TorrentUrlTab onUrlChange={mockOnUrlChange} />);
+    renderComponent();
 
     const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
     fireEvent.change(urlInput, { target: { value: "magnet:test" } });
@@ -27,9 +39,7 @@ describe("TorrentUrlTab Component", () => {
 
   it("отображает initialUrl, если он передан", () => {
     const initialUrl = "magnet:initial";
-    render(
-      <TorrentUrlTab onUrlChange={mockOnUrlChange} initialUrl={initialUrl} />
-    );
+    renderComponent({ initialUrl });
 
     const urlInput = screen.getByPlaceholderText(
       "magnet:?xt=urn:btih:..."
@@ -39,18 +49,26 @@ describe("TorrentUrlTab Component", () => {
 
   it("обновляет отображаемый URL при изменении props", () => {
     const { rerender } = render(
-      <TorrentUrlTab
-        onUrlChange={mockOnUrlChange}
-        initialUrl="magnet:initial"
-      />
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <TorrentUrlTab
+            onUrlChange={mockOnUrlChange}
+            initialUrl="magnet:initial"
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
     );
 
     // Перерендерим с новым initialUrl
     rerender(
-      <TorrentUrlTab
-        onUrlChange={mockOnUrlChange}
-        initialUrl="magnet:updated"
-      />
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <TorrentUrlTab
+            onUrlChange={mockOnUrlChange}
+            initialUrl="magnet:updated"
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
     );
 
     const urlInput = screen.getByPlaceholderText(

@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { TorrentFileTab } from "./TorrentFileTab";
-import { LocalizationProvider } from "../../../contexts/LocalizationContext";
+import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 
 // Mock зависимостей
 vi.mock("../../../../wailsjs/go/main/App", () => ({
@@ -17,9 +18,11 @@ describe("TorrentFileTab Component", () => {
 
   const renderComponent = (props = {}) => {
     render(
-      <LocalizationProvider>
-        <TorrentFileTab onFileSelect={mockOnFileSelect} {...props} />
-      </LocalizationProvider>
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <TorrentFileTab onFileSelect={mockOnFileSelect} {...props} />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
     );
   };
 

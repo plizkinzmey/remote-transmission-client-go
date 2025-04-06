@@ -1,7 +1,8 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { DownloadPathSelector } from "./DownloadPathSelector";
-import { LocalizationProvider } from "../../../contexts/LocalizationContext";
+import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 
 // Mock зависимостей
 vi.mock("../../../../wailsjs/go/main/App", () => ({
@@ -24,9 +25,11 @@ describe("DownloadPathSelector Component", () => {
 
   const renderComponent = (props = {}) => {
     render(
-      <LocalizationProvider>
-        <DownloadPathSelector onPathChange={mockOnPathChange} {...props} />
-      </LocalizationProvider>
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <DownloadPathSelector onPathChange={mockOnPathChange} {...props} />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
     );
   };
 

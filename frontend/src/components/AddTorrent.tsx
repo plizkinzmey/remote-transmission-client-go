@@ -242,7 +242,10 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   return (
     <Portal>
       <Dialog.Root open onOpenChange={() => onClose()}>
-        <Dialog.Content style={{ maxWidth: 500 }}>
+        <Dialog.Content
+          data-testid="add-torrent-modal"
+          style={{ maxWidth: 500 }}
+        >
           <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
           {isLocalizationLoading || isLoadingPaths ? (
             <Flex justify="center" p="6">

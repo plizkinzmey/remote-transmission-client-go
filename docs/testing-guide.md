@@ -10,6 +10,7 @@ This guide describes the principles and practices for testing frontend component
 - [Mocks and Stubs](#mocks-and-stubs)
 - [Test Naming](#test-naming)
 - [Selectors in Tests](#selectors-in-tests)
+- [Testing Components with Portals](#testing-components-with-portals)
 - [Style Testing](#style-testing)
 - [Running Tests](#running-tests)
 - [Common Issues and Solutions](#common-issues-and-solutions)
@@ -161,6 +162,70 @@ screen.getByRole("button", { name: "Save" })
 - CSS class selectors (except when checking for the presence of classes)
 - Index-based selectors (`firstChild`, `childNodes[1]`, etc.)
 - DOM structure selectors that might change
+
+## Testing Components with Portals
+
+Components that use portals (like modals from Radix UI) render content outside the regular DOM hierarchy, which requires special testing approaches:
+
+### Finding Elements in Portals
+
+When testing components that use portals, use document-level selectors instead of component-scoped ones:
+
+```typescript
+// INCORRECT: This may not find elements in portals
+const modal = screen.getByTestId("settings-modal");
+
+// CORRECT: Use document-level queries
+const modal = document.querySelector('[data-testid="settings-modal"]');
+
+// OR use the within utility to search the entire document.body
+import { within } from '@testing-library/react';
+const modal = within(document.body).getByTestId("settings-modal");
+```
+
+### Waiting for Portal Content
+
+When a portal is dynamically rendered (e.g., after clicking a button), wait for the content to appear:
+
+```typescript
+import { act } from '@testing-library/react';
+
+// Click a button that opens a portal-based modal
+fireEvent.click(openModalButton);
+
+// Wait for portal content to render
+await act(async () => {
+  await new Promise(resolve => setTimeout(resolve, 0));
+});
+
+// Now test the portal content
+const modal = document.querySelector('[data-testid="modal-content"]');
+expect(modal).not.toBeNull();
+```
+
+### Mocking Portal Components for Testing
+
+For components like Radix UI that use portals internally, you can mock them to avoid portal behavior:
+
+```typescript
+// Mock Dialog.Portal component from Radix UI
+vi.mock('@radix-ui/react-dialog', async () => {
+  const actual = await vi.importActual('@radix-ui/react-dialog');
+  return {
+    ...actual,
+    DialogPortal: ({ children }) => <div data-testid="mocked-portal">{children}</div>,
+  };
+});
+```
+
+### Events in Portal Components
+
+When triggering events on elements inside portals, ensure they bubble correctly:
+
+```typescript
+// Add the bubbles: true option to ensure events propagate correctly
+portalElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+```
 
 ## Style Testing
 

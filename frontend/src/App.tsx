@@ -109,6 +109,12 @@ function App() {
     checkFirstStart(isReconnecting);
   }, [checkFirstStart, isReconnecting]);
 
+  // Обновляем список торрентов при монтировании компонента
+  useEffect(() => {
+    refreshTorrents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Пустой массив зависимостей для вызова только при монтировании
+
   // При сохранении настроек в режиме первого запуска
   const handleSettingsSaveWrapper = async (
     settings: ConnectionConfig
@@ -202,6 +208,7 @@ function App() {
         {/* Модальные окна */}
         {showSettings && (
           <Settings
+            data-testid="settings-modal"
             onSave={
               isFirstStart ? handleSettingsSaveWrapper : handleSettingsSave
             }
@@ -212,6 +219,7 @@ function App() {
 
         {showAddTorrent && (
           <AddTorrent
+            data-testid="add-torrent-modal"
             torrentFile={torrentFilePath || undefined} // передаётся путь, если есть
             torrentFileData={torrentFileData || undefined} // передаются данные перетаскиваемого файла
             onAdd={handleAddTorrent}

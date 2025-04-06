@@ -1,0 +1,7 @@
+/* Стили для заголовка торрента */
+.textEllipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}

@@ -1,10 +1,83 @@
 import "@testing-library/jest-dom";
-import { afterEach, vi } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 
 // Очистка после каждого теста
 afterEach(() => {
   cleanup();
+});
+
+// Мокируем window.matchMedia глобально для всех тестов
+// Это улучшенная версия, которая обрабатывает все возможные сценарии
+beforeAll(() => {
+  // Убеждаемся, что window определен
+  if (typeof window === "undefined") {
+    Object.defineProperty(global, "window", {
+      value: {},
+      writable: true,
+    });
+  }
+
+  // Определяем надежный мок для matchMedia
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query) => {
+      // Определяем значение matches в зависимости от запроса
+      // По умолчанию используем темную тему в тестах для большего покрытия
+      const isDarkMode = query === "(prefers-color-scheme: dark)";
+
+      return {
+        matches: isDarkMode,
+        media: query,
+        onchange: null,
+        addListener: vi.fn((callback) => {
+          if (callback) callback({ matches: isDarkMode, media: query });
+        }),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn((event, callback) => {
+          if (event === "change" && callback) {
+            callback({ matches: isDarkMode, media: query });
+          }
+        }),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+    }),
+  });
+
+  // Мок для localStorage
+  const localStorageMock = (() => {
+    let store: Record<string, string> = {};
+    return {
+      getItem: vi.fn((key: string) => store[key] || null),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
+      clear: vi.fn(() => {
+        store = {};
+      }),
+      key: vi.fn((index: number) => {
+        return Object.keys(store)[index] || null;
+      }),
+      length: 0,
+    };
+  })();
+
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+    writable: true,
+    configurable: true,
+  });
+
+  // Настройка RadixUI для тестов
+  // Создаем заглушку для data-theme атрибута в document
+  if (!document.documentElement.hasAttribute("data-radix-theme-direction")) {
+    document.documentElement.setAttribute("data-radix-theme-direction", "ltr");
+  }
 });
 
 // Мок для функций Wails
@@ -54,5 +127,13 @@ vi.mock("../styles/StatusMessage.module.css", () => ({
     error: "error-mock",
     info: "info-mock",
     expandableMessage: "expandableMessage-mock",
+  },
+}));
+
+vi.mock("../styles/LoadingSpinner.module.css", () => ({
+  default: {
+    spinner: "spinner-mock",
+    container: "container-mock",
+    label: "label-mock",
   },
 }));

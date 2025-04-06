@@ -1,0 +1,7 @@
+/* Стили для кнопок действий */
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+  -webkit-app-region: no-drag;
+}

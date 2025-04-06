@@ -265,6 +265,7 @@ export const Settings: React.FC<SettingsProps> = ({
         // возвращаем false, чтобы предотвратить закрытие
         return !(isFirstStart || isSaving);
       }}
+      data-testid="settings-modal"
     >
       <Dialog.Content
         style={{ maxWidth: 500 }}

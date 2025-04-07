@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TorrentFileTab } from "./TorrentFileTab";
 import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
 import { TestThemeProvider } from "../../../test/mocks/theme-mock";
@@ -9,15 +10,34 @@ vi.mock("../../../../wailsjs/go/main/App", () => ({
   ReadFile: vi.fn().mockResolvedValue("base64content"),
 }));
 
+// Оригинальный FileReader
+const OriginalFileReader = window.FileReader;
+
 describe("TorrentFileTab Component", () => {
   const mockOnFileSelect = vi.fn();
 
+  // Мок для FileReader
+  const fileReaderMock = {
+    readAsDataURL: vi.fn(),
+    onload: null as any,
+    result: "data:application/x-bittorrent;base64,mockBase64Content",
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Создаем мок для FileReader перед каждым тестом
+    // @ts-ignore - игнорируем ошибки типов для тестирования
+    window.FileReader = vi.fn(() => fileReaderMock);
+  });
+
+  afterEach(() => {
+    // Восстанавливаем оригинальный FileReader после каждого теста
+    window.FileReader = OriginalFileReader;
   });
 
   const renderComponent = (props = {}) => {
-    render(
+    return render(
       <TestThemeProvider>
         <MockLocalizationProvider>
           <TorrentFileTab onFileSelect={mockOnFileSelect} {...props} />
@@ -56,10 +76,62 @@ describe("TorrentFileTab Component", () => {
     expect(ReadFile).toHaveBeenCalledWith("/path/to/file.torrent");
 
     // Ожидаем появления имени файла
-    expect(screen.getByText("file.torrent")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("file.torrent")).toBeInTheDocument();
+    });
+
+    // Ожидаем вызов onFileSelect - этот вызов асинхронный, поэтому нужен waitFor
+    await waitFor(() => {
+      expect(mockOnFileSelect).toHaveBeenCalled();
+      expect(mockOnFileSelect).toHaveBeenCalledWith(
+        "file.torrent",
+        "base64content"
+      );
+    });
   });
 
-  it("поддерживает drag-and-drop файлов", () => {
+  it("поддерживает выбор файла через input", () => {
+    renderComponent();
+
+    const fileInputArea = screen
+      .getByText("add.dropFile")
+      .closest(".file-input-area");
+    expect(fileInputArea).toBeInTheDocument();
+
+    if (fileInputArea) {
+      // Симулируем клик по области
+      fireEvent.click(fileInputArea);
+
+      // Создаем файловый объект
+      const file = new File(["content"], "test.torrent", {
+        type: "application/x-bittorrent",
+      });
+
+      // Находим скрытый input и симулируем выбор файла
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      expect(fileInput).toBeInTheDocument();
+
+      // Добавляем файл в fileList
+      Object.defineProperty(fileInput, "files", {
+        value: [file],
+      });
+
+      // Вызываем событие change
+      fireEvent.change(fileInput);
+
+      // Теперь эмулируем результат выполнения FileReader
+      if (fileReaderMock.onload) {
+        fileReaderMock.onload({ target: fileReaderMock } as any);
+      }
+
+      // Проверяем вызов readAsDataURL
+      expect(fileReaderMock.readAsDataURL).toHaveBeenCalled();
+    }
+  });
+
+  it("поддерживает drag-and-drop файлов торрентов", async () => {
     renderComponent();
 
     const dropArea = screen
@@ -67,22 +139,56 @@ describe("TorrentFileTab Component", () => {
       .closest(".file-input-area");
     expect(dropArea).toBeInTheDocument();
 
-    // Мокаем File API
-    const file = new File(["content"], "test.torrent", {
-      type: "application/x-bittorrent",
-    });
-    Object.defineProperty(file, "name", { value: "test.torrent" });
-
-    // Эмулируем события drag-and-drop
     if (dropArea) {
+      // Тестирование dragOver
       fireEvent.dragOver(dropArea);
       expect(dropArea).toHaveClass("drag-over");
 
-      const dataTransfer = { files: [file] };
+      // Тестирование dragLeave
+      fireEvent.dragLeave(dropArea);
+      expect(dropArea).not.toHaveClass("drag-over");
+
+      // Тестирование drop с торрент-файлом
+      const file = new File(["content"], "test.torrent", {
+        type: "application/x-bittorrent",
+      });
+      const dataTransfer = {
+        files: [file],
+        clearData: vi.fn(),
+      };
+
+      // Симулируем событие drop
       fireEvent.drop(dropArea, { dataTransfer });
 
-      // После drop drag-over класс должен быть удален
+      // После drop класс drag-over должен быть удален
       expect(dropArea).not.toHaveClass("drag-over");
+
+      // Проверяем, что readAsDataURL был вызван
+      expect(fileReaderMock.readAsDataURL).toHaveBeenCalled();
+    }
+  });
+
+  it("игнорирует drop для не-торрент файлов", () => {
+    renderComponent();
+
+    const dropArea = screen
+      .getByText("add.dropFile")
+      .closest(".file-input-area");
+
+    if (dropArea) {
+      // Создаем не-торрент файл
+      const file = new File(["content"], "test.txt", { type: "text/plain" });
+      const dataTransfer = {
+        files: [file],
+        clearData: vi.fn(),
+      };
+
+      // Симулируем dragOver и drop
+      fireEvent.dragOver(dropArea);
+      fireEvent.drop(dropArea, { dataTransfer });
+
+      // FileReader не должен быть вызван для не-торрент файлов
+      expect(fileReaderMock.readAsDataURL).not.toHaveBeenCalled();
     }
   });
 });

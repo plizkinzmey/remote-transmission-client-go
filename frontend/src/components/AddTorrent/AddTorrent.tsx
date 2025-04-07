@@ -103,6 +103,9 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
             <Dialog.Title mb="4">
               {t("add.title") || "Add Torrent"}
             </Dialog.Title>
+            <Dialog.Description>
+              {t("add.loading") || "Loading..."}
+            </Dialog.Description>
             <Flex justify="center" p="6">
               <LoadingSpinner size="medium" />
             </Flex>
@@ -120,6 +123,9 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
           className="dialog-content"
         >
           <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
+          <Dialog.Description>
+            {t("add.description") || "Add a new torrent from URL or file"}
+          </Dialog.Description>
           <form onSubmit={handleSubmit}>
             <Tabs.Root
               value={activeTab}

@@ -33,6 +33,17 @@ This guide describes the principles and practices for testing frontend component
   - [Common Issues and Solutions](#common-issues-and-solutions)
     - [1. CSS Module Issues](#1-css-module-issues)
     - [2. Re-rendering Issues](#2-re-rendering-issues)
+    - [3. React Context Issues](#3-react-context-issues)
+  - [Testing File Operations](#testing-file-operations)
+    - [Mocking FileReader](#mocking-filereader)
+  - [Testing Browser APIs](#testing-browser-apis)
+    - [Mocking ResizeObserver](#mocking-resizeobserver)
+  - [Dealing with Asynchronous Tests](#dealing-with-asynchronous-tests)
+    - [Proper use of waitFor](#proper-use-of-waitfor)
+    - [Testing React useEffect hooks](#testing-react-useeffect-hooks)
+  - [Achieving 100% Test Coverage](#achieving-100-test-coverage)
+  - [Testing React.useState Mocking](#testing-reactusestate-mocking)
+  - [Testing Components that use External Libraries](#testing-components-that-use-external-libraries)
 
 ## Technology Stack
 
@@ -358,3 +369,232 @@ For errors related to component updates after actions:
 
 - Use `rerender` from React Testing Library
 - Ensure all state updates are wrapped in `act()`
+
+### 3. React Context Issues
+
+If your components use React Context (like ThemeContext or LocalizationContext), you need to create context wrappers for testing:
+
+```typescript
+// Create a mock file in src/test/mocks/localization-context-mock.tsx
+import React, { ReactNode } from "react";
+import { LocalizationContext } from "../../contexts/LocalizationContext";
+
+export const MockLocalizationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const mockContext = {
+    t: (key: string) => key,
+    locale: "en",
+    setLocale: vi.fn(),
+    isLoading: false
+  };
+
+  return (
+    <LocalizationContext.Provider value={mockContext}>
+      {children}
+    </LocalizationContext.Provider>
+  );
+};
+```
+
+Use this wrapper in tests:
+
+```typescript
+render(
+  <MockLocalizationProvider>
+    <ComponentToTest />
+  </MockLocalizationProvider>
+);
+```
+
+## Testing File Operations
+
+### Mocking FileReader
+
+When testing components that handle file uploads or drag-and-drop operations:
+
+```typescript
+// Store original FileReader implementation
+const OriginalFileReader = window.FileReader;
+
+// Set up mock before tests
+beforeEach(() => {
+  const fileReaderMock = {
+    readAsDataURL: vi.fn(),
+    onload: null as any,
+    result: "data:application/x-bittorrent;base64,mockBase64Content"
+  };
+  
+  // Replace global FileReader
+  window.FileReader = vi.fn(() => fileReaderMock);
+});
+
+// Restore original after tests
+afterEach(() => {
+  window.FileReader = OriginalFileReader;
+});
+
+it('handles file selection', () => {
+  // Create a mock file
+  const file = new File(['content'], 'test.torrent', { type: 'application/x-bittorrent' });
+  
+  // Simulate file input change
+  fireEvent.change(fileInput, { target: { files: [file] } });
+  
+  // Manually trigger onload event on the mock reader
+  const mockReader = window.FileReader();
+  if (mockReader.onload) {
+    mockReader.onload({ target: mockReader } as any);
+  }
+  
+  // Check result
+  expect(onFileSelectMock).toHaveBeenCalledWith('test.torrent', 'mockBase64Content');
+});
+```
+
+## Testing Browser APIs
+
+### Mocking ResizeObserver
+
+Many UI libraries like Radix UI use ResizeObserver which is not available in jsdom:
+
+```typescript
+// In setup-tests.ts or a dedicated mock file
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+// Add to global object before tests
+window.ResizeObserver = MockResizeObserver;
+```
+
+## Dealing with Asynchronous Tests
+
+### Proper use of waitFor
+
+When testing components with asynchronous operations, always use `waitFor`:
+
+```typescript
+await waitFor(() => {
+  expect(screen.getByText('Data loaded successfully')).toBeInTheDocument();
+});
+```
+
+For operations that might take longer:
+
+```typescript
+await waitFor(() => {
+  expect(mockOnPathChange).toHaveBeenCalled();
+}, { timeout: 2000 });
+```
+
+### Testing React useEffect hooks
+
+For components with multiple useEffect hooks:
+
+```typescript
+it('calls effect after render', async () => {
+  const mockFunction = vi.fn();
+  
+  render(<Component onLoad={mockFunction} />);
+  
+  // Wait for all effects to complete
+  await waitFor(() => {
+    expect(mockFunction).toHaveBeenCalled();
+  });
+});
+```
+
+## Achieving 100% Test Coverage
+
+To achieve 100% test coverage:
+
+1. **Test all branches in conditional rendering**:
+```typescript
+it('renders loading state', () => {
+  vi.mocked(useLocalization).mockReturnValue({
+    t: vi.fn(),
+    isLoading: true,
+    locale: 'en',
+    setLocale: vi.fn()
+  });
+
+  render(<Component />);
+  expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+});
+```
+
+2. **Test all possible React state combinations**:
+   - Initial state
+   - After user interaction
+   - After data loading
+   - Error states
+
+3. **Mock all external dependencies**:
+   - API calls
+   - Context values
+   - Browser APIs
+
+4. **Test empty and edge cases**:
+   - Empty arrays or collections
+   - Boundary values
+   - Invalid inputs
+
+5. **Test cleanup functions in useEffect**:
+```typescript
+it('cleans up on unmount', () => {
+  const mockCleanup = vi.fn();
+  vi.spyOn(React, 'useEffect').mockImplementation(f => {
+    const cleanup = f();
+    if (cleanup) return mockCleanup;
+  });
+  
+  const { unmount } = render(<Component />);
+  unmount();
+  expect(mockCleanup).toHaveBeenCalled();
+});
+```
+
+## Testing React.useState Mocking
+
+In some cases, you need to mock React.useState to test specific state conditions:
+
+```typescript
+it('returns null when loading', () => {
+  const originalUseState = React.useState;
+  
+  // Mock useState to force loading state to true
+  vi.spyOn(React, 'useState')
+    .mockImplementationOnce(() => ["", vi.fn()]) // First useState call
+    .mockImplementationOnce(() => [[], vi.fn()]) // Second useState call
+    .mockImplementationOnce(() => [true, vi.fn()]); // isLoading state
+  
+  const { container } = render(<Component />);
+  expect(container.firstChild).toBeNull();
+  
+  // Restore original
+  React.useState = originalUseState;
+});
+```
+
+## Testing Components that use External Libraries
+
+When your component uses external libraries like Radix UI:
+
+```typescript
+// Create a wrapper for external library components
+export const TestThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  return (
+    <ThemeProvider theme="light" scaling="100%">
+      <div>{children}</div>
+    </ThemeProvider>
+  );
+};
+
+// Use it in tests
+render(
+  <TestThemeProvider>
+    <Component />
+  </TestThemeProvider>
+);
+```

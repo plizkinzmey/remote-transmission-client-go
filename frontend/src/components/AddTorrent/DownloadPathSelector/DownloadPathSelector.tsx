@@ -140,11 +140,17 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
             value={downloadPath}
             onValueChange={handlePathChange}
             size="1"
+            data-testid="path-select"
           >
-            <Select.Trigger />
+            <Select.Trigger data-testid="select-trigger" />
             <Select.Content>
               {downloadPaths.map((path) => (
-                <Select.Item key={path} value={path} className="select-item">
+                <Select.Item
+                  key={path}
+                  value={path}
+                  className="select-item"
+                  data-testid={`path-option-${path}`}
+                >
                   {path}
                 </Select.Item>
               ))}
@@ -157,6 +163,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
             value={customPath}
             onChange={handleCustomPathChange}
             color={pathError ? "red" : undefined}
+            data-testid="custom-path-input"
           />
         )}
 
@@ -165,6 +172,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
           size="1"
           variant="soft"
           onClick={handleCustomPathToggle}
+          data-testid="toggle-path-mode-button"
         >
           {showCustomPath
             ? t("add.selectFromExisting")

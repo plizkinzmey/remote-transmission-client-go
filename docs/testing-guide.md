@@ -193,6 +193,66 @@ screen.getByRole("button", { name: "Save" })
 - Index-based selectors (`firstChild`, `childNodes[1]`, etc.)
 - DOM structure selectors that might change
 
+### Best Practices for data-testid
+
+When adding data-testid attributes to components, follow these guidelines:
+
+1. **Be specific and descriptive**:
+   ```jsx
+   // GOOD
+   <button data-testid="save-settings-button">Save</button>
+   
+   // TOO GENERIC
+   <button data-testid="button">Save</button>
+   ```
+
+2. **Use consistent naming patterns**:
+   ```jsx
+   // Recommended pattern: [component]-[element]-[variant/state]
+   <input data-testid="search-input-active" />
+   <button data-testid="search-button-disabled" disabled />
+   ```
+
+3. **Add data-testid to library components**:
+   For external UI libraries (like Radix UI, Material UI), wrap them or extend with data-testid:
+   ```jsx
+   <Select.Root>
+     <Select.Trigger data-testid="path-select-trigger" />
+     <Select.Content>
+       {items.map(item => (
+         <Select.Item 
+           key={item.value} 
+           value={item.value} 
+           data-testid={`select-item-${item.value}`}
+         >
+           {item.label}
+         </Select.Item>
+       ))}
+     </Select.Content>
+   </Select.Root>
+   ```
+
+4. **Add data-testid to dynamic components**:
+   ```jsx
+   {items.map((item, index) => (
+     <li key={item.id} data-testid={`item-${item.id}`}>
+       {item.name}
+     </li>
+   ))}
+   ```
+
+5. **Add data-testid for conditional rendering**:
+   ```jsx
+   {isLoading ? (
+     <div data-testid="loading-state"><Spinner /></div>
+   ) : (
+     <div data-testid="loaded-state">{content}</div>
+   )}
+   ```
+
+6. **Don't overuse**:
+   Add data-testid only to elements you actually need to interact with or assert in tests.
+
 ## Testing Components with Portals
 
 Components that use portals (like modals, dialogs, or tooltips from Radix UI) render content outside the regular DOM hierarchy, which requires special testing approaches.

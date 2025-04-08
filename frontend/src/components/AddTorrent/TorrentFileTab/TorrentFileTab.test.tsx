@@ -191,4 +191,27 @@ describe("TorrentFileTab Component", () => {
       expect(fileReaderMock.readAsDataURL).not.toHaveBeenCalled();
     }
   });
+
+  it("обрабатывает ошибку при чтении файла через Wails API", async () => {
+    const { ReadFile } = await import("../../../../wailsjs/go/main/App");
+    vi.mocked(ReadFile).mockRejectedValueOnce(new Error("Test error"));
+
+    // Создаем мок для console.error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    renderComponent({ torrentFilePath: "/path/to/invalid-file.torrent" });
+
+    await waitFor(() => {
+      expect(ReadFile).toHaveBeenCalledWith("/path/to/invalid-file.torrent");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Ошибка при чтении файла через Wails API:",
+        expect.any(Error)
+      );
+    });
+
+    // Восстанавливаем оригинальный console.error
+    consoleErrorSpy.mockRestore();
+  });
 });

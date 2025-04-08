@@ -19,8 +19,8 @@ vi.mock("../../contexts/LocalizationContext", () => ({
     setLanguage: vi.fn(),
     availableLanguages: [
       { code: "en", name: "English" },
-      { code: "ru", name: "Русский" }
-    ]
+      { code: "ru", name: "Русский" },
+    ],
   }),
 }));
 
@@ -55,8 +55,8 @@ describe("AddTorrent Component", () => {
       setLanguage: vi.fn(),
       availableLanguages: [
         { code: "en", name: "English" },
-        { code: "ru", name: "Русский" }
-      ]
+        { code: "ru", name: "Русский" },
+      ],
     });
   });
 
@@ -167,7 +167,9 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText("add.enterCustomPath");
+      const customPathButton = screen.getByText((content, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
       fireEvent.click(customPathButton);
 
       // Проверяем, что появилось текстовое поле
@@ -201,8 +203,8 @@ describe("AddTorrent Component", () => {
       setLanguage: vi.fn(),
       availableLanguages: [
         { code: "en", name: "English" },
-        { code: "ru", name: "Русский" }
-      ]
+        { code: "ru", name: "Русский" },
+      ],
     });
 
     renderComponent();
@@ -213,6 +215,45 @@ describe("AddTorrent Component", () => {
       expect(within(modal).getByText("add.title")).toBeInTheDocument();
       // Проверяем, что LoadingSpinner отображается используя data-testid
       expect(within(modal).getByTestId("loading-spinner")).toBeInTheDocument();
+    });
+  });
+
+  it("валидирует путь перед отправкой", async () => {
+    // Мокируем GetDownloadPaths, чтобы по умолчанию возвращался /valid/path
+    const { GetDownloadPaths } = await import("../../../wailsjs/go/main/App");
+    vi.mocked(GetDownloadPaths).mockResolvedValue(["/valid/path"]);
+
+    // Очищаем предыдущие вызовы mockOnAdd
+    mockOnAdd.mockClear();
+
+    renderComponent();
+
+    // Дожидаемся загрузки путей
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Вводим URL
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Нажимаем кнопку добавления
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      expect(mockOnAdd).toHaveBeenCalledWith("magnet:test", "/valid/path");
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  it("переключается на вкладку File при наличии torrentFile", async () => {
+    renderComponent({ torrentFile: "/path/to/file.torrent" });
+
+    await waitFor(() => {
+      // Получаем табы и проверяем, что второй таб (File) имеет атрибут data-state="active"
+      const tabs = screen.getAllByRole("tab");
+      expect(tabs[1]).toHaveAttribute("data-state", "active");
     });
   });
 });

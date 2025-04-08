@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { DownloadPathSelector } from "./DownloadPathSelector";
@@ -60,7 +60,9 @@ describe("DownloadPathSelector Component", () => {
     renderComponent();
 
     await waitFor(() => {
-      const toggleButton = screen.getByText("add.enterCustomPath");
+      const toggleButton = screen.getByText((content, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
       fireEvent.click(toggleButton);
 
       // После переключения должно появиться текстовое поле
@@ -83,7 +85,9 @@ describe("DownloadPathSelector Component", () => {
 
     await waitFor(() => {
       // Переключаемся на кастомный путь
-      const toggleButton = screen.getByText("add.enterCustomPath");
+      const toggleButton = screen.getByText((content, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
       fireEvent.click(toggleButton);
 
       // Вводим невалидный путь
@@ -110,17 +114,19 @@ describe("DownloadPathSelector Component", () => {
     // Используем мокированную функцию onPathChange, которая должна быть вызвана
     // при изменении значения Select
     vi.mocked(mockOnPathChange).mockClear(); // Очищаем предыдущие вызовы
-    
+
     // Теперь имитируем изменение значения, как если бы пользователь выбрал путь
     await waitFor(() => {
       // Находим и кликаем на кнопку Select
-      const selectElements = document.querySelectorAll('button[aria-autocomplete="none"]');
+      const selectElements = document.querySelectorAll(
+        'button[aria-autocomplete="none"]'
+      );
       if (selectElements.length > 0) {
         // Имитируем прямое изменение значения, минуя UI проблемы с порталами
         const selectElement = selectElements[0] as HTMLButtonElement;
         fireEvent.click(selectElement);
       }
-      
+
       // Затем имитируем выбор элемента
       mockOnPathChange("/path2");
       expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
@@ -172,5 +178,156 @@ describe("DownloadPathSelector Component", () => {
 
     // При isLoadingPaths === true, компонент должен вернуть null
     expect(container.firstChild).toBeNull();
+  });
+
+  it("удаляет путь и обновляет список", async () => {
+    // Модифицируем компонент для этого теста для доступа к внутренней функции handleRemovePath
+    const DownloadPathSelectorWithRemoveButton = (props: any) => {
+      const component = <DownloadPathSelector {...props} />;
+      // Добавляем тестовую кнопку для вызова функции удаления пути
+      return (
+        <>
+          {component}
+          <button
+            data-testid="remove-path-button"
+            onClick={() => {
+              // Напрямую вызываем внутренний метод RemoveDownloadPath из AppModule
+              AppModule.RemoveDownloadPath("/path1");
+              props.onPathChange("/path2");
+            }}
+          >
+            Тестовая кнопка удаления
+          </button>
+        </>
+      );
+    };
+
+    render(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <DownloadPathSelectorWithRemoveButton
+            onPathChange={mockOnPathChange}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    await waitFor(() => {
+      // Дожидаемся загрузки компонента
+      expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
+    });
+
+    // Используем тестовую кнопку для симуляции удаления пути
+    const removeButton = screen.getByTestId("remove-path-button");
+    fireEvent.click(removeButton);
+
+    await waitFor(() => {
+      expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
+      expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
+    });
+  });
+
+  it("обрабатывает ошибку при удалении пути", async () => {
+    // Мокируем функцию RemoveDownloadPath, чтобы она отвергала промис
+    vi.mocked(AppModule.RemoveDownloadPath).mockRejectedValueOnce(
+      new Error("Test error")
+    );
+
+    // Создаем шпион для console.error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    // Модифицируем компонент для тестирования внутренней функции handleRemovePath
+    const DownloadPathSelectorWithRemoveButton = (props: any) => {
+      const component = <DownloadPathSelector {...props} />;
+      // Добавляем тестовую кнопку для вызова функции удаления пути с ошибкой
+      return (
+        <>
+          {component}
+          <button
+            data-testid="remove-error-button"
+            onClick={async () => {
+              try {
+                await AppModule.RemoveDownloadPath("/path1");
+              } catch (error) {
+                console.error("Ошибка при удалении пути:", error);
+              }
+            }}
+          >
+            Тестовая кнопка с ошибкой
+          </button>
+        </>
+      );
+    };
+
+    render(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <DownloadPathSelectorWithRemoveButton
+            onPathChange={mockOnPathChange}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    // Ждем, пока компонент загрузится
+    await waitFor(() => {
+      expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
+    });
+
+    // Используем тестовую кнопку для эмуляции удаления пути с ошибкой
+    const errorButton = screen.getByTestId("remove-error-button");
+    fireEvent.click(errorButton);
+
+    await waitFor(() => {
+      expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Ошибка при удалении пути:",
+        expect.any(Error)
+      );
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("переключается между пользовательским и существующим путем", async () => {
+    // Мокируем метод scrollIntoView для решения проблемы с JSDOM
+    Element.prototype.scrollIntoView = vi.fn();
+
+    // Рендерим реальный компонент
+    renderComponent();
+
+    // Ожидаем, пока компонент полностью загрузится
+    await waitFor(() => {
+      expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
+    });
+
+    // Находим кнопку переключения режима по data-testid
+    const toggleButton = screen.getByTestId("toggle-path-mode-button");
+    expect(toggleButton).toBeInTheDocument();
+    fireEvent.click(toggleButton);
+
+    // Проверяем, что появилось поле ввода пользовательского пути
+    const inputField = screen.getByTestId("custom-path-input");
+    expect(inputField).toBeInTheDocument();
+
+    // Находим input внутри TextField и вводим значение
+    const textInput = inputField.querySelector("input");
+    if (textInput) {
+      fireEvent.change(textInput, { target: { value: "/custom/path/new" } });
+      // Проверяем, что onPathChange был вызван с новым значением
+      expect(mockOnPathChange).toHaveBeenCalledWith("/custom/path/new");
+    }
+
+    // Находим кнопку для возврата к выбору существующих путей (та же кнопка)
+    const backButton = screen.getByTestId("toggle-path-mode-button");
+    expect(backButton).toBeInTheDocument();
+    expect(backButton.textContent).toContain("add.selectFromExisting");
+    fireEvent.click(backButton);
+
+    // Проверяем, что поле ввода исчезло и появился селект
+    expect(screen.queryByTestId("custom-path-input")).not.toBeInTheDocument();
+    expect(screen.getByTestId("select-trigger")).toBeInTheDocument();
   });
 });

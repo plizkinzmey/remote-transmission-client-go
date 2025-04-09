@@ -14,6 +14,7 @@ This guide describes the principles and practices for testing frontend component
     - [External Dependencies](#external-dependencies)
     - [Wails API and Go Functions](#wails-api-and-go-functions)
   - [Test Naming](#test-naming)
+    - [Язык описания тестов](#язык-описания-тестов)
   - [Selectors in Tests](#selectors-in-tests)
     - [Preferred selectors (in order of priority):](#preferred-selectors-in-order-of-priority)
     - [Avoid:](#avoid)
@@ -156,10 +157,28 @@ describe('ComponentName', () => {
 });
 ```
 
-Examples:
-- `it('renders with default props')`
-- `it('displays error message when status is error')`
-- `it('calls onSubmit when form is submitted')`
+### Язык описания тестов
+
+Все описания тестов должны быть написаны на русском языке для обеспечения согласованности и понятности для команды разработки:
+
+```typescript
+describe('КомпонентName', () => {
+  it('отображает сообщение об ошибке при наличии ошибки', () => {
+    // код теста
+  });
+
+  it('скрывает сообщение при отсутствии ошибок', () => {
+    // код теста
+  });
+});
+```
+
+Примеры правильного именования тестов:
+- `отображается при попытке переподключения`
+- `не отображается когда переподключение не требуется`
+- `применяет правильные стили`
+- `вызывает onSubmit при отправке формы`
+- `отображает спиннер во время загрузки`
 
 ## Selectors in Tests
 

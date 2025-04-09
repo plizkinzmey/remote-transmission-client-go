@@ -1,0 +1,26 @@
+/* Стили для компонента TorrentFileTab */
+
+.file-input-area {
+  border: 2px dashed var(--gray-6);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-input-area:hover {
+  border-color: var(--accent-9);
+  background: var(--gray-3);
+}
+
+.file-input-area.drag-over {
+  background: var(--gray-3);
+}
+
+.selected-file {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--gray-3);
+  border-radius: 6px;
+}

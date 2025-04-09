@@ -23,7 +23,12 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   };
 
   return (
-    <Flex justify="center" align="center" className={className}>
+    <Flex 
+      justify="center" 
+      align="center" 
+      className={`loading-spinner ${className || ''}`}
+      data-testid="loading-spinner"
+    >
       <ArrowPathIcon
         width={getSize()}
         height={getSize()}

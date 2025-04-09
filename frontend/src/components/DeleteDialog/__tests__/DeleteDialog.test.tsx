@@ -158,7 +158,7 @@ describe("DeleteDialog Component", () => {
 
     // Отмечаем чекбокс
     fireEvent.click(screen.getByTestId("delete-dialog-checkbox"));
-    
+
     // Нажимаем на кнопку подтверждения
     fireEvent.click(screen.getByTestId("delete-dialog-confirm"));
 

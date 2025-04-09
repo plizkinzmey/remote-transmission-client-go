@@ -74,6 +74,20 @@ describe('Footer', () => {
       expect(screen.getByTestId("download-speed-block")).toHaveTextContent("1.00 MB/s");
       expect(screen.getByTestId("upload-speed-block")).toHaveTextContent("1.00 KB/s");
     });
+
+    it('корректно обрабатывает NaN значения скорости', () => {
+      render(
+        <Footer
+          totalDownloadSpeed={NaN}
+          totalUploadSpeed={NaN}
+          freeSpace={1024}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("download-speed-block")).toHaveTextContent("0.00 B/s");
+      expect(screen.getByTestId("upload-speed-block")).toHaveTextContent("0.00 B/s");
+    });
   });
 
   describe('Форматирование размера диска', () => {
@@ -96,6 +110,19 @@ describe('Footer', () => {
           totalDownloadSpeed={0}
           totalUploadSpeed={0}
           freeSpace={-1024}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("free-space-block")).toHaveTextContent("0.00 B");
+    });
+
+    it('корректно обрабатывает NaN значения размера', () => {
+      render(
+        <Footer
+          totalDownloadSpeed={0}
+          totalUploadSpeed={0}
+          freeSpace={NaN}
           transmissionVersion="3.0.0"
         />
       );

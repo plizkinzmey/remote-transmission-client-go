@@ -47,7 +47,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
       setDeleteData(false);
       logger.info("Dialog opened", { mode, torrentName, count });
     }
-  }, [open, torrentName, count, mode, logger]);
+  }, [open, torrentName, count, mode]);
 
   const handleConfirm = useCallback(() => {
     logger.info("Delete confirmed", { deleteData });

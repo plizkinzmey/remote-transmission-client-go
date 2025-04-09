@@ -4,7 +4,6 @@ import { DeleteDialog } from "../DeleteDialog";
 import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
 import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import type { SetStateAction, Dispatch } from "react";
 
 // Мокируем хук useLogger
 vi.mock("../../../hooks/useLogger", () => ({
@@ -81,26 +80,11 @@ describe("DeleteDialog Component", () => {
   const mockOnConfirm = vi.fn();
   const mockOnCancel = vi.fn();
 
-  let deleteDataState = false;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    deleteDataState = false;
   });
 
   const renderDialog = (props: Partial<React.ComponentProps<typeof DeleteDialog>> = {}) => {
-    // Исправляем типизацию useState для соответствия ожиданиям React
-    vi.spyOn(React, 'useState').mockImplementation(() => [
-      deleteDataState,
-      ((value: unknown) => {
-        if (typeof value === 'function') {
-          deleteDataState = (value as (prev: boolean) => boolean)(deleteDataState);
-        } else {
-          deleteDataState = value as boolean;
-        }
-      }) as React.Dispatch<unknown>
-    ]);
-
     return render(
       <TestThemeProvider>
         <MockLocalizationProvider>
@@ -158,7 +142,6 @@ describe("DeleteDialog Component", () => {
   });
 
   it("вызывает onConfirm при нажатии на кнопку подтверждения", () => {
-    // Вместо проверки с true, просто убедимся что функция вызывается
     renderDialog();
 
     // Нажимаем на кнопку подтверждения
@@ -166,41 +149,21 @@ describe("DeleteDialog Component", () => {
 
     // Проверяем, что onConfirm был вызван
     expect(mockOnConfirm).toHaveBeenCalled();
+    // По умолчанию deleteData должен быть false
+    expect(mockOnConfirm).toHaveBeenCalledWith(false);
   });
 
-  it("сбрасывает состояние при изменении open, torrentName, count или mode", () => {
-    // Устанавливаем начальное состояние
-    deleteDataState = true;
+  it("вызывает onConfirm с значением true когда чекбокс отмечен", () => {
+    renderDialog();
 
-    const result = renderDialog({
-      mode: "single",
-      torrentName: "test.torrent",
-      open: true
-    });
+    // Отмечаем чекбокс
+    fireEvent.click(screen.getByTestId("delete-dialog-checkbox"));
+    
+    // Нажимаем на кнопку подтверждения
+    fireEvent.click(screen.getByTestId("delete-dialog-confirm"));
 
-    // Проверяем начальное состояние, пропуская визуальную проверку чекбокса
-    expect(deleteDataState).toBe(true);
-
-    // Сбрасываем состояние перед ререндером
-    deleteDataState = false;
-
-    // Перерендериваем с новыми пропсами
-    result.rerender(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <DeleteDialog
-            mode="bulk"
-            count={3}
-            open={true}
-            onConfirm={mockOnConfirm}
-            onCancel={mockOnCancel}
-          />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
-
-    // Проверяем, что состояние было сброшено
-    expect(deleteDataState).toBe(false);
+    // Проверяем, что onConfirm был вызван с true
+    expect(mockOnConfirm).toHaveBeenCalledWith(true);
   });
 
   it("вызывает onCancel при закрытии диалога через onOpenChange", () => {

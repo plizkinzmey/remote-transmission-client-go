@@ -87,7 +87,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
                 className={styles.message}
                 data-testid="delete-dialog-torrent-name"
               >
-                {t("remove.message", torrentName)}
+                {t("remove.message", [torrentName])}
               </Text>
             ) : (
               <Text as="p" size="1" className={styles.message} data-testid="delete-dialog-confirmation">

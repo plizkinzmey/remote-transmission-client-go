@@ -61,7 +61,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
   }, [onCancel, logger]);
 
   if (isLocalizationLoading) {
-    return <LoadingSpinner data-testid="delete-dialog-loader" />;
+    return <LoadingSpinner />;
   }
 
   return (

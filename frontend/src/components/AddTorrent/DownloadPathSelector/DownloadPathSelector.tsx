@@ -30,27 +30,31 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
   // Получаем список путей при инициализации
   useEffect(() => {
+    let isMounted = true;
+
     const fetchPaths = async () => {
       try {
         const paths = await GetDownloadPaths();
+        if (!isMounted) return;
+
         setDownloadPaths(paths);
 
         if (paths.length > 0) {
           const pathToSet = initialPath || paths[0];
           setDownloadPath(pathToSet);
-          setDefaultPath(paths[0]); // Сохраняем путь по умолчанию
+          setDefaultPath(paths[0]);
           onPathChange(pathToSet);
         }
 
         setIsLoadingPaths(false);
-        // Сообщаем родительскому компоненту о завершении загрузки
-        if (onLoadingStateChange) {
+        if (onLoadingStateChange && isMounted) {
           onLoadingStateChange(false);
         }
       } catch (error) {
         console.error("Ошибка при получении путей:", error);
+        if (!isMounted) return;
+
         setIsLoadingPaths(false);
-        // Сообщаем родительскому компоненту о завершении загрузки даже в случае ошибки
         if (onLoadingStateChange) {
           onLoadingStateChange(false);
         }
@@ -58,6 +62,11 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     };
 
     fetchPaths();
+
+    // Функция очистки
+    return () => {
+      isMounted = false;
+    };
   }, [initialPath, onPathChange, onLoadingStateChange]);
 
   // Валидация пути при его изменении

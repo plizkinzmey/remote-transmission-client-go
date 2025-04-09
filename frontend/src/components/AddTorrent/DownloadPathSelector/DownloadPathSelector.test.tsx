@@ -60,9 +60,7 @@ describe("DownloadPathSelector Component", () => {
     renderComponent();
 
     await waitFor(() => {
-      const toggleButton = screen.getByText((content, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const toggleButton = screen.getByText("add.enterCustomPath");
       fireEvent.click(toggleButton);
 
       // После переключения должно появиться текстовое поле
@@ -85,9 +83,7 @@ describe("DownloadPathSelector Component", () => {
 
     await waitFor(() => {
       // Переключаемся на кастомный путь
-      const toggleButton = screen.getByText((content, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const toggleButton = screen.getByText("add.enterCustomPath");
       fireEvent.click(toggleButton);
 
       // Вводим невалидный путь
@@ -105,29 +101,22 @@ describe("DownloadPathSelector Component", () => {
     renderComponent();
 
     await waitFor(() => {
-      // Проверяем, что компонент загрузился
       expect(screen.getByText("add.enterCustomPath")).toBeInTheDocument();
     });
 
     // Имитируем выбор пути путем прямого вызова функции onValueChange
     const paths = await AppModule.GetDownloadPaths();
-    // Используем мокированную функцию onPathChange, которая должна быть вызвана
-    // при изменении значения Select
-    vi.mocked(mockOnPathChange).mockClear(); // Очищаем предыдущие вызовы
+    vi.mocked(mockOnPathChange).mockClear();
 
-    // Теперь имитируем изменение значения, как если бы пользователь выбрал путь
     await waitFor(() => {
-      // Находим и кликаем на кнопку Select
       const selectElements = document.querySelectorAll(
         'button[aria-autocomplete="none"]'
       );
       if (selectElements.length > 0) {
-        // Имитируем прямое изменение значения, минуя UI проблемы с порталами
         const selectElement = selectElements[0] as HTMLButtonElement;
         fireEvent.click(selectElement);
       }
 
-      // Затем имитируем выбор элемента
       mockOnPathChange("/path2");
       expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
     });
@@ -147,7 +136,7 @@ describe("DownloadPathSelector Component", () => {
     // Мокируем консоль, чтобы отловить сообщение об ошибке
     const consoleErrorSpy = vi
       .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockImplementation(() => { });
 
     // Меняем реализацию mock-функции для вызова ошибки
     const mockGetDownloadPaths = vi.mocked(AppModule.GetDownloadPaths);
@@ -168,7 +157,7 @@ describe("DownloadPathSelector Component", () => {
   it("возвращает null при загрузке путей", () => {
     // Мокируем GetDownloadPaths, чтобы его вызов зависал и статус загрузки сохранялся
     vi.mocked(AppModule.GetDownloadPaths).mockReturnValueOnce(
-      new Promise(() => {}) // Promise, который никогда не разрешится (имитация загрузки)
+      new Promise(() => { }) // Promise, который никогда не разрешится (имитация загрузки)
     );
 
     // Рендерим компонент напрямую, без обертки ThemeProvider
@@ -236,7 +225,7 @@ describe("DownloadPathSelector Component", () => {
     // Создаем шпион для console.error
     const consoleErrorSpy = vi
       .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockImplementation(() => { });
 
     // Модифицируем компонент для тестирования внутренней функции handleRemovePath
     const DownloadPathSelectorWithRemoveButton = (props: any) => {
@@ -329,5 +318,22 @@ describe("DownloadPathSelector Component", () => {
     // Проверяем, что поле ввода исчезло и появился селект
     expect(screen.queryByTestId("custom-path-input")).not.toBeInTheDocument();
     expect(screen.getByTestId("select-trigger")).toBeInTheDocument();
+  });
+
+  it("корректно обрабатывает размонтирование компонента во время загрузки путей", async () => {
+    // Создаем Promise с явной типизацией
+    const loadingPromise: Promise<string[]> = new Promise((resolve) => {
+      setTimeout(() => resolve(["/path1", "/path2"]), 100);
+    });
+
+    vi.mocked(AppModule.GetDownloadPaths).mockReturnValueOnce(loadingPromise);
+
+    const { unmount } = renderComponent();
+    unmount();
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(mockOnPathChange).not.toHaveBeenCalled();
+    expect(mockOnLoadingStateChange).not.toHaveBeenCalled();
   });
 });

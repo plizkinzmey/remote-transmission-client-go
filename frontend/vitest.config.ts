@@ -9,6 +9,7 @@ declare module "vite" {
       environment?: string;
       setupFiles?: string | string[];
       outputFile?: string;
+      silent?: boolean;
       coverage?: {
         reporter?: string | string[];
         exclude?: string[];
@@ -38,6 +39,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/test/setup-tests.ts",
+    silent: true, // Показывать только ошибки
     coverage: {
       reporter: ["text", "text-summary", "lcov"],
       exclude: [

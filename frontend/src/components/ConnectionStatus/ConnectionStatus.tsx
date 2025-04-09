@@ -25,7 +25,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   return (
     <div className={styles.connectionStatus} data-testid="connection-status-container">
       <div className={styles.messageContainer}>
-        <LoadingSpinner size="medium" data-testid="connection-status-spinner" />
+        <LoadingSpinner size="medium" />
         <p className={styles.message} data-testid="connection-status-message">
           {t("errors.timeoutExplanation")}
         </p>

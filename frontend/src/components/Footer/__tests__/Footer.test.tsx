@@ -88,6 +88,36 @@ describe('Footer', () => {
       expect(screen.getByTestId("download-speed-block")).toHaveTextContent("0.00 B/s");
       expect(screen.getByTestId("upload-speed-block")).toHaveTextContent("0.00 B/s");
     });
+
+    it('корректно обрабатывает нечисловые значения скорости', () => {
+      render(
+        <Footer
+          totalDownloadSpeed={Number.NaN}
+          totalUploadSpeed={Number.NaN}
+          freeSpace={1024}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("download-speed-block")).toHaveTextContent("0.00 B/s");
+      expect(screen.getByTestId("upload-speed-block")).toHaveTextContent("0.00 B/s");
+    });
+
+    it('обрабатывает приведенные к NaN значения корректно', () => {
+      render(
+        <Footer
+          // @ts-ignore - для теста передаем некорректное значение
+          totalDownloadSpeed="not a number"
+          // @ts-ignore - для теста передаем некорректное значение
+          totalUploadSpeed="invalid"
+          freeSpace={1024}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("download-speed-block")).toHaveTextContent("0.00 B/s");
+      expect(screen.getByTestId("upload-speed-block")).toHaveTextContent("0.00 B/s");
+    });
   });
 
   describe('Форматирование размера диска', () => {
@@ -123,6 +153,33 @@ describe('Footer', () => {
           totalDownloadSpeed={0}
           totalUploadSpeed={0}
           freeSpace={NaN}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("free-space-block")).toHaveTextContent("0.00 B");
+    });
+
+    it('корректно обрабатывает нечисловые значения размера', () => {
+      render(
+        <Footer
+          totalDownloadSpeed={0}
+          totalUploadSpeed={0}
+          freeSpace={Number.NaN}
+          transmissionVersion="3.0.0"
+        />
+      );
+
+      expect(screen.getByTestId("free-space-block")).toHaveTextContent("0.00 B");
+    });
+
+    it('обрабатывает приведенные к NaN значения размера корректно', () => {
+      render(
+        <Footer
+          totalDownloadSpeed={0}
+          totalUploadSpeed={0}
+          // @ts-ignore - для теста передаем некорректное значение
+          freeSpace="invalid size"
           transmissionVersion="3.0.0"
         />
       );

@@ -69,10 +69,12 @@ export const formatRatio = (ratio: number): string => {
  * @returns Отформатированная строка со скоростью (например, "1.24 MB/s")
  */
 export const formatTransferSpeed = (speed?: number): string => {
-  if (speed === undefined || isNaN(speed) || speed < 0) return "0.00 B/s";
+  const numericSpeed = Number(speed);
+  if (speed === undefined || Number.isNaN(numericSpeed) || numericSpeed < 0)
+    return "0.00 B/s";
 
   const units = ["B/s", "KB/s", "MB/s", "GB/s"];
-  let value = speed;
+  let value = numericSpeed;
   let unitIndex = 0;
 
   while (value >= 1024 && unitIndex < units.length - 1) {
@@ -89,10 +91,12 @@ export const formatTransferSpeed = (speed?: number): string => {
  * @returns Отформатированная строка с размером (например, "1.24 GB")
  */
 export const formatStorageSize = (size?: number): string => {
-  if (size === undefined || isNaN(size) || size < 0) return "0.00 B";
+  const numericSize = Number(size);
+  if (size === undefined || Number.isNaN(numericSize) || numericSize < 0)
+    return "0.00 B";
 
   const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = size;
+  let value = numericSize;
   let unitIndex = 0;
 
   while (value >= 1024 && unitIndex < units.length - 1) {

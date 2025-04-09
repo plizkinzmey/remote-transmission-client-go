@@ -1,0 +1,11 @@
+/* Стили для компонента AddTorrent */
+
+.dialog-content {
+  max-width: 500px;
+}
+
+.tabs-trigger {
+  white-space: normal;
+  min-height: 32px;
+  height: auto;
+}

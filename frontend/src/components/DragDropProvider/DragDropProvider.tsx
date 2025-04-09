@@ -1,14 +1,27 @@
 import React, { useState, ReactNode } from "react";
-import { useLocalization } from "../contexts/LocalizationContext";
-import styles from "../styles/App.module.css";
+import { useLocalization } from "../../contexts/LocalizationContext";
+import styles from "./DragDropProvider.module.css";
 
-interface DragDropProviderProps {
+/**
+ * Пропсы для компонента DragDropProvider
+ * @interface DragDropProviderProps
+ */
+export interface DragDropProviderProps {
+  /** Дочерние элементы компонента */
   children: ReactNode;
+
+  /** 
+   * Функция обратного вызова, вызываемая при сбросе торрент-файла 
+   * @param fileName - Имя сброшенного файла
+   * @param fileData - Содержимое файла в формате base64
+   */
   onFileDropped: (fileName: string, fileData: string) => void;
 }
 
 /**
  * Компонент для обработки перетаскивания торрент-файлов
+ * Оборачивает содержимое приложения и добавляет функциональность drag&drop
+ * для загрузки торрент-файлов
  */
 export const DragDropProvider: React.FC<DragDropProviderProps> = ({
   children,
@@ -69,14 +82,17 @@ export const DragDropProvider: React.FC<DragDropProviderProps> = ({
 
   return (
     <div
-      className={styles.appContainer}
+      className={styles.container}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      data-testid="drag-drop-container"
     >
       {isDragging && (
-        <div className={styles.dragOverlay}>
-          <div className={styles.dropIndicator}>{t("add.dropTorrentHere")}</div>
+        <div className={styles.dragOverlay} data-testid="drag-overlay">
+          <div className={styles.dropIndicator} data-testid="drop-indicator">
+            {t("add.dropTorrentHere")}
+          </div>
         </div>
       )}
       {children}

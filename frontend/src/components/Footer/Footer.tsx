@@ -1,16 +1,15 @@
 import React from "react";
 import { Flex, Box, Text } from "@radix-ui/themes";
-import { useLocalization } from "../contexts/LocalizationContext";
+import { useLocalization } from "../../contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
-import { LoadingSpinner } from "./LoadingSpinner";
+import { LoadingSpinner } from "../LoadingSpinner";
+import styles from "./Footer.module.css";
 
-interface FooterProps {
-  totalDownloadSpeed?: number;
-  totalUploadSpeed?: number;
-  freeSpace?: number;
-  transmissionVersion?: string;
-}
-
+/**
+ * Форматирует скорость в удобочитаемый вид с единицами измерения
+ * @param speed - Скорость в байтах в секунду
+ * @returns Отформатированная строка со скоростью (например, "1.24 MB/s")
+ */
 const formatSpeed = (speed?: number): string => {
   if (speed === undefined) return "-";
   const units = ["B/s", "KB/s", "MB/s", "GB/s"];
@@ -25,6 +24,11 @@ const formatSpeed = (speed?: number): string => {
   return `${value.toFixed(2)} ${units[unitIndex]}`;
 };
 
+/**
+ * Форматирует размер в удобочитаемый вид с единицами измерения
+ * @param size - Размер в байтах
+ * @returns Отформатированная строка с размером (например, "1.24 GB")
+ */
 const formatSize = (size?: number): string => {
   if (size === undefined) return "-";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -39,6 +43,24 @@ const formatSize = (size?: number): string => {
   return `${value.toFixed(2)} ${units[unitIndex]}`;
 };
 
+/**
+ * Пропсы компонента Footer
+ */
+export interface FooterProps {
+  /** Общая скорость загрузки в байтах в секунду */
+  totalDownloadSpeed?: number;
+  /** Общая скорость отдачи в байтах в секунду */
+  totalUploadSpeed?: number;
+  /** Свободное место на диске в байтах */
+  freeSpace?: number;
+  /** Версия Transmission */
+  transmissionVersion?: string;
+}
+
+/**
+ * Компонент Footer отображает информацию о текущей скорости загрузки/отдачи,
+ * свободном месте на диске и версии Transmission
+ */
 export const Footer: React.FC<FooterProps> = ({
   totalDownloadSpeed,
   totalUploadSpeed,
@@ -48,33 +70,21 @@ export const Footer: React.FC<FooterProps> = ({
   const { t } = useLocalization();
 
   return (
-    <Box
-      position="fixed"
-      bottom="0"
-      left="0"
-      right="0"
-      style={{
-        background: "var(--card-background)",
-        borderTop: "1px solid var(--border-color)",
-        zIndex: 100,
-        height: "36px",
-        backdropFilter: "blur(10px)",
-      }}
-    >
+    <Box className={styles.footer} data-testid="footer">
       <Flex
         justify="between"
         align="center"
         px="4"
         py="1"
-        style={{ height: "100%" }}
+        className={styles.container}
       >
-        <Flex gap="4" align="center" style={{ minWidth: "200px" }}>
-          <Flex align="center" gap="1">
+        <Flex gap="4" align="center" className={styles.statsBlock}>
+          <Flex align="center" gap="1" data-testid="download-speed-block">
             {totalDownloadSpeed === undefined ? (
               <LoadingSpinner size="small" />
             ) : (
-              <Flex align="center" gap="1">
-                <ArrowDownIcon width={18} height={18} />
+              <Flex align="center" gap="1" className={styles.speedWrapper}>
+                <ArrowDownIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
                   {formatSpeed(totalDownloadSpeed)}
                 </Text>
@@ -82,12 +92,12 @@ export const Footer: React.FC<FooterProps> = ({
             )}
           </Flex>
 
-          <Flex align="center" gap="1">
+          <Flex align="center" gap="1" data-testid="upload-speed-block">
             {totalUploadSpeed === undefined ? (
               <LoadingSpinner size="small" />
             ) : (
-              <Flex align="center" gap="1">
-                <ArrowUpIcon width={18} height={18} />
+              <Flex align="center" gap="1" className={styles.speedWrapper}>
+                <ArrowUpIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
                   {formatSpeed(totalUploadSpeed)}
                 </Text>
@@ -96,7 +106,7 @@ export const Footer: React.FC<FooterProps> = ({
           </Flex>
         </Flex>
 
-        <Flex align="center" style={{ minWidth: "150px" }}>
+        <Flex align="center" className={styles.infoBlock} data-testid="free-space-block">
           {freeSpace === undefined ? (
             <LoadingSpinner size="small" />
           ) : (
@@ -106,7 +116,7 @@ export const Footer: React.FC<FooterProps> = ({
           )}
         </Flex>
 
-        <Flex align="center" style={{ minWidth: "150px" }}>
+        <Flex align="center" className={styles.infoBlock} data-testid="version-block">
           {transmissionVersion === undefined ? (
             <LoadingSpinner size="small" />
           ) : (

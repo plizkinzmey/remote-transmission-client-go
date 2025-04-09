@@ -3,45 +3,8 @@ import { Flex, Box, Text } from "@radix-ui/themes";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import { LoadingSpinner } from "../LoadingSpinner";
+import { formatTransferSpeed, formatStorageSize } from "../../utils/formatters";
 import styles from "./Footer.module.css";
-
-/**
- * Форматирует скорость в удобочитаемый вид с единицами измерения
- * @param speed - Скорость в байтах в секунду
- * @returns Отформатированная строка со скоростью (например, "1.24 MB/s")
- */
-const formatSpeed = (speed?: number): string => {
-  if (speed === undefined) return "-";
-  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
-  let value = speed;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex++;
-  }
-
-  return `${value.toFixed(2)} ${units[unitIndex]}`;
-};
-
-/**
- * Форматирует размер в удобочитаемый вид с единицами измерения
- * @param size - Размер в байтах
- * @returns Отформатированная строка с размером (например, "1.24 GB")
- */
-const formatSize = (size?: number): string => {
-  if (size === undefined) return "-";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = size;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex++;
-  }
-
-  return `${value.toFixed(2)} ${units[unitIndex]}`;
-};
 
 /**
  * Пропсы компонента Footer
@@ -86,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Flex align="center" gap="1" className={styles.speedWrapper}>
                 <ArrowDownIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
-                  {formatSpeed(totalDownloadSpeed)}
+                  {formatTransferSpeed(totalDownloadSpeed)}
                 </Text>
               </Flex>
             )}
@@ -99,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Flex align="center" gap="1" className={styles.speedWrapper}>
                 <ArrowUpIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
-                  {formatSpeed(totalUploadSpeed)}
+                  {formatTransferSpeed(totalUploadSpeed)}
                 </Text>
               </Flex>
             )}
@@ -111,7 +74,7 @@ export const Footer: React.FC<FooterProps> = ({
             <LoadingSpinner size="small" />
           ) : (
             <Text size="1" color="gray">
-              {t("footer.freeSpace")} {formatSize(freeSpace)}
+              {t("footer.freeSpace")} {formatStorageSize(freeSpace)}
             </Text>
           )}
         </Flex>

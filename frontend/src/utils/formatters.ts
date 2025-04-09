@@ -62,3 +62,43 @@ export const normalizeValue = (value: number): number => {
 export const formatRatio = (ratio: number): string => {
   return normalizeValue(ratio).toFixed(2);
 };
+
+/**
+ * Форматирует скорость в удобочитаемый вид с единицами измерения
+ * @param speed - Скорость в байтах в секунду
+ * @returns Отформатированная строка со скоростью (например, "1.24 MB/s")
+ */
+export const formatTransferSpeed = (speed?: number): string => {
+  if (speed === undefined || speed < 0) return "0.00 B/s";
+
+  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+  let value = speed;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+
+  return `${value.toFixed(2)} ${units[unitIndex]}`;
+};
+
+/**
+ * Форматирует размер в удобочитаемый вид с единицами измерения
+ * @param size - Размер в байтах
+ * @returns Отформатированная строка с размером (например, "1.24 GB")
+ */
+export const formatStorageSize = (size?: number): string => {
+  if (size === undefined || size < 0) return "0.00 B";
+
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+
+  return `${value.toFixed(2)} ${units[unitIndex]}`;
+};

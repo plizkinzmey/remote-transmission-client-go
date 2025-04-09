@@ -26,8 +26,8 @@ const mockOnOpenChange = vi.fn();
 // Мокируем Radix UI компоненты
 vi.mock("@radix-ui/themes", () => ({
   Dialog: {
-    Root: ({ children, open, onOpenChange }: { 
-      children: React.ReactNode; 
+    Root: ({ children, open, onOpenChange }: {
+      children: React.ReactNode;
       open: boolean;
       onOpenChange?: (isOpen: boolean) => void;
     }) => {
@@ -40,29 +40,29 @@ vi.mock("@radix-ui/themes", () => ({
         </div>
       );
     },
-    Content: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    Content: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
       <div data-testid="dialog-content" {...props}>{children}</div>
     ),
-    Title: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    Title: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
       <div data-testid="dialog-title" {...props}>{children}</div>
     ),
   },
-  Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: any }) => (
+  Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void;[key: string]: any }) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
-  Text: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  Text: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
     <span {...props}>{children}</span>
   ),
-  Flex: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  Flex: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
     <div {...props}>{children}</div>
   ),
-  Box: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  Box: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
     <div {...props}>{children}</div>
   ),
-  Checkbox: ({ checked, onCheckedChange, ...props }: { 
-    checked?: boolean; 
-    onCheckedChange?: (checked: boolean) => void; 
-    [key: string]: any 
+  Checkbox: ({ checked, onCheckedChange, ...props }: {
+    checked?: boolean;
+    onCheckedChange?: (checked: boolean) => void;
+    [key: string]: any
   }) => (
     <input
       type="checkbox"
@@ -80,7 +80,7 @@ vi.mock("@radix-ui/themes", () => ({
 describe("DeleteDialog Component", () => {
   const mockOnConfirm = vi.fn();
   const mockOnCancel = vi.fn();
-  
+
   let deleteDataState = false;
 
   beforeEach(() => {
@@ -137,8 +137,9 @@ describe("DeleteDialog Component", () => {
     renderDialog({ mode: "single", torrentName: "test.torrent" });
 
     expect(screen.getByTestId("delete-dialog-title")).toHaveTextContent("remove.title");
-    expect(screen.getByTestId("delete-dialog-confirmation")).toHaveTextContent("remove.confirmation");
     expect(screen.getByTestId("delete-dialog-torrent-name")).toHaveTextContent("remove.message");
+    // Проверяем, что элемент с текстом remove.confirmation отсутствует
+    expect(screen.queryByText("remove.confirmation")).toBeNull();
   });
 
   it("отображает диалог в режиме bulk с количеством торрентов", () => {
@@ -162,7 +163,7 @@ describe("DeleteDialog Component", () => {
 
     // Нажимаем на кнопку подтверждения
     fireEvent.click(screen.getByTestId("delete-dialog-confirm"));
-    
+
     // Проверяем, что onConfirm был вызван
     expect(mockOnConfirm).toHaveBeenCalled();
   });
@@ -170,11 +171,11 @@ describe("DeleteDialog Component", () => {
   it("сбрасывает состояние при изменении open, torrentName, count или mode", () => {
     // Устанавливаем начальное состояние
     deleteDataState = true;
-    
-    const result = renderDialog({ 
-      mode: "single", 
+
+    const result = renderDialog({
+      mode: "single",
       torrentName: "test.torrent",
-      open: true 
+      open: true
     });
 
     // Проверяем начальное состояние, пропуская визуальную проверку чекбокса
@@ -182,7 +183,7 @@ describe("DeleteDialog Component", () => {
 
     // Сбрасываем состояние перед ререндером
     deleteDataState = false;
-    
+
     // Перерендериваем с новыми пропсами
     result.rerender(
       <TestThemeProvider>
@@ -204,10 +205,10 @@ describe("DeleteDialog Component", () => {
 
   it("вызывает onCancel при закрытии диалога через onOpenChange", () => {
     renderDialog();
-    
+
     // Имитируем закрытие диалога
     mockOnOpenChange(false);
-    
+
     // Проверяем, что onCancel был вызван
     expect(mockOnCancel).toHaveBeenCalledTimes(1);
   });

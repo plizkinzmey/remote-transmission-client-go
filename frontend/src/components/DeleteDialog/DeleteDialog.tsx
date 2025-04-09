@@ -80,27 +80,26 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
           </Dialog.Title>
 
           <Box my="4">
-            <Text as="p" size="1" className={styles.message} data-testid="delete-dialog-confirmation">
-              {mode === "single"
-                ? t("remove.confirmation")
-                : t("remove.selectedConfirmation")}
-            </Text>
-            {mode === "single" && torrentName && (
-              <Text 
-                as="p" 
-                size="1" 
-                weight="bold" 
+            {mode === "single" && torrentName ? (
+              <Text
+                as="p"
+                size="1"
                 className={styles.message}
                 data-testid="delete-dialog-torrent-name"
               >
                 {t("remove.message", torrentName)}
               </Text>
+            ) : (
+              <Text as="p" size="1" className={styles.message} data-testid="delete-dialog-confirmation">
+                {t("remove.selectedConfirmation")}
+              </Text>
             )}
+
             {mode === "bulk" && typeof count === "number" && (
-              <Text 
-                as="p" 
-                size="1" 
-                weight="bold" 
+              <Text
+                as="p"
+                size="1"
+                weight="bold"
                 className={styles.message}
                 data-testid="delete-dialog-count"
               >
@@ -123,9 +122,9 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
           </Box>
 
           <Flex className={styles.footer}>
-            <Button 
-              size="1" 
-              variant="soft" 
+            <Button
+              size="1"
+              variant="soft"
               onClick={handleCancel}
               data-testid="delete-dialog-cancel"
             >

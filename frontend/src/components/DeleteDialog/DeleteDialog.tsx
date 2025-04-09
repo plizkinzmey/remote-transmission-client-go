@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import { Dialog, Button, Text, Flex, Box, Checkbox } from "@radix-ui/themes";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -41,13 +41,18 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
   const [deleteData, setDeleteData] = useState(false);
   const logger = useLogger("DeleteDialog");
 
+  // Используем useRef для сохранения мемоизированной функции логгирования
+  const logDialogOpened = useRef((mode: string, torrentName?: string, count?: number) => {
+    logger.info("Dialog opened", { mode, torrentName, count });
+  }).current;
+
   // Сброс состояния при открытии диалога
   useEffect(() => {
     if (open) {
       setDeleteData(false);
-      logger.info("Dialog opened", { mode, torrentName, count });
+      logDialogOpened(mode, torrentName, count);
     }
-  }, [open, torrentName, count, mode]);
+  }, [open, torrentName, count, mode, logDialogOpened]);
 
   const handleConfirm = useCallback(() => {
     logger.info("Delete confirmed", { deleteData });
@@ -103,7 +108,7 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
                 className={styles.message}
                 data-testid="delete-dialog-count"
               >
-                {t("remove.selectedCount", String(count))}
+                {t("remove.selectedCount", [String(count)])}
               </Text>
             )}
           </Box>

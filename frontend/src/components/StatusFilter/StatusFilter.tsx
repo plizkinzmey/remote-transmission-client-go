@@ -51,7 +51,7 @@ export const StatusFilter: React.FC<StatusFilterProps> = ({
         >
             {statuses.map(({ id, label, color }) => (
                 <Button
-                    key={label}
+                    key={id}
                     size="1"
                     color={color}
                     variant={selectedStatus === id ? "solid" : "soft"}

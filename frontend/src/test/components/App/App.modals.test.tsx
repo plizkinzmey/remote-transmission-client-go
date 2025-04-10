@@ -160,7 +160,7 @@ describe("App - Модальные окна", () => {
     vi.mocked(useFilteredTorrents).mockReturnValue({
       searchTerm: "",
       setSearchTerm: vi.fn(),
-      statusFilter: "all",
+      statusFilter: null,
       setStatusFilter: vi.fn(),
       filteredTorrents: [],
     });

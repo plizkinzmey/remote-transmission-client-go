@@ -60,7 +60,7 @@ describe("App - Пользовательские взаимодействия", 
     vi.mocked(useFilteredTorrents).mockReturnValue({
       searchTerm: "",
       setSearchTerm: mockSetSearchTerm,
-      statusFilter: "all",
+      statusFilter: null,
       setStatusFilter: vi.fn(),
       filteredTorrents: [
         {
@@ -102,7 +102,7 @@ describe("App - Пользовательские взаимодействия", 
     vi.mocked(useFilteredTorrents).mockReturnValue({
       searchTerm: "test",
       setSearchTerm: mockSetSearchTerm,
-      statusFilter: "all",
+      statusFilter: null,
       setStatusFilter: vi.fn(),
       filteredTorrents: [
         {

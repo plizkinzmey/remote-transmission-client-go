@@ -1,6 +1,6 @@
-import { useLocalization } from "../contexts/LocalizationContext";
-import { StatusFilter } from "./StatusFilter";
-import { LoadingSpinner } from "./LoadingSpinner";
+import { useLocalization } from "../../contexts/LocalizationContext";
+import { StatusFilter } from "../StatusFilter";
+import { LoadingSpinner } from "../LoadingSpinner";
 import {
   Cog6ToothIcon,
   PlusCircleIcon,
@@ -9,12 +9,12 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { SnailIcon } from "./icons/SnailIcon";
-import styles from "../styles/Header.module.css";
-import { useState, useCallback, useEffect } from "react";
-import { ThemeToggle } from "./ThemeToggle";
-import { LanguageSelector } from "./LanguageSelector";
-import { DeleteDialog } from "./DeleteDialog";
+import { SnailIcon } from "../icons/SnailIcon";
+import styles from "./Header.module.css";
+import { useState, useCallback } from "react";
+import { ThemeToggle } from "../ThemeToggle";
+import { LanguageSelector } from "../LanguageSelector";
+import { DeleteDialog } from "../DeleteDialog";
 import {
   IconButton,
   TextField,
@@ -24,31 +24,60 @@ import {
   Checkbox,
 } from "@radix-ui/themes";
 
-interface HeaderProps {
+/**
+ * Props interface for the Header component
+ */
+export interface HeaderProps {
+  /** Current search term for filtering torrents */
   searchTerm: string;
+  /** Callback to update search term */
   setSearchTerm: (term: string) => void;
+  /** Callback for adding new torrent */
   onAddTorrent: () => void;
+  /** Callback for opening settings */
   onSettings: () => void;
+  /** Callback for starting selected torrents */
   onStartSelected: () => void;
+  /** Callback for stopping selected torrents */
   onStopSelected: () => void;
+  /** Callback for removing selected torrents */
   onRemoveSelected: (deleteData: boolean) => void;
+  /** Whether any torrents are currently selected */
   hasSelectedTorrents: boolean;
+  /** Loading state for start operation */
   startLoading: boolean;
+  /** Loading state for stop operation */
   stopLoading: boolean;
+  /** Loading state for remove operation */
   removeLoading: boolean;
+  /** List of filtered torrents */
   filteredTorrents: Array<any>;
+  /** Set of selected torrent IDs */
   selectedTorrents: Set<number>;
+  /** Callback for selecting/deselecting all torrents */
   onSelectAll: () => void;
-  error?: string; // Сделал свойство error необязательным
+  /** Optional error message to display */
+  error?: string;
+  /** Current status filter */
   statusFilter: string | null;
+  /** Callback for changing status filter */
   onStatusFilterChange: (status: string | null) => void;
+  /** List of all torrents */
   torrents: Array<any>;
+  /** Callback for setting speed limit */
   onSetSpeedLimit: (isSlowMode: boolean) => void;
+  /** Whether slow mode is enabled */
   isSlowModeEnabled?: boolean;
+  /** Whether client is reconnecting */
   isReconnecting: boolean;
+  /** Whether this is first application start */
   isFirstStart?: boolean;
 }
 
+/**
+ * Header component for the torrent client application
+ * Contains controls for managing torrents and application settings
+ */
 export const Header: React.FC<HeaderProps> = ({
   searchTerm,
   setSearchTerm,
@@ -76,9 +105,9 @@ export const Header: React.FC<HeaderProps> = ({
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
-  const handleRemoveClick = () => {
+  const handleRemoveClick = useCallback(() => {
     setShowDeleteConfirmation(true);
-  };
+  }, []);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,8 +117,8 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <Box className={styles.fixedHeader}>
-      <Flex className={styles.controlPanel} justify="between" align="center">
+    <Box className={styles.container} data-testid="header-main">
+      <Flex className={styles.controlsContainer} justify="between" align="center" data-testid="header-control-panel">
         <Flex gap="3" align="center">
           <TextField.Root
             size="1"
@@ -99,6 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
             onChange={handleSearchChange}
             disabled={isReconnecting}
             title={isReconnecting ? t("errors.needConnection") : undefined}
+            data-testid="header-search-input"
           >
             <TextField.Slot>
               <MagnifyingGlassIcon width={18} height={18} />
@@ -199,8 +229,8 @@ export const Header: React.FC<HeaderProps> = ({
         </Flex>
       </Flex>
 
-      <Box className={styles.selectAllContainer}>
-        <Flex className={styles.selectAllWrapper}>
+      <Box className={styles.filterBar}>
+        <Flex className={styles.selectAllContainer} data-testid="header-select-all-container">
           <Checkbox
             size="1"
             checked={
@@ -214,10 +244,10 @@ export const Header: React.FC<HeaderProps> = ({
           <Text size="1">
             {selectedTorrents.size > 0
               ? t(
-                  "torrents.selected",
-                  String(selectedTorrents.size),
-                  String(filteredTorrents.length)
-                )
+                "torrents.selected",
+                String(selectedTorrents.size),
+                String(filteredTorrents.length)
+              )
               : t("torrents.selectAll")}
           </Text>
         </Flex>
@@ -230,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({
       </Box>
 
       {error && (
-        <Box className={styles.errorMessage}>
+        <Box className={styles.errorContainer} data-testid="header-error-message">
           <Text color="red" size="1">
             {error}
           </Text>

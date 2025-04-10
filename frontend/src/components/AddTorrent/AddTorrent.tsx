@@ -123,9 +123,6 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
           className="dialog-content"
         >
           <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
-          <Dialog.Description>
-            {t("add.description") || "Add a new torrent from URL or file"}
-          </Dialog.Description>
           <form onSubmit={handleSubmit}>
             <Tabs.Root
               value={activeTab}

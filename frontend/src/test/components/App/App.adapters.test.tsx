@@ -139,7 +139,7 @@ describe("App - Адаптеры и вспомогательные функци�
     vi.mocked(useFilteredTorrents).mockReturnValue({
       searchTerm: "",
       setSearchTerm: vi.fn(),
-      statusFilter: "all",
+      statusFilter: null,
       setStatusFilter: vi.fn(),
       filteredTorrents,
     });

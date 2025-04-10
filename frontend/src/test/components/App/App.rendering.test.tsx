@@ -146,7 +146,7 @@ describe("App - Рендеринг компонента", () => {
     vi.mocked(useFilteredTorrents).mockReturnValue({
       searchTerm: "",
       setSearchTerm: vi.fn(),
-      statusFilter: "all",
+      statusFilter: null,
       setStatusFilter: vi.fn(),
       filteredTorrents: [],
     });

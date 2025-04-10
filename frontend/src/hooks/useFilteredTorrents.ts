@@ -1,12 +1,15 @@
 import { useState, useMemo } from "react";
 import { TorrentData } from "../components/TorrentList";
+import { StatusType } from "../utils/torrentStatus";
 
 /**
  * Хук для управления фильтрацией торрентов
  */
 export const useFilteredTorrents = (torrents: TorrentData[]) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusType | "slow" | null>(
+    null
+  );
 
   // Фильтрация торрентов по поисковому запросу и статусу
   const filteredTorrents = useMemo(() => {

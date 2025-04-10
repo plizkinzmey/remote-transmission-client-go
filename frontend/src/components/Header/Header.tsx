@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { StatusFilter } from "../StatusFilter";
+import { StatusType } from "../../utils/torrentStatus";
 import { LoadingSpinner } from "../LoadingSpinner";
 import {
   Cog6ToothIcon,
@@ -59,9 +60,9 @@ export interface HeaderProps {
   /** Optional error message to display */
   error?: string;
   /** Current status filter */
-  statusFilter: string | null;
+  statusFilter: StatusType | "slow" | null;
   /** Callback for changing status filter */
-  onStatusFilterChange: (status: string | null) => void;
+  onStatusFilterChange: (status: StatusType | "slow" | null) => void;
   /** List of all torrents */
   torrents: Array<any>;
   /** Callback for setting speed limit */

@@ -41,6 +41,8 @@
   align-items: center;
   gap: 4px;
   margin-left: -16px;
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 .errorContainer {

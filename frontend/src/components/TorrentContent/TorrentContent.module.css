@@ -1,0 +1,52 @@
+.dialogContent {
+  width: 90vw;
+  height: 90vh;
+  max-width: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentArea {
+  flex: 1;
+  overflow: hidden;
+}
+
+.scrollArea {
+  height: 100%;
+  padding: 20px;
+}
+
+.errorContainer {
+  padding: 16px;
+  border-radius: 6px;
+  background-color: var(--error-background);
+  color: var(--error-color);
+}
+
+.loadingContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadingText {
+  margin-top: 16px;
+}
+
+.fileListContainer {
+  /* Стили для контейнера списка файлов */
+  width: 100%;
+}
+
+/* Глобальные стили для индетерминированных чекбоксов */
+:global(.indeterminate-checkbox [data-state="checked"]) {
+  background-color: var(--accent-9);
+  opacity: 0.7;
+}
+
+:global(.torrent-content-overlay) {
+  z-index: 1100 !important;
+}

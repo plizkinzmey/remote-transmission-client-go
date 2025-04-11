@@ -46,6 +46,7 @@ This guide describes the principles and practices for testing frontend component
   - [Testing React.useState Mocking](#testing-reactusestate-mocking)
   - [Testing Components that use External Libraries](#testing-components-that-use-external-libraries)
   - [Testing Radix UI Components](#testing-radix-ui-components)
+  - [Testing Complex Component Compositions](#testing-complex-component-compositions)
 
 ## Technology Stack
 
@@ -829,3 +830,155 @@ it('применяет стили Radix UI', () => {
 3. **Проблемы с темами**:
    - Всегда оборачивайте компоненты в ThemeProvider
    - Учитывайте возможность автоматической смены темы
+
+## Testing Complex Component Compositions
+
+При тестировании сложных компонентов, разделенных на несколько подкомпонентов, следует применять особый подход:
+
+### Тестирование на разных уровнях
+
+1. **Тестирование корневого компонента**:
+   - Проверяйте только общее поведение и интеграцию подкомпонентов
+   - Мокируйте подкомпоненты при необходимости, избегая тестирования их внутренней логики
+   - Сосредоточьтесь на проверке правильности передачи пропсов
+
+```typescript
+// Мок подкомпонентов для тестирования корневого компонента
+vi.mock('../FileNode', () => ({
+  FileNode: ({ node, onToggleWanted, onToggleExpand }) => (
+    <div 
+      data-testid={`file-node-mock-${node.Path}`} 
+      data-path={node.Path}
+      onClick={() => onToggleWanted(node)}
+      onDoubleClick={() => onToggleExpand(node)}
+    />
+  )
+}));
+
+it('передает правильные пропсы в подкомпоненты', async () => {
+  render(<TorrentContent id={123} name="Test" onClose={mockClose} />);
+  
+  await waitFor(() => {
+    const fileNode = screen.getByTestId('file-node-mock-file1.txt');
+    expect(fileNode).toHaveAttribute('data-path', 'file1.txt');
+  });
+  
+  // Проверка взаимодействия между компонентами
+  fireEvent.click(fileNode);
+  expect(mockSetFilesWanted).toHaveBeenCalled();
+});
+```
+
+2. **Тестирование подкомпонентов**:
+   - Тестируйте подкомпоненты изолированно, с различными пропсами
+   - Проверяйте все возможные состояния подкомпонентов
+   - Фокусируйтесь на специфичной для подкомпонента логике
+
+### Тестирование кастомных хуков
+
+Для компонентов, выносящих логику в кастомные хуки (например, `useTorrentFiles`, `useDownloadDirectory`):
+
+1. **Изолированное тестирование хуков**:
+
+```typescript
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useTorrentFiles } from '../hooks/useTorrentFiles';
+import { GetTorrentFiles, SetFilesWanted } from '../../wailsjs/go/main/App';
+
+// Мокируем внешние зависимости
+vi.mock('../../wailsjs/go/main/App', () => ({
+  GetTorrentFiles: vi.fn(),
+  SetFilesWanted: vi.fn()
+}));
+
+describe('useTorrentFiles хук', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  
+  it('загружает файлы при монтировании', async () => {
+    vi.mocked(GetTorrentFiles).mockResolvedValue([
+      { ID: 1, Path: 'file1.txt', Size: 100, Progress: 50, Wanted: true }
+    ]);
+    
+    const { result, waitForNextUpdate } = renderHook(() => useTorrentFiles(123));
+    
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error).toBe(null);
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.loading).toBe(false);
+    expect(result.current.fileTree.length).toBe(1);
+    expect(GetTorrentFiles).toHaveBeenCalledWith(123);
+  });
+  
+  it('переключает выбор файла', async () => {
+    vi.mocked(GetTorrentFiles).mockResolvedValue([
+      { ID: 1, Path: 'file1.txt', Size: 100, Progress: 50, Wanted: true }
+    ]);
+    
+    const { result, waitForNextUpdate } = renderHook(() => useTorrentFiles(123));
+    
+    await waitForNextUpdate();
+    
+    act(() => {
+      result.current.toggleNode(result.current.fileTree[0]);
+    });
+    
+    expect(SetFilesWanted).toHaveBeenCalledWith(123, [1], false);
+  });
+});
+```
+
+2. **Тестирование интеграции хуков с компонентами**:
+   - Проверяйте обновление компонента при изменении данных в хуке
+   - Тестируйте пограничные случаи и обработку ошибок
+
+### Тестирование взаимодействия с API
+
+Для компонентов, работающих с внешними API:
+
+```typescript
+it('корректно обрабатывает ошибки API', async () => {
+  vi.mocked(GetTorrentFiles).mockRejectedValue(new Error('API error'));
+  
+  render(<TorrentContent id={123} name="Test" onClose={mockClose} />);
+  
+  await waitFor(() => {
+    expect(screen.getByTestId('files-error')).toBeInTheDocument();
+    expect(screen.getByTestId('files-error')).toHaveTextContent('errors.failedToLoadFiles');
+  });
+});
+```
+
+### Особенности тестирования сложных взаимодействий
+
+1. **Проверка эффектов действий в UI на данные**:
+```typescript
+it('обновляет состояние выбора при переключении файлов', async () => {
+  // Настраиваем начальное состояние
+  vi.mocked(GetTorrentFiles).mockResolvedValue([
+    { ID: 1, Path: 'file1.txt', Size: 100, Progress: 50, Wanted: true },
+    { ID: 2, Path: 'file2.txt', Size: 100, Progress: 50, Wanted: true }
+  ]);
+  
+  render(<TorrentContent id={123} name="Test" onClose={mockClose} />);
+  
+  // Ждем загрузку файлов
+  await waitFor(() => {
+    expect(screen.getByTestId('file-node-file1.txt')).toBeInTheDocument();
+  });
+  
+  // Имитируем переключение выбора всех файлов
+  const toggleAll = screen.getByTestId('toggle-all-checkbox');
+  fireEvent.click(toggleAll);
+  
+  // Проверяем вызов API для снятия выбора
+  expect(SetFilesWanted).toHaveBeenCalledWith(123, [1, 2], false);
+});
+```
+
+2. **Тестирование синхронизации данных между компонентами**:
+   - Проверяйте, что изменения в одном компоненте отражаются в других
+   - Тестируйте использование общих данных через контекст или пропсы

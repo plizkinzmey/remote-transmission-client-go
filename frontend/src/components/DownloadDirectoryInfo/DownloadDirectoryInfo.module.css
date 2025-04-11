@@ -1,0 +1,11 @@
+.container {
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--gray-5);
+  background-color: var(--background-secondary, var(--gray-3));
+}
+
+.pathText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,72 @@
+.fileNode {
+  margin-bottom: 2px;
+}
+
+.fileNodeContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.fileNodeContent:hover {
+  background-color: var(--gray-3);
+}
+
+.iconContainer {
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.folderIcon {
+  color: var(--gray-12);
+}
+
+.fileIcon {
+  color: var(--gray-11);
+}
+
+.nameContainer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sizeText {
+  width: 100px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.progressContainer {
+  width: 100px;
+}
+
+.progressBar {
+  width: 100px;
+  height: 4px;
+  background-color: var(--tree-progress-bg, var(--gray-5));
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: var(--tree-progress-fill, var(--accent-9));
+  border-radius: 2px;
+}

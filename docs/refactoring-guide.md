@@ -270,6 +270,258 @@ describe('ComponentName', () => {
    - Сохраняйте консистентность с другими компонентами
    - Поддерживайте все стандартные состояния (hover, focus, active)
 
+## Декомпозиция сложных компонентов
+
+При работе со сложными компонентами, которые выполняют множество функций, следует придерживаться следующего подхода:
+
+### 1. Анализ и планирование
+
+1. **Определение зон ответственности**:
+   - Выделите основные функциональные блоки
+   - Определите UI-компоненты, которые можно вынести
+   - Выявите логику, которую можно изолировать в хуки
+
+2. **План миграции**:
+   ```
+   ComponentName/
+   ├── index.ts                    # Публичный API компонента
+   ├── ComponentName.tsx           # Основной компонент
+   ├── ComponentName.module.css    # Стили основного компонента
+   ├── hooks/                      # Выделенная бизнес-логика
+   │   ├── useComponentData.ts     # Работа с данными
+   │   └── useComponentState.ts    # Управление состоянием
+   ├── components/                 # Подкомпоненты
+   │   ├── SubComponent1/
+   │   └── SubComponent2/
+   ├── README.md                  # Документация
+   └── __tests__/                 # Тесты всех частей
+   ```
+
+### 2. Выделение бизнес-логики в хуки
+
+1. **Критерии для выделения в хук**:
+   ```typescript
+   // ❌ До: Логика смешана с отображением
+   const Component = () => {
+     const [data, setData] = useState([]);
+     const [loading, setLoading] = useState(false);
+     const [error, setError] = useState(null);
+     
+     useEffect(() => {
+       const loadData = async () => {
+         setLoading(true);
+         try {
+           const result = await fetchData();
+           setData(result);
+         } catch (err) {
+           setError(err);
+         } finally {
+           setLoading(false);
+         }
+       };
+       loadData();
+     }, []);
+     
+     // Еще много логики...
+   };
+
+   // ✅ После: Логика в отдельном хуке
+   const useComponentData = () => {
+     const [data, setData] = useState([]);
+     const [loading, setLoading] = useState(false);
+     const [error, setError] = useState(null);
+     
+     useEffect(() => {
+       const loadData = async () => {
+         setLoading(true);
+         try {
+           const result = await fetchData();
+           setData(result);
+         } catch (err) {
+           setError(err);
+         } finally {
+           setLoading(false);
+         }
+       };
+       loadData();
+     }, []);
+     
+     return { data, loading, error };
+   };
+
+   const Component = () => {
+     const { data, loading, error } = useComponentData();
+     // Только логика отображения...
+   };
+   ```
+
+2. **Правила выделения хуков**:
+   - Один хук = одна зона ответственности
+   - Хук должен быть универсальным
+   - Обработка ошибок должна быть инкапсулирована
+   - Названия методов должны отражать бизнес-логику
+
+### 3. Создание подкомпонентов
+
+1. **Критерии для выделения подкомпонента**:
+   - Повторное использование кода
+   - Сложная внутренняя логика
+   - Независимый блок UI
+   - Большой размер кода (более 100-150 строк)
+
+2. **Структура подкомпонента**:
+   ```typescript
+   // SubComponent1/SubComponent1.tsx
+   export interface SubComponent1Props {
+     /** Данные для отображения */
+     data: ComponentData;
+     /** Обработчик изменений */
+     onChange: (data: ComponentData) => void;
+   }
+
+   export const SubComponent1: React.FC<SubComponent1Props> = ({
+     data,
+     onChange
+   }) => {
+     // Локальная логика подкомпонента...
+     return (
+       <div data-testid="sub-component-1">
+         {/* Отображение... */}
+       </div>
+     );
+   };
+   ```
+
+### 4. Сохранение обратной совместимости
+
+1. **Сохранение публичного API**:
+   ```typescript
+   // index.ts
+   export { ComponentName } from './ComponentName';
+   export type { ComponentNameProps } from './ComponentName';
+   
+   // Не экспортируем внутренние компоненты и хуки
+   // export { SubComponent1 } from './components/SubComponent1';
+   ```
+
+2. **Постепенная миграция**:
+   ```typescript
+   // Step 1: Создаем новую структуру
+   // Step 2: Переносим код частями
+   // Step 3: Тестируем каждое изменение
+   // Step 4: Удаляем старый код
+   ```
+
+### 5. Управление состоянием
+
+1. **Правила распределения состояния**:
+   ```typescript
+   // ✅ Состояние в родительском компоненте
+   const ParentComponent = () => {
+     const [sharedState, setSharedState] = useState();
+     return (
+       <>
+         <SubComponent1 
+           state={sharedState}
+           onChange={setSharedState}
+         />
+         <SubComponent2
+           state={sharedState}
+         />
+       </>
+     );
+   };
+
+   // ✅ Локальное состояние в подкомпоненте
+   const SubComponent = () => {
+     const [localState, setLocalState] = useState();
+     return (/* использование localState */);
+   };
+   ```
+
+2. **Использование контекста**:
+   ```typescript
+   // Для общих данных между компонентами
+   const ComponentContext = createContext<ComponentContextType | null>(null);
+
+   export const useComponentContext = () => {
+     const context = useContext(ComponentContext);
+     if (!context) {
+       throw new Error('useComponentContext must be used within ComponentProvider');
+     }
+     return context;
+   };
+   ```
+
+### 6. Организация тестов
+
+1. **Структура тестов**:
+   ```
+   __tests__/
+   ├── ComponentName.test.tsx      # Тесты основного компонента
+   ├── hooks/                      # Тесты хуков
+   │   ├── useComponentData.test.ts
+   │   └── useComponentState.test.ts
+   └── components/                 # Тесты подкомпонентов
+       ├── SubComponent1.test.tsx
+       └── SubComponent2.test.tsx
+   ```
+
+2. **Тестирование интеграции**:
+   ```typescript
+   describe('интеграция компонентов', () => {
+     it('корректно передает данные между компонентами', async () => {
+       render(<ComponentName />);
+       
+       // Действие в одном компоненте
+       fireEvent.click(screen.getByTestId('sub1-button'));
+       
+       // Проверка эффекта в другом компоненте
+       await waitFor(() => {
+         expect(screen.getByTestId('sub2-content'))
+           .toHaveTextContent('обновленные данные');
+       });
+     });
+   });
+   ```
+
+### 7. Документация рефакторинга
+
+В README.md компонента следует добавить:
+
+```markdown
+## Архитектура
+
+### Компоненты
+- ComponentName - основной компонент
+  - SubComponent1 - подкомпонент для ...
+  - SubComponent2 - подкомпонент для ...
+
+### Хуки
+- useComponentData - загрузка и управление данными
+- useComponentState - управление состоянием UI
+
+### Потоки данных
+1. Загрузка данных через useComponentData
+2. Обработка в основном компоненте
+3. Распределение по подкомпонентам
+
+### Взаимодействие компонентов
+- Схема взаимодействия компонентов
+- Описание передачи данных
+- Обработка событий
+```
+
+### 8. Проверка результатов декомпозиции
+
+- [ ] Каждый компонент имеет четкую зону ответственности
+- [ ] Бизнес-логика изолирована в хуках
+- [ ] Подкомпоненты независимы и переиспользуемы
+- [ ] Тесты покрывают как отдельные части, так и их взаимодействие
+- [ ] Документация отражает новую структуру
+- [ ] Сохранен публичный API компонента
+- [ ] Улучшена поддерживаемость кода
+
 ## Проверка результатов
 
 1. **Структура**

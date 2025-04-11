@@ -1,0 +1,65 @@
+/* Основной контейнер списка торрентов */
+.torrentListContainer {
+  flex: 1;
+  padding: 120px 20px 20px;
+  background-color: var(--background-primary);
+}
+
+/* Контейнер для элементов списка */
+.torrentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+/* Состояние пустого списка */
+.emptyState {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+/* Контейнер для состояния загрузки */
+.loadingContainer {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Текст загрузки */
+.loadingText {
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+/* Медиа-запрос для мобильных устройств */
+@media (max-width: 768px) {
+  .torrentListContainer {
+    padding: 80px 12px 12px;
+  }
+
+  .torrentList {
+    gap: 8px;
+  }
+
+  .emptyState {
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  .loadingContainer {
+    height: 160px;
+  }
+}

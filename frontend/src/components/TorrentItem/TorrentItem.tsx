@@ -36,6 +36,7 @@ interface TorrentItemProps {
   uploadSpeedFormatted: string;
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
   isSlowMode?: boolean;
+  "data-testid"?: string; // Добавляем поддержку data-testid
 }
 
 export const TorrentItem: React.FC<TorrentItemProps> = ({
@@ -60,6 +61,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   uploadSpeedFormatted,
   onSetSpeedLimit,
   isSlowMode = false,
+  "data-testid": dataTestId,
 }) => {
   const { t } = useLocalization();
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -114,6 +116,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       <Card
         variant="surface"
         className={getCardClassName(status, "card", styles)}
+        data-testid={dataTestId}
       >
         <Flex gap="3" align="start">
           <Box pt="1">

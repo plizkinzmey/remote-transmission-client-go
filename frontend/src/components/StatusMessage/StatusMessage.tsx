@@ -20,11 +20,11 @@ type RadixTextColor = "green" | "red" | "blue" | undefined;
 /**
  * Маппинг типов статусов на соответствующие цвета Radix UI и ARIA роли
  */
-const statusConfig: Record<StatusType, { color: RadixTextColor; role: string; label: string }> = {
+const statusConfig: Record<StatusType, { color: RadixTextColor; role: string | undefined; label: string }> = {
   success: { color: "green", role: "status", label: "Успешно" },
   error: { color: "red", role: "alert", label: "Ошибка" },
   info: { color: "blue", role: "status", label: "Информация" },
-  none: { color: undefined, role: "none", label: "" },
+  none: { color: undefined, role: undefined, label: "" },
 };
 
 /**

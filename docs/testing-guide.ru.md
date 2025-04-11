@@ -25,6 +25,7 @@
   - [Типичные проблемы и решения](#типичные-проблемы-и-решения)
     - [1. Проблемы с CSS модулями](#1-проблемы-с-css-модулями)
     - [2. Проблемы с перерисовкой](#2-проблемы-с-перерисовкой)
+  - [Тестирование компонентов Radix UI](#тестирование-компонентов-radix-ui)
 
 ## Технологический стек
 
@@ -224,4 +225,154 @@ npm run test -- StatusMessage
 
 - Используйте `rerender` из React Testing Library
 - Убедитесь, что все состояния обновляются через `act()`
+
+## Тестирование компонентов Radix UI
+
+При тестировании компонентов, использующих Radix UI, особое внимание следует уделить темам, порталам и мокированию компонентов.
+
+### Мокирование компонентов Radix UI
+
+```typescript
+vi.mock('@radix-ui/themes', () => ({
+  IconButton: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
+  DropdownMenu: {
+    Root: ({ children }: any) => <div data-testid="dropdown-root">{children}</div>,
+    Trigger: ({ children }: any) => (
+      <div data-testid="dropdown-trigger">{children}</div>
+    ),
+    Content: ({ children }: any) => (
+      <div data-testid="dropdown-content">{children}</div>
+    ),
+    Item: ({ onClick, children, ...props }: any) => (
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
+    ),
+  },
+  Flex: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Text: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+}));
 ```
+
+### Интеграция с системой тем
+
+При тестировании компонентов, использующих темы Radix UI:
+
+1. **Настройка провайдера темы**:
+```typescript
+import { Theme as RadixTheme } from "@radix-ui/themes";
+
+const TestThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <RadixTheme appearance="dark" accentColor="blue" radius="medium">
+    {children}
+  </RadixTheme>
+);
+```
+
+2. **Использование провайдера темы в тестах**:
+```typescript
+describe('КомпонентСТемой', () => {
+  it('корректно отображается с темой', () => {
+    render(
+      <TestThemeProvider>
+        <КомпонентСТемой />
+      </TestThemeProvider>
+    );
+    // ... проверки
+  });
+});
+```
+
+### Тестирование переключения тем
+
+При тестировании компонентов с возможностью смены темы:
+
+1. **Мок контекста темы**:
+```typescript
+const mockSetTheme = vi.fn();
+vi.mock('../../contexts/ThemeContext', () => ({
+  useTheme: () => ({
+    theme: 'light', // или 'dark', 'auto'
+    setTheme: mockSetTheme,
+  }),
+}));
+```
+
+2. **Тестирование смены темы**:
+```typescript
+it('переключает тему при клике', async () => {
+  const { rerender } = render(
+    <TestThemeProvider>
+      <ThemeToggle />
+    </TestThemeProvider>
+  );
+
+  fireEvent.click(screen.getByTestId('theme-toggle-button'));
+  fireEvent.click(screen.getByTestId('theme-toggle-light'));
+  
+  expect(mockSetTheme).toHaveBeenCalledWith('light');
+});
+```
+
+### Тестирование стилизованных компонентов
+
+При тестировании компонентов, использующих систему стилей Radix UI:
+
+1. **Не тестируйте детали реализации** системы стилей Radix UI
+2. **Фокусируйтесь на тестировании поведения** компонента и взаимодействии с пользователем
+3. **Используйте атрибуты data-testid** для выбора элементов вместо селекторов на основе стилей
+
+```typescript
+// ПРАВИЛЬНО: тестирование поведения
+it('отображает правильную иконку для текущей темы', () => {
+  render(
+    <TestThemeProvider>
+      <ThemeToggle />
+    </TestThemeProvider>
+  );
+  
+  expect(screen.getByTestId('theme-icon-light')).toBeInTheDocument();
+});
+
+// НЕПРАВИЛЬНО: тестирование стилей Radix UI
+it('применяет стили Radix UI', () => {
+  render(<ThemeToggle />);
+  expect(screen.getByRole('button')).toHaveStyle({ 
+    backgroundColor: 'var(--accent-9)' 
+  });
+});
+```
+
+### Лучшие практики тестирования Radix UI
+
+1. **Правильное мокирование порталов**:
+   - Используйте простые div элементы вместо порталов в тестах
+   - Добавляйте data-testid для удобного поиска элементов
+
+2. **Обработка смены темы**:
+   - Тестируйте компонент в разных темах
+   - Проверяйте корректность отображения контента при смене темы
+
+3. **Тестирование доступности**:
+   - Проверяйте ARIA атрибуты
+   - Тестируйте навигацию с клавиатуры
+
+4. **Взаимодействие с компонентами**:
+   - Тестируйте открытие/закрытие выпадающих меню
+   - Проверяйте обработку событий клика и наведения
+
+### Частые проблемы
+
+1. **Тестирование внутренней реализации Radix UI**:
+   - Избегайте тестирования внутренних механизмов библиотеки
+   - Фокусируйтесь на пользовательском взаимодействии
+
+2. **Сложности с порталами**:
+   - Используйте моки для порталов
+   - Дожидайтесь рендеринга контента с помощью waitFor
+
+3. **Проблемы с темами**:
+   - Всегда оборачивайте компоненты в ThemeProvider
+   - Учитывайте возможность автоматической смены темы

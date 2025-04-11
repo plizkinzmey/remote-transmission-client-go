@@ -72,8 +72,14 @@ export const FileNode: React.FC<FileNodeProps> = ({
                             checked={node.Wanted}
                             onCheckedChange={handleCheckboxChange}
                             ref={(el) => {
-                                if (el && node.indeterminate) {
-                                    el.classList.add("indeterminate-checkbox");
+                                if (el) {
+                                    // Поскольку Radix UI Checkbox использует button, а не input,
+                                    // мы должны вернуться к использованию CSS класса
+                                    if (node.indeterminate) {
+                                        el.classList.add("indeterminate-checkbox");
+                                    } else {
+                                        el.classList.remove("indeterminate-checkbox");
+                                    }
                                 }
                             }}
                             className={node.indeterminate ? "indeterminate-checkbox" : ""}
@@ -115,7 +121,7 @@ export const FileNode: React.FC<FileNodeProps> = ({
                 <Box>
                     {node.children.map((child) => (
                         <FileNode
-                            key={child.Path}
+                            key={child.ID} // Используем ID вместо Path для уникального ключа
                             node={child}
                             depth={depth + 1}
                             onToggleWanted={onToggleWanted}

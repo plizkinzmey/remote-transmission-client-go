@@ -96,7 +96,7 @@ export const StatusMessage = React.memo<StatusMessageProps>(({
       <Flex
         align="start"
         gap="1"
-        className={`${styles.messageContainer} ${animated ? styles.animated : ""}`}
+        className={`${styles.messageContainer}${animated ? ` ${styles.animated}` : ''}`}
       >
         {icon}
         <Text

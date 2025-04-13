@@ -82,10 +82,10 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   };
 
   // Общая функция для валидации пути и обработки ошибок
-  const handlePathValidation = async (path: string): Promise<boolean | undefined> => {
+  const handlePathValidation = async (path: string): Promise<boolean> => {
     if (!path) {
       setPathError("");
-      return;
+      return false;
     }
 
     try {

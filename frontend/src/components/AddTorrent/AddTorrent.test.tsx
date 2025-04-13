@@ -426,13 +426,11 @@ describe("AddTorrent Component", () => {
     expect(pathSelect).toBeInTheDocument();
 
     // Симулируем событие submit для формы вместо клика по кнопке
-    const form = screen.getByRole("dialog").querySelector("form");
+    const form = screen.getByTestId("add-torrent-form");
     expect(form).toBeInTheDocument();
 
-    // Проверяем, что форма не null перед вызовом fireEvent.submit
-    if (form) {
-      fireEvent.submit(form);
-    }
+    // Проверяем, что форма найдена перед вызовом fireEvent.submit
+    fireEvent.submit(form);
 
     // Проверяем, что onAddFile был вызван с правильными параметрами
     // Используем более длительный таймаут для асинхронных операций
@@ -546,12 +544,11 @@ describe("AddTorrent Component", () => {
     fireEvent.change(urlInput, { target: { value: "magnet:test-protocol" } });
 
     // Используем submit на форме напрямую для надёжности
-    const form = screen.getByRole("dialog").querySelector("form");
+    const form = screen.getByTestId("add-torrent-form");
     expect(form).toBeInTheDocument();
 
-    if (form) {
-      fireEvent.submit(form);
-    }
+    // Отправляем форму напрямую
+    fireEvent.submit(form);
 
     // Проверяем, что onAdd был вызван с правильными параметрами
     await waitFor(() => {

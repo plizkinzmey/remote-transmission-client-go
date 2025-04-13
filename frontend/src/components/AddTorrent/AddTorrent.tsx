@@ -150,7 +150,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
           className="dialog-content"
         >
           <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} data-testid="add-torrent-form">
             <Tabs.Root
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as "url" | "file")}

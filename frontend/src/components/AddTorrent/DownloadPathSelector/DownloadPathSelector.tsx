@@ -102,7 +102,12 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   const handlePathChange = async (path: string) => {
     setDownloadPath(path);
     onPathChange(path);
-    await validatePath(path);
+    try {
+      await validatePath(path);
+    } catch (error) {
+      console.error("Ошибка при валидации пути:", error);
+      // Ошибка уже обрабатывается внутри validatePath через setPathError
+    }
   };
 
   const handleCustomPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,7 +119,14 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
     // Выполняем валидацию, но только для отображения сообщения об ошибке
     if (path) {
-      validatePath(path);
+      validatePath(path)
+        .then(() => {
+          // Успешная валидация уже обрабатывается в validatePath
+        })
+        .catch((error) => {
+          console.error("Ошибка при валидации пользовательского пути:", error);
+          // Ошибка уже обрабатывается внутри validatePath через setPathError
+        });
     } else {
       setPathError("");
     }

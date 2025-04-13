@@ -90,9 +90,12 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
     try {
       await validatePath(path);
+      // При успешной валидации setPathError("") вызывается в функции validatePath
     } catch (error) {
+      // Логируем ошибку только для целей отладки
+      // Обработка ошибки для UI уже выполняется внутри validatePath через setPathError
+      // Здесь не требуется дополнительного вызова setPathError, так как это дублирование
       console.error("Ошибка валидации пути:", error);
-      // Ошибка уже обрабатывается внутри validatePath через setPathError
     }
   };
 

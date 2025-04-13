@@ -72,11 +72,21 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
 
   // Экспозиция функций для тестирования
   useEffect(() => {
+    // Устанавливаем функции для тестирования
     if (testRef) {
       testRef.current = {
         validatePath,
       };
     }
+
+    // Функция очистки при размонтировании компонента
+    return () => {
+      // Сбрасываем testRef при размонтировании, чтобы избежать проблем
+      // с устаревшими ссылками в тестах и потенциальных утечек памяти
+      if (testRef) {
+        testRef.current = {};
+      }
+    };
   }, [testRef, validatePath]);
 
   const handleSubmit = async (e: React.FormEvent) => {

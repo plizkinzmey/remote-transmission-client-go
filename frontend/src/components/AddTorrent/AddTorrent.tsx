@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, Button, Tabs, Flex, Box } from "@radix-ui/themes";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -18,6 +18,10 @@ export interface AddTorrentProps {
     name: string;
     data: string;
   }; // данные торрент-файла (для перетаскивания)
+  // Добавляем тестовый реф для доступа к внутренним функциям в тестах
+  testRef?: React.MutableRefObject<{
+    validatePath?: (path: string) => Promise<boolean>;
+  }>;
 }
 
 export const AddTorrent: React.FC<AddTorrentProps> = ({
@@ -26,6 +30,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   onClose,
   torrentFile,
   torrentFileData,
+  testRef,
 }) => {
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [url, setUrl] = useState("");
@@ -49,10 +54,12 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   // Обработчик для получения пути из компонента DownloadPathSelector
   const handlePathChange = (path: string) => {
     setDownloadPath(path);
+    // Сбрасываем ошибку при изменении пути
+    setPathError("");
   };
 
   // Валидация пути перед отправкой
-  const validatePath = async (path: string) => {
+  const validatePath = useCallback(async (path: string): Promise<boolean> => {
     try {
       await ValidateDownloadPath(path);
       setPathError("");
@@ -61,7 +68,27 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       setPathError(String(error));
       return false;
     }
-  };
+  }, [setPathError, ValidateDownloadPath]);
+
+  // Экспозиция функций для тестирования
+  useEffect(() => {
+    // Устанавливаем функции для тестирования
+    if (testRef) {
+      testRef.current = {
+        validatePath,
+      };
+    }
+
+    // Функция очистки при размонтировании компонента
+    return () => {
+      // Сбрасываем testRef при размонтировании, чтобы избежать проблем
+      // с устаревшими ссылками в тестах и потенциальных утечек памяти
+      if (testRef) {
+        // Используем undefined вместо null для соответствия требуемому типу
+        testRef.current = { validatePath: undefined };
+      }
+    };
+  }, [testRef, validatePath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +150,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
           className="dialog-content"
         >
           <Dialog.Title mb="4">{t("add.title")}</Dialog.Title>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} data-testid="add-torrent-form">
             <Tabs.Root
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as "url" | "file")}

@@ -81,6 +81,27 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     }
   };
 
+  // Общая функция для валидации пути и обработки ошибок
+  const handlePathValidation = async (path: string): Promise<boolean> => {
+    if (!path) {
+      setPathError("");
+      return false;
+    }
+
+    try {
+      const isValid = await validatePath(path);
+      // При успешной валидации setPathError("") вызывается в функции validatePath
+      return isValid;
+    } catch (error) {
+      // Логируем ошибку для целей отладки
+      console.error("Ошибка валидации пути:", error);
+
+      // Всегда обновляем UI с самой последней ошибкой, без условной проверки
+      setPathError(String(error));
+      return false;
+    }
+  };
+
   const handleRemovePath = async (pathToRemove: string) => {
     try {
       await RemoveDownloadPath(pathToRemove);
@@ -102,19 +123,19 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   const handlePathChange = async (path: string) => {
     setDownloadPath(path);
     onPathChange(path);
-    await validatePath(path);
+    await handlePathValidation(path);
   };
 
-  const handleCustomPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomPathChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const path = e.target.value;
     setCustomPath(path);
 
+    // Всегда обновляем путь в родительском компоненте
+    onPathChange(path);
+
+    // Выполняем валидацию, но только для отображения сообщения об ошибке
     if (path) {
-      validatePath(path).then((isValid) => {
-        if (isValid) {
-          onPathChange(path);
-        }
-      });
+      await handlePathValidation(path);
     } else {
       setPathError("");
     }

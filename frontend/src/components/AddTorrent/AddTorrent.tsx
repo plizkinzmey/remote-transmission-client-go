@@ -68,7 +68,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       setPathError(String(error));
       return false;
     }
-  }, [setPathError]);
+  }, [setPathError, ValidateDownloadPath]);
 
   // Экспозиция функций для тестирования
   useEffect(() => {

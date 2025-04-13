@@ -82,7 +82,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   };
 
   // Общая функция для валидации пути и обработки ошибок
-  const validatePathAndHandleError = async (path: string): Promise<boolean | undefined> => {
+  const handlePathValidation = async (path: string): Promise<boolean | undefined> => {
     if (!path) {
       setPathError("");
       return;
@@ -123,7 +123,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   const handlePathChange = async (path: string) => {
     setDownloadPath(path);
     onPathChange(path);
-    await validatePathAndHandleError(path);
+    await handlePathValidation(path);
   };
 
   const handleCustomPathChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +135,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
     // Выполняем валидацию, но только для отображения сообщения об ошибке
     if (path) {
-      await validatePathAndHandleError(path);
+      await handlePathValidation(path);
     } else {
       setPathError("");
     }

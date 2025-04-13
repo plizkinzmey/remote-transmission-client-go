@@ -18,6 +18,7 @@ This guide describes the principles and practices for testing frontend component
   - [Selectors in Tests](#selectors-in-tests)
     - [Preferred selectors (in order of priority):](#preferred-selectors-in-order-of-priority)
     - [Avoid:](#avoid)
+    - [Best Practices for data-testid](#best-practices-for-data-testid)
   - [Testing Components with Portals](#testing-components-with-portals)
     - [Finding Elements in Portals](#finding-elements-in-portals)
     - [Waiting for Portal Content](#waiting-for-portal-content)
@@ -47,6 +48,8 @@ This guide describes the principles and practices for testing frontend component
   - [Testing Components that use External Libraries](#testing-components-that-use-external-libraries)
   - [Testing Radix UI Components](#testing-radix-ui-components)
   - [Testing Complex Component Compositions](#testing-complex-component-compositions)
+  - [Тестирование состояний загрузки и обработки ошибок](#тестирование-состояний-загрузки-и-обработки-ошибок)
+  - [Управление состоянием в тестах](#управление-состоянием-в-тестах)
 
 ## Technology Stack
 
@@ -213,6 +216,7 @@ screen.getByRole("button", { name: "Save" })
 - CSS class selectors (except when checking for the presence of classes)
 - Index-based selectors (`firstChild`, `childNodes[1]`, etc.)
 - DOM structure selectors that might change
+- Using `querySelector` directly on DOM elements (use RTL's methods instead)
 
 ### Best Practices for data-testid
 
@@ -273,6 +277,26 @@ When adding data-testid attributes to components, follow these guidelines:
 
 6. **Don't overuse**:
    Add data-testid only to elements you actually need to interact with or assert in tests.
+
+7. **Add data-testid to forms**:
+   Always add data-testid to forms to avoid using querySelector:
+   ```jsx
+   <form data-testid="add-item-form" onSubmit={handleSubmit}>
+     {/* form content */}
+   </form>
+   ```
+
+8. **Use data-testid for form submission tests**:
+   When testing form submission, use the form's data-testid instead of targeting the submit button:
+   ```typescript
+   // GOOD
+   const form = screen.getByTestId("add-item-form");
+   fireEvent.submit(form);
+   
+   // AVOID (more brittle)
+   const submitButton = screen.getByText("Submit");
+   fireEvent.click(submitButton);
+   ```
 
 ## Testing Components with Portals
 
@@ -982,3 +1006,642 @@ it('обновляет состояние выбора при переключе
 2. **Тестирование синхронизации данных между компонентами**:
    - Проверяйте, что изменения в одном компоненте отражаются в других
    - Тестируйте использование общих данных через контекст или пропсы
+
+## Тестирование состояний загрузки и обработки ошибок
+
+### 1. Состояния загрузки
+
+1. **Начальное состояние загрузки**:
+   ```typescript
+   it('отображает спиннер при начальной загрузке', () => {
+     render(<Component />);
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+   });
+   ```
+
+2. **Переход между состояниями**:
+   ```typescript
+   it('скрывает спиннер после загрузки данных', async () => {
+     render(<Component />);
+     
+     // Проверяем наличие спиннера
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+     
+     // Ждем завершения загрузки
+     await waitFor(() => {
+       expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+     });
+   });
+   ```
+
+3. **Множественные загрузки**:
+   ```typescript
+   it('корректно обрабатывает параллельные загрузки', async () => {
+     render(<Component />);
+
+     // Запускаем несколько загрузок
+     fireEvent.click(screen.getByTestId('load-item-1'));
+     fireEvent.click(screen.getByTestId('load-item-2'));
+
+     // Проверяем спиннер
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+     // Ждем завершения всех загрузок
+     await waitFor(() => {
+       expect(screen.queryByTestId('loading-spinner')).not.toBeInTheDocument();
+     });
+   });
+   ```
+
+### 2. Обработка ошибок
+
+1. **Отображение ошибок**:
+   ```typescript
+   it('отображает сообщение об ошибке при неудачной загрузке', async () => {
+     // Мокируем ошибку
+     vi.mocked(loadData).mockRejectedValue(new Error('Тестовая ошибка'));
+
+     render(<Component />);
+
+     await waitFor(() => {
+       expect(screen.getByTestId('error-display'))
+         .toHaveTextContent('Тестовая ошибка');
+     });
+   });
+   ```
+
+2. **Повторные попытки**:
+   ```typescript
+   it('позволяет повторить загрузку после ошибки', async () => {
+     // Сначала ошибка, потом успех
+     vi.mocked(loadData)
+       .mockRejectedValueOnce(new Error('Ошибка'))
+       .mockResolvedValueOnce({ data: 'success' });
+
+     render(<Component />);
+
+     // Ждем появления ошибки
+     await waitFor(() => {
+       expect(screen.getByTestId('error-display')).toBeInTheDocument();
+     });
+
+     // Нажимаем кнопку повтора
+     fireEvent.click(screen.getByTestId('error-retry-button'));
+
+     // Проверяем успешную загрузку
+     await waitFor(() => {
+       expect(screen.queryByTestId('error-display')).not.toBeInTheDocument();
+       expect(screen.getByText('success')).toBeInTheDocument();
+     });
+   });
+   ```
+
+### 3. Комбинации состояний
+
+1. **Переходы между состояниями**:
+   ```typescript
+   it('правильно переключается между состояниями', async () => {
+     render(<Component />);
+
+     // Начальная загрузка
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+     // Успешная загрузка
+     await waitFor(() => {
+       expect(screen.getByTestId('content')).toBeInTheDocument();
+     });
+
+     // Запуск новой загрузки
+     fireEvent.click(screen.getByTestId('refresh-button'));
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+     // Ошибка при обновлении
+     await waitFor(() => {
+       expect(screen.getByTestId('error-display')).toBeInTheDocument();
+     });
+   });
+   ```
+
+2. **Восстановление после ошибок**:
+   ```typescript
+   it('восстанавливает предыдущее состояние после ошибки', async () => {
+     const initialData = { value: 'initial' };
+     const mockLoad = vi.mocked(loadData)
+       .mockResolvedValueOnce(initialData)
+       .mockRejectedValueOnce(new Error('Ошибка обновления'));
+
+     const { rerender } = render(<Component />);
+
+     // Ждем начальной загрузки
+     await waitFor(() => {
+       expect(screen.getByText('initial')).toBeInTheDocument();
+     });
+
+     // Пробуем обновить с ошибкой
+     fireEvent.click(screen.getByTestId('refresh-button'));
+
+     await waitFor(() => {
+       // Проверяем наличие ошибки
+       expect(screen.getByTestId('error-display')).toBeInTheDocument();
+       // Проверяем, что старые данные все еще отображаются
+       expect(screen.getByText('initial')).toBeInTheDocument();
+     });
+   });
+   ```
+
+### 4. Отмена загрузок
+
+1. **Отмена при размонтировании**:
+   ```typescript
+   it('отменяет загрузку при размонтировании', async () => {
+     const mockAbort = vi.fn();
+     const mockController = new AbortController();
+     mockController.abort = mockAbort;
+     vi.mocked(window.AbortController).mockImplementation(() => mockController);
+
+     const { unmount } = render(<Component />);
+
+     // Размонтируем компонент во время загрузки
+     unmount();
+
+     expect(mockAbort).toHaveBeenCalled();
+   });
+   ```
+
+2. **Отмена пользователем**:
+   ```typescript
+   it('позволяет пользователю отменить загрузку', async () => {
+     render(<Component />);
+
+     // Запускаем загрузку
+     fireEvent.click(screen.getByTestId('start-load-button'));
+     
+     // Отменяем загрузку
+     fireEvent.click(screen.getByTestId('cancel-button'));
+
+     await waitFor(() => {
+       // Проверяем, что загрузка отменена
+       expect(screen.queryByTestId('loading-spinner'))
+         .not.toBeInTheDocument();
+       // Проверяем сообщение об отмене
+       expect(screen.getByText('Загрузка отменена'))
+         .toBeInTheDocument();
+     });
+   });
+   ```
+
+### 5. Тестирование таймаутов
+
+1. **Обработка таймаутов**:
+   ```typescript
+   it('обрабатывает таймаут загрузки', async () => {
+     // Мокируем функцию загрузки, которая не завершается
+     vi.mocked(loadData).mockImplementation(() => new Promise(() => {}));
+
+     render(<Component timeout={1000} />);
+
+     // Ждем сообщения о таймауте
+     await waitFor(() => {
+       expect(screen.getByText('Превышено время ожидания'))
+         .toBeInTheDocument();
+     }, { timeout: 2000 });
+   });
+   ```
+
+2. **Автоматические повторные попытки**:
+   ```typescript
+   it('автоматически повторяет попытку после таймаута', async () => {
+     // Первый запрос - таймаут, второй - успех
+     vi.mocked(loadData)
+       .mockImplementationOnce(() => new Promise(() => {}))
+       .mockResolvedValueOnce({ data: 'success' });
+
+     render(<Component timeout={1000} retryCount={1} />);
+
+     // Ждем успешной загрузки после повторной попытки
+     await waitFor(() => {
+       expect(screen.getByText('success')).toBeInTheDocument();
+     }, { timeout: 3000 });
+
+     // Проверяем количество попыток
+     expect(loadData).toHaveBeenCalledTimes(2);
+   });
+   ```
+
+### 6. Тестирование индикаторов прогресса
+
+1. **Прогресс загрузки**:
+   ```typescript
+   it('отображает прогресс загрузки', async () => {
+     const mockProgress = vi.fn();
+     vi.mocked(loadData).mockImplementation(async () => {
+       mockProgress(0);
+       await new Promise(resolve => setTimeout(resolve, 100));
+       mockProgress(50);
+       await new Promise(resolve => setTimeout(resolve, 100));
+       mockProgress(100);
+       return { data: 'success' };
+     });
+
+     render(<Component onProgress={mockProgress} />);
+
+     await waitFor(() => {
+       expect(mockProgress).toHaveBeenNthCalledWith(1, 0);
+       expect(mockProgress).toHaveBeenNthCalledWith(2, 50);
+       expect(mockProgress).toHaveBeenNthCalledWith(3, 100);
+     });
+   });
+   ```
+
+2. **Индикаторы состояния**:
+   ```typescript
+   it('корректно отображает индикаторы состояния', async () => {
+     render(<Component />);
+
+     // Проверяем начальное состояние
+     expect(screen.getByTestId('status-indicator'))
+       .toHaveAttribute('data-status', 'idle');
+
+     // Запускаем загрузку
+     fireEvent.click(screen.getByTestId('start-button'));
+     expect(screen.getByTestId('status-indicator'))
+       .toHaveAttribute('data-status', 'loading');
+
+     // Ждем завершения
+     await waitFor(() => {
+       expect(screen.getByTestId('status-indicator'))
+         .toHaveAttribute('data-status', 'success');
+     });
+   });
+   ```
+
+### 7. Рекомендации
+
+1. **Всегда тестируйте**:
+   - Начальное состояние загрузки
+   - Успешное завершение загрузки
+   - Обработку ошибок
+   - Возможность повторных попыток
+   - Отмену загрузки
+   - Восстановление после ошибок
+
+2. **Используйте правильные утверждения**:
+   ```typescript
+   // ❌ Плохо: нестабильный тест
+   await new Promise(resolve => setTimeout(resolve, 1000));
+   expect(screen.getByTestId('content')).toBeInTheDocument();
+
+   // ✅ Хорошо: ждем изменения состояния
+   await waitFor(() => {
+     expect(screen.getByTestId('content')).toBeInTheDocument();
+   });
+   ```
+
+3. **Тестируйте пограничные случаи**:
+   - Множественные параллельные загрузки
+   - Отмена во время загрузки
+   - Повторная загрузка при наличии ошибки
+   - Таймауты и сетевые проблемы
+
+4. **Моделируйте реальные сценарии**:
+   - Медленное соединение
+   - Потеря связи
+   - Частичная загрузка данных
+   - Неожиданные форматы ответов
+
+5. **Поддерживайте чистоту тестов**:
+   - Сбрасывайте моки между тестами
+   - Очищайте таймеры
+   - Восстанавливайте исходное состояние
+   - Изолируйте тесты друг от друга
+
+## Управление состоянием в тестах
+
+### 1. Подготовка начального состояния
+
+1. **Использование фабрик данных**:
+   ```typescript
+   // test/factories/torrent.ts
+   export const createTorrent = (override = {}) => ({
+     id: 1,
+     name: "test.torrent",
+     progress: 0,
+     status: "stopped",
+     ...override
+   });
+
+   // В тестах:
+   it('отображает прогресс торрента', () => {
+     const torrent = createTorrent({ progress: 50 });
+     render(<TorrentItem torrent={torrent} />);
+     expect(screen.getByTestId('progress-bar')).toHaveAttribute('value', '50');
+   });
+   ```
+
+2. **Мокирование глобального состояния**:
+   ```typescript
+   const mockStore = {
+     torrents: [createTorrent(), createTorrent()],
+     settings: { theme: 'dark' },
+     user: { isAuthenticated: true }
+   };
+
+   const mockTorrentContext = {
+     state: mockStore,
+     dispatch: vi.fn()
+   };
+
+   vi.mock('../contexts/TorrentContext', () => ({
+     useTorrentContext: () => mockTorrentContext
+   }));
+   ```
+
+### 2. Тестирование побочных эффектов
+
+1. **Проверка вызовов эффектов**:
+   ```typescript
+   it('обновляет данные при изменении ID', () => {
+     const loadData = vi.fn();
+     const { rerender } = render(
+       <Component id={1} onLoad={loadData} />
+     );
+
+     // Проверяем первоначальную загрузку
+     expect(loadData).toHaveBeenCalledWith(1);
+
+     // Меняем пропсы
+     rerender(<Component id={2} onLoad={loadData} />);
+
+     // Проверяем повторный вызов с новым ID
+     expect(loadData).toHaveBeenCalledWith(2);
+   });
+   ```
+
+2. **Тестирование очистки эффектов**:
+   ```typescript
+   it('отписывается от событий при размонтировании', () => {
+     const unsubscribe = vi.fn();
+     vi.mocked(subscribeToEvents).mockReturnValue(unsubscribe);
+
+     const { unmount } = render(<Component />);
+     unmount();
+
+     expect(unsubscribe).toHaveBeenCalled();
+   });
+   ```
+
+### 3. Тестирование изменений состояния
+
+1. **Проверка обновления UI**:
+   ```typescript
+   it('обновляет UI при изменении данных', async () => {
+     const { rerender } = render(
+       <TorrentList torrents={[createTorrent({ progress: 0 })]} />
+     );
+
+     // Проверяем начальное состояние
+     expect(screen.getByTestId('progress-0')).toBeInTheDocument();
+
+     // Обновляем пропсы
+     rerender(
+       <TorrentList torrents={[createTorrent({ progress: 50 })]} />
+     );
+
+     // Проверяем обновление UI
+     await waitFor(() => {
+       expect(screen.getByTestId('progress-50')).toBeInTheDocument();
+     });
+   });
+   ```
+
+2. **Тестирование условного рендеринга**:
+   ```typescript
+   it('показывает разные компоненты в зависимости от состояния', () => {
+     const { rerender } = render(
+       <StatusDisplay status="loading" />
+     );
+
+     // Проверяем состояние загрузки
+     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+     // Меняем состояние
+     rerender(<StatusDisplay status="error" />);
+
+     // Проверяем отображение ошибки
+     expect(screen.getByTestId('error-message')).toBeInTheDocument();
+   });
+   ```
+
+### 4. Работа с асинхронным состоянием
+
+1. **Тестирование промежуточных состояний**:
+   ```typescript
+   it('отображает все этапы загрузки', async () => {
+     render(<DataLoader />);
+
+     // Начальное состояние
+     expect(screen.getByTestId('initial-state')).toBeInTheDocument();
+
+     // Состояние загрузки
+     fireEvent.click(screen.getByText('Load'));
+     expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+
+     // Финальное состояние
+     await waitFor(() => {
+       expect(screen.getByTestId('loaded-state')).toBeInTheDocument();
+     });
+   });
+   ```
+
+2. **Обработка гонки состояний**:
+   ```typescript
+   it('обрабатывает гонку состояний корректно', async () => {
+     // Создаем Promise, который завершится позже
+     const slowData = new Promise(resolve => 
+       setTimeout(() => resolve('slow'), 100)
+     );
+     
+     // Создаем Promise, который завершится раньше
+     const fastData = Promise.resolve('fast');
+
+     // Первый запрос (медленный)
+     vi.mocked(loadData).mockResolvedValueOnce(slowData);
+     
+     const { rerender } = render(<Component id={1} />);
+
+     // Второй запрос (быстрый)
+     vi.mocked(loadData).mockResolvedValueOnce(fastData);
+     rerender(<Component id={2} />);
+
+     // Проверяем, что отображаются данные от последнего запроса
+     await waitFor(() => {
+       expect(screen.getByText('fast')).toBeInTheDocument();
+     });
+   });
+   ```
+
+### 5. Тестирование кеширования
+
+1. **Проверка механизма кеширования**:
+   ```typescript
+   it('использует кешированные данные при повторном рендере', async () => {
+     const loadData = vi.fn().mockResolvedValue({ data: 'test' });
+
+     const { rerender } = render(
+       <CachedComponent id={1} loadData={loadData} />
+     );
+
+     // Ждем первой загрузки
+     await waitFor(() => {
+       expect(screen.getByText('test')).toBeInTheDocument();
+     });
+
+     // Перерендер с теми же пропсами
+     rerender(<CachedComponent id={1} loadData={loadData} />);
+
+     // Проверяем, что повторной загрузки не было
+     expect(loadData).toHaveBeenCalledTimes(1);
+   });
+   ```
+
+2. **Тестирование инвалидации кеша**:
+   ```typescript
+   it('сбрасывает кеш при необходимости', async () => {
+     const loadData = vi.fn()
+       .mockResolvedValueOnce({ data: 'old' })
+       .mockResolvedValueOnce({ data: 'new' });
+
+     const { rerender } = render(
+       <CachedComponent id={1} version={1} loadData={loadData} />
+     );
+
+     // Ждем первой загрузки
+     await waitFor(() => {
+       expect(screen.getByText('old')).toBeInTheDocument();
+     });
+
+     // Меняем версию для инвалидации кеша
+     rerender(<CachedComponent id={1} version={2} loadData={loadData} />);
+
+     // Проверяем перезагрузку данных
+     await waitFor(() => {
+       expect(screen.getByText('new')).toBeInTheDocument();
+     });
+     expect(loadData).toHaveBeenCalledTimes(2);
+   });
+   ```
+
+### 6. Тестирование оптимизаций производительности
+
+1. **Проверка мемоизации**:
+   ```typescript
+   it('не перерендеривает оптимизированные компоненты', () => {
+     const renderSpy = vi.fn();
+     
+     const OptimizedChild = memo(() => {
+       renderSpy();
+       return <div>Optimized</div>;
+     });
+
+     const { rerender } = render(
+       <Parent>
+         <OptimizedChild />
+       </Parent>
+     );
+
+     // Первый рендер
+     expect(renderSpy).toHaveBeenCalledTimes(1);
+
+     // Обновление родителя не должно вызывать рендер дочернего
+     rerender(
+       <Parent>
+         <OptimizedChild />
+       </Parent>
+     );
+
+     expect(renderSpy).toHaveBeenCalledTimes(1);
+   });
+   ```
+
+2. **Тестирование useMemo и useCallback**:
+   ```typescript
+   it('сохраняет ссылки на мемоизированные значения', () => {
+     const results: any[] = [];
+     
+     const TestComponent = () => {
+       const [, setCount] = useState(0);
+       const memoizedValue = useMemo(() => ({ test: true }), []);
+       const memoizedCallback = useCallback(() => {}, []);
+       
+       results.push({
+         value: memoizedValue,
+         callback: memoizedCallback
+       });
+       
+       return (
+         <button onClick={() => setCount(c => c + 1)}>
+           Update
+         </button>
+       );
+     };
+
+     render(<TestComponent />);
+     
+     // Вызываем обновление
+     fireEvent.click(screen.getByText('Update'));
+     
+     // Проверяем, что ссылки остались теми же
+     expect(results[0].value).toBe(results[1].value);
+     expect(results[0].callback).toBe(results[1].callback);
+   });
+   ```
+
+### 7. Рекомендации
+
+1. **Изолируйте тесты состояния**:
+   ```typescript
+   describe('Component State', () => {
+     beforeEach(() => {
+       // Сброс состояния перед каждым тестом
+       vi.clearAllMocks();
+     });
+
+     it('тестирует одно изменение состояния', () => {
+       // Один тест - одно изменение
+     });
+   });
+   ```
+
+2. **Используйте снимки состояния**:
+   ```typescript
+   it('корректно обновляет состояние', () => {
+     const states: any[] = [];
+     const TestComponent = () => {
+       const state = useMyState();
+       states.push({ ...state });
+       return null;
+     };
+
+     render(<TestComponent />);
+     
+     // Проверяем все состояния
+     expect(states).toMatchSnapshot();
+   });
+   ```
+
+3. **Тестируйте граничные случаи**:
+   ```typescript
+   it('обрабатывает некорректные состояния', () => {
+     // Проверка null
+     render(<Component state={null} />);
+     expect(screen.getByText('Нет данных')).toBeInTheDocument();
+
+     // Проверка пустого объекта
+     render(<Component state={{}} />);
+     expect(screen.getByText('Некорректные данные')).toBeInTheDocument();
+
+     // Проверка невалидных данных
+     render(<Component state={{ invalid: true }} />);
+     expect(screen.getByText('Ошибка данных')).toBeInTheDocument();
+   });
+   ```

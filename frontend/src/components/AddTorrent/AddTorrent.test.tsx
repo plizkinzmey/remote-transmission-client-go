@@ -168,9 +168,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((_text, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const customPathButton = screen.getByTestId("toggle-path-mode-button");
       fireEvent.click(customPathButton);
 
       // Проверяем, что появилось текстовое поле
@@ -234,9 +232,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((_text, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const customPathButton = screen.getByTestId("toggle-path-mode-button");
       fireEvent.click(customPathButton);
     });
 
@@ -286,9 +282,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((_text, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const customPathButton = screen.getByTestId("toggle-path-mode-button");
       fireEvent.click(customPathButton);
     });
 
@@ -334,9 +328,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((_text, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const customPathButton = screen.getByTestId("toggle-path-mode-button");
       fireEvent.click(customPathButton);
     });
 
@@ -501,9 +493,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((_text, element) => {
-        return element?.textContent === "add.enterCustomPath";
-      });
+      const customPathButton = screen.getByTestId("toggle-path-mode-button");
       fireEvent.click(customPathButton);
     });
 
@@ -593,9 +583,7 @@ describe("AddTorrent Component", () => {
     });
 
     // Открываем поле для ввода пользовательского пути
-    const customPathButton = screen.getByText((_text, element) => {
-      return element?.textContent === "add.enterCustomPath";
-    });
+    const customPathButton = screen.getByTestId("toggle-path-mode-button");
     fireEvent.click(customPathButton);
 
     // Вводим путь, который вызовет ошибку валидации

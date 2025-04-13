@@ -77,7 +77,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
         validatePath,
       };
     }
-  }, [testRef]);
+  }, [testRef, validatePath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

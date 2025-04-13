@@ -606,4 +606,36 @@ describe("AddTorrent Component", () => {
     // Проверяем, что onAdd не был вызван из-за ошибки валидации
     expect(mockOnAdd).not.toHaveBeenCalled();
   });
+
+  it("создает и очищает testRef при монтировании и размонтировании компонента", async () => {
+    // Создаем реальный ref для проверки
+    const testRef = React.createRef<{ validatePath?: (path: string) => Promise<boolean> }>();
+
+    const { unmount } = renderComponent({ testRef });
+
+    // Проверяем, что ref был настроен с функцией validatePath
+    await waitFor(() => {
+      expect(testRef.current).not.toBeNull();
+      expect(testRef.current?.validatePath).toBeDefined();
+    });
+
+    // Проверяем работу функции validatePath через ref
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+    ValidateDownloadPath.mockResolvedValueOnce(undefined);
+
+    // Вызываем функцию validatePath через ref
+    if (testRef.current && testRef.current.validatePath) {
+      const result = await testRef.current.validatePath("/valid/path");
+      expect(result).toBe(true);
+      expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/path");
+    }
+
+    // Размонтируем компонент
+    unmount();
+
+    // После размонтирования validatePath должен быть undefined
+    expect(testRef.current?.validatePath).toBeUndefined();
+  });
 });

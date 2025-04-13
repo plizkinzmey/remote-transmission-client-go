@@ -81,22 +81,30 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     }
   };
 
+  // Предварительная проверка пути - сохраняем асинхронность
+  const isEmptyPath = (path: string): boolean => {
+    return !path;
+  };
+
+  // Обработка пустого пути - сохраняем асинхронность
+  const handleEmptyPath = async (): Promise<boolean> => {
+    setPathError("");
+    return false;
+  };
+
   // Общая функция для валидации пути и обработки ошибок
   const handlePathValidation = async (path: string): Promise<boolean> => {
-    if (!path) {
-      setPathError("");
-      return false;
+    if (isEmptyPath(path)) {
+      return await handleEmptyPath();
     }
 
     try {
-      const isValid = await validatePath(path);
-      // При успешной валидации setPathError("") вызывается в функции validatePath
-      return isValid;
+      return await validatePath(path);
     } catch (error) {
       // Логируем ошибку для целей отладки
       console.error("Ошибка валидации пути:", error);
 
-      // Всегда обновляем UI с самой последней ошибкой, без условной проверки
+      // Всегда обновляем UI с самой последней ошибкой
       setPathError(String(error));
       return false;
     }

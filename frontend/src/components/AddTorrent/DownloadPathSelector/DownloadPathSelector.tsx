@@ -105,7 +105,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     try {
       await validatePath(path);
     } catch (error) {
-      console.error("Ошибка при валидации пути:", error);
+      console.error("Ошибка валидации пути:", error);
       // Ошибка уже обрабатывается внутри validatePath через setPathError
     }
   };
@@ -124,7 +124,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
           // Успешная валидация уже обрабатывается в validatePath
         })
         .catch((error) => {
-          console.error("Ошибка при валидации пользовательского пути:", error);
+          console.error("Ошибка валидации пути:", error);
           // Ошибка уже обрабатывается внутри validatePath через setPathError
         });
     } else {

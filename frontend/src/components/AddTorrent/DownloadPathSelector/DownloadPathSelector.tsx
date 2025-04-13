@@ -109,12 +109,12 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     const path = e.target.value;
     setCustomPath(path);
 
+    // Всегда обновляем путь в родительском компоненте
+    onPathChange(path);
+
+    // Выполняем валидацию, но только для отображения сообщения об ошибке
     if (path) {
-      validatePath(path).then((isValid) => {
-        if (isValid) {
-          onPathChange(path);
-        }
-      });
+      validatePath(path);
     } else {
       setPathError("");
     }

@@ -18,6 +18,10 @@ export interface AddTorrentProps {
     name: string;
     data: string;
   }; // данные торрент-файла (для перетаскивания)
+  // Добавляем тестовый реф для доступа к внутренним функциям в тестах
+  testRef?: React.MutableRefObject<{
+    validatePath?: (path: string) => Promise<boolean>;
+  }>;
 }
 
 export const AddTorrent: React.FC<AddTorrentProps> = ({
@@ -26,6 +30,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   onClose,
   torrentFile,
   torrentFileData,
+  testRef,
 }) => {
   const { t, isLoading: isLocalizationLoading } = useLocalization();
   const [url, setUrl] = useState("");
@@ -49,6 +54,8 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   // Обработчик для получения пути из компонента DownloadPathSelector
   const handlePathChange = (path: string) => {
     setDownloadPath(path);
+    // Сбрасываем ошибку при изменении пути
+    setPathError("");
   };
 
   // Валидация пути перед отправкой
@@ -62,6 +69,15 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       return false;
     }
   };
+
+  // Экспозиция функций для тестирования
+  useEffect(() => {
+    if (testRef) {
+      testRef.current = {
+        validatePath,
+      };
+    }
+  }, [testRef]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

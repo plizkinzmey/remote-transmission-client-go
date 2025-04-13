@@ -1,3 +1,4 @@
+import React from "react";
 import {
   render,
   screen,
@@ -219,21 +220,31 @@ describe("AddTorrent Component", () => {
   });
 
   it("валидирует путь перед отправкой", async () => {
-    // Мокируем GetDownloadPaths, чтобы по умолчанию возвращался /valid/path
-    const { GetDownloadPaths } = await import("../../../wailsjs/go/main/App");
-    vi.mocked(GetDownloadPaths).mockResolvedValue(["/valid/path"]);
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Настраиваем мок для успешной валидации
+    ValidateDownloadPath.mockResolvedValue(undefined);
 
     // Очищаем предыдущие вызовы mockOnAdd
     mockOnAdd.mockClear();
 
     renderComponent();
 
-    // Дожидаемся загрузки путей
+    // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+      const customPathButton = screen.getByText((_text, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
+      fireEvent.click(customPathButton);
     });
 
-    // Вводим URL
+    // Вводим корректный путь
+    const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    fireEvent.change(pathInput, { target: { value: "/valid/custom/path" } });
+
+    // Вводим URL и отправляем форму
     const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
     fireEvent.change(urlInput, { target: { value: "magnet:test" } });
 
@@ -241,8 +252,10 @@ describe("AddTorrent Component", () => {
     const addButton = screen.getByText("add.add");
     fireEvent.click(addButton);
 
+    // Проверяем, что onAdd был вызван с правильными параметрами
     await waitFor(() => {
-      expect(mockOnAdd).toHaveBeenCalledWith("magnet:test", "/valid/path");
+      expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/custom/path");
+      expect(mockOnAdd).toHaveBeenCalledWith("magnet:test", "/valid/custom/path");
       expect(mockOnClose).toHaveBeenCalled();
     });
   });
@@ -308,6 +321,84 @@ describe("AddTorrent Component", () => {
     expect(mockOnAdd).not.toHaveBeenCalled();
   });
 
+  it("выполняет успешную валидацию пути и отправляет форму с URL", async () => {
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Настраиваем мок для успешной валидации
+    ValidateDownloadPath.mockResolvedValue(undefined);
+
+    // Очищаем предыдущие вызовы mockOnAdd
+    mockOnAdd.mockClear();
+
+    renderComponent();
+
+    // Открываем поле для ввода пользовательского пути
+    await waitFor(() => {
+      const customPathButton = screen.getByText((_text, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
+      fireEvent.click(customPathButton);
+    });
+
+    // Вводим корректный путь
+    const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    fireEvent.change(pathInput, { target: { value: "/valid/custom/path" } });
+
+    // Вводим URL и отправляем форму
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Нажимаем кнопку добавления
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    // Проверяем, что onAdd был вызван с правильными параметрами
+    await waitFor(() => {
+      expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/custom/path");
+      expect(mockOnAdd).toHaveBeenCalledWith("magnet:test", "/valid/custom/path");
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  it("отправляет форму без валидации, если путь не указан", async () => {
+    // Очищаем моки перед тестом
+    mockOnAdd.mockClear();
+    mockOnClose.mockClear();
+
+    const { GetDownloadPaths, ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Сбрасываем мок для ValidateDownloadPath
+    ValidateDownloadPath.mockReset();
+
+    // Мокируем GetDownloadPaths, чтобы возвращался пустой массив (нет путей по умолчанию)
+    GetDownloadPaths.mockResolvedValueOnce([]);
+
+    renderComponent();
+
+    // Вводим URL
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Нажимаем кнопку добавления
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    // Проверяем, что функция валидации не вызывалась
+    await waitFor(() => {
+      expect(ValidateDownloadPath).not.toHaveBeenCalled();
+    });
+
+    // Проверяем, что onAdd был вызван с пустым путем загрузки
+    await waitFor(() => {
+      expect(mockOnAdd).toHaveBeenCalledWith("magnet:test", "");
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
   it("правильно обрабатывает отправку формы с файлом", async () => {
     // Данные о торрент-файле
     const torrentFileData = {
@@ -319,10 +410,14 @@ describe("AddTorrent Component", () => {
     mockOnAddFile.mockClear();
     mockOnClose.mockClear();
 
-    // Мокируем ValidateDownloadPath, чтобы он всегда возвращал успех
-    const { ValidateDownloadPath } = vi.mocked(
+    const { GetDownloadPaths, ValidateDownloadPath } = vi.mocked(
       await import("../../../wailsjs/go/main/App")
     );
+
+    // Настраиваем мок для возврата конкретного пути
+    GetDownloadPaths.mockResolvedValue(["/default/path"]);
+
+    // Мокируем ValidateDownloadPath, чтобы он всегда возвращал успех
     ValidateDownloadPath.mockResolvedValue(undefined);
 
     renderComponent({ torrentFileData });
@@ -352,8 +447,180 @@ describe("AddTorrent Component", () => {
     // Проверяем, что onAddFile был вызван с правильными параметрами
     // Используем более длительный таймаут для асинхронных операций
     await waitFor(() => {
-      expect(mockOnAddFile).toHaveBeenCalledWith("base64-encoded-data", "/valid/path");
+      expect(mockOnAddFile).toHaveBeenCalledWith("base64-encoded-data", "/default/path");
       expect(mockOnClose).toHaveBeenCalled();
     }, { timeout: 1000 });
+  });
+
+  it("закрывает диалог при нажатии на кнопку отмены", async () => {
+    // Очищаем мок перед тестом
+    mockOnClose.mockClear();
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Находим кнопку "Отмена" и кликаем по ней
+    const cancelButton = screen.getByText("add.cancel");
+    expect(cancelButton).toBeInTheDocument();
+    fireEvent.click(cancelButton);
+
+    // Проверяем, что функция onClose была вызвана
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("отключает кнопку добавления, если не указан URL", async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Проверяем, что кнопка отправки отключена, когда поле URL пустое
+    const addButton = screen.getByText("add.add");
+    expect(addButton).toBeDisabled();
+
+    // Вводим URL
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Проверяем, что кнопка стала активной
+    expect(addButton).not.toBeDisabled();
+  });
+
+  it("напрямую тестирует функцию validatePath с ошибкой валидации", async () => {
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Настраиваем mock для ValidateDownloadPath, чтобы он выбрасывал определенное исключение
+    ValidateDownloadPath.mockRejectedValue("Тестовая ошибка пути");
+
+    // Рендерим компонент
+    renderComponent();
+
+    // Открываем поле для ввода пользовательского пути
+    await waitFor(() => {
+      const customPathButton = screen.getByText((_text, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
+      fireEvent.click(customPathButton);
+    });
+
+    // Вводим путь, который должен вызвать ошибку валидации
+    const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    fireEvent.change(pathInput, { target: { value: "/test/invalid/path" } });
+
+    // Вводим URL, чтобы кнопка добавления стала активной
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test-url" } });
+
+    // Нажимаем кнопку добавления
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    // Проверяем, что ValidateDownloadPath был вызван с правильным путем
+    expect(ValidateDownloadPath).toHaveBeenCalledWith("/test/invalid/path");
+
+    // Проверяем, что ошибка отображается в компоненте
+    await waitFor(() => {
+      const errorMessages = screen.queryAllByText("Тестовая ошибка пути");
+      expect(errorMessages.length).toBeGreaterThan(0);
+    });
+
+    // Проверяем, что onAdd не был вызван (форма не была отправлена)
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it("обрабатывает события через props корректно", async () => {
+    // Очищаем моки перед тестом
+    mockOnAdd.mockClear();
+    mockOnAddFile.mockClear();
+    mockOnClose.mockClear();
+
+    // Мокируем ValidateDownloadPath, чтобы он всегда возвращал успех
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+    ValidateDownloadPath.mockResolvedValue(undefined);
+
+    renderComponent();
+
+    // Дожидаемся инициализации компонента
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Вводим URL
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test-protocol" } });
+
+    // Используем submit на форме напрямую для надёжности
+    const form = screen.getByRole("dialog").querySelector("form");
+    expect(form).toBeInTheDocument();
+
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    // Проверяем, что onAdd был вызван с правильными параметрами
+    await waitFor(() => {
+      expect(mockOnAdd).toHaveBeenCalled();
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+  });
+
+  it("явно вызывает блок catch в функции validatePath через HandleSubmit", async () => {
+    // Очищаем моки перед тестом
+    mockOnAdd.mockClear();
+    mockOnClose.mockClear();
+
+    // Мокируем ValidateDownloadPath, чтобы он гарантированно выбрасывал ошибку
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Используем mockImplementation вместо mockRejectedValue
+    ValidateDownloadPath.mockImplementation(() => {
+      return Promise.reject("Тестовая ошибка валидации пути");
+    });
+
+    renderComponent();
+
+    // Дожидаемся инициализации компонента
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Открываем поле для ввода пользовательского пути
+    const customPathButton = screen.getByText((_text, element) => {
+      return element?.textContent === "add.enterCustomPath";
+    });
+    fireEvent.click(customPathButton);
+
+    // Вводим путь, который вызовет ошибку валидации
+    const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    fireEvent.change(pathInput, { target: { value: "/error/path" } });
+
+    // Вводим URL
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Нажимаем кнопку добавления для вызова handleSubmit
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    // Дожидаемся отображения любого сообщения об ошибке в компоненте
+    await waitFor(() => {
+      const pathErrorElement = screen.getByText((content) => {
+        return content.includes("Тестовая ошибка валидации пути");
+      }, { exact: false });
+      expect(pathErrorElement).toBeInTheDocument();
+    }, { timeout: 1000 });
+
+    // Проверяем, что onAdd не был вызван из-за ошибки валидации
+    expect(mockOnAdd).not.toHaveBeenCalled();
   });
 });

@@ -167,7 +167,7 @@ describe("AddTorrent Component", () => {
 
     // Открываем поле для ввода пользовательского пути
     await waitFor(() => {
-      const customPathButton = screen.getByText((content, element) => {
+      const customPathButton = screen.getByText((_text, element) => {
         return element?.textContent === "add.enterCustomPath";
       });
       fireEvent.click(customPathButton);
@@ -255,5 +255,105 @@ describe("AddTorrent Component", () => {
       const tabs = screen.getAllByRole("tab");
       expect(tabs[1]).toHaveAttribute("data-state", "active");
     });
+  });
+
+  it("обрабатывает ошибки валидации пути и отображает сообщение об ошибке", async () => {
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+
+    // Настраиваем мок для возврата ошибки
+    ValidateDownloadPath.mockRejectedValueOnce("Недопустимый путь");
+
+    // Очищаем предыдущие вызовы mockOnAdd
+    mockOnAdd.mockClear();
+
+    renderComponent();
+
+    // Открываем поле для ввода пользовательского пути
+    await waitFor(() => {
+      const customPathButton = screen.getByText((_text, element) => {
+        return element?.textContent === "add.enterCustomPath";
+      });
+      fireEvent.click(customPathButton);
+    });
+
+    // Вводим путь, который вызовет ошибку
+    const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    fireEvent.change(pathInput, { target: { value: "/some/invalid/path" } });
+
+    // Вводим URL и отправляем форму
+    const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
+    fireEvent.change(urlInput, { target: { value: "magnet:test" } });
+
+    // Принудительно устанавливаем, что ValidateDownloadPath будет возвращать ошибку
+    ValidateDownloadPath.mockRejectedValue("Недопустимый путь");
+
+    const addButton = screen.getByText("add.add");
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      // Проверяем, что ValidateDownloadPath был вызван
+      expect(ValidateDownloadPath).toHaveBeenCalledWith("/some/invalid/path");
+
+      // Проверяем, что отображается сообщение об ошибке (используем queryAllByText вместо getByText)
+      const errorMessages = screen.queryAllByText("Недопустимый путь");
+      expect(errorMessages.length).toBeGreaterThan(0);
+    });
+
+    // Ждем завершения всех асинхронных операций
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Проверяем, что onAdd не был вызван после задержки
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it("правильно обрабатывает отправку формы с файлом", async () => {
+    // Данные о торрент-файле
+    const torrentFileData = {
+      name: "test-torrent.torrent",
+      data: "base64-encoded-data",
+    };
+
+    // Очищаем моки перед тестом
+    mockOnAddFile.mockClear();
+    mockOnClose.mockClear();
+
+    // Мокируем ValidateDownloadPath, чтобы он всегда возвращал успех
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+    ValidateDownloadPath.mockResolvedValue(undefined);
+
+    renderComponent({ torrentFileData });
+
+    await waitFor(() => {
+      // Проверяем, что форма отображается с файлом
+      expect(screen.getByText("test-torrent.torrent")).toBeInTheDocument();
+
+      // Проверяем, что вкладка File активна
+      const tabs = screen.getAllByRole("tab");
+      expect(tabs[1]).toHaveAttribute("data-state", "active");
+    });
+
+    // Находим выпадающий список путей с использованием правильного data-testid
+    const pathSelect = screen.getByTestId("select-trigger");
+    expect(pathSelect).toBeInTheDocument();
+
+    // Симулируем событие submit для формы вместо клика по кнопке
+    const form = screen.getByRole("dialog").querySelector("form");
+    expect(form).toBeInTheDocument();
+
+    // Проверяем, что форма не null перед вызовом fireEvent.submit
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    // Проверяем, что onAddFile был вызван с правильными параметрами
+    // Используем более длительный таймаут для асинхронных операций
+    await waitFor(() => {
+      expect(mockOnAddFile).toHaveBeenCalledWith("base64-encoded-data", "/valid/path");
+      expect(mockOnClose).toHaveBeenCalled();
+    }, { timeout: 1000 });
   });
 });

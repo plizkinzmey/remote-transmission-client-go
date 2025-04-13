@@ -275,8 +275,9 @@ describe("AddTorrent Component", () => {
       await import("../../../wailsjs/go/main/App")
     );
 
-    // Настраиваем мок для возврата ошибки
-    ValidateDownloadPath.mockRejectedValueOnce("Недопустимый путь");
+    // Используем существующую реализацию мока, настраивая только конкретное значение ошибки
+    // для этого теста без переопределения всей реализации функции
+    const errorMessage = "Недопустимый путь";
 
     // Очищаем предыдущие вызовы mockOnAdd
     mockOnAdd.mockClear();
@@ -299,8 +300,8 @@ describe("AddTorrent Component", () => {
     const urlInput = screen.getByPlaceholderText("magnet:?xt=urn:btih:...");
     fireEvent.change(urlInput, { target: { value: "magnet:test" } });
 
-    // Принудительно устанавливаем, что ValidateDownloadPath будет возвращать ошибку
-    ValidateDownloadPath.mockRejectedValue("Недопустимый путь");
+    // Устанавливаем ожидаемую ошибку для этой конкретной проверки
+    ValidateDownloadPath.mockRejectedValueOnce(errorMessage);
 
     const addButton = screen.getByText("add.add");
     fireEvent.click(addButton);
@@ -310,15 +311,12 @@ describe("AddTorrent Component", () => {
       expect(ValidateDownloadPath).toHaveBeenCalledWith("/some/invalid/path");
 
       // Проверяем, что отображается сообщение об ошибке (используем queryAllByText вместо getByText)
-      const errorMessages = screen.queryAllByText("Недопустимый путь");
+      const errorMessages = screen.queryAllByText(errorMessage);
       expect(errorMessages.length).toBeGreaterThan(0);
-    });
 
-    // Ждем завершения всех асинхронных операций
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Проверяем, что onAdd не был вызван после задержки
-    expect(mockOnAdd).not.toHaveBeenCalled();
+      // Проверяем, что onAdd не был вызван
+      expect(mockOnAdd).not.toHaveBeenCalled();
+    }, { timeout: 1000 });
   });
 
   it("выполняет успешную валидацию пути и отправляет форму с URL", async () => {

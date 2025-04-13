@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, Button, Tabs, Flex, Box } from "@radix-ui/themes";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -59,7 +59,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   };
 
   // Валидация пути перед отправкой
-  const validatePath = async (path: string) => {
+  const validatePath = useCallback(async (path: string): Promise<boolean> => {
     try {
       await ValidateDownloadPath(path);
       setPathError("");
@@ -68,7 +68,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       setPathError(String(error));
       return false;
     }
-  };
+  }, [setPathError]);
 
   // Экспозиция функций для тестирования
   useEffect(() => {

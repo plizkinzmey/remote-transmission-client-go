@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Box, Flex, Text, IconButton, Checkbox } from "@radix-ui/themes";
 import { ChevronDownIcon, FolderIcon, DocumentIcon } from "@heroicons/react/24/outline";
 import { FileNode as FileNodeType } from "../../types/FileTree";
@@ -26,10 +26,8 @@ export const FileNode: React.FC<FileNodeProps> = ({
     onToggleExpand,
 }) => {
     const handleCheckboxChange = (checked: boolean) => {
-        onToggleWanted(node, checked);
+        onToggleWanted(node, !!checked);
     };
-
-    const checkboxRef = useRef<HTMLButtonElement>(null);
 
     // Определяем значение checked для Checkbox.Root
     // Radix UI Checkbox.Root поддерживает значение 'indeterminate' для пропа checked
@@ -75,7 +73,6 @@ export const FileNode: React.FC<FileNodeProps> = ({
                 <Flex className={styles.nameContainer}>
                     <Box style={{ display: "flex", alignItems: "center" }}>
                         <Checkbox
-                            ref={checkboxRef}
                             checked={checkedValue}
                             onCheckedChange={handleCheckboxChange}
                             className={node.indeterminate ? "indeterminate-checkbox" : ""}

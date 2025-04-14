@@ -29,6 +29,10 @@ export const FileNode: React.FC<FileNodeProps> = ({
         onToggleWanted(node, checked);
     };
 
+    // Определяем значение checked для Checkbox.Root
+    // Radix UI Checkbox.Root поддерживает значение 'indeterminate' для пропа checked
+    const checkedValue = node.indeterminate ? "indeterminate" : node.Wanted;
+
     return (
         <Box
             className={styles.fileNode}
@@ -69,19 +73,8 @@ export const FileNode: React.FC<FileNodeProps> = ({
                 <Flex className={styles.nameContainer}>
                     <Box style={{ display: "flex", alignItems: "center" }}>
                         <Checkbox
-                            checked={node.Wanted}
+                            checked={checkedValue}
                             onCheckedChange={handleCheckboxChange}
-                            ref={(el) => {
-                                if (el) {
-                                    // Поскольку Radix UI Checkbox использует button, а не input,
-                                    // мы должны вернуться к использованию CSS класса
-                                    if (node.indeterminate) {
-                                        el.classList.add("indeterminate-checkbox");
-                                    } else {
-                                        el.classList.remove("indeterminate-checkbox");
-                                    }
-                                }
-                            }}
                             className={node.indeterminate ? "indeterminate-checkbox" : ""}
                             data-testid={`checkbox-${node.Path}`}
                         />

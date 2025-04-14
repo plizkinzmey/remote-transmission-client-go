@@ -23,11 +23,11 @@ export interface FileNode {
   /** Размер файла в байтах */
   Size: number;
   /** Прогресс загрузки файла в процентах (0-100) */
-  Progress: number;
+  Progress?: number; // Сделать Progress необязательным
   /** Флаг, указывающий выбран ли файл для загрузки */
   Wanted: boolean;
   /** Флаг, указывающий является ли узел директорией */
-  isDirectory?: boolean;
+  isDirectory: boolean;
   /** Дочерние узлы (для директорий) */
   children?: FileNode[];
   /** Ссылка на родительский узел */

@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import userEvent from '@testing-library/user-event'; // Импортировать user-event
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { AddTorrent } from "./AddTorrent";
 import { MockLocalizationProvider } from "../../test/mocks/localization-context-mock";
@@ -505,6 +506,53 @@ describe("AddTorrent Component", () => {
     expect(addButton).not.toBeDisabled();
   });
 
+  it("отключает кнопку добавления на вкладке File, если файл не выбран", async () => {
+    renderComponent();
+    const user = userEvent.setup(); // Настроить user-event
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Переключаемся на вкладку File
+    const fileTabTrigger = screen.getByRole('tab', { name: /add.file/i });
+    await user.click(fileTabTrigger); // Использовать user.click
+
+    // Проверяем, что кнопка отправки отключена
+    const addButton = screen.getByRole('button', { name: /add.add/i }); // Искать по роли и имени
+    expect(addButton).toBeDisabled();
+  });
+
+  it("включает кнопку добавления на вкладке File, когда файл выбран", async () => {
+    renderComponent();
+    const user = userEvent.setup(); // Настроить user-event
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Переключаемся на вкладку File
+    const fileTabTrigger = screen.getByRole('tab', { name: /add.file/i });
+    await user.click(fileTabTrigger);
+
+    // Находим кнопку добавления и проверяем, что она отключена
+    const addButton = screen.getByRole('button', { name: /add.add/i });
+    expect(addButton).toBeDisabled();
+
+    // Симулируем выбор файла через userEvent.upload
+    // **ВАЖНО**: Убедитесь, что в компоненте TorrentFileTab есть
+    // input type="file" с атрибутом data-testid="file-input"
+    const fileInput = screen.getByTestId('file-input');
+    const file = new File(['torrent data'], 'test.torrent', { type: 'application/x-bittorrent' });
+    await user.upload(fileInput, file);
+
+    // Ждем обновления состояния (когда selectedFileData установится)
+    // и проверяем, что кнопка стала активной
+    await waitFor(() => {
+      expect(addButton).not.toBeDisabled();
+    });
+  });
+
   it("напрямую тестирует функцию validatePath с ошибкой валидации", async () => {
     const { ValidateDownloadPath } = vi.mocked(
       await import("../../../wailsjs/go/main/App")
@@ -668,11 +716,11 @@ describe("AddTorrent Component", () => {
 
   it("выполняет очистку при размонтировании без testRef", () => {
     // Рендерим компонент БЕЗ передачи testRef
-    const { unmount } = renderComponent(); 
+    const { unmount } = renderComponent();
 
     // Просто размонтируем компонент. Ошибок быть не должно.
     // Это вызовет функцию очистки useEffect (строка 131),
     // и условие `if (testRef)` (строка 134) будет false.
-    expect(() => unmount()).not.toThrow(); 
+    expect(() => unmount()).not.toThrow();
   });
 });

@@ -196,8 +196,8 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
                 size="1"
                 type="submit"
                 disabled={
-                  (activeTab === "url" && !url.trim()) ||
-                  (activeTab === "file" && !selectedFileData)
+                  (activeTab === "url" && !url.trim()) || // Ветвление 1 (&&) + Ветвление 2 (||)
+                  (activeTab === "file" && !selectedFileData) // Ветвление 3 (&&)
                 }
               >
                 {t("add.add")}

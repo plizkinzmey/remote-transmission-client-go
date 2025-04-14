@@ -14,7 +14,7 @@ interface DownloadPathSelectorProps {
   onLoadingStateChange?: (isLoading: boolean) => void;
   testRef?: React.MutableRefObject<{
     handleRemovePath?: (path: string) => Promise<void>;
-    handlePathValidation?: (path: string) => Promise<boolean>;
+    validatePath?: (path: string) => Promise<boolean>;
   }>;
 }
 
@@ -72,11 +72,11 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     };
   }, [initialPath, onPathChange, onLoadingStateChange]);
 
-  const validatePath = useCallback(async (path: string): Promise<void> => {
+  const validatePathInternal = useCallback(async (path: string): Promise<void> => {
     await ValidateDownloadPath(path);
   }, []);
 
-  const handlePathValidation = useCallback(
+  const validatePath = useCallback(
     async (path: string): Promise<boolean> => {
       if (!path) {
         setPathError("");
@@ -84,7 +84,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
       }
 
       try {
-        await validatePath(path);
+        await validatePathInternal(path);
         setPathError("");
         return true;
       } catch (error) {
@@ -93,7 +93,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
         return false;
       }
     },
-    [validatePath, setPathError]
+    [validatePathInternal, setPathError]
   );
 
   const handleRemovePath = useCallback(
@@ -107,20 +107,20 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
           const newPath = paths.length > 0 ? paths[0] : "";
           setDownloadPath(newPath);
           onPathChange(newPath);
-          await handlePathValidation(newPath);
+          await validatePath(newPath);
         }
       } catch (error) {
         console.error("Ошибка при удалении пути:", error);
       }
     },
-    [downloadPath, onPathChange, handlePathValidation, setDownloadPaths, setDownloadPath]
+    [downloadPath, onPathChange, validatePath, setDownloadPaths, setDownloadPath]
   );
 
   useEffect(() => {
     if (testRef) {
       testRef.current = {
         handleRemovePath,
-        handlePathValidation,
+        validatePath,
       };
     }
     return () => {
@@ -128,19 +128,19 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
         testRef.current = {};
       }
     };
-  }, [testRef, handleRemovePath, handlePathValidation]);
+  }, [testRef, handleRemovePath, validatePath]);
 
   const handlePathChange = async (path: string) => {
     setDownloadPath(path);
     onPathChange(path);
-    await handlePathValidation(path);
+    await validatePath(path);
   };
 
   const handleCustomPathChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const path = e.target.value;
     setCustomPath(path);
     onPathChange(path);
-    await handlePathValidation(path);
+    await validatePath(path);
   };
 
   const handleCustomPathToggle = () => {

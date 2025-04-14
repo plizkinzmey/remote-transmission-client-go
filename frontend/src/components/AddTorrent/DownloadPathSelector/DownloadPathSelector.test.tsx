@@ -30,7 +30,7 @@ vi.mock("../../../../wailsjs/go/main/App", () => ({
 // Определяем тип для testRef
 type DownloadPathSelectorTestRef = {
   handleRemovePath?: (path: string) => Promise<void>;
-  handlePathValidation?: (path: string) => Promise<boolean>;
+  validatePath?: (path: string) => Promise<boolean>;
 };
 
 // Mock PointerEvent methods for Radix UI compatibility in JSDOM
@@ -294,7 +294,7 @@ describe("DownloadPathSelector Component", () => {
     expect(mockOnLoadingStateChange).not.toHaveBeenCalled();
   });
 
-  it("обрабатывает пустой путь в handleCustomPathChange и handlePathValidation", async () => {
+  it("обрабатывает пустой путь в handleCustomPathChange и validatePath", async () => {
     const user = userEvent.setup();
     renderComponent();
 
@@ -322,7 +322,7 @@ describe("DownloadPathSelector Component", () => {
 
     let validationResult = true;
     await act(async () => {
-      validationResult = await testRef.current.handlePathValidation?.("") ?? true;
+      validationResult = await testRef.current.validatePath?.("") ?? true;
     });
     expect(validationResult).toBe(false);
     await waitFor(() => {
@@ -481,7 +481,7 @@ describe("DownloadPathSelector Component", () => {
     await waitFor(() => {
       expect(mockOnPathChange).toHaveBeenCalledWith("/lastpath");
       expect(testRef.current.handleRemovePath).toBeDefined();
-      expect(testRef.current.handlePathValidation).toBeDefined();
+      expect(testRef.current.validatePath).toBeDefined();
     });
 
     mockOnPathChange.mockClear();
@@ -507,32 +507,25 @@ describe("DownloadPathSelector Component", () => {
   });
 
   it("корректно загружает пути без onLoadingStateChange", async () => {
-    // Рендерим компонент БЕЗ onLoadingStateChange
     renderComponent();
 
-    // Просто проверяем, что компонент загрузился и выбрал первый путь,
-    // что неявно подтверждает, что ветка `if (onLoadingStateChange && isMounted)`
-    // отработала корректно (не вызвав ошибку при undefined onLoadingStateChange)
     await waitFor(() => {
       expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
     });
 
-    // Убедимся, что select-trigger отображается
     expect(screen.getByTestId("select-trigger")).toBeInTheDocument();
   });
 
   it("обрабатывает ошибку при получении путей без onLoadingStateChange", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockImplementation(() => { });
 
     const testError = new Error("Test error without callback");
     vi.mocked(AppModule.GetDownloadPaths).mockRejectedValueOnce(testError);
 
-    // Рендерим компонент БЕЗ onLoadingStateChange
     renderComponent();
 
-    // Ожидаем, что ошибка будет залогирована
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Ошибка при получении путей:",
@@ -540,8 +533,6 @@ describe("DownloadPathSelector Component", () => {
       );
     });
 
-    // Проверяем, что компонент не упал и отобразил кнопку переключения
-    // (это означает, что isLoadingPaths стал false, даже без колбэка)
     expect(screen.getByTestId("toggle-path-mode-button")).toBeInTheDocument();
 
     consoleErrorSpy.mockRestore();
@@ -550,35 +541,28 @@ describe("DownloadPathSelector Component", () => {
   it("корректно обрабатывает размонтирование компонента во время ошибки загрузки путей", async () => {
     const testError = new Error("Delayed error");
     const errorPromise: Promise<string[]> = new Promise((_, reject) => {
-      setTimeout(() => reject(testError), 100); // Задержка отклонения
+      setTimeout(() => reject(testError), 100);
     });
     vi.mocked(AppModule.GetDownloadPaths).mockReturnValueOnce(errorPromise);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
 
-    // Передаем mock-колбэк
     const { unmount } = renderComponent({ onLoadingStateChange: mockOnLoadingStateChange });
 
-    // Размонтируем *до* отклонения промиса
     unmount();
 
-    // Ждем отклонения промиса *после* размонтирования
     await act(async () => {
       try {
         await errorPromise;
       } catch (e) {
-        // Ожидаемое отклонение
       }
     });
 
-     // Ждем еще немного, чтобы убедиться, что любые потенциальные обновления состояния попытались бы выполниться
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // Проверяем, что console.error БЫЛ вызван (строка 58)
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Ошибка при получении путей:",
-        testError
+      "Ошибка при получении путей:",
+      testError
     );
-    // Проверяем, что onLoadingStateChange НЕ был вызван, так как сработал return на строке 59
     expect(mockOnLoadingStateChange).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();

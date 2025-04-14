@@ -5,10 +5,11 @@ import {
   fireEvent,
   waitFor,
   within,
+  act,
 } from "@testing-library/react";
 import userEvent from '@testing-library/user-event'; // Импортировать user-event
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { AddTorrent } from "./AddTorrent";
+import { AddTorrent, AddTorrentProps } from "./AddTorrent"; // Импортируем AddTorrentProps
 import { MockLocalizationProvider } from "../../test/mocks/localization-context-mock";
 import { TestThemeProvider } from "../../test/mocks/theme-mock";
 
@@ -62,7 +63,7 @@ describe("AddTorrent Component", () => {
     });
   });
 
-  const renderComponent = (props = {}) => {
+  const renderComponent = (props: Partial<AddTorrentProps> = {}) => {
     return render(
       <TestThemeProvider>
         <MockLocalizationProvider>
@@ -683,8 +684,8 @@ describe("AddTorrent Component", () => {
   });
 
   it("создает и очищает testRef при монтировании и размонтировании компонента", async () => {
-    // Создаем реальный ref для проверки
-    const testRef = React.createRef<{ validatePath?: (path: string) => Promise<boolean> }>();
+    // Создаем объект, соответствующий MutableRefObject
+    const testRef: AddTorrentProps['testRef'] = { current: {} };
 
     const { unmount } = renderComponent({ testRef });
 
@@ -701,11 +702,13 @@ describe("AddTorrent Component", () => {
     ValidateDownloadPath.mockResolvedValueOnce(undefined);
 
     // Вызываем функцию validatePath через ref
-    if (testRef.current && testRef.current.validatePath) {
-      const result = await testRef.current.validatePath("/valid/path");
-      expect(result).toBe(true);
-      expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/path");
+    let result = false;
+    if (testRef.current?.validatePath) {
+      result = await testRef.current.validatePath("/valid/path");
     }
+    expect(result).toBe(true);
+    expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/path");
+
 
     // Размонтируем компонент
     unmount();
@@ -714,13 +717,79 @@ describe("AddTorrent Component", () => {
     expect(testRef.current?.validatePath).toBeUndefined();
   });
 
-  it("выполняет очистку при размонтировании без testRef", () => {
-    // Рендерим компонент БЕЗ передачи testRef
-    const { unmount } = renderComponent();
+  it("вызывает очистку useEffect при изменении testRef", async () => {
+    // Создаем объекты, соответствующие MutableRefObject
+    const ref1: AddTorrentProps['testRef'] = { current: {} };
+    const ref2: AddTorrentProps['testRef'] = { current: {} };
 
-    // Просто размонтируем компонент. Ошибок быть не должно.
-    // Это вызовет функцию очистки useEffect (строка 131),
-    // и условие `if (testRef)` (строка 134) будет false.
+    // Рендерим с первым ref
+    const { rerender } = render(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <AddTorrent
+            onAdd={mockOnAdd}
+            onAddFile={mockOnAddFile}
+            onClose={mockOnClose}
+            testRef={ref1}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    // Проверяем, что ref1 был установлен
+    await waitFor(() => {
+      expect(ref1.current).not.toBeNull();
+      expect(ref1.current?.validatePath).toBeDefined();
+    });
+
+    // Перерендериваем компонент с другим ref
+    rerender(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <AddTorrent
+            onAdd={mockOnAdd}
+            onAddFile={mockOnAddFile}
+            onClose={mockOnClose}
+            testRef={ref2}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    // Проверяем, что ref2 был установлен.
+    await waitFor(() => {
+      expect(ref2.current).not.toBeNull();
+      expect(ref2.current?.validatePath).toBeDefined();
+    });
+
+    // Дополнительно убедимся, что ref1 был очищен
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    expect(ref1.current?.validatePath).toBeUndefined();
+  });
+
+  it("выполняет очистку при размонтировании без testRef", () => {
+    const { unmount } = renderComponent();
     expect(() => unmount()).not.toThrow();
+  });
+
+  it("закрывает диалог при нажатии Escape", async () => {
+    // Очищаем мок перед тестом
+    mockOnClose.mockClear();
+
+    renderComponent();
+
+    // Убеждаемся, что диалог открыт
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Имитируем нажатие клавиши Escape на документе
+    // Используем fireEvent.keyDown, так как Radix Dialog слушает это событие
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
+
+    // Проверяем, что функция onClose была вызвана через onOpenChange
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 });

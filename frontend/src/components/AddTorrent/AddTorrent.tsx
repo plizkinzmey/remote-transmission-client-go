@@ -143,7 +143,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
 
   return (
     <Portal>
-      <Dialog.Root open onOpenChange={() => onClose()}>
+      <Dialog.Root open onOpenChange={onClose}>
         <Dialog.Content
           data-testid="add-torrent-modal"
           className="dialog-content"

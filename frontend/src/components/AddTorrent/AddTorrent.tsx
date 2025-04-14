@@ -70,6 +70,11 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
     }
   }, [setPathError, ValidateDownloadPath]);
 
+  // Определяем обработчик для onOpenChange с помощью useCallback
+  const handleOpenChange = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
   // Экспозиция функций для тестирования
   useEffect(() => {
     // Устанавливаем функции для тестирования
@@ -121,7 +126,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
   if (isLocalizationLoading) {
     return (
       <Portal>
-        <Dialog.Root open onOpenChange={onClose}>
+        <Dialog.Root open onOpenChange={handleOpenChange}>
           <Dialog.Content
             data-testid="add-torrent-modal"
             className="dialog-content"
@@ -143,7 +148,7 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
 
   return (
     <Portal>
-      <Dialog.Root open onOpenChange={onClose}>
+      <Dialog.Root open onOpenChange={handleOpenChange}>
         <Dialog.Content
           data-testid="add-torrent-modal"
           className="dialog-content"

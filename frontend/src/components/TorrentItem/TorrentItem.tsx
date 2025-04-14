@@ -14,31 +14,60 @@ import {
 } from "../../utils/torrentStatus";
 import styles from "./TorrentItem.module.css";
 
-interface TorrentItemProps {
+/**
+ * @description Пропсы для компонента TorrentItem.
+ */
+export interface TorrentItemProps {
+  /** @description Уникальный идентификатор торрента. */
   id: number;
+  /** @description Имя торрента. */
   name: string;
+  /** @description Текущий статус торрента (например, 'stopped', 'downloading'). */
   status: string;
+  /** @description Прогресс загрузки торрента в процентах (0-100). */
   progress: number;
+  /** @description Отформатированный размер торрента (например, '100 MB'). */
   sizeFormatted: string;
+  /** @description Коэффициент раздачи. */
   uploadRatio: number;
+  /** @description Количество подключенных сидов. */
   seedsConnected: number;
+  /** @description Общее количество сидов. */
   seedsTotal: number;
+  /** @description Количество подключенных пиров. */
   peersConnected: number;
+  /** @description Общее количество пиров. */
   peersTotal: number;
+  /** @description Отформатированный объем отданного (например, '50 MB'). */
   uploadedFormatted: string;
+  /** @description Выбран ли торрент. */
   selected: boolean;
+  /** @description Обработчик выбора/снятия выбора торрента. */
   onSelect: (id: number) => void;
+  /** @description Обработчик удаления торрента. */
   onRemove: (id: number, deleteData: boolean) => void;
+  /** @description Обработчик запуска торрента. */
   onStart: (id: number) => void;
+  /** @description Обработчик остановки торрента. */
   onStop: (id: number) => void;
+  /** @description Обработчик проверки торрента (опционально). */
   onVerify?: (id: number) => void;
+  /** @description Отформатированная скорость загрузки (например, '1 MB/s'). */
   downloadSpeedFormatted: string;
+  /** @description Отформатированная скорость отдачи (например, '500 KB/s'). */
   uploadSpeedFormatted: string;
+  /** @description Обработчик установки ограничения скорости (опционально). */
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
+  /** @description Включен ли режим ограничения скорости (опционально). */
   isSlowMode?: boolean;
-  "data-testid"?: string; // Добавляем поддержку data-testid
+  /** @description Атрибут data-testid для корневого элемента компонента (опционально). */
+  "data-testid"?: string;
 }
 
+/**
+ * @description Компонент для отображения элемента списка торрентов.
+ * Показывает основную информацию о торренте и предоставляет действия для управления им.
+ */
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
@@ -77,17 +106,24 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   useEffect(() => {
     if (!isLoading || !lastAction) return;
 
-    if (lastAction === "verify" && isChecking(status)) {
-      setIsLoading(false);
-      setLastAction(null);
+    // Обработка сброса для 'verify' только при статусе 'checking'
+    if (lastAction === "verify") {
+      if (isChecking(status)) {
+        setIsLoading(false);
+        setLastAction(null);
+      }
+      // Не сбрасываем состояние немедленно для 'verify'
       return;
     }
 
-    const canPerformAction =
-      (lastAction === "start" && status === "stopped") ||
-      (lastAction === "stop" && ["downloading", "seeding"].includes(status));
+    // Определяем, нужно ли сбрасывать состояние загрузки для 'start' или 'stop'
+    // Сброс происходит, когда статус изменился после соответствующего действия
+    const shouldResetLoading =
+      (lastAction === "start" && status !== "stopped") || // Если стартовали, а статус уже не stopped
+      (lastAction === "stop" && !["downloading", "seeding"].includes(status)); // Если остановили, а статус уже не downloading/seeding
 
-    if (!canPerformAction) {
+    // Сбрасываем isLoading, если статус изменился после действия
+    if (shouldResetLoading) {
       setIsLoading(false);
       setLastAction(null);
     }
@@ -125,7 +161,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               checked={selected}
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}
-              disabled={isCurrentlyBlocked}
+              disabled={isCurrentlyBlocked || isChecking(status)}
+              data-testid={`torrent-item-checkbox-${id}`}
             />
           </Box>
           <Box className={styles.contentBox}>
@@ -178,13 +215,12 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         open={showDeleteConfirmation}
       />
 
-      {showContent && (
-        <TorrentContent
-          id={id}
-          name={name}
-          onClose={() => setShowContent(false)}
-        />
-      )}
+      <TorrentContent
+        id={id}
+        name={name}
+        open={showContent}
+        onClose={() => setShowContent(false)}
+      />
     </>
   );
 };

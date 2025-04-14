@@ -15,6 +15,8 @@ export interface TorrentContentProps {
     id: number;
     /** Название торрента */
     name: string;
+    /** Управляет видимостью диалога */
+    open: boolean;
     /** Обработчик закрытия диалога */
     onClose: () => void;
 }
@@ -26,6 +28,7 @@ export interface TorrentContentProps {
 export const TorrentContent: React.FC<TorrentContentProps> = ({
     id,
     name,
+    open,
     onClose,
 }) => {
     const { t } = useLocalization();
@@ -46,11 +49,15 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
 
     // Блокируем прокрутку основного содержимого при открытом окне
     useEffect(() => {
-        document.body.style.overflow = "hidden";
-        return () => {
+        if (open) {
+            document.body.style.overflow = "hidden";
+            return () => {
+                document.body.style.overflow = "";
+            };
+        } else {
             document.body.style.overflow = "";
-        };
-    }, []);
+        }
+    }, [open]);
 
     // Рендеринг содержимого диалога в зависимости от состояния загрузки и наличия ошибок
     const renderContent = () => {
@@ -96,7 +103,7 @@ export const TorrentContent: React.FC<TorrentContentProps> = ({
     };
 
     return (
-        <Dialog.Root open={true} onOpenChange={(open) => !open && onClose()}>
+        <Dialog.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             <Dialog.Content
                 className={`torrent-content-overlay ${styles.dialogContent}`}
                 data-testid="torrent-content-dialog"

@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FileNode } from "../FileNode";
@@ -197,9 +196,13 @@ describe("FileNode", () => {
             Path: "documents",
             Size: 2048,
             Progress: 50,
-            Wanted: false,
+            Wanted: false, // Wanted может быть false для indeterminate
             isDirectory: true,
-            children: [],
+            children: [
+                { ID: 1, Name: "file1.txt", Path: "documents/file1.txt", Size: 1024, Progress: 100, Wanted: true, isDirectory: false },
+                { ID: 2, Name: "file2.txt", Path: "documents/file2.txt", Size: 1024, Progress: 0, Wanted: false, isDirectory: false },
+            ], // Добавим детей для более реалистичного сценария indeterminate
+            expanded: true, // Развернем, чтобы дети были видны (хотя это не влияет на indeterminate)
             indeterminate: true
         };
 
@@ -209,8 +212,51 @@ describe("FileNode", () => {
             onToggleExpand: mockToggleExpand
         });
 
-        // Проверяем, что у чекбокса есть класс для промежуточного состояния
+        // Проверяем, что у чекбокса установлен атрибут data-state="indeterminate"
         const checkbox = screen.getByTestId(`checkbox-${dirNode.Path}`);
-        expect(checkbox.closest(".indeterminate-checkbox")).toBeInTheDocument();
+        expect(checkbox).toHaveAttribute('data-state', 'indeterminate'); // Проверка атрибута data-state
+    });
+
+    it("отображает прогресс 0% если node.Progress не определен", () => {
+        const fileNode: FileNodeType = {
+            ID: 3,
+            Name: "no-progress.txt",
+            Path: "no-progress.txt",
+            Size: 500,
+            Wanted: true,
+            isDirectory: false
+        };
+
+        renderComponent({
+            node: fileNode,
+            onToggleWanted: mockToggleWanted,
+            onToggleExpand: mockToggleExpand
+        });
+
+        // Проверяем, что прогресс-бар отображается с шириной 0%
+        const progressBar = screen.getByTestId(`progress-${fileNode.Path}`);
+        expect(progressBar).toBeInTheDocument();
+        expect(progressBar).toHaveStyle("width: 0%");
+    });
+
+    it("обрабатывает размонтирование без ошибок (покрывает ref callback)", () => {
+        const fileNode: FileNodeType = {
+            ID: 1,
+            Name: "unmount-test.txt",
+            Path: "unmount-test.txt",
+            Size: 100,
+            Progress: 0,
+            Wanted: true,
+            isDirectory: false,
+        };
+
+        const { unmount } = renderComponent({
+            node: fileNode,
+            onToggleWanted: mockToggleWanted,
+            onToggleExpand: mockToggleExpand,
+        });
+
+        // Просто размонтируем компонент. Это вызовет ref callback с null.
+        expect(() => unmount()).not.toThrow();
     });
 });

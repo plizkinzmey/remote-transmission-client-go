@@ -14,7 +14,8 @@ import {
 } from "../../utils/torrentStatus";
 import styles from "./TorrentItem.module.css";
 
-interface TorrentItemProps {
+// Экспортируем интерфейс
+export interface TorrentItemProps {
   id: number;
   name: string;
   status: string;
@@ -77,17 +78,24 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   useEffect(() => {
     if (!isLoading || !lastAction) return;
 
-    if (lastAction === "verify" && isChecking(status)) {
-      setIsLoading(false);
-      setLastAction(null);
+    // Обработка сброса для 'verify' только при статусе 'checking'
+    if (lastAction === "verify") {
+      if (isChecking(status)) {
+        setIsLoading(false);
+        setLastAction(null);
+      }
+      // Не сбрасываем состояние немедленно для 'verify'
       return;
     }
 
-    const canPerformAction =
-      (lastAction === "start" && status === "stopped") ||
-      (lastAction === "stop" && ["downloading", "seeding"].includes(status));
+    // Существующая логика для 'start' и 'stop'
+    // Определяем, соответствует ли текущий статус последнему действию
+    const isActionStillValid =
+      (lastAction === "start" && status !== "stopped") || // Если стартовали, а статус уже не stopped
+      (lastAction === "stop" && !["downloading", "seeding"].includes(status)); // Если остановили, а статус уже не downloading/seeding
 
-    if (!canPerformAction) {
+    // Сбрасываем isLoading, если действие больше не актуально для текущего статуса
+    if (isActionStillValid) {
       setIsLoading(false);
       setLastAction(null);
     }
@@ -125,7 +133,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               checked={selected}
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}
-              disabled={isCurrentlyBlocked}
+              disabled={isCurrentlyBlocked || isChecking(status)}
             />
           </Box>
           <Box className={styles.contentBox}>

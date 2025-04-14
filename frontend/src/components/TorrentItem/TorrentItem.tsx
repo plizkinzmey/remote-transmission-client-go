@@ -116,14 +116,14 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
       return;
     }
 
-    // Существующая логика для 'start' и 'stop'
-    // Определяем, соответствует ли текущий статус последнему действию
-    const isActionStillValid =
+    // Определяем, нужно ли сбрасывать состояние загрузки для 'start' или 'stop'
+    // Сброс происходит, когда статус изменился после соответствующего действия
+    const shouldResetLoading =
       (lastAction === "start" && status !== "stopped") || // Если стартовали, а статус уже не stopped
       (lastAction === "stop" && !["downloading", "seeding"].includes(status)); // Если остановили, а статус уже не downloading/seeding
 
-    // Сбрасываем isLoading, если действие больше не актуально для текущего статуса
-    if (isActionStillValid) {
+    // Сбрасываем isLoading, если статус изменился после действия
+    if (shouldResetLoading) {
       setIsLoading(false);
       setLastAction(null);
     }

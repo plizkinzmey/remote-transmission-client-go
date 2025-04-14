@@ -89,6 +89,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
         return true;
       } catch (error) {
         console.error("Ошибка валидации пути:", error);
+        // Удаляем префикс "Error: " для более чистого отображения в UI
         setPathError(String(error).replace(/^Error:\s*/, ""));
         return false;
       }

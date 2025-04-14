@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Box, Flex, Text, IconButton, Checkbox } from "@radix-ui/themes";
 import { ChevronDownIcon, FolderIcon, DocumentIcon } from "@heroicons/react/24/outline";
 import { FileNode as FileNodeType } from "../../types/FileTree";
@@ -28,6 +28,17 @@ export const FileNode: React.FC<FileNodeProps> = ({
     const handleCheckboxChange = (checked: boolean) => {
         onToggleWanted(node, checked);
     };
+
+    const checkboxRef = useRef<HTMLButtonElement>(null);
+
+    // Определяем значение checked для Checkbox.Root
+    const checkedValue = node.indeterminate ? "indeterminate" : node.Wanted;
+
+    // --- ОТЛАДКА ---
+    console.log(
+        `[FileNode] Rendering Checkbox for ${node.Path}. indeterminate: ${node.indeterminate}, Wanted: ${node.Wanted}, checkedValue: ${checkedValue}`
+    );
+    // ---------------
 
     return (
         <Box
@@ -69,19 +80,9 @@ export const FileNode: React.FC<FileNodeProps> = ({
                 <Flex className={styles.nameContainer}>
                     <Box style={{ display: "flex", alignItems: "center" }}>
                         <Checkbox
-                            checked={node.Wanted}
+                            ref={checkboxRef}
+                            checked={checkedValue}
                             onCheckedChange={handleCheckboxChange}
-                            ref={(el) => {
-                                if (el) {
-                                    // Поскольку Radix UI Checkbox использует button, а не input,
-                                    // мы должны вернуться к использованию CSS класса
-                                    if (node.indeterminate) {
-                                        el.classList.add("indeterminate-checkbox");
-                                    } else {
-                                        el.classList.remove("indeterminate-checkbox");
-                                    }
-                                }
-                            }}
                             className={node.indeterminate ? "indeterminate-checkbox" : ""}
                             data-testid={`checkbox-${node.Path}`}
                         />

@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { DownloadPathSelector } from "./DownloadPathSelector";
-import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
-import { TestThemeProvider } from "../../../test/mocks/theme-mock";
+import { DownloadPathSelector } from "../DownloadPathSelector";
+import { MockLocalizationProvider } from "../../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../../test/mocks/theme-mock";
 
 // Импортируем модули для мока
-import * as AppModule from "../../../../wailsjs/go/main/App";
+import * as AppModule from "../../../../../wailsjs/go/main/App";
 
 // Mock зависимостей
-vi.mock("../../../../wailsjs/go/main/App", () => ({
+vi.mock("../../../../../wailsjs/go/main/App", () => ({
   GetDownloadPaths: vi.fn().mockResolvedValue(["/path1", "/path2", "/path3"]),
   ValidateDownloadPath: vi.fn().mockImplementation(async (path) => {
     if (path === "/invalid") {

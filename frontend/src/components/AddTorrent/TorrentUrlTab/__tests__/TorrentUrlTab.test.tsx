@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { TorrentUrlTab } from "./TorrentUrlTab";
-import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
-import { TestThemeProvider } from "../../../test/mocks/theme-mock";
+import { TorrentUrlTab } from "../TorrentUrlTab";
+import { MockLocalizationProvider } from "../../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../../test/mocks/theme-mock";
 
 describe("TorrentUrlTab Component", () => {
   const mockOnUrlChange = vi.fn();

@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { TorrentFileTab } from "./TorrentFileTab";
-import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
-import { TestThemeProvider } from "../../../test/mocks/theme-mock";
+import { TorrentFileTab } from "../TorrentFileTab";
+import { MockLocalizationProvider } from "../../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../../test/mocks/theme-mock";
 
 // Mock зависимостей
-vi.mock("../../../../wailsjs/go/main/App", () => ({
+vi.mock("../../../../../wailsjs/go/main/App", () => ({
   ReadFile: vi.fn().mockResolvedValue("base64content"),
 }));
 
@@ -69,7 +69,7 @@ describe("TorrentFileTab Component", () => {
   });
 
   it("вызывает onFileSelect при выборе файла через torrentFilePath", async () => {
-    const { ReadFile } = await import("../../../../wailsjs/go/main/App");
+    const { ReadFile } = await import("../../../../../wailsjs/go/main/App");
     renderComponent({ torrentFilePath: "/path/to/file.torrent" });
 
     // Проверяем, что ReadFile был вызван
@@ -193,13 +193,13 @@ describe("TorrentFileTab Component", () => {
   });
 
   it("обрабатывает ошибку при чтении файла через Wails API", async () => {
-    const { ReadFile } = await import("../../../../wailsjs/go/main/App");
+    const { ReadFile } = await import("../../../../../wailsjs/go/main/App");
     vi.mocked(ReadFile).mockRejectedValueOnce(new Error("Test error"));
 
     // Создаем мок для console.error
     const consoleErrorSpy = vi
       .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockImplementation(() => { });
 
     renderComponent({ torrentFilePath: "/path/to/invalid-file.torrent" });
 

@@ -84,7 +84,6 @@ export const AddTorrent: React.FC<AddTorrentProps> = ({
       // Сбрасываем testRef при размонтировании, чтобы избежать проблем
       // с устаревшими ссылками в тестах и потенциальных утечек памяти
       if (testRef) {
-        // Используем undefined вместо null для соответствия требуемому типу
         testRef.current = { validatePath: undefined };
       }
     };

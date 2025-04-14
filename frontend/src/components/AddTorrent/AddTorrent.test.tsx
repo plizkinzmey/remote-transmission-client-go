@@ -217,6 +217,33 @@ describe("AddTorrent Component", () => {
     });
   });
 
+  it("отображает fallback-текст в состоянии загрузки, если перевод отсутствует", async () => {
+    // Мокируем хук useLocalization для возврата isLoading=true и t, возвращающей пустую строку
+    vi.mocked(
+      await import("../../contexts/LocalizationContext")
+    ).useLocalization.mockReturnValue({
+      t: vi.fn((key) => ''), // Возвращаем пустую строку '' вместо undefined
+      isLoading: true,
+      currentLanguage: "en",
+      setLanguage: vi.fn(),
+      availableLanguages: [
+        { code: "en", name: "English" },
+        { code: "ru", name: "Русский" },
+      ],
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      const modal = screen.getByTestId("add-torrent-modal");
+      expect(modal).toBeInTheDocument();
+      // Проверяем, что отображается fallback-текст
+      expect(within(modal).getByText("Add Torrent")).toBeInTheDocument(); // Строка 130
+      expect(within(modal).getByText("Loading...")).toBeInTheDocument(); // Строка 133
+      expect(within(modal).getByTestId("loading-spinner")).toBeInTheDocument();
+    });
+  });
+
   it("валидирует путь перед отправкой", async () => {
     const { ValidateDownloadPath } = vi.mocked(
       await import("../../../wailsjs/go/main/App")
@@ -637,5 +664,15 @@ describe("AddTorrent Component", () => {
 
     // После размонтирования validatePath должен быть undefined
     expect(testRef.current?.validatePath).toBeUndefined();
+  });
+
+  it("выполняет очистку при размонтировании без testRef", () => {
+    // Рендерим компонент БЕЗ передачи testRef
+    const { unmount } = renderComponent(); 
+
+    // Просто размонтируем компонент. Ошибок быть не должно.
+    // Это вызовет функцию очистки useEffect (строка 131),
+    // и условие `if (testRef)` (строка 134) будет false.
+    expect(() => unmount()).not.toThrow(); 
   });
 });

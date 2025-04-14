@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, Select, TextField, Button, Flex } from "@radix-ui/themes";
 import { useLocalization } from "../../../contexts/LocalizationContext";
 import {
@@ -11,13 +11,18 @@ import "./DownloadPathSelector.css";
 interface DownloadPathSelectorProps {
   onPathChange: (path: string) => void;
   initialPath?: string;
-  onLoadingStateChange?: (isLoading: boolean) => void; // Новый проп для отслеживания состояния загрузки
+  onLoadingStateChange?: (isLoading: boolean) => void;
+  testRef?: React.MutableRefObject<{
+    handleRemovePath?: (path: string) => Promise<void>;
+    handlePathValidation?: (path: string) => Promise<boolean>;
+  }>;
 }
 
 export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   onPathChange,
   initialPath,
   onLoadingStateChange,
+  testRef,
 }) => {
   const { t } = useLocalization();
   const [downloadPath, setDownloadPath] = useState<string>("");
@@ -28,7 +33,6 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   const [pathError, setPathError] = useState<string>("");
   const [defaultPath, setDefaultPath] = useState<string>("");
 
-  // Получаем список путей при инициализации
   useEffect(() => {
     let isMounted = true;
 
@@ -63,70 +67,68 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
     fetchPaths();
 
-    // Функция очистки
     return () => {
       isMounted = false;
     };
   }, [initialPath, onPathChange, onLoadingStateChange]);
 
-  // Валидация пути при его изменении
-  const validatePath = async (path: string) => {
-    try {
-      await ValidateDownloadPath(path);
-      setPathError("");
-      return true;
-    } catch (error) {
-      setPathError(String(error));
-      return false;
-    }
-  };
+  const validatePath = useCallback(async (path: string): Promise<void> => {
+    await ValidateDownloadPath(path);
+  }, []);
 
-  // Предварительная проверка пути - сохраняем асинхронность
-  const isEmptyPath = (path: string): boolean => {
-    return !path;
-  };
-
-  // Обработка пустого пути - сохраняем асинхронность
-  const handleEmptyPath = async (): Promise<boolean> => {
-    setPathError("");
-    return false;
-  };
-
-  // Общая функция для валидации пути и обработки ошибок
-  const handlePathValidation = async (path: string): Promise<boolean> => {
-    if (isEmptyPath(path)) {
-      return await handleEmptyPath();
-    }
-
-    try {
-      return await validatePath(path);
-    } catch (error) {
-      // Логируем ошибку для целей отладки
-      console.error("Ошибка валидации пути:", error);
-
-      // Всегда обновляем UI с самой последней ошибкой
-      setPathError(String(error));
-      return false;
-    }
-  };
-
-  const handleRemovePath = async (pathToRemove: string) => {
-    try {
-      await RemoveDownloadPath(pathToRemove);
-      // Обновляем список путей
-      const paths = await GetDownloadPaths();
-      setDownloadPaths(paths);
-
-      // Если удалили текущий путь, выбираем первый из оставшихся
-      if (pathToRemove === downloadPath && paths.length > 0) {
-        const newPath = paths[0];
-        setDownloadPath(newPath);
-        onPathChange(newPath);
+  const handlePathValidation = useCallback(
+    async (path: string): Promise<boolean> => {
+      if (!path) {
+        setPathError("");
+        return false;
       }
-    } catch (error) {
-      console.error("Ошибка при удалении пути:", error);
+
+      try {
+        await validatePath(path);
+        setPathError("");
+        return true;
+      } catch (error) {
+        console.error("Ошибка валидации пути:", error);
+        setPathError(String(error).replace(/^Error:\s*/, ""));
+        return false;
+      }
+    },
+    [validatePath, setPathError]
+  );
+
+  const handleRemovePath = useCallback(
+    async (pathToRemove: string) => {
+      try {
+        await RemoveDownloadPath(pathToRemove);
+        const paths = await GetDownloadPaths();
+        setDownloadPaths(paths);
+
+        if (pathToRemove === downloadPath) {
+          const newPath = paths.length > 0 ? paths[0] : "";
+          setDownloadPath(newPath);
+          onPathChange(newPath);
+          await handlePathValidation(newPath);
+        }
+      } catch (error) {
+        console.error("Ошибка при удалении пути:", error);
+      }
+    },
+    [downloadPath, onPathChange, handlePathValidation, setDownloadPaths, setDownloadPath]
+  );
+
+  useEffect(() => {
+    if (testRef) {
+      testRef.current = {
+        handleRemovePath,
+        handlePathValidation,
+      };
     }
-  };
+    return () => {
+      if (testRef) {
+        testRef.current = {};
+      }
+    };
+  }, [testRef, handleRemovePath, handlePathValidation]);
 
   const handlePathChange = async (path: string) => {
     setDownloadPath(path);
@@ -137,16 +139,8 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
   const handleCustomPathChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const path = e.target.value;
     setCustomPath(path);
-
-    // Всегда обновляем путь в родительском компоненте
     onPathChange(path);
-
-    // Выполняем валидацию, но только для отображения сообщения об ошибке
-    if (path) {
-      await handlePathValidation(path);
-    } else {
-      setPathError("");
-    }
+    await handlePathValidation(path);
   };
 
   const handleCustomPathToggle = () => {
@@ -154,16 +148,14 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
     setShowCustomPath(newShowCustomPath);
 
     if (newShowCustomPath) {
-      // При включении кастомного пути копируем текущий выбранный путь
       setCustomPath(downloadPath);
     } else {
-      // При выключении возвращаемся к выбранному пути
       onPathChange(downloadPath);
     }
   };
 
   if (isLoadingPaths) {
-    return null; // будет обработано родительским компонентом
+    return null;
   }
 
   return (

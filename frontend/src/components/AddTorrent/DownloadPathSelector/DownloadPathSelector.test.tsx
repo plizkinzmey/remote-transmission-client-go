@@ -1,38 +1,61 @@
-import React, { useState } from "react";
+import React, { useState } from "react"; // Удалить useRef
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import userEvent from '@testing-library/user-event'; // Импортировать user-event
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { DownloadPathSelector } from "./DownloadPathSelector";
 import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
 import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 
 // Импортируем модули для мока
-import * as AppModule from "../../../../wailsjs/go/main/App";
+import * as AppModule from "../../../../wailsjs/go/main/App"; // Добавить этот импорт
 
-// Mock зависимостей - vi.mock должен быть в начале файла перед остальным кодом
+// Mock зависимостей
 vi.mock("../../../../wailsjs/go/main/App", () => ({
-  GetDownloadPaths: vi.fn().mockResolvedValue(["/path1", "/path2"]),
-  ValidateDownloadPath: vi.fn().mockImplementation((path) => {
+  GetDownloadPaths: vi.fn().mockResolvedValue(["/path1", "/path2", "/path3"]), // Добавим /path3 для тестов удаления
+  ValidateDownloadPath: vi.fn().mockImplementation(async (path) => {
     if (path === "/invalid") {
-      return Promise.reject("Invalid path");
+      throw new Error("Invalid path");
     }
-    return Promise.resolve(true);
+    if (path === "/test/path") {
+      throw new Error("Тестовая ошибка валидации");
+    }
+    // Добавим условие для теста ошибки валидации в handlePathValidation
+    if (path === "/validation-error-test") {
+      throw new Error("Direct validation error");
+    }
+    return Promise.resolve();
   }),
   RemoveDownloadPath: vi.fn().mockResolvedValue(true),
 }));
 
+// Определяем тип для testRef
+type DownloadPathSelectorTestRef = {
+  handleRemovePath?: (path: string) => Promise<void>;
+  handlePathValidation?: (path: string) => Promise<boolean>;
+};
+
 describe("DownloadPathSelector Component", () => {
   const mockOnPathChange = vi.fn();
   const mockOnLoadingStateChange = vi.fn();
+  // Создаем ref для доступа к внутренним функциям
+  let testRef: React.MutableRefObject<DownloadPathSelectorTestRef>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Инициализируем ref перед каждым тестом
+    testRef = { current: {} };
   });
 
   const renderComponent = (props = {}) => {
     return render(
       <TestThemeProvider>
         <MockLocalizationProvider>
-          <DownloadPathSelector onPathChange={mockOnPathChange} {...props} />
+          {/* Передаем testRef в компонент */}
+          <DownloadPathSelector
+            onPathChange={mockOnPathChange}
+            testRef={testRef}
+            {...props}
+          />
         </MockLocalizationProvider>
       </TestThemeProvider>
     );
@@ -105,7 +128,6 @@ describe("DownloadPathSelector Component", () => {
     });
 
     // Имитируем выбор пути путем прямого вызова функции onValueChange
-    const paths = await AppModule.GetDownloadPaths();
     vi.mocked(mockOnPathChange).mockClear();
 
     await waitFor(() => {
@@ -169,113 +191,74 @@ describe("DownloadPathSelector Component", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("удаляет путь и обновляет список", async () => {
-    // Модифицируем компонент для этого теста для доступа к внутренней функции handleRemovePath
-    const DownloadPathSelectorWithRemoveButton = (props: any) => {
-      const component = <DownloadPathSelector {...props} />;
-      // Добавляем тестовую кнопку для вызова функции удаления пути
-      return (
-        <>
-          {component}
-          <button
-            data-testid="remove-path-button"
-            onClick={() => {
-              // Напрямую вызываем внутренний метод RemoveDownloadPath из AppModule
-              AppModule.RemoveDownloadPath("/path1");
-              props.onPathChange("/path2");
-            }}
-          >
-            Тестовая кнопка удаления
-          </button>
-        </>
-      );
-    };
-
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <DownloadPathSelectorWithRemoveButton
-            onPathChange={mockOnPathChange}
-          />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
+  it("удаляет текущий путь через testRef и выбирает следующий", async () => {
+    renderComponent({ initialPath: "/path2" });
 
     await waitFor(() => {
-      // Дожидаемся загрузки компонента
-      expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
-    });
-
-    // Используем тестовую кнопку для симуляции удаления пути
-    const removeButton = screen.getByTestId("remove-path-button");
-    fireEvent.click(removeButton);
-
-    await waitFor(() => {
-      expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
       expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
     });
+    mockOnPathChange.mockClear();
+    // Сбрасываем GetDownloadPaths ПОСЛЕ инициализации
+    vi.mocked(AppModule.GetDownloadPaths).mockClear();
+    // Мокируем GetDownloadPaths для возврата обновленного списка ПОСЛЕ удаления
+    vi.mocked(AppModule.GetDownloadPaths).mockResolvedValueOnce(["/path1", "/path3"]);
+
+    await act(async () => {
+      await testRef.current.handleRemovePath?.("/path2");
+    });
+
+    expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path2");
+    // Теперь ожидаем только ОДИН вызов GetDownloadPaths (внутри handleRemovePath)
+    expect(AppModule.GetDownloadPaths).toHaveBeenCalledTimes(1);
+    expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
+    expect(AppModule.ValidateDownloadPath).toHaveBeenCalledWith("/path1");
   });
 
-  it("обрабатывает ошибку при удалении пути", async () => {
-    // Мокируем функцию RemoveDownloadPath, чтобы она отвергала промис
-    vi.mocked(AppModule.RemoveDownloadPath).mockRejectedValueOnce(
-      new Error("Test error")
-    );
+  it("удаляет НЕ текущий путь через testRef и НЕ меняет выбор", async () => {
+    renderComponent({ initialPath: "/path2" });
 
-    // Создаем шпион для console.error
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => { });
+    await waitFor(() => {
+      expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
+    });
+    mockOnPathChange.mockClear();
+    // Сбрасываем GetDownloadPaths ПОСЛЕ инициализации
+    vi.mocked(AppModule.GetDownloadPaths).mockClear();
+    // Мокируем GetDownloadPaths для возврата обновленного списка ПОСЛЕ удаления
+    vi.mocked(AppModule.GetDownloadPaths).mockResolvedValueOnce(["/path1", "/path2"]);
 
-    // Модифицируем компонент для тестирования внутренней функции handleRemovePath
-    const DownloadPathSelectorWithRemoveButton = (props: any) => {
-      const component = <DownloadPathSelector {...props} />;
-      // Добавляем тестовую кнопку для вызова функции удаления пути с ошибкой
-      return (
-        <>
-          {component}
-          <button
-            data-testid="remove-error-button"
-            onClick={async () => {
-              try {
-                await AppModule.RemoveDownloadPath("/path1");
-              } catch (error) {
-                console.error("Ошибка при удалении пути:", error instanceof Error ? error.message : String(error));
-              }
-            }}
-          >
-            Тестовая кнопка с ошибкой
-          </button>
-        </>
-      );
-    };
+    await act(async () => {
+      await testRef.current.handleRemovePath?.("/path3");
+    });
 
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <DownloadPathSelectorWithRemoveButton
-            onPathChange={mockOnPathChange}
-          />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
+    expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path3");
+    // Теперь ожидаем только ОДИН вызов GetDownloadPaths (внутри handleRemovePath)
+    expect(AppModule.GetDownloadPaths).toHaveBeenCalledTimes(1);
+    expect(mockOnPathChange).not.toHaveBeenCalled();
+  });
 
-    // Ждем, пока компонент загрузится
+  it("обрабатывает ошибку при удалении пути через testRef", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+    const removeError = new Error("Remove failed");
+    vi.mocked(AppModule.RemoveDownloadPath).mockRejectedValueOnce(removeError);
+
+    renderComponent({ initialPath: "/path1" });
+
     await waitFor(() => {
       expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
     });
+    mockOnPathChange.mockClear();
+    // Сбрасываем GetDownloadPaths ПОСЛЕ инициализации
+    vi.mocked(AppModule.GetDownloadPaths).mockClear();
 
-    // Используем тестовую кнопку для эмуляции удаления пути с ошибкой
-    const errorButton = screen.getByTestId("remove-error-button");
-    fireEvent.click(errorButton);
-
-    await waitFor(() => {
-      expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Ошибка при удалении пути:",
-        expect.any(String)
-      );
+    await act(async () => {
+      await testRef.current.handleRemovePath?.("/path1");
     });
+
+    expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
+    // GetDownloadPaths не должен вызываться при ошибке удаления
+    expect(AppModule.GetDownloadPaths).not.toHaveBeenCalled();
+    expect(mockOnPathChange).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith("Ошибка при удалении пути:", removeError);
 
     consoleErrorSpy.mockRestore();
   });
@@ -337,113 +320,89 @@ describe("DownloadPathSelector Component", () => {
     expect(mockOnLoadingStateChange).not.toHaveBeenCalled();
   });
 
-  it("обрабатывает пустой путь в handlePathValidation", async () => {
+  it("обрабатывает пустой путь в handleCustomPathChange и handlePathValidation", async () => {
+    const user = userEvent.setup();
     renderComponent();
 
-    await waitFor(() => {
-      const customPathButton = screen.getByTestId("toggle-path-mode-button");
-      fireEvent.click(customPathButton);
-    });
+    const toggleButton = await screen.findByTestId("toggle-path-mode-button");
+    await user.click(toggleButton);
 
     const pathInput = screen.getByPlaceholderText("/path/to/downloads");
-    fireEvent.change(pathInput, { target: { value: "" } });
 
-    // Проверяем, что ошибка не отображается для пустого пути
-    expect(screen.queryByText("Invalid path")).not.toBeInTheDocument();
+    // Очищаем поле перед вводом
+    await user.clear(pathInput);
+    // Вводим какой-то путь
+    await user.type(pathInput, "/some/path");
+    // Теперь последний вызов должен быть с правильным путем
+    expect(mockOnPathChange).toHaveBeenLastCalledWith("/some/path");
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    // Очищаем поле ввода
+    await user.clear(pathInput);
+
+    expect(mockOnPathChange).toHaveBeenLastCalledWith("");
+
+    await waitFor(() => {
+      const errorElement = document.querySelector('.path-error');
+      expect(errorElement).toBeNull();
+    });
+
+    let validationResult = true;
+    await act(async () => {
+      validationResult = await testRef.current.handlePathValidation?.("") ?? true;
+    });
+    expect(validationResult).toBe(false);
+    await waitFor(() => {
+      const errorElement = document.querySelector('.path-error');
+      expect(errorElement).toBeNull();
+    });
   });
 
-  it("обрабатывает ошибки при валидации пути с отображением в UI", async () => {
-    // Определим текст ошибки
+  it("обрабатывает ошибки при валидации пути с отображением в UI и логированием", async () => {
+    const user = userEvent.setup();
     const validationError = "Тестовая ошибка валидации";
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
 
-    // Настроим мок функции ValidateDownloadPath, чтобы она возвращала ошибку
-    const { ValidateDownloadPath } = vi.mocked(AppModule);
-    ValidateDownloadPath.mockRejectedValueOnce(validationError);
+    // Мок ValidateDownloadPath уже настроен глобально
 
-    // Рендерим компонент
     renderComponent();
 
     // Переключаемся в режим ввода пути
     const toggleButton = await screen.findByTestId("toggle-path-mode-button");
-    fireEvent.click(toggleButton);
+    await user.click(toggleButton);
 
-    // Находим и заполняем поле ввода
     const pathInput = screen.getByPlaceholderText("/path/to/downloads");
+    await user.clear(pathInput);
+    await user.type(pathInput, "/test/path");
 
-    // Вводим путь, который вызовет ошибку
-    await act(async () => {
-      fireEvent.change(pathInput, { target: { value: "/test/path" } });
+    // Проверяем вызов ValidateDownloadPath
+    await waitFor(() => {
+      expect(AppModule.ValidateDownloadPath).toHaveBeenLastCalledWith("/test/path");
     });
 
-    // Проверяем, что ValidateDownloadPath был вызван с правильным параметром
-    expect(ValidateDownloadPath).toHaveBeenCalledWith("/test/path");
-
-    // Проверяем, что текст ошибки был отображен в UI
-    const errorText = await screen.findByText(validationError);
+    // Проверяем отображение ошибки в UI
+    const errorText = await screen.findByText(validationError); // Ищем без "Error: "
     expect(errorText).toBeInTheDocument();
+    expect(errorText).toHaveTextContent(validationError);
 
-    // Проверяем, что контейнер поля ввода изменил цвет на красный
-    // Находим родительский div с классом rt-TextFieldRoot
+    // Проверяем цвет поля ввода
     const textFieldContainer = screen.getByTestId("custom-path-input").closest('.rt-TextFieldRoot');
     expect(textFieldContainer).toHaveAttribute("data-accent-color", "red");
-  });
 
-  it("обрабатывает ошибки при удалении пути", async () => {
-    // Создаем шпион для console.error
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
-
-    // Мокируем RemoveDownloadPath, чтобы он возвращал ошибку
-    const { RemoveDownloadPath } = vi.mocked(AppModule);
-    const testError = new Error("Ошибка при удалении пути");
-    RemoveDownloadPath.mockRejectedValueOnce(testError);
-
-    // Создаем компонент с тестовой кнопкой для удаления
-    const TestComponent = () => {
-      const handleRemove = async () => {
-        try {
-          await RemoveDownloadPath("/path1");
-        } catch (error) {
-          console.error("Ошибка при удалении пути:", error instanceof Error ? error.message : String(error));
-        }
-      };
-
-      return (
-        <>
-          <DownloadPathSelector onPathChange={mockOnPathChange} />
-          <button data-testid="test-remove-button" onClick={handleRemove}>
-            Remove Path
-          </button>
-        </>
-      );
-    };
-
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <TestComponent />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
+    // Проверяем вызов console.error внутри handlePathValidation
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Ошибка валидации пути:",
+      expect.any(Error) // Ожидаем объект Error
+    );
+    // Проверяем сообщение в ошибке, переданной в console.error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.anything(), // Игнорируем первый аргумент ("Ошибка валидации пути:")
+      expect.objectContaining({ message: validationError }) // Проверяем сообщение в объекте Error
     );
 
-    // Ждем, пока компонент загрузится
-    await waitFor(() => {
-      expect(screen.getByTestId("test-remove-button")).toBeInTheDocument();
-    });
-
-    // Нажимаем кнопку удаления
-    const removeButton = screen.getByTestId("test-remove-button");
-    await act(async () => {
-      fireEvent.click(removeButton);
-    });
-
-    // Проверяем, что ошибка была залогирована
-    await waitFor(() => {
-      expect(RemoveDownloadPath).toHaveBeenCalledWith("/path1");
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Ошибка при удалении пути:",
-        expect.any(String)
-      );
-    });
 
     consoleErrorSpy.mockRestore();
   });
@@ -569,303 +528,5 @@ describe("DownloadPathSelector Component", () => {
     });
 
     consoleErrorSpy.mockRestore();
-  });
-
-  it("удаляет текущий выбранный путь и выбирает первый из оставшихся", async () => {
-    // Создаем компонент с доступом к внутренним методам
-    const TestComponent = () => {
-      const [currentPath, setCurrentPath] = useState<string>("/path1");
-      const pathChangeHandler = (path: string) => {
-        mockOnPathChange(path);
-        setCurrentPath(path);
-      };
-
-      // Функция для имитации удаления текущего выбранного пути
-      const handleRemoveCurrentPath = async () => {
-        try {
-          // Установим mock-возвращаемое значение для GetDownloadPaths после удаления
-          // имитируем удаление пути "/path1" из списка
-          vi.mocked(AppModule.GetDownloadPaths).mockResolvedValueOnce(["/path2"]);
-
-          // Удаляем текущий путь
-          await AppModule.RemoveDownloadPath(currentPath);
-
-          // После удаления пути должен быть вызван GetDownloadPaths для обновления списка
-          const updatedPaths = await AppModule.GetDownloadPaths();
-
-          // Если был удален текущий путь, должен быть выбран первый из оставшихся
-          if (updatedPaths.length > 0) {
-            pathChangeHandler(updatedPaths[0]);
-          }
-        } catch (error) {
-          console.error("Ошибка при удалении пути:", error);
-        }
-      };
-
-      return (
-        <>
-          <div>Текущий путь: {currentPath}</div>
-          <DownloadPathSelector
-            onPathChange={pathChangeHandler}
-            initialPath={currentPath}
-          />
-          <button data-testid="remove-current-path" onClick={handleRemoveCurrentPath}>
-            Удалить текущий путь
-          </button>
-        </>
-      );
-    };
-
-    // Рендерим компонент
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <TestComponent />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
-
-    // Дожидаемся загрузки компонента
-    await waitFor(() => {
-      expect(screen.getByText("Текущий путь: /path1")).toBeInTheDocument();
-    });
-
-    // Очищаем историю вызовов мока
-    mockOnPathChange.mockClear();
-
-    // Нажимаем кнопку удаления текущего пути
-    const removeButton = screen.getByTestId("remove-current-path");
-    await act(async () => {
-      fireEvent.click(removeButton);
-    });
-
-    // Проверяем что:
-    // 1. Вызвана функция RemoveDownloadPath с правильным путем
-    // 2. Вызвана функция GetDownloadPaths для получения обновленного списка
-    // 3. Вызвана функция onPathChange с новым путем
-    await waitFor(() => {
-      expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path1");
-      expect(AppModule.GetDownloadPaths).toHaveBeenCalled();
-      expect(mockOnPathChange).toHaveBeenCalledWith("/path2");
-    });
-
-    // Проверяем, что UI обновлен
-    await waitFor(() => {
-      expect(screen.getByText("Текущий путь: /path2")).toBeInTheDocument();
-    });
-  });
-
-  it("вызывает функцию удаления пути и обрабатывает различные сценарии", async () => {
-    // Создаем компонент с доступом к внутреннему состоянию
-    // Для имитации сложной логики в handleRemovePath
-    const TestRemovePathComponent = () => {
-      // Храним пути в локальном состоянии для полного контроля
-      const [paths, setPaths] = useState<string[]>(["/path1", "/path2", "/path3"]);
-      const [currentPath, setCurrentPath] = useState("/path2");
-
-      // Замыкаем мок-функцию обратного вызова для теста
-      const localPathChange = (path: string) => {
-        mockOnPathChange(path);
-        setCurrentPath(path);
-      };
-
-      // Функция имитирующая полное поведение handleRemovePath
-      const simulateRemovePath = async (pathToRemove: string) => {
-        try {
-          // Удаляем путь
-          await AppModule.RemoveDownloadPath(pathToRemove);
-
-          // Имитируем получение обновленного списка после удаления
-          const newPaths = paths.filter(p => p !== pathToRemove);
-          setPaths(newPaths);
-
-          // Если удален текущий путь, выбираем первый из оставшихся
-          if (pathToRemove === currentPath && newPaths.length > 0) {
-            localPathChange(newPaths[0]);
-          }
-        } catch (error) {
-          console.error("Ошибка при удалении пути:", error);
-        }
-      };
-
-      return (
-        <>
-          <div data-testid="current-path">Current: {currentPath}</div>
-          <div>
-            <h4>Available Paths:</h4>
-            <ul>
-              {paths.map(path => (
-                <li key={path} data-testid={`path-item-${path}`}>{path}</li>
-              ))}
-            </ul>
-          </div>
-          <button
-            data-testid="remove-current-path-btn"
-            onClick={() => simulateRemovePath(currentPath)}>
-            Remove Current Path
-          </button>
-          <button
-            data-testid="remove-other-path-btn"
-            onClick={() => simulateRemovePath("/path3")}>
-            Remove Another Path
-          </button>
-        </>
-      );
-    };
-
-    // Рендерим тестовый компонент
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <TestRemovePathComponent />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
-
-    // Проверяем, что начальное состояние корректно
-    expect(screen.getByTestId("current-path").textContent).toContain("/path2");
-    expect(screen.getByTestId("path-item-/path1")).toBeInTheDocument();
-    expect(screen.getByTestId("path-item-/path2")).toBeInTheDocument();
-    expect(screen.getByTestId("path-item-/path3")).toBeInTheDocument();
-
-    // Очищаем историю вызовов моков
-    vi.mocked(AppModule.RemoveDownloadPath).mockClear();
-    mockOnPathChange.mockClear();
-
-    // Сценарий 1: Удаляем текущий выбранный путь
-    const removeCurrentBtn = screen.getByTestId("remove-current-path-btn");
-    await act(async () => {
-      fireEvent.click(removeCurrentBtn);
-    });
-
-    // Проверяем, что:
-    // 1. Вызвана функция RemoveDownloadPath с правильным путем
-    // 2. Текущий путь изменился на первый доступный из списка
-    expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path2");
-    expect(mockOnPathChange).toHaveBeenCalledWith("/path1");
-    expect(screen.getByTestId("current-path").textContent).toContain("/path1");
-
-    // Очищаем историю вызовов моков снова
-    vi.mocked(AppModule.RemoveDownloadPath).mockClear();
-    mockOnPathChange.mockClear();
-
-    // Сценарий 2: Удаляем другой путь, не текущий
-    const removeOtherBtn = screen.getByTestId("remove-other-path-btn");
-    await act(async () => {
-      fireEvent.click(removeOtherBtn);
-    });
-
-    // Проверяем, что:
-    // 1. Вызвана функция RemoveDownloadPath с другим путем
-    // 2. Текущий путь не изменился
-    expect(AppModule.RemoveDownloadPath).toHaveBeenCalledWith("/path3");
-    expect(mockOnPathChange).not.toHaveBeenCalled(); // текущий путь не менялся
-    expect(screen.getByTestId("current-path").textContent).toContain("/path1");
-  });
-
-  it("корректно отрабатывает предварительную проверку пути через isValidPathToCheck", async () => {
-    const TestPathValidationComponent: React.FC = () => {
-      const [pathError, setPathError] = useState<string>("");
-      const [result, setResult] = useState<boolean>(false);
-
-      const testPath = async (path: string) => {
-        // Имитация логики isValidPathToCheck из основного компонента
-        if (!path) {
-          setPathError("");
-          setResult(false);
-        } else {
-          setResult(true);
-        }
-      };
-
-      return (
-        <>
-          <div data-testid="path-error">{pathError}</div>
-          <div data-testid="test-result">{result.toString()}</div>
-          <button data-testid="test-empty-path" onClick={() => testPath("")}>
-            Test Empty Path
-          </button>
-          <button data-testid="test-valid-path" onClick={() => testPath("/valid/path")}>
-            Test Valid Path
-          </button>
-        </>
-      );
-    };
-
-    // Рендерим компонент
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <TestPathValidationComponent />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
-
-    // Проверяем пустой путь
-    const emptyPathButton = screen.getByTestId("test-empty-path");
-    await act(async () => {
-      fireEvent.click(emptyPathButton);
-    });
-
-    expect(screen.getByTestId("test-result").textContent).toBe("false");
-    expect(screen.getByTestId("path-error").textContent).toBe("");
-
-    // Проверяем валидный путь
-    const validPathButton = screen.getByTestId("test-valid-path");
-    await act(async () => {
-      fireEvent.click(validPathButton);
-    });
-
-    expect(screen.getByTestId("test-result").textContent).toBe("true");
-  });
-
-  it("тестирует полный цикл обработки ошибок", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
-
-    const TestErrorHandlingComponent: React.FC = () => {
-      const [pathError, setPathError] = useState<string>("");
-      const [validationResult, setValidationResult] = useState<boolean>(false);
-
-      const validatePathWithError = async () => {
-        try {
-          throw new Error("Тест ошибки валидации");
-        } catch (error) {
-          console.error("Ошибка валидации пути:", error instanceof Error ? error.message : String(error));
-          setPathError(error instanceof Error ? error.message : String(error));
-          setValidationResult(false);
-        }
-      };
-
-      return (
-        <>
-          <div data-testid="path-error">{pathError}</div>
-          <div data-testid="validation-result">{validationResult.toString()}</div>
-          <button data-testid="test-validation" onClick={validatePathWithError}>
-            Test Validation
-          </button>
-        </>
-      );
-    };
-
-    render(
-      <TestThemeProvider>
-        <MockLocalizationProvider>
-          <TestErrorHandlingComponent />
-        </MockLocalizationProvider>
-      </TestThemeProvider>
-    );
-
-    const validationButton = screen.getByTestId("test-validation");
-    await act(async () => {
-      fireEvent.click(validationButton);
-    });
-
-    expect(screen.getByTestId("validation-result").textContent).toBe("false");
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Ошибка валидации пути:",
-      expect.any(String)
-    );
-
-    consoleSpy.mockRestore();
   });
 });

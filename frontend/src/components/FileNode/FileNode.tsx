@@ -32,13 +32,8 @@ export const FileNode: React.FC<FileNodeProps> = ({
     const checkboxRef = useRef<HTMLButtonElement>(null);
 
     // Определяем значение checked для Checkbox.Root
+    // Radix UI Checkbox.Root поддерживает значение 'indeterminate' для пропа checked
     const checkedValue = node.indeterminate ? "indeterminate" : node.Wanted;
-
-    // --- ОТЛАДКА ---
-    console.log(
-        `[FileNode] Rendering Checkbox for ${node.Path}. indeterminate: ${node.indeterminate}, Wanted: ${node.Wanted}, checkedValue: ${checkedValue}`
-    );
-    // ---------------
 
     return (
         <Box

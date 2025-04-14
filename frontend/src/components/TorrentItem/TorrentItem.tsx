@@ -14,32 +14,60 @@ import {
 } from "../../utils/torrentStatus";
 import styles from "./TorrentItem.module.css";
 
-// Экспортируем интерфейс
+/**
+ * @description Пропсы для компонента TorrentItem.
+ */
 export interface TorrentItemProps {
+  /** @description Уникальный идентификатор торрента. */
   id: number;
+  /** @description Имя торрента. */
   name: string;
+  /** @description Текущий статус торрента (например, 'stopped', 'downloading'). */
   status: string;
+  /** @description Прогресс загрузки торрента в процентах (0-100). */
   progress: number;
+  /** @description Отформатированный размер торрента (например, '100 MB'). */
   sizeFormatted: string;
+  /** @description Коэффициент раздачи. */
   uploadRatio: number;
+  /** @description Количество подключенных сидов. */
   seedsConnected: number;
+  /** @description Общее количество сидов. */
   seedsTotal: number;
+  /** @description Количество подключенных пиров. */
   peersConnected: number;
+  /** @description Общее количество пиров. */
   peersTotal: number;
+  /** @description Отформатированный объем отданного (например, '50 MB'). */
   uploadedFormatted: string;
+  /** @description Выбран ли торрент. */
   selected: boolean;
+  /** @description Обработчик выбора/снятия выбора торрента. */
   onSelect: (id: number) => void;
+  /** @description Обработчик удаления торрента. */
   onRemove: (id: number, deleteData: boolean) => void;
+  /** @description Обработчик запуска торрента. */
   onStart: (id: number) => void;
+  /** @description Обработчик остановки торрента. */
   onStop: (id: number) => void;
+  /** @description Обработчик проверки торрента (опционально). */
   onVerify?: (id: number) => void;
+  /** @description Отформатированная скорость загрузки (например, '1 MB/s'). */
   downloadSpeedFormatted: string;
+  /** @description Отформатированная скорость отдачи (например, '500 KB/s'). */
   uploadSpeedFormatted: string;
+  /** @description Обработчик установки ограничения скорости (опционально). */
   onSetSpeedLimit?: (id: number, isSlowMode: boolean) => void;
+  /** @description Включен ли режим ограничения скорости (опционально). */
   isSlowMode?: boolean;
-  "data-testid"?: string; // Добавляем поддержку data-testid
+  /** @description Атрибут data-testid для корневого элемента компонента (опционально). */
+  "data-testid"?: string;
 }
 
+/**
+ * @description Компонент для отображения элемента списка торрентов.
+ * Показывает основную информацию о торренте и предоставляет действия для управления им.
+ */
 export const TorrentItem: React.FC<TorrentItemProps> = ({
   id,
   name,
@@ -134,6 +162,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
               onCheckedChange={() => onSelect(id)}
               aria-label={t("torrents.selectTorrent", name)}
               disabled={isCurrentlyBlocked || isChecking(status)}
+              data-testid={`torrent-item-checkbox-${id}`}
             />
           </Box>
           <Box className={styles.contentBox}>
@@ -186,13 +215,12 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
         open={showDeleteConfirmation}
       />
 
-      {showContent && (
-        <TorrentContent
-          id={id}
-          name={name}
-          onClose={() => setShowContent(false)}
-        />
-      )}
+      <TorrentContent
+        id={id}
+        name={name}
+        open={showContent}
+        onClose={() => setShowContent(false)}
+      />
     </>
   );
 };

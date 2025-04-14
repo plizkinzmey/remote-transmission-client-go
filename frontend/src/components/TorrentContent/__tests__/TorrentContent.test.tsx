@@ -1,7 +1,7 @@
 // Добавляем React для использования React.ComponentProps
 import React from "react";
 // Удаляем waitFor, оставляем fireEvent, cleanup
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
 // Добавляем afterEach
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TorrentContent } from "../TorrentContent";
@@ -104,11 +104,12 @@ vi.mock("@radix-ui/themes", async () => {
         Dialog: {
             ...actual.Dialog,
             // Используем React.ComponentProps для получения типа пропсов
-            Root: ({ children, onOpenChange }: React.ComponentProps<typeof actual.Dialog.Root>) => {
+            // Мок Dialog.Root теперь рендерит детей только если open=true
+            Root: ({ children, open, onOpenChange }: React.ComponentProps<typeof actual.Dialog.Root>) => {
                 // Захватываем переданный обработчик
                 capturedOnOpenChange = onOpenChange;
-                // Рендерим детей, чтобы остальная часть компонента работала
-                return <div data-testid="mock-dialog-root">{children}</div>;
+                // Рендерим детей только если open=true
+                return open ? <div data-testid="mock-dialog-root">{children}</div> : null;
             },
             // Используем React.ComponentProps для получения типа пропсов
             Content: ({ children, ...props }: React.ComponentProps<typeof actual.Dialog.Content>) => (
@@ -225,6 +226,7 @@ describe("TorrentContent", () => {
     });
 
     // Хелпер рендеринга с возможностью переопределения моков хуков
+    // Добавляем open: true по умолчанию
     const renderComponent = (props = {}, torrentFilesHookProps = {}, downloadDirHookProps = {}) => {
         vi.mocked(useTorrentFiles).mockReturnValue({
             ...mockUseTorrentFilesDefault,
@@ -241,8 +243,9 @@ describe("TorrentContent", () => {
                     <TorrentContent
                         id={123}
                         name="Test Torrent"
-                        onClose={mockOnClose} // <--- mockOnClose передается здесь по умолчанию
-                        {...props} // Любые дополнительные props могут переопределить onClose, но по умолчанию он есть
+                        open={true} // Передаем open=true по умолчанию для тестов
+                        onClose={mockOnClose}
+                        {...props}
                     />
                 </MockLocalizationProvider>
             </TestThemeProvider>
@@ -286,14 +289,34 @@ describe("TorrentContent", () => {
         expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it("устанавливает overflow: hidden для body при монтировании и сбрасывает при размонтировании", () => {
+    it("не отображается, если open=false", () => {
+        renderComponent({ open: false });
+        // Dialog.Root в моке возвращает null, если open=false
+        expect(screen.queryByTestId("torrent-content-dialog")).not.toBeInTheDocument();
+        // Проверяем, что стиль body не изменен
+        expect(document.body.style.overflow).toBe("");
+    });
+
+    it("устанавливает overflow: hidden для body при open=true и сбрасывает при open=false", () => {
         expect(document.body.style.overflow).toBe("");
 
-        const { unmount } = renderComponent();
+        const { rerender } = renderComponent({ open: true }); // Изначально открыт
 
         expect(document.body.style.overflow).toBe("hidden");
 
-        unmount();
+        // Перерендериваем с open=false
+        rerender(
+             <TestThemeProvider>
+                <MockLocalizationProvider>
+                    <TorrentContent
+                        id={123}
+                        name="Test Torrent"
+                        open={false}
+                        onClose={mockOnClose}
+                    />
+                </MockLocalizationProvider>
+            </TestThemeProvider>
+        );
 
         expect(document.body.style.overflow).toBe("");
     });
@@ -335,19 +358,33 @@ describe("TorrentContent", () => {
         expect(useDownloadDirectory).toHaveBeenCalledWith(torrentId);
     });
 
-    it("вызывает onClose когда Dialog.Root инициирует закрытие (onOpenChange)", () => {
-        renderComponent();
+    it("вызывает onClose когда Dialog.Root инициирует закрытие (onOpenChange(false))", () => {
+        renderComponent({ open: true }); // Убедимся, что компонент отрендерен
         expect(capturedOnOpenChange).toBeDefined();
 
+        // Имитируем вызов onOpenChange с false (закрытие)
         if (capturedOnOpenChange) {
-            capturedOnOpenChange(false);
+            // Присваиваем локальной переменной для помощи TypeScript
+            const handler = capturedOnOpenChange;
+            act(() => {
+                 handler(false); // Вызываем локальную переменную
+            });
+        } else {
+            throw new Error("capturedOnOpenChange was not defined in the mock");
         }
 
         expect(mockOnClose).toHaveBeenCalledTimes(1);
 
         mockOnClose.mockClear();
+        // Имитируем вызов onOpenChange с true (открытие - не должно вызывать onClose)
         if (capturedOnOpenChange) {
-            capturedOnOpenChange(true);
+             // Присваиваем локальной переменной для помощи TypeScript
+             const handler = capturedOnOpenChange;
+             act(() => {
+                handler(true); // Вызываем локальную переменную
+             });
+        } else {
+             throw new Error("capturedOnOpenChange was not defined in the mock");
         }
         expect(mockOnClose).not.toHaveBeenCalled();
     });

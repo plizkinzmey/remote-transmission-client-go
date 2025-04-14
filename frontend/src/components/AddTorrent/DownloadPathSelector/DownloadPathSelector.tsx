@@ -74,7 +74,7 @@ export const DownloadPathSelector: React.FC<DownloadPathSelectorProps> = ({
 
   const validatePathInternal = useCallback(async (path: string): Promise<void> => {
     await ValidateDownloadPath(path);
-  }, []);
+  }, [ValidateDownloadPath]);
 
   const validatePath = useCallback(
     async (path: string): Promise<boolean> => {

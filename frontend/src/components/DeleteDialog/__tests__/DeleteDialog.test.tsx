@@ -14,67 +14,68 @@ vi.mock("../../../hooks/useLogger", () => ({
   }),
 }));
 
-// Мокируем Portal компонент
-vi.mock("../../Portal", () => ({
-  Portal: ({ children }: { children: React.ReactNode }) => <div data-testid="portal-mock">{children}</div>,
-}));
-
 // Создаем моки для Radix UI компонентов
 const mockOnOpenChange = vi.fn();
 
 // Мокируем Radix UI компоненты
-vi.mock("@radix-ui/themes", () => ({
-  Dialog: {
-    Root: ({ children, open, onOpenChange }: {
-      children: React.ReactNode;
-      open: boolean;
-      onOpenChange?: (isOpen: boolean) => void;
-    }) => {
-      if (onOpenChange) {
-        mockOnOpenChange.mockImplementation(onOpenChange);
-      }
-      return (
-        <div data-testid="dialog-root" data-open={open}>
-          {open ? children : null}
-        </div>
-      );
-    },
-    Content: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
-      <div data-testid="dialog-content" {...props}>{children}</div>
-    ),
-    Title: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
-      <div data-testid="dialog-title" {...props}>{children}</div>
-    ),
-  },
-  Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void;[key: string]: any }) => (
-    <button onClick={onClick} {...props}>{children}</button>
-  ),
-  Text: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
-    <span {...props}>{children}</span>
-  ),
-  Flex: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
-    <div {...props}>{children}</div>
-  ),
-  Box: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
-    <div {...props}>{children}</div>
-  ),
-  Checkbox: ({ checked, onCheckedChange, ...props }: {
-    checked?: boolean;
-    onCheckedChange?: (checked: boolean) => void;
-    [key: string]: any
-  }) => (
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(e) => {
-        if (onCheckedChange) {
-          onCheckedChange(e.target.checked);
+vi.mock("@radix-ui/themes", async (importOriginal) => {
+  // Используем importOriginal для получения реальных компонентов, если они нужны
+  const actual = await importOriginal<typeof import("@radix-ui/themes")>();
+  return {
+    ...actual, // Сохраняем остальные реальные компоненты, если они не мокируются ниже
+    Portal: ({ children }: { children: React.ReactNode }) => <div data-testid="radix-portal-mock">{children}</div>, // <--- Добавляем мок для Portal
+    Dialog: {
+      Root: ({ children, open, onOpenChange }: {
+        children: React.ReactNode;
+        open: boolean;
+        onOpenChange?: (isOpen: boolean) => void;
+      }) => {
+        if (onOpenChange) {
+          mockOnOpenChange.mockImplementation(onOpenChange);
         }
-      }}
-      data-testid={props["data-testid"]}
-    />
-  ),
-}));
+        return (
+          <div data-testid="dialog-root" data-open={open}>
+            {open ? children : null}
+          </div>
+        );
+      },
+      Content: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+        <div data-testid="dialog-content" {...props}>{children}</div>
+      ),
+      Title: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+        <div data-testid="dialog-title" {...props}>{children}</div>
+      ),
+    },
+    Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void;[key: string]: any }) => (
+      <button onClick={onClick} {...props}>{children}</button>
+    ),
+    Text: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+      <span {...props}>{children}</span>
+    ),
+    Flex: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+      <div {...props}>{children}</div>
+    ),
+    Box: ({ children, ...props }: { children: React.ReactNode;[key: string]: any }) => (
+      <div {...props}>{children}</div>
+    ),
+    Checkbox: ({ checked, onCheckedChange, ...props }: {
+      checked?: boolean;
+      onCheckedChange?: (checked: boolean) => void;
+      [key: string]: any
+    }) => (
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => {
+          if (onCheckedChange) {
+            onCheckedChange(e.target.checked);
+          }
+        }}
+        data-testid={props["data-testid"]}
+      />
+    ),
+  };
+});
 
 describe("DeleteDialog Component", () => {
   const mockOnConfirm = vi.fn();

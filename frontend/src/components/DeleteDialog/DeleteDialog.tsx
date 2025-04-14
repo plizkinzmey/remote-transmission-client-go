@@ -1,8 +1,7 @@
 import React, { useEffect, useCallback, useState, useRef } from "react";
-import { Dialog, Button, Text, Flex, Box, Checkbox } from "@radix-ui/themes";
+import { Dialog, Button, Text, Flex, Box, Checkbox, Portal } from "@radix-ui/themes";
 import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { Portal } from "../Portal";
 import styles from "./DeleteDialog.module.css";
 import { useLogger } from "../../hooks";
 

@@ -241,15 +241,13 @@ describe("TorrentContent", () => {
                     <TorrentContent
                         id={123}
                         name="Test Torrent"
-                        onClose={mockOnClose}
-                        {...props}
+                        onClose={mockOnClose} // <--- mockOnClose передается здесь по умолчанию
+                        {...props} // Любые дополнительные props могут переопределить onClose, но по умолчанию он есть
                     />
                 </MockLocalizationProvider>
             </TestThemeProvider>
         );
     };
-
-    // --- Существующие тесты (адаптированные под моки хуков) ---
 
     it("отображает заголовок с названием торрента", () => {
         renderComponent();

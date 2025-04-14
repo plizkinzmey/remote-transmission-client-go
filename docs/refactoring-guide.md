@@ -1,94 +1,97 @@
-# Руководство по рефакторингу компонентов
+# Component Refactoring Guide
 
-## Принципы рефакторинга
+## Refactoring Principles
 
-1. **Структура каталогов**
-   - Каждый компонент должен находиться в собственном каталоге
-   - Название каталога должно совпадать с названием компонента
-   - Структура каталога компонента:
+1. **Directory Structure**
+   - Each component should reside in its own directory.
+   - The directory name should match the component name.
+   - Component directory structure:
      ```
      ComponentName/
-     ├── README.md
-     ├── index.ts
-     ├── ComponentName.tsx
-     ├── ComponentName.module.css
-     └── __tests__/
-         └── ComponentName.test.tsx
+     ├── __tests__/             # Directory for tests
+     │   ├── ComponentName.test.tsx # Tests for the main component
+     │   └── index.test.tsx       # Tests for index.ts
+     ├── ComponentName.tsx      # Main component file
+     ├── ComponentName.module.css # Component's CSS module
+     ├── index.ts               # File for re-exporting the component and types
+     └── README.md              # Component documentation
      ```
 
-2. **Документация компонента (README.md)**
-   - Краткое описание компонента и его назначения
-   - Примеры использования
-   - Описание пропсов и их типов
-   - Особенности реализации и важные замечания
-   - Зависимости компонента
-   - Примеры кода
+2. **Component Documentation (README.md)**
+   - Brief description of the component and its purpose
+   - Usage examples
+   - Description of props and their types
+   - Implementation details and important notes
+   - Component dependencies
+   - Code examples
 
-3. **Стили**
-   - Каждый компонент должен иметь свой CSS-модуль
-   - Стили должны быть локальными для компонента
-   - Имена классов должны быть семантическими
-   - Глобальные стили должны быть минимизированы
+3. **Styles**
+   - Each component should have its own CSS module
+   - Styles should be local to the component
+   - Class names should be semantic
+   - Global styles should be minimized
 
-4. **Тестирование**
-   - Тесты должны находиться в папке `__tests__`
-   - Описания тестов должны быть на русском языке
-   - Необходимо обеспечить минимальное покрытие:
+4. **Testing**
+   - Tests should be located in the `__tests__` folder
+   - Test descriptions should be in English
+   - Minimum coverage required:
      - Lines: 70%
      - Functions: 70%
      - Branches: 70%
      - Statements: 70%
-   - Использовать data-testid для ключевых элементов
+   - Use data-testid for key elements
 
-## План рефакторинга компонента
+## Component Refactoring Plan
 
-1. **Подготовка**
+1. **Preparation**
    ```bash
-   # Создать структуру каталогов
+   # Create directory structure
    mkdir -p src/components/ComponentName/__tests__
    ```
 
-2. **Перенос файлов**
-   - Создать index.ts для экспорта
-   - Перенести компонент в новый каталог
-   - Создать файл стилей
-   - Создать тестовый файл
-   - Создать README.md файл
+2. **File Migration**
+   - Move the component file (`ComponentName.tsx`) to `src/components/ComponentName/`.
+   - Create `index.ts` to export the component and its types in `src/components/ComponentName/`.
+   - Move or create the style file (`ComponentName.module.css`) in `src/components/ComponentName/`.
+   - Move or create the main test file (`ComponentName.test.tsx`) to `src/components/ComponentName/__tests__/`.
+   - Create the test file for `index.ts` (`index.test.tsx`) in `src/components/ComponentName/__tests__/`.
+   - Create the `README.md` file in `src/components/ComponentName/`.
 
-3. **Рефакторинг компонента**
-   - Добавить JSDoc документацию
-   - Определить и типизировать пропсы
-   - Добавить data-testid атрибуты
-   - Обновить импорты
+3. **Component Refactoring**
+   - Add JSDoc documentation
+   - Define and type props
+   - Add data-testid attributes
+   - Update imports
 
-4. **Рефакторинг стилей**
-   - Перенести стили в .module.css файл
-   - Использовать CSS модули
-   - Обновить импорты стилей в компоненте
+4. **Style Refactoring**
+   - Move styles to the .module.css file
+   - Use CSS modules
+   - Update style imports in the component
 
-5. **Написание тестов**
-   - Создать основные тест-кейсы
-   - Убедиться в работе моков
-   - Проверить покрытие кода
+5. **Writing Tests**
+   - Create main test cases for `ComponentName.test.tsx`.
+   - Create a test to check re-exports in `index.test.tsx`.
+   - Ensure mocks are working.
+   - Check code coverage (including `index.ts`).
 
-6. **Проверка импортов**
-   - Обновить все импорты в других файлах
-   - Проверить циклические зависимости
-   - Обновить индексные файлы
+6. **Import Verification**
+   - Update all imports in other files
+   - Check for cyclic dependencies
+   - Update index files
 
-## Пример index.ts
+## Example index.ts
 ```typescript
 export { ComponentName } from './ComponentName';
 export type { ComponentNameProps } from './ComponentName';
 ```
 
-## Пример структуры компонента
+## Example Component Structure
 ```typescript
 /**
- * @description Описание компонента
+ * @description Component description
  */
 export interface ComponentNameProps {
-  /** Описание пропса */
+  /** Prop description */
   prop1: string;
 }
 
@@ -104,23 +107,23 @@ export const ComponentName: React.FC<ComponentNameProps> = ({ prop1 }) => {
 };
 ```
 
-## Пример теста
+## Example Test
 ```typescript
 describe('ComponentName', () => {
-  it('отображается корректно с переданными пропсами', () => {
+  it('renders correctly with provided props', () => {
     render(<ComponentName prop1="test" />);
     expect(screen.getByTestId('component-container')).toBeInTheDocument();
   });
 });
 ```
 
-## Работа с компонентами Radix UI
+## Working with Radix UI Components
 
-При рефакторинге компонентов, использующих Radix UI, следуйте этим рекомендациям:
+When refactoring components using Radix UI, follow these guidelines:
 
-### Интеграция с системой тем
+### Theme Integration
 
-1. **Используйте встроенную систему тем Radix UI**:
+1. **Use Radix UI's built-in theme system**:
    ```tsx
    // ThemeProvider.tsx
    <RadixTheme
@@ -132,14 +135,14 @@ describe('ComponentName', () => {
    </RadixTheme>
    ```
 
-2. **Избегайте дублирования стилей**:
-   - Не переопределяйте базовые цвета и темы Radix UI
-   - Используйте CSS переменные Radix UI вместо своих
-   - Ограничьте CSS модули анимациями и позиционированием
+2. **Avoid style duplication**:
+   - Do not override Radix UI's base colors and themes
+   - Use Radix UI's CSS variables instead of custom ones
+   - Limit CSS modules to animations and positioning
 
-3. **Правильная структура стилей**:
+3. **Proper Style Structure**:
    ```css
-   /* ✅ Правильно: только специфичные стили */
+   /* ✅ Correct: only specific styles */
    .container {
      position: relative;
    }
@@ -148,18 +151,18 @@ describe('ComponentName', () => {
      transition: all 0.2s ease;
    }
 
-   /* ❌ Неправильно: дублирование тем Radix UI */
+   /* ❌ Incorrect: duplicating Radix UI themes */
    .menuItem {
      color: var(--custom-text-color);
      background: var(--custom-bg-color);
    }
    ```
 
-### Компоненты и доступность
+### Components and Accessibility
 
-1. **Используйте готовые компоненты правильно**:
+1. **Use built-in components correctly**:
    ```tsx
-   // ✅ Правильно: используем встроенные компоненты
+   // ✅ Correct: use built-in components
    <DropdownMenu.Item>
      <Flex gap="2" align="center">
        <Icon />
@@ -167,7 +170,7 @@ describe('ComponentName', () => {
      </Flex>
    </DropdownMenu.Item>
 
-   // ❌ Неправильно: реализуем то же самое вручную
+   // ❌ Incorrect: implement the same manually
    <div role="menuitem" onClick={handler}>
      <div style={{ display: 'flex', gap: '8px' }}>
        <Icon />
@@ -176,13 +179,13 @@ describe('ComponentName', () => {
    </div>
    ```
 
-2. **ARIA атрибуты**:
-   - Используйте встроенные ARIA атрибуты Radix UI
-   - Добавляйте дополнительные атрибуты только при необходимости
+2. **ARIA Attributes**:
+   - Use Radix UI's built-in ARIA attributes
+   - Add additional attributes only when necessary
 
-### Организация компонента
+### Component Organization
 
-1. **Структура файлов**:
+1. **File Structure**:
    ```
    ComponentName/
    ├── index.ts
@@ -193,115 +196,115 @@ describe('ComponentName', () => {
        └── ComponentName.test.tsx
    ```
 
-2. **Документация компонента**:
+2. **Component Documentation**:
    ```md
    # ComponentName
 
-   ## Особенности
-   - Интеграция с системой тем Radix UI
-   - Поддержка dark/light/auto режимов
-   - Доступность через ARIA
+   ## Features
+   - Integration with Radix UI's theme system
+   - Support for dark/light/auto modes
+   - Accessibility via ARIA
 
-   ## Зависимости
+   ## Dependencies
    - @radix-ui/themes
-   - Другие зависимости...
+   - Other dependencies...
 
    ## API
-   Описание пропсов и примеры использования...
+   Description of props and usage examples...
    ```
 
-### Производительность
+### Performance
 
-1. **Мемоизация колбэков**:
+1. **Callback Memoization**:
    ```tsx
    const handleThemeChange = useCallback((theme: ThemeType) => {
      setTheme(theme);
    }, [setTheme]);
    ```
 
-2. **Условный рендеринг**:
+2. **Conditional Rendering**:
    ```tsx
-   // ✅ Правильно: минимальное количество перерисовок
+   // ✅ Correct: minimal re-renders
    <DropdownMenu.Root open={isOpen}>
      <DropdownMenu.Trigger />
      {isOpen && <DropdownMenu.Content />}
    </DropdownMenu.Root>
    ```
 
-### Тестирование
+### Testing
 
-1. **Моки компонентов**:
+1. **Component Mocks**:
    ```tsx
    vi.mock('@radix-ui/themes', () => ({
      DropdownMenu: {
        Root: ({ children }) => <div>{children}</div>,
-       // ...остальные части
+       // ...other parts
      },
-     // ...другие компоненты
+     // ...other components
    }));
    ```
 
-2. **Тестирование тем**:
+2. **Theme Testing**:
    ```tsx
-   it('применяет правильную тему', () => {
+   it('applies the correct theme', () => {
      render(
        <ThemeProvider theme="dark">
          <Component />
        </ThemeProvider>
      );
-     // Проверяем поведение, а не стили
+     // Test behavior, not styles
    });
    ```
 
-### Распространенные ошибки
+### Common Mistakes
 
-1. **❌ Переопределение системы тем**:
-   - Не создавайте собственную систему тем
-   - Используйте встроенные темы Radix UI
-   - Расширяйте только при крайней необходимости
+1. **❌ Overriding the theme system**:
+   - Do not create your own theme system
+   - Use Radix UI's built-in themes
+   - Extend only when absolutely necessary
 
-2. **❌ Игнорирование доступности**:
-   - Не удаляйте ARIA атрибуты
-   - Не меняйте семантическую структуру компонентов
-   - Сохраняйте поддержку клавиатурной навигации
+2. **❌ Ignoring accessibility**:
+   - Do not remove ARIA attributes
+   - Do not change the semantic structure of components
+   - Maintain keyboard navigation support
 
-3. **❌ Неправильная обработка состояний**:
-   - Не изменяйте базовое поведение компонентов
-   - Сохраняйте консистентность с другими компонентами
-   - Поддерживайте все стандартные состояния (hover, focus, active)
+3. **❌ Incorrect state handling**:
+   - Do not alter the base behavior of components
+   - Maintain consistency with other components
+   - Support all standard states (hover, focus, active)
 
-## Декомпозиция сложных компонентов
+## Decomposing Complex Components
 
-При работе со сложными компонентами, которые выполняют множество функций, следует придерживаться следующего подхода:
+When working with complex components that perform multiple functions, follow this approach:
 
-### 1. Анализ и планирование
+### 1. Analysis and Planning
 
-1. **Определение зон ответственности**:
-   - Выделите основные функциональные блоки
-   - Определите UI-компоненты, которые можно вынести
-   - Выявите логику, которую можно изолировать в хуки
+1. **Define Responsibilities**:
+   - Identify key functional blocks
+   - Determine UI components that can be extracted
+   - Identify logic that can be isolated into hooks
 
-2. **План миграции**:
+2. **Migration Plan**:
    ```
    ComponentName/
-   ├── index.ts                    # Публичный API компонента
-   ├── ComponentName.tsx           # Основной компонент
-   ├── ComponentName.module.css    # Стили основного компонента
-   ├── hooks/                      # Выделенная бизнес-логика
-   │   ├── useComponentData.ts     # Работа с данными
-   │   └── useComponentState.ts    # Управление состоянием
-   ├── components/                 # Подкомпоненты
+   ├── index.ts                    # Public API of the component
+   ├── ComponentName.tsx           # Main component
+   ├── ComponentName.module.css    # Styles for the main component
+   ├── hooks/                      # Isolated business logic
+   │   ├── useComponentData.ts     # Data handling
+   │   └── useComponentState.ts    # State management
+   ├── components/                 # Subcomponents
    │   ├── SubComponent1/
    │   └── SubComponent2/
-   ├── README.md                  # Документация
-   └── __tests__/                 # Тесты всех частей
+   ├── README.md                  # Documentation
+   └── __tests__/                 # Tests for all parts
    ```
 
-### 2. Выделение бизнес-логики в хуки
+### 2. Extracting Business Logic into Hooks
 
-1. **Критерии для выделения в хук**:
+1. **Criteria for Hook Extraction**:
    ```typescript
-   // ❌ До: Логика смешана с отображением
+   // ❌ Before: Logic mixed with rendering
    const Component = () => {
      const [data, setData] = useState([]);
      const [loading, setLoading] = useState(false);
@@ -322,10 +325,10 @@ describe('ComponentName', () => {
        loadData();
      }, []);
      
-     // Еще много логики...
+     // More logic...
    };
 
-   // ✅ После: Логика в отдельном хуке
+   // ✅ After: Logic in a separate hook
    const useComponentData = () => {
      const [data, setData] = useState([]);
      const [loading, setLoading] = useState(false);
@@ -351,31 +354,31 @@ describe('ComponentName', () => {
 
    const Component = () => {
      const { data, loading, error } = useComponentData();
-     // Только логика отображения...
+     // Only rendering logic...
    };
    ```
 
-2. **Правила выделения хуков**:
-   - Один хук = одна зона ответственности
-   - Хук должен быть универсальным
-   - Обработка ошибок должна быть инкапсулирована
-   - Названия методов должны отражать бизнес-логику
+2. **Hook Extraction Rules**:
+   - One hook = one responsibility
+   - Hook should be reusable
+   - Error handling should be encapsulated
+   - Method names should reflect business logic
 
-### 3. Создание подкомпонентов
+### 3. Creating Subcomponents
 
-1. **Критерии для выделения подкомпонента**:
-   - Повторное использование кода
-   - Сложная внутренняя логика
-   - Независимый блок UI
-   - Большой размер кода (более 100-150 строк)
+1. **Criteria for Subcomponent Extraction**:
+   - Code reuse
+   - Complex internal logic
+   - Independent UI block
+   - Large code size (over 100-150 lines)
 
-2. **Структура подкомпонента**:
+2. **Subcomponent Structure**:
    ```typescript
    // SubComponent1/SubComponent1.tsx
    export interface SubComponent1Props {
-     /** Данные для отображения */
+     /** Data for rendering */
      data: ComponentData;
-     /** Обработчик изменений */
+     /** Change handler */
      onChange: (data: ComponentData) => void;
    }
 
@@ -383,40 +386,40 @@ describe('ComponentName', () => {
      data,
      onChange
    }) => {
-     // Локальная логика подкомпонента...
+     // Local logic of the subcomponent...
      return (
        <div data-testid="sub-component-1">
-         {/* Отображение... */}
+         {/* Rendering... */}
        </div>
      );
    };
    ```
 
-### 4. Сохранение обратной совместимости
+### 4. Maintaining Backward Compatibility
 
-1. **Сохранение публичного API**:
+1. **Preserving Public API**:
    ```typescript
    // index.ts
    export { ComponentName } from './ComponentName';
    export type { ComponentNameProps } from './ComponentName';
    
-   // Не экспортируем внутренние компоненты и хуки
+   // Do not export internal components and hooks
    // export { SubComponent1 } from './components/SubComponent1';
    ```
 
-2. **Постепенная миграция**:
+2. **Gradual Migration**:
    ```typescript
-   // Step 1: Создаем новую структуру
-   // Step 2: Переносим код частями
-   // Step 3: Тестируем каждое изменение
-   // Step 4: Удаляем старый код
+   // Step 1: Create new structure
+   // Step 2: Move code in parts
+   // Step 3: Test each change
+   // Step 4: Remove old code
    ```
 
-### 5. Управление состоянием
+### 5. State Management
 
-1. **Правила распределения состояния**:
+1. **State Distribution Rules**:
    ```typescript
-   // ✅ Состояние в родительском компоненте
+   // ✅ State in the parent component
    const ParentComponent = () => {
      const [sharedState, setSharedState] = useState();
      return (
@@ -432,16 +435,16 @@ describe('ComponentName', () => {
      );
    };
 
-   // ✅ Локальное состояние в подкомпоненте
+   // ✅ Local state in the subcomponent
    const SubComponent = () => {
      const [localState, setLocalState] = useState();
-     return (/* использование localState */);
+     return (/* use localState */);
    };
    ```
 
-2. **Использование контекста**:
+2. **Using Context**:
    ```typescript
-   // Для общих данных между компонентами
+   // For shared data between components
    const ComponentContext = createContext<ComponentContextType | null>(null);
 
    export const useComponentContext = () => {
@@ -453,82 +456,82 @@ describe('ComponentName', () => {
    };
    ```
 
-### 6. Организация тестов
+### 6. Organizing Tests
 
-1. **Структура тестов**:
+1. **Test Structure**:
    ```
    __tests__/
-   ├── ComponentName.test.tsx      # Тесты основного компонента
-   ├── hooks/                      # Тесты хуков
+   ├── ComponentName.test.tsx      # Tests for the main component
+   ├── hooks/                      # Tests for hooks
    │   ├── useComponentData.test.ts
    │   └── useComponentState.test.ts
-   └── components/                 # Тесты подкомпонентов
+   └── components/                 # Tests for subcomponents
        ├── SubComponent1.test.tsx
        └── SubComponent2.test.tsx
    ```
 
-2. **Тестирование интеграции**:
+2. **Integration Testing**:
    ```typescript
-   describe('интеграция компонентов', () => {
-     it('корректно передает данные между компонентами', async () => {
+   describe('component integration', () => {
+     it('correctly passes data between components', async () => {
        render(<ComponentName />);
        
-       // Действие в одном компоненте
+       // Action in one component
        fireEvent.click(screen.getByTestId('sub1-button'));
        
-       // Проверка эффекта в другом компоненте
+       // Check effect in another component
        await waitFor(() => {
          expect(screen.getByTestId('sub2-content'))
-           .toHaveTextContent('обновленные данные');
+           .toHaveTextContent('updated data');
        });
      });
    });
    ```
 
-### 7. Документация рефакторинга
+### 7. Refactoring Documentation
 
-В README.md компонента следует добавить:
+In the component's README.md, add:
 
 ```markdown
-## Архитектура
+## Architecture
 
-### Компоненты
-- ComponentName - основной компонент
-  - SubComponent1 - подкомпонент для ...
-  - SubComponent2 - подкомпонент для ...
+### Components
+- ComponentName - main component
+  - SubComponent1 - subcomponent for ...
+  - SubComponent2 - subcomponent for ...
 
-### Хуки
-- useComponentData - загрузка и управление данными
-- useComponentState - управление состоянием UI
+### Hooks
+- useComponentData - data loading and management
+- useComponentState - UI state management
 
-### Потоки данных
-1. Загрузка данных через useComponentData
-2. Обработка в основном компоненте
-3. Распределение по подкомпонентам
+### Data Flows
+1. Data loading via useComponentData
+2. Processing in the main component
+3. Distribution to subcomponents
 
-### Взаимодействие компонентов
-- Схема взаимодействия компонентов
-- Описание передачи данных
-- Обработка событий
+### Component Interaction
+- Component interaction diagram
+- Description of data passing
+- Event handling
 ```
 
-### 8. Проверка результатов декомпозиции
+### 8. Decomposition Results Verification
 
-- [ ] Каждый компонент имеет четкую зону ответственности
-- [ ] Бизнес-логика изолирована в хуках
-- [ ] Подкомпоненты независимы и переиспользуемы
-- [ ] Тесты покрывают как отдельные части, так и их взаимодействие
-- [ ] Документация отражает новую структуру
-- [ ] Сохранен публичный API компонента
-- [ ] Улучшена поддерживаемость кода
+- [ ] Each component has a clear responsibility
+- [ ] Business logic is isolated in hooks
+- [ ] Subcomponents are independent and reusable
+- [ ] Tests cover both individual parts and their interaction
+- [ ] Documentation reflects the new structure
+- [ ] Public API of the component is preserved
+- [ ] Code maintainability is improved
 
-## Обработка ошибок и состояний загрузки
+## Error Handling and Loading States
 
-При рефакторинге компонентов важно уделить особое внимание обработке ошибок и управлению состояниями загрузки.
+When refactoring components, pay special attention to error handling and loading state management.
 
-### 1. Единообразная обработка ошибок
+### 1. Consistent Error Handling
 
-1. **Определение типов ошибок**:
+1. **Defining Error Types**:
    ```typescript
    type ApiError = {
      code: string;
@@ -536,11 +539,11 @@ describe('ComponentName', () => {
      details?: Record<string, unknown>;
    };
 
-   // В компоненте:
+   // In the component:
    const [error, setError] = useState<ApiError | null>(null);
    ```
 
-2. **Компонент для отображения ошибок**:
+2. **Error Display Component**:
    ```typescript
    interface ErrorDisplayProps {
      error: ApiError | null;
@@ -570,7 +573,7 @@ describe('ComponentName', () => {
              onClick={onRetry}
              data-testid="error-retry-button"
            >
-             Повторить
+             Retry
            </Button>
          )}
        </div>
@@ -578,7 +581,7 @@ describe('ComponentName', () => {
    };
    ```
 
-3. **Хук для обработки ошибок**:
+3. **Error Handling Hook**:
    ```typescript
    interface ErrorState {
      error: ApiError | null;
@@ -603,9 +606,9 @@ describe('ComponentName', () => {
    };
    ```
 
-### 2. Управление состоянием загрузки
+### 2. Managing Loading States
 
-1. **Хук для управления загрузкой**:
+1. **Loading State Hook**:
    ```typescript
    interface LoadingState {
      isLoading: boolean;
@@ -628,7 +631,7 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Компонент индикатора загрузки**:
+2. **Loading Spinner Component**:
    ```typescript
    interface LoadingSpinnerProps {
      size?: 'small' | 'medium' | 'large';
@@ -651,15 +654,15 @@ describe('ComponentName', () => {
          )}
          data-testid="loading-spinner"
        >
-         {/* Содержимое спиннера */}
+         {/* Spinner content */}
        </div>
      );
    };
    ```
 
-### 3. Интеграция в компоненты
+### 3. Integration into Components
 
-1. **Использование в компонентах**:
+1. **Usage in Components**:
    ```typescript
    const Component: React.FC = () => {
      const { error, setError, clearError } = useError();
@@ -670,11 +673,11 @@ describe('ComponentName', () => {
        startLoading();
        try {
          const data = await loadData();
-         // Обработка данных
+         // Process data
        } catch (e) {
          setError({
            code: 'DATA_LOAD_ERROR',
-           message: 'Не удалось загрузить данные'
+           message: 'Failed to load data'
          });
        } finally {
          stopLoading();
@@ -691,52 +694,52 @@ describe('ComponentName', () => {
            error={error}
            onRetry={handleDataLoad}
          />
-         {/* Основной контент */}
+         {/* Main content */}
        </div>
      );
    };
    ```
 
-2. **Тестирование обработки ошибок**:
+2. **Testing Error Handling**:
    ```typescript
    describe('Component', () => {
-     it('отображает ошибку при неудачной загрузке данных', async () => {
-       // Мокируем ошибку загрузки
+     it('displays error on failed data load', async () => {
+       // Mock data load error
        vi.mocked(loadData).mockRejectedValue(new Error('API Error'));
 
        render(<Component />);
 
-       // Проверяем появление спиннера
+       // Check spinner appearance
        expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
 
-       // Ждем обработки ошибки
+       // Wait for error handling
        await waitFor(() => {
          expect(screen.getByTestId('error-display')).toBeInTheDocument();
-         expect(screen.getByText('Не удалось загрузить данные')).toBeInTheDocument();
+         expect(screen.getByText('Failed to load data')).toBeInTheDocument();
        });
 
-       // Проверяем возможность повторной загрузки
+       // Check retry functionality
        const retryButton = screen.getByTestId('error-retry-button');
        fireEvent.click(retryButton);
 
-       // Проверяем, что попытка загрузки повторилась
+       // Verify retry attempt
        expect(loadData).toHaveBeenCalledTimes(2);
      });
    });
    ```
 
-### 4. Оптимизация производительности
+### 4. Performance Optimization
 
-1. **Мемоизация обработчиков**:
+1. **Callback Memoization**:
    ```typescript
    const handleRetry = useCallback(async () => {
      await handleDataLoad();
    }, [handleDataLoad]);
    ```
 
-2. **Предотвращение лишних рендеров**:
+2. **Preventing Excessive Renders**:
    ```typescript
-   // Выносим состояния в отдельный компонент
+   // Extract states into a separate component
    const LoadingErrorWrapper: React.FC<{
      children: React.ReactNode;
    }> = ({ children }) => {
@@ -755,9 +758,9 @@ describe('ComponentName', () => {
    };
    ```
 
-### 5. Группирование состояний и обработчиков
+### 5. Grouping States and Handlers
 
-1. **Объединение связанных состояний**:
+1. **Combining Related States**:
    ```typescript
    interface ComponentState {
      loading: boolean;
@@ -793,9 +796,9 @@ describe('ComponentName', () => {
    };
    ```
 
-### 6. Обработка множественных загрузок
+### 6. Handling Multiple Loads
 
-1. **Отслеживание активных загрузок**:
+1. **Tracking Active Loads**:
    ```typescript
    const useLoadingQueue = () => {
      const [loadingTasks, setLoadingTasks] = useState<Set<string>>(new Set());
@@ -821,7 +824,7 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Применение в компоненте**:
+2. **Usage in Component**:
    ```typescript
    const Component: React.FC = () => {
      const { isLoading, startTask, finishTask } = useLoadingQueue();
@@ -838,44 +841,44 @@ describe('ComponentName', () => {
      return (
        <div>
          {isLoading && <LoadingSpinner />}
-         {/* Контент */}
+         {/* Content */}
        </div>
      );
    };
    ```
 
-### 7. Рекомендации по рефакторингу обработки ошибок
+### 7. Error Handling Refactoring Recommendations
 
-1. **Определить точки возникновения ошибок**:
-   - Сетевые запросы
-   - Обработка данных
-   - Пользовательский ввод
+1. **Identify Error Points**:
+   - Network requests
+   - Data processing
+   - User input
 
-2. **Создать иерархию ошибок**:
-   - Критические (требуют перезагрузки)
-   - Предупреждения (можно продолжить работу)
-   - Информационные сообщения
+2. **Create Error Hierarchy**:
+   - Critical (require reload)
+   - Warnings (can continue working)
+   - Informational messages
 
-3. **Стандартизировать обработку**:
-   - Единый формат ошибок
-   - Общие компоненты отображения
-   - Унифицированные обработчики
+3. **Standardize Handling**:
+   - Unified error format
+   - Common display components
+   - Unified handlers
 
-4. **Добавить восстановление**:
-   - Автоматические повторные попытки
-   - Ручной повтор операций
-   - Сохранение состояния
+4. **Add Recovery Options**:
+   - Automatic retries
+   - Manual operation retries
+   - State preservation
 
-5. **Улучшить UX при ошибках**:
-   - Понятные сообщения
-   - Четкие инструкции
-   - Возможность отмены/отката
+5. **Improve UX on Errors**:
+   - Clear messages
+   - Specific instructions
+   - Cancel/rollback options
 
-## Организация контекстов и глобального состояния
+## Organizing Contexts and Global State
 
-### 1. Структура контекстов
+### 1. Context Structure
 
-1. **Базовая организация**:
+1. **Basic Organization**:
    ```typescript
    // contexts/ThemeContext/ThemeContext.tsx
    interface ThemeContextType {
@@ -893,7 +896,7 @@ describe('ComponentName', () => {
      const [isLoading, setIsLoading] = useState(true);
 
      useEffect(() => {
-       // Инициализация темы
+       // Theme initialization
        setIsLoading(false);
      }, []);
 
@@ -905,20 +908,20 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Хук для работы с контекстом**:
+2. **Hook for Context Usage**:
    ```typescript
    export const useTheme = () => {
      const context = useContext(ThemeContext);
      if (!context) {
-       throw new Error('useTheme должен использоваться внутри ThemeProvider');
+       throw new Error('useTheme must be used within ThemeProvider');
      }
      return context;
    };
    ```
 
-### 2. Композиция провайдеров
+### 2. Provider Composition
 
-1. **Организация нескольких контекстов**:
+1. **Organizing Multiple Contexts**:
    ```typescript
    const AppProviders: React.FC<{ children: React.ReactNode }> = ({ 
      children 
@@ -937,14 +940,14 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Порядок провайдеров**:
-   - Сначала глобальные провайдеры (тема, локализация)
-   - Затем провайдеры с бизнес-логикой
-   - В конце UI-специфичные провайдеры
+2. **Provider Order**:
+   - Start with global providers (theme, localization)
+   - Then business logic providers
+   - Finally UI-specific providers
 
-### 3. Управление глобальным состоянием
+### 3. Managing Global State
 
-1. **Создание стора**:
+1. **Creating Store**:
    ```typescript
    interface AppState {
      isConnected: boolean;
@@ -965,7 +968,7 @@ describe('ComponentName', () => {
    }));
    ```
 
-2. **Селекторы для данных**:
+2. **Selectors for Data**:
    ```typescript
    const useConnectionStatus = () => {
      const isConnected = useAppStore(state => state.isConnected);
@@ -974,9 +977,9 @@ describe('ComponentName', () => {
    };
    ```
 
-### 4. Интеграция с компонентами
+### 4. Integration with Components
 
-1. **Использование в компонентах**:
+1. **Usage in Components**:
    ```typescript
    const ConnectionStatus: React.FC = () => {
      const { isConnected, error } = useConnectionStatus();
@@ -990,21 +993,21 @@ describe('ComponentName', () => {
          })}
          data-theme={theme}
        >
-         {error || (isConnected ? 'Подключено' : 'Отключено')}
+         {error || (isConnected ? 'Connected' : 'Disconnected')}
        </div>
      );
    };
    ```
 
-### 5. Обработка побочных эффектов
+### 5. Handling Side Effects
 
-1. **Эффекты в контекстах**:
+1. **Effects in Contexts**:
    ```typescript
    const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
      children 
    }) => {
      useEffect(() => {
-       // Подписка на изменения настроек
+       // Subscribe to settings changes
        const unsubscribe = subscribeToSettings((newSettings) => {
          updateSettings(newSettings);
        });
@@ -1018,7 +1021,7 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Синхронизация состояний**:
+2. **State Synchronization**:
    ```typescript
    const useSyncSettings = () => {
      const { settings, updateSettings } = useSettings();
@@ -1032,9 +1035,9 @@ describe('ComponentName', () => {
    };
    ```
 
-### 6. Тестирование контекстов
+### 6. Testing Contexts
 
-1. **Тестовые обертки**:
+1. **Test Wrappers**:
    ```typescript
    const renderWithProviders = (
      ui: React.ReactElement,
@@ -1049,15 +1052,15 @@ describe('ComponentName', () => {
    };
    ```
 
-2. **Тестирование хуков**:
+2. **Testing Hooks**:
    ```typescript
    describe('useTheme', () => {
-     it('выбрасывает ошибку вне провайдера', () => {
+     it('throws error outside provider', () => {
        const { result } = renderHook(() => useTheme());
-       expect(result.error).toMatch(/useTheme должен использоваться/);
+       expect(result.error).toMatch(/useTheme must be used/);
      });
 
-     it('возвращает текущую тему', () => {
+     it('returns current theme', () => {
        const { result } = renderHook(() => useTheme(), {
          wrapper: ThemeProvider,
        });
@@ -1066,17 +1069,17 @@ describe('ComponentName', () => {
    });
    ```
 
-### 7. Миграция существующего кода
+### 7. Migrating Existing Code
 
-1. **План миграции**:
-   - Идентифицировать глобальные состояния
-   - Создать соответствующие контексты
-   - Постепенно переводить компоненты на использование контекстов
-   - Тестировать каждый шаг
+1. **Migration Plan**:
+   - Identify global states
+   - Create corresponding contexts
+   - Gradually migrate components to use contexts
+   - Test each step
 
-2. **Пример миграции**:
+2. **Migration Example**:
    ```typescript
-   // До: глобальные переменные или пропсы
+   // Before: global variables or props
    const App = () => {
      const [theme, setTheme] = useState('light');
      return (
@@ -1088,7 +1091,7 @@ describe('ComponentName', () => {
      );
    };
 
-   // После: использование контекста
+   // After: using context
    const App = () => {
      return (
        <ThemeProvider>
@@ -1100,237 +1103,232 @@ describe('ComponentName', () => {
    };
    ```
 
-### 8. Рекомендации по использованию
+### 8. Usage Recommendations
 
-1. **Когда использовать контекст**:
-   - Глобальные настройки (тема, локализация)
-   - Состояние аутентификации
-   - Общие настройки приложения
-   - Данные, требуемые во многих компонентах
+1. **When to Use Context**:
+   - Global settings (theme, localization)
+   - Authentication state
+   - Application-wide settings
+   - Data required in many components
 
-2. **Когда использовать пропсы**:
-   - Локальные данные компонента
-   - Данные, используемые в 1-2 уровнях компонентов
-   - Специфичные настройки компонента
+2. **When to Use Props**:
+   - Local component data
+   - Data used in 1-2 component levels
+   - Component-specific settings
 
-## Типовые ошибки и рекомендации
+## Common Mistakes and Recommendations
 
-### 1. Проблемы с типизацией
+### 1. Typing Issues
 
-1. **Нестрогое использование типов**:
+1. **Loose Type Usage**:
    ```typescript
-   // ❌ Плохо: тип не определен явно
+   // ❌ Bad: type not explicitly defined
    const validatePathAndHandleError = async (path: string) => {
-     // может вернуть undefined
+     // may return undefined
      return;
    };
 
-   // ✅ Хорошо: явное определение возвращаемого типа
+   // ✅ Good: explicit return type definition
    const validatePathAndHandleError = async (path: string): Promise<boolean> => {
-     return false; // явный возврат boolean
+     return false; // explicit boolean return
    };
    ```
 
-2. **Важность явных типов возврата**:
+2. **Importance of Explicit Return Types**:
    ```typescript
-   // ❌ Плохо: неявный тип возврата
+   // ❌ Bad: implicit return type
    const handleSubmit = async (e) => {
      await validatePath(downloadPath);
    };
 
-   // ✅ Хорошо: явный тип возврата
+   // ✅ Good: explicit return type
    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
      await validatePath(downloadPath);
    };
    ```
 
-### 2. Проблемы с именованием
+### 2. Naming Issues
 
-1. **Слишком длинные имена**:
+1. **Overly Long Names**:
    ```typescript
-   // ❌ Плохо: длинное, избыточное имя
+   // ❌ Bad: long, redundant name
    const validatePathAndHandleErrorAndUpdateUI = async () => {};
 
-   // ✅ Хорошо: краткое, но информативное имя
+   // ✅ Good: concise, yet informative name
    const handlePathValidation = async () => {};
    ```
 
-2. **Непоследовательные имена**:
+2. **Inconsistent Naming**:
    ```typescript
-   // ❌ Плохо: разные стили именования
+   // ❌ Bad: different naming styles
    const handle_submit = () => {};
    const processData = () => {};
    const ValidatePath = () => {};
 
-   // ✅ Хорошо: единый стиль
+   // ✅ Good: consistent style
    const handleSubmit = () => {};
    const handleDataProcess = () => {};
    const handlePathValidation = () => {};
    ```
 
-### 3. Проблемы с зависимостями
+### 3. Dependency Issues
 
-1. **Нестабильные зависимости в useCallback**:
+1. **Unstable Dependencies in useCallback/useEffect**:
    ```typescript
-   // ❌ Плохо: пропущена зависимость ValidateDownloadPath
+   // ❌ Bad: missing ValidateDownloadPath dependency
    const validatePath = useCallback(async () => {
      await ValidateDownloadPath(path);
    }, [path]);
 
-   // ✅ Хорошо: все зависимости указаны
+   // ✅ Good: all dependencies specified (exhaustive-deps rule)
    const validatePath = useCallback(async () => {
      await ValidateDownloadPath(path);
-   }, [path, ValidateDownloadPath]);
+   }, [path, ValidateDownloadPath]); // <--- Added dependency
    ```
+   - **Always** include all variables and functions from the outer scope used inside the hook in the dependency array. This prevents bugs related to stale values in closures.
 
-2. **Неправильное использование хуков**:
+### 4. DOM Selector Issues in Tests
+
+1. **Unstable Selectors**:
    ```typescript
-   // ❌ Плохо: хуки внутри условий
-   if (isEnabled) {
-     useEffect(() => {
-       // код эффекта
-     }, []);
-   }
-
-   // ✅ Хорошо: условие внутри хука
-   useEffect(() => {
-     if (isEnabled) {
-       // код эффекта
-     }
-   }, [isEnabled]);
-   ```
-
-### 4. Проблемы с DOM-селекторами в тестах
-
-1. **Нестабильные селекторы**:
-   ```typescript
-   // ❌ Плохо: использование querySelector
+   // ❌ Bad: using querySelector
    const form = screen.getByRole("dialog").querySelector("form");
 
-   // ✅ Хорошо: использование data-testid
+   // ✅ Good: using data-testid
    const form = screen.getByTestId("add-torrent-form");
    ```
 
-2. **Поиск элементов**:
+2. **Element Search**:
    ```typescript
-   // ❌ Плохо: поиск по классам или структуре DOM
+   // ❌ Bad: searching by classes or DOM structure
    const button = container.querySelector('.submit-button');
 
-   // ✅ Хорошо: поиск по роли или data-testid
+   // ✅ Good: searching by role or data-testid
    const button = screen.getByRole('button', { name: 'Submit' });
-   // или
+   // or
    const button = screen.getByTestId('submit-button');
    ```
 
-### 5. Рекомендации по оптимизации
+### 5. Optimization Recommendations
 
-1. **Мемоизация компонентов**:
+1. **Component Memoization**:
    ```typescript
-   // ❌ Плохо: избыточная мемоизация
+   // ❌ Bad: excessive memoization
    const SimpleText = memo(({ text }: { text: string }) => <span>{text}</span>);
 
-   // ✅ Хорошо: мемоизация сложных компонентов
+   // ✅ Good: memoization of complex components
    const ComplexComponent = memo(({ data, onUpdate }: ComplexProps) => (
-     // сложная логика рендеринга
+     // complex rendering logic
    ));
    ```
 
-2. **Оптимизация ререндеров**:
+2. **Render Optimization**:
    ```typescript
-   // ❌ Плохо: создание функций при каждом рендере
-   const Component = () => {
+   // ❌ Bad: creating functions on every render
+   const Component = ({ onAction }) => {
      const handleClick = () => {
-       // обработчик
+       // handler
+       onAction();
      };
      return <button onClick={handleClick}>Click</button>;
    };
 
-   // ✅ Хорошо: использование useCallback
-   const Component = () => {
+   // ✅ Good: using useCallback for handlers
+   const Component = ({ onAction }) => {
      const handleClick = useCallback(() => {
-       // обработчик
-     }, []);
+       // handler
+       onAction();
+     }, [onAction]); // <--- Dependency onAction
      return <button onClick={handleClick}>Click</button>;
    };
    ```
+   - Use `useCallback` for event handlers, especially if they are passed to child components or used in `useEffect`. This also helps test coverage tools correctly track functions.
+   - **Handlers for libraries (e.g., Radix UI):** If you pass a callback to a library component (e.g., `onOpenChange`), it is often useful to wrap it in `useCallback` for stability and better testability.
+     ```typescript
+     const handleOpenChange = useCallback(() => {
+       onClose(); // onClose from props
+     }, [onClose]);
+     
+     return <Dialog.Root onOpenChange={handleOpenChange}>...</Dialog.Root>;
+     ```
 
-### 6. Рекомендации по тестированию
+### 6. Testing Recommendations
 
-1. **Поддержка тестов**:
+1. **Test Support**:
    ```typescript
-   // ❌ Плохо: хрупкие тесты
+   // ❌ Bad: fragile tests
    test('renders correctly', () => {
      const { container } = render(<Component />);
      expect(container.querySelector('div > span')).toBeInTheDocument();
    });
 
-   // ✅ Хорошо: надежные тесты
-   test('отображает контент корректно', () => {
+   // ✅ Good: reliable tests
+   test('renders content correctly', () => {
      render(<Component />);
      expect(screen.getByTestId('content-container')).toBeInTheDocument();
    });
    ```
 
-2. **Описание тестов**:
+2. **Test Descriptions**:
    ```typescript
-   // ❌ Плохо: неинформативные описания
+   // ❌ Bad: uninformative descriptions
    it('works', () => {});
    it('should work', () => {});
 
-   // ✅ Хорошо: понятные описания действий и ожидаемого результата
-   it('отображает сообщение об ошибке при неудачной валидации', () => {});
-   it('очищает форму после успешной отправки', () => {});
+   // ✅ Good: clear descriptions of actions and expected results
+   it('displays error message on failed validation', () => {});
+   it('clears form after successful submission', () => {});
    ```
 
-### 7. Рекомендации по архитектуре
+### 7. Architecture Recommendations
 
-1. **Разделение ответственности**:
+1. **Responsibility Separation**:
    ```typescript
-   // ❌ Плохо: смешивание логики и представления
+   // ❌ Bad: mixing logic and presentation
    const Component = () => {
      const [data, setData] = useState([]);
      const loadData = async () => {
-       // запрос к API
-       // обработка данных
-       // обновление UI
+       // API request
+       // data processing
+       // UI update
      };
    };
 
-   // ✅ Хорошо: выделение логики в хук
+   // ✅ Good: extracting logic into a hook
    const useDataLoader = () => {
      const [data, setData] = useState([]);
      const loadData = useCallback(async () => {
-       // запрос к API
-       // обработка данных
+       // API request
+       // data processing
      }, []);
      return { data, loadData };
    };
 
    const Component = () => {
      const { data, loadData } = useDataLoader();
-     // только логика отображения
+     // only rendering logic
    };
    ```
 
-2. **Переиспользование кода**:
+2. **Code Reuse**:
    ```typescript
-   // ❌ Плохо: дублирование логики
+   // ❌ Bad: duplicated logic
    const ComponentA = () => {
      const handleError = (error) => {
-       // обработка ошибки
+       // error handling
      };
    };
 
    const ComponentB = () => {
      const handleError = (error) => {
-       // та же логика обработки ошибки
+       // same error handling logic
      };
    };
 
-   // ✅ Хорошо: вынесение общей логики
+   // ✅ Good: extracting common logic
    const useErrorHandler = () => {
      const handleError = useCallback((error) => {
-       // общая логика обработки ошибки
+       // common error handling logic
      }, []);
      return { handleError };
    };
@@ -1344,93 +1342,96 @@ describe('ComponentName', () => {
    };
    ```
 
-### 8. Рекомендации по документации
+### 8. Documentation Recommendations
 
-1. **Комментарии к коду**:
+1. **Code Comments**:
    ```typescript
-   // ❌ Плохо: очевидные комментарии
-   // Создаем состояние
+   // ❌ Bad: obvious comments
+   // Create state
    const [state, setState] = useState();
 
-   // ✅ Хорошо: объяснение сложной логики или важных деталей
-   // Проверяем путь на валидность и очищаем ошибки при пустом пути
-   const handlePathValidation = async (path: string): Promise<boolean> => {
-     if (!path) {
-       setPathError("");
-       return false;
-     }
-     // ...остальная логика
-   };
-   ```
+   // ❌ Bad: excessive comments for simple logic
+   // (activeTab === "url" && !url.trim()) || // Branch 1 (&&) + Branch 2 (||)
+   // (activeTab === "file" && !selectedFileData) // Branch 3 (&&)
 
-2. **JSDoc документация**:
+   // ✅ Good: explanation of complex logic or *reason* for a specific decision
+   // Validate path and clear errors for empty path
+   const handlePathValidation = async (path: string): Promise<boolean> => { ... };
+
+   // ✅ Good: explanation of non-obvious behavior or workaround
+   // Remove "Error: " prefix for cleaner UI display
+   setPathError(String(error).replace(/^Error:\s*/, ""));
+   ```
+   - Comments should explain *why*, not *what* the code does, if it is not obvious. Remove comments that simply repeat the code.
+
+2. **JSDoc Documentation**:
    ```typescript
-   // ❌ Плохо: неполная документация
-   /** Обработчик валидации */
+   // ❌ Bad: incomplete documentation
+   /** Validation handler */
    const handleValidation = () => {};
 
-   // ✅ Хорошо: полная документация
+   // ✅ Good: complete documentation
    /**
-    * Проверяет валидность пути и обновляет состояние ошибки
-    * @param path - Путь для проверки
-    * @returns Promise<boolean> - true если путь валидный, false в противном случае
-    * @throws {ValidationError} Если произошла ошибка валидации
+    * Validates the path and updates error state
+    * @param path - Path to validate
+    * @returns Promise<boolean> - true if the path is valid, false otherwise
+    * @throws {ValidationError} If validation error occurs
     */
    const handlePathValidation = async (path: string): Promise<boolean> => {};
    ```
 
-## Проверка результатов
+## Results Verification
 
-1. **Структура**
-   - [ ] Компонент находится в отдельном каталоге
-   - [ ] Создан index.ts файл
-   - [ ] Стили в отдельном модуле
-   - [ ] Тесты в папке __tests__
-   - [ ] README.md файл создан и заполнен
+1. **Structure**
+   - [ ] Component resides in a separate directory
+   - [ ] index.ts file created
+   - [ ] Styles in a separate module
+   - [ ] Tests in the __tests__ folder
+   - [ ] README.md file created and filled
 
-2. **Код**
-   - [ ] Документация JSDoc
-   - [ ] Типизация пропсов
-   - [ ] Data-testid атрибуты
-   - [ ] Корректные импорты
+2. **Code**
+   - [ ] JSDoc documentation
+   - [ ] Props typing
+   - [ ] Data-testid attributes
+   - [ ] Correct imports
 
-3. **Тесты**
-   - [ ] Тесты на русском языке
-   - [ ] Достаточное покрытие
-   - [ ] Все кейсы протестированы
-   - [ ] Корректная работа моков
+3. **Tests**
+   - [ ] Tests in English
+   - [ ] Sufficient coverage
+   - [ ] All cases tested
+   - [ ] Mocks work correctly
 
-4. **Стили**
-   - [ ] Локальные стили в модуле
-   - [ ] Семантические имена классов
-   - [ ] Отсутствие глобальных стилей
+4. **Styles**
+   - [ ] Local styles in the module
+   - [ ] Semantic class names
+   - [ ] No global styles
 
-5. **Документация**
-   - [ ] README.md содержит описание компонента
-   - [ ] Примеры использования
-   - [ ] Описание пропсов и их типов
-   - [ ] Особенности реализации
+5. **Documentation**
+   - [ ] README.md contains component description
+   - [ ] Usage examples
+   - [ ] Props description and their types
+   - [ ] Implementation details
 
-## Возможные проблемы
+## Potential Issues
 
-1. **Циклические зависимости**
-   - Проверять импорты на циклические зависимости
-   - Использовать индексные файлы для экспорта
+1. **Cyclic Dependencies**
+   - Check imports for cyclic dependencies
+   - Use index files for exports
 
-2. **Конфликты стилей**
-   - Использовать уникальные имена классов
-   - Проверять специфичность селекторов
+2. **Style Conflicts**
+   - Use unique class names
+   - Check selector specificity
 
-3. **Проблемы с тестами**
-   - Проверять корректность моков
-   - Следить за асинхронными операциями
-   - Правильно использовать act() и waitFor()
+3. **Test Issues**
+   - Verify mock correctness
+   - Monitor asynchronous operations
+   - Properly use act() and waitFor()
 
-## Заключение
+## Conclusion
 
-После рефакторинга убедитесь, что:
-1. Компонент изолирован и переиспользуем
-2. Тесты покрывают основную функциональность
-3. Стили локализованы и не влияют на другие компоненты
-4. Документация актуальна и понятна
-5. Код соответствует общим стандартам проекта
+After refactoring, ensure that:
+1. The component is isolated and reusable
+2. Tests cover the main functionality
+3. Styles are localized and do not affect other components
+4. Documentation is up-to-date and clear
+5. Code adheres to project standards

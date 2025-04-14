@@ -9,12 +9,12 @@ import {
 } from "@testing-library/react";
 import userEvent from '@testing-library/user-event'; // Импортировать user-event
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { AddTorrent, AddTorrentProps } from "./AddTorrent"; // Импортируем AddTorrentProps
-import { MockLocalizationProvider } from "../../test/mocks/localization-context-mock";
-import { TestThemeProvider } from "../../test/mocks/theme-mock";
+import { AddTorrent, AddTorrentProps } from "../AddTorrent"; // Импортируем AddTorrentProps
+import { MockLocalizationProvider } from "../../../test/mocks/localization-context-mock";
+import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 
 // Мок для LocalizationContext
-vi.mock("../../contexts/LocalizationContext", () => ({
+vi.mock("../../../contexts/LocalizationContext", () => ({
   useLocalization: vi.fn().mockReturnValue({
     t: vi.fn((key) => key),
     isLoading: false,
@@ -28,7 +28,7 @@ vi.mock("../../contexts/LocalizationContext", () => ({
 }));
 
 // Mock зависимостей
-vi.mock("../../../wailsjs/go/main/App", () => ({
+vi.mock("../../../../wailsjs/go/main/App", () => ({
   ValidateDownloadPath: vi.fn().mockImplementation((path) => {
     if (path === "/invalid/path") {
       return Promise.reject("Невалидный путь");
@@ -50,7 +50,7 @@ describe("AddTorrent Component", () => {
 
     // Сбрасываем мок функции useLocalization к значению по умолчанию
     vi.mocked(
-      await import("../../contexts/LocalizationContext")
+      await import("../../../contexts/LocalizationContext")
     ).useLocalization.mockReturnValue({
       t: vi.fn((key) => key),
       isLoading: false,
@@ -163,7 +163,7 @@ describe("AddTorrent Component", () => {
 
   it("выполняет валидацию пути перед отправкой", async () => {
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     renderComponent();
@@ -196,7 +196,7 @@ describe("AddTorrent Component", () => {
   it("отображает индикатор загрузки при isLocalizationLoading=true", async () => {
     // Мокируем хук useLocalization для возврата isLoading=true
     vi.mocked(
-      await import("../../contexts/LocalizationContext")
+      await import("../../../contexts/LocalizationContext")
     ).useLocalization.mockReturnValue({
       t: vi.fn((key) => key),
       isLoading: true,
@@ -222,7 +222,7 @@ describe("AddTorrent Component", () => {
   it("отображает fallback-текст в состоянии загрузки, если перевод отсутствует", async () => {
     // Мокируем хук useLocalization для возврата isLoading=true и t, возвращающей пустую строку
     vi.mocked(
-      await import("../../contexts/LocalizationContext")
+      await import("../../../contexts/LocalizationContext")
     ).useLocalization.mockReturnValue({
       t: vi.fn((key) => ''), // Возвращаем пустую строку '' вместо undefined
       isLoading: true,
@@ -248,7 +248,7 @@ describe("AddTorrent Component", () => {
 
   it("валидирует путь перед отправкой", async () => {
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Настраиваем мок для успешной валидации
@@ -297,7 +297,7 @@ describe("AddTorrent Component", () => {
 
   it("обрабатывает ошибки валидации пути и отображает сообщение об ошибке", async () => {
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Используем существующую реализацию мока, настраивая только конкретное значение ошибки
@@ -344,7 +344,7 @@ describe("AddTorrent Component", () => {
 
   it("выполняет успешную валидацию пути и отправляет форму с URL", async () => {
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Настраиваем мок для успешной валидации
@@ -387,7 +387,7 @@ describe("AddTorrent Component", () => {
     mockOnClose.mockClear();
 
     const { GetDownloadPaths, ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Сбрасываем мок для ValidateDownloadPath
@@ -430,7 +430,7 @@ describe("AddTorrent Component", () => {
     mockOnClose.mockClear();
 
     const { GetDownloadPaths, ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Настраиваем мок для возврата конкретного пути
@@ -556,7 +556,7 @@ describe("AddTorrent Component", () => {
 
   it("напрямую тестирует функцию validatePath с ошибкой валидации", async () => {
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Настраиваем mock для ValidateDownloadPath, чтобы он выбрасывал определенное исключение
@@ -604,7 +604,7 @@ describe("AddTorrent Component", () => {
 
     // Мокируем ValidateDownloadPath, чтобы он всегда возвращал успех
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
     ValidateDownloadPath.mockResolvedValue(undefined);
 
@@ -640,7 +640,7 @@ describe("AddTorrent Component", () => {
 
     // Мокируем ValidateDownloadPath, чтобы он гарантированно выбрасывал ошибку
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
 
     // Используем mockImplementation вместо mockRejectedValue
@@ -697,7 +697,7 @@ describe("AddTorrent Component", () => {
 
     // Проверяем работу функции validatePath через ref
     const { ValidateDownloadPath } = vi.mocked(
-      await import("../../../wailsjs/go/main/App")
+      await import("../../../../wailsjs/go/main/App")
     );
     ValidateDownloadPath.mockResolvedValueOnce(undefined);
 

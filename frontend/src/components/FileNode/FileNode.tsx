@@ -26,7 +26,7 @@ export const FileNode: React.FC<FileNodeProps> = ({
     onToggleExpand,
 }) => {
     const handleCheckboxChange = (checked: boolean) => {
-        onToggleWanted(node, !!checked);
+        onToggleWanted(node, checked);
     };
 
     // Определяем значение checked для Checkbox.Root

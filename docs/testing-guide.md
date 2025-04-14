@@ -43,10 +43,12 @@ This guide describes the principles and practices for testing frontend component
   - [Dealing with Asynchronous Tests](#dealing-with-asynchronous-tests)
     - [Proper use of waitFor](#proper-use-of-waitfor)
     - [Testing React useEffect hooks](#testing-react-useeffect-hooks)
+    - [Adhering to `exhaustive-deps`](#adhering-to-exhaustive-deps)
   - [Achieving 100% Test Coverage](#achieving-100-test-coverage)
   - [Testing React.useState Mocking](#testing-reactusestate-mocking)
   - [Testing Components that use External Libraries](#testing-components-that-use-external-libraries)
   - [Testing Radix UI Components](#testing-radix-ui-components)
+    - [Best Practices for Radix UI Testing](#best-practices-for-radix-ui-testing)
   - [Testing Complex Component Compositions](#testing-complex-component-compositions)
   - [Тестирование состояний загрузки и обработки ошибок](#тестирование-состояний-загрузки-и-обработки-ошибок)
   - [Управление состоянием в тестах](#управление-состоянием-в-тестах)
@@ -610,6 +612,12 @@ it('calls effect after render', async () => {
 });
 ```
 
+### Adhering to `exhaustive-deps`
+
+- Всегда включайте все зависимости, используемые внутри `useEffect`, `useCallback`, `useMemo`, в массив зависимостей хука.
+- Это помогает избежать проблем с устаревшими замыканиями и обеспечивает предсказуемое поведение.
+- Используйте линтер `eslint-plugin-react-hooks` для автоматической проверки правила `exhaustive-deps`.
+
 ## Achieving 100% Test Coverage
 
 To achieve 100% test coverage:
@@ -659,6 +667,18 @@ it('cleans up on unmount', () => {
   expect(mockCleanup).toHaveBeenCalled();
 });
 ```
+
+6. **Cover all functions, including inline and anonymous ones**:
+   - Инструменты покрытия могут не всегда корректно отслеживать анонимные функции, определенные прямо в JSX (например, `<Component onClick={() => doSomething()} />`).
+   - Если тест не покрывает такую функцию, вынесите ее в `useCallback`:
+     ```typescript
+     const handleClick = useCallback(() => {
+       doSomething();
+     }, [/* зависимости */]);
+     
+     return <Component onClick={handleClick} />;
+     ```
+   - Это создает стабильную ссылку на функцию, которую инструменты покрытия и тесты могут надежно отследить.
 
 ## Testing React.useState Mocking
 
@@ -840,6 +860,11 @@ it('применяет стили Radix UI', () => {
 4. **Component Interaction**:
    - Тестируйте открытие/закрытие выпадающих меню
    - Проверяйте обработку событий клика и наведения
+
+5. **Handle Event Callbacks Carefully**:
+   - Некоторые обработчики событий Radix (например, `onOpenChange` у `Dialog.Root`) могут передавать аргументы в колбэк.
+   - Если вы передаете свою функцию напрямую (например, `onOpenChange={myHandler}`), убедитесь, что она может принимать эти аргументы или что они не вызовут проблем.
+   - Безопаснее использовать обертку (`onOpenChange={() => myHandler()}`) или вынести обработчик в `useCallback`, если аргументы не нужны или должны быть проигнорированы.
 
 ### Common Pitfalls
 

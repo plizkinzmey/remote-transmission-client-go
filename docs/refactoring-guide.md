@@ -1170,35 +1170,19 @@ describe('ComponentName', () => {
 
 ### 3. Проблемы с зависимостями
 
-1. **Нестабильные зависимости в useCallback**:
+1. **Нестабильные зависимости в useCallback/useEffect**:
    ```typescript
    // ❌ Плохо: пропущена зависимость ValidateDownloadPath
    const validatePath = useCallback(async () => {
      await ValidateDownloadPath(path);
    }, [path]);
 
-   // ✅ Хорошо: все зависимости указаны
+   // ✅ Хорошо: все зависимости указаны (правило exhaustive-deps)
    const validatePath = useCallback(async () => {
      await ValidateDownloadPath(path);
-   }, [path, ValidateDownloadPath]);
+   }, [path, ValidateDownloadPath]); // <--- Добавлена зависимость
    ```
-
-2. **Неправильное использование хуков**:
-   ```typescript
-   // ❌ Плохо: хуки внутри условий
-   if (isEnabled) {
-     useEffect(() => {
-       // код эффекта
-     }, []);
-   }
-
-   // ✅ Хорошо: условие внутри хука
-   useEffect(() => {
-     if (isEnabled) {
-       // код эффекта
-     }
-   }, [isEnabled]);
-   ```
+   - **Всегда** включайте все переменные и функции из внешнего скоупа, используемые внутри хука, в массив зависимостей. Это предотвращает баги, связанные с устаревшими значениями в замыканиях.
 
 ### 4. Проблемы с DOM-селекторами в тестах
 
@@ -1238,21 +1222,32 @@ describe('ComponentName', () => {
 2. **Оптимизация ререндеров**:
    ```typescript
    // ❌ Плохо: создание функций при каждом рендере
-   const Component = () => {
+   const Component = ({ onAction }) => {
      const handleClick = () => {
        // обработчик
+       onAction();
      };
      return <button onClick={handleClick}>Click</button>;
    };
 
-   // ✅ Хорошо: использование useCallback
-   const Component = () => {
+   // ✅ Хорошо: использование useCallback для обработчиков
+   const Component = ({ onAction }) => {
      const handleClick = useCallback(() => {
        // обработчик
-     }, []);
+       onAction();
+     }, [onAction]); // <--- Зависимость onAction
      return <button onClick={handleClick}>Click</button>;
    };
    ```
+   - Используйте `useCallback` для обработчиков событий, особенно если они передаются дочерним компонентам или используются в `useEffect`. Это также помогает инструментам покрытия тестами корректно отслеживать функции.
+   - **Обработчики для библиотек (например, Radix UI):** Если вы передаете колбэк в компонент библиотеки (например, `onOpenChange`), часто полезно обернуть его в `useCallback` для стабильности и лучшей тестируемости.
+     ```typescript
+     const handleOpenChange = useCallback(() => {
+       onClose(); // onClose из пропсов
+     }, [onClose]);
+     
+     return <Dialog.Root onOpenChange={handleOpenChange}>...</Dialog.Root>;
+     ```
 
 ### 6. Рекомендации по тестированию
 
@@ -1352,16 +1347,19 @@ describe('ComponentName', () => {
    // Создаем состояние
    const [state, setState] = useState();
 
-   // ✅ Хорошо: объяснение сложной логики или важных деталей
+   // ❌ Плохо: избыточные комментарии к простой логике
+   // (activeTab === "url" && !url.trim()) || // Ветвление 1 (&&) + Ветвление 2 (||)
+   // (activeTab === "file" && !selectedFileData) // Ветвление 3 (&&)
+
+   // ✅ Хорошо: объяснение сложной логики или *причины* определенного решения
    // Проверяем путь на валидность и очищаем ошибки при пустом пути
-   const handlePathValidation = async (path: string): Promise<boolean> => {
-     if (!path) {
-       setPathError("");
-       return false;
-     }
-     // ...остальная логика
-   };
+   const handlePathValidation = async (path: string): Promise<boolean> => { ... };
+
+   // ✅ Хорошо: объяснение неочевидного поведения или обходного пути
+   // Удаляем префикс "Error: " для более чистого отображения в UI
+   setPathError(String(error).replace(/^Error:\s*/, ""));
    ```
+   - Комментарии должны объяснять *почему*, а не *что* делает код, если это не очевидно. Удаляйте комментарии, которые просто повторяют код.
 
 2. **JSDoc документация**:
    ```typescript

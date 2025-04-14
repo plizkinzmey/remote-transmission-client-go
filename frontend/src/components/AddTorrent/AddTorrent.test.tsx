@@ -5,9 +5,11 @@ import {
   fireEvent,
   waitFor,
   within,
+  act,
 } from "@testing-library/react";
+import userEvent from '@testing-library/user-event'; // Импортировать user-event
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import { AddTorrent } from "./AddTorrent";
+import { AddTorrent, AddTorrentProps } from "./AddTorrent"; // Импортируем AddTorrentProps
 import { MockLocalizationProvider } from "../../test/mocks/localization-context-mock";
 import { TestThemeProvider } from "../../test/mocks/theme-mock";
 
@@ -61,7 +63,7 @@ describe("AddTorrent Component", () => {
     });
   });
 
-  const renderComponent = (props = {}) => {
+  const renderComponent = (props: Partial<AddTorrentProps> = {}) => {
     return render(
       <TestThemeProvider>
         <MockLocalizationProvider>
@@ -213,6 +215,33 @@ describe("AddTorrent Component", () => {
       expect(modal).toBeInTheDocument();
       expect(within(modal).getByText("add.title")).toBeInTheDocument();
       // Проверяем, что LoadingSpinner отображается используя data-testid
+      expect(within(modal).getByTestId("loading-spinner")).toBeInTheDocument();
+    });
+  });
+
+  it("отображает fallback-текст в состоянии загрузки, если перевод отсутствует", async () => {
+    // Мокируем хук useLocalization для возврата isLoading=true и t, возвращающей пустую строку
+    vi.mocked(
+      await import("../../contexts/LocalizationContext")
+    ).useLocalization.mockReturnValue({
+      t: vi.fn((key) => ''), // Возвращаем пустую строку '' вместо undefined
+      isLoading: true,
+      currentLanguage: "en",
+      setLanguage: vi.fn(),
+      availableLanguages: [
+        { code: "en", name: "English" },
+        { code: "ru", name: "Русский" },
+      ],
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      const modal = screen.getByTestId("add-torrent-modal");
+      expect(modal).toBeInTheDocument();
+      // Проверяем, что отображается fallback-текст
+      expect(within(modal).getByText("Add Torrent")).toBeInTheDocument(); // Строка 130
+      expect(within(modal).getByText("Loading...")).toBeInTheDocument(); // Строка 133
       expect(within(modal).getByTestId("loading-spinner")).toBeInTheDocument();
     });
   });
@@ -478,6 +507,53 @@ describe("AddTorrent Component", () => {
     expect(addButton).not.toBeDisabled();
   });
 
+  it("отключает кнопку добавления на вкладке File, если файл не выбран", async () => {
+    renderComponent();
+    const user = userEvent.setup(); // Настроить user-event
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Переключаемся на вкладку File
+    const fileTabTrigger = screen.getByRole('tab', { name: /add.file/i });
+    await user.click(fileTabTrigger); // Использовать user.click
+
+    // Проверяем, что кнопка отправки отключена
+    const addButton = screen.getByRole('button', { name: /add.add/i }); // Искать по роли и имени
+    expect(addButton).toBeDisabled();
+  });
+
+  it("включает кнопку добавления на вкладке File, когда файл выбран", async () => {
+    renderComponent();
+    const user = userEvent.setup(); // Настроить user-event
+
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Переключаемся на вкладку File
+    const fileTabTrigger = screen.getByRole('tab', { name: /add.file/i });
+    await user.click(fileTabTrigger);
+
+    // Находим кнопку добавления и проверяем, что она отключена
+    const addButton = screen.getByRole('button', { name: /add.add/i });
+    expect(addButton).toBeDisabled();
+
+    // Симулируем выбор файла через userEvent.upload
+    // **ВАЖНО**: Убедитесь, что в компоненте TorrentFileTab есть
+    // input type="file" с атрибутом data-testid="file-input"
+    const fileInput = screen.getByTestId('file-input');
+    const file = new File(['torrent data'], 'test.torrent', { type: 'application/x-bittorrent' });
+    await user.upload(fileInput, file);
+
+    // Ждем обновления состояния (когда selectedFileData установится)
+    // и проверяем, что кнопка стала активной
+    await waitFor(() => {
+      expect(addButton).not.toBeDisabled();
+    });
+  });
+
   it("напрямую тестирует функцию validatePath с ошибкой валидации", async () => {
     const { ValidateDownloadPath } = vi.mocked(
       await import("../../../wailsjs/go/main/App")
@@ -605,5 +681,115 @@ describe("AddTorrent Component", () => {
 
     // Проверяем, что onAdd не был вызван из-за ошибки валидации
     expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it("создает и очищает testRef при монтировании и размонтировании компонента", async () => {
+    // Создаем объект, соответствующий MutableRefObject
+    const testRef: AddTorrentProps['testRef'] = { current: {} };
+
+    const { unmount } = renderComponent({ testRef });
+
+    // Проверяем, что ref был настроен с функцией validatePath
+    await waitFor(() => {
+      expect(testRef.current).not.toBeNull();
+      expect(testRef.current?.validatePath).toBeDefined();
+    });
+
+    // Проверяем работу функции validatePath через ref
+    const { ValidateDownloadPath } = vi.mocked(
+      await import("../../../wailsjs/go/main/App")
+    );
+    ValidateDownloadPath.mockResolvedValueOnce(undefined);
+
+    // Вызываем функцию validatePath через ref
+    let result = false;
+    if (testRef.current?.validatePath) {
+      result = await testRef.current.validatePath("/valid/path");
+    }
+    expect(result).toBe(true);
+    expect(ValidateDownloadPath).toHaveBeenCalledWith("/valid/path");
+
+
+    // Размонтируем компонент
+    unmount();
+
+    // После размонтирования validatePath должен быть undefined
+    expect(testRef.current?.validatePath).toBeUndefined();
+  });
+
+  it("вызывает очистку useEffect при изменении testRef", async () => {
+    // Создаем объекты, соответствующие MutableRefObject
+    const ref1: AddTorrentProps['testRef'] = { current: {} };
+    const ref2: AddTorrentProps['testRef'] = { current: {} };
+
+    // Рендерим с первым ref
+    const { rerender } = render(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <AddTorrent
+            onAdd={mockOnAdd}
+            onAddFile={mockOnAddFile}
+            onClose={mockOnClose}
+            testRef={ref1}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    // Проверяем, что ref1 был установлен
+    await waitFor(() => {
+      expect(ref1.current).not.toBeNull();
+      expect(ref1.current?.validatePath).toBeDefined();
+    });
+
+    // Перерендериваем компонент с другим ref
+    rerender(
+      <TestThemeProvider>
+        <MockLocalizationProvider>
+          <AddTorrent
+            onAdd={mockOnAdd}
+            onAddFile={mockOnAddFile}
+            onClose={mockOnClose}
+            testRef={ref2}
+          />
+        </MockLocalizationProvider>
+      </TestThemeProvider>
+    );
+
+    // Проверяем, что ref2 был установлен.
+    await waitFor(() => {
+      expect(ref2.current).not.toBeNull();
+      expect(ref2.current?.validatePath).toBeDefined();
+    });
+
+    // Дополнительно убедимся, что ref1 был очищен
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    expect(ref1.current?.validatePath).toBeUndefined();
+  });
+
+  it("выполняет очистку при размонтировании без testRef", () => {
+    const { unmount } = renderComponent();
+    expect(() => unmount()).not.toThrow();
+  });
+
+  it("закрывает диалог при нажатии Escape", async () => {
+    // Очищаем мок перед тестом
+    mockOnClose.mockClear();
+
+    renderComponent();
+
+    // Убеждаемся, что диалог открыт
+    await waitFor(() => {
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+    });
+
+    // Имитируем нажатие клавиши Escape на документе
+    // Используем fireEvent.keyDown, так как Radix Dialog слушает это событие
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
+
+    // Проверяем, что функция onClose была вызвана через onOpenChange
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 });

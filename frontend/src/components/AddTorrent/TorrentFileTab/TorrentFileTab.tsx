@@ -126,6 +126,7 @@ export const TorrentFileTab: React.FC<TorrentFileTabProps> = ({
         accept=".torrent"
         onChange={handleFileChange}
         style={{ display: "none" }}
+        data-testid="file-input"
       />
     </Flex>
   );

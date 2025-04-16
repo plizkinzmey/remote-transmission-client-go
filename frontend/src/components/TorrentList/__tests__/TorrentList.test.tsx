@@ -133,6 +133,10 @@ describe('TorrentList', () => {
             expect(screen.getByText(`Mocked TorrentItem: ${torrent.Name}`)).toBeInTheDocument();
         });
 
+        // Assert the number of rendered TorrentItem elements by checking the rendered text
+        const renderedItems = screen.getAllByText(/Mocked TorrentItem:/);
+        expect(renderedItems).toHaveLength(mockTorrents.length);
+
         // Optional: Check the final count if needed, but be aware it might be higher than expected
         // due to StrictMode or other factors causing double renders in test environments.
         // If this fails consistently with double the count, it's likely StrictMode.
@@ -227,11 +231,29 @@ describe('TorrentList', () => {
         );
 
         // Check props for the third torrent (Torrent C, ID 3, not selected)
+        // Ensure all relevant props are checked consistently
         expect(torrentItemMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: mockTorrents[2].ID,
                 name: mockTorrents[2].Name,
+                status: mockTorrents[2].Status,
+                progress: mockTorrents[2].Progress,
+                sizeFormatted: mockTorrents[2].SizeFormatted,
+                uploadRatio: mockTorrents[2].UploadRatio,
+                seedsConnected: mockTorrents[2].SeedsConnected,
+                seedsTotal: mockTorrents[2].SeedsTotal,
+                peersConnected: mockTorrents[2].PeersConnected,
+                peersTotal: mockTorrents[2].PeersTotal,
+                uploadedFormatted: mockTorrents[2].UploadedFormatted,
+                downloadSpeedFormatted: mockTorrents[2].DownloadSpeedFormatted,
+                uploadSpeedFormatted: mockTorrents[2].UploadSpeedFormatted,
                 selected: false, // Explicitly check false
+                onSelect: defaultProps.onSelect,
+                onRemove: defaultProps.onRemove,
+                onStart: defaultProps.onStart,
+                onStop: defaultProps.onStop,
+                onVerify: defaultProps.onVerify,
+                onSetSpeedLimit: defaultProps.onSetSpeedLimit,
                 isSlowMode: mockTorrents[2].IsSlowMode,
             }),
             {} // Second argument for context

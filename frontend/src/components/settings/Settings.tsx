@@ -12,7 +12,7 @@ import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { ConnectionTab } from "./ConnectionTab";
 import { LimitsTab } from "./LimitsTab";
-import { PathsTab, PathsTabRef } from "./PathsTab";
+import { PathsTab, PathsTabRef } from "./PathsTab"; // Changed imports to named and added PathsTabRef
 import { ConnectionConfig } from "../../App";
 import { LanguageSelector } from "../LanguageSelector";
 import StatusMessage from "../StatusMessage";
@@ -33,11 +33,7 @@ const defaultSettings: ConnectionConfig = {
   slowSpeedUnit: "KiB/s",
 };
 
-export const Settings: React.FC<SettingsProps> = ({
-  onSave,
-  onClose,
-  isFirstStart = false,
-}) => {
+export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStart }) => {
   const { t, currentLanguage, setLanguage } = useLocalization();
   const [settings, setSettings] = useState<ConnectionConfig>(defaultSettings);
   const [isLoading, setIsLoading] = useState(!isFirstStart);

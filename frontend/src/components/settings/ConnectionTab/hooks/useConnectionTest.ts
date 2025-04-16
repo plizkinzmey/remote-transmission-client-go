@@ -28,7 +28,7 @@ interface UseConnectionTestResult {
  */
 export const useConnectionTest = (
   settings: ConnectionConfig,
-  onConnectionTest?: (success: boolean, errorMessage?: string) => void,
+  onConnectionTest?: (success: boolean, errorMessage?: string) => void
 ): UseConnectionTestResult => {
   const { t } = useLocalization();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -59,10 +59,9 @@ export const useConnectionTest = (
       }
     } catch (error) {
       setConnectionStatus("error");
-      let errorMessage = t("settings.testError");
+      let errorMessage = t("settings.testError"); // Default
       const errorStr = String(error);
 
-      // Улучшенная проверка ошибок (можно расширить)
       if (errorStr.includes("errors.connectionAuthRequired")) {
         errorMessage = t("errors.connectionAuthRequired");
       } else if (errorStr.includes("connection refused")) {
@@ -70,9 +69,12 @@ export const useConnectionTest = (
       } else if (errorStr.includes("timeout")) {
         errorMessage = t("errors.connectionTimeout");
       } else if (errorStr.includes("invalid port")) {
-        errorMessage = t("errors.invalidPort"); // Пример новой ошибки
+        // Строки 73-74
+        errorMessage = t("errors.invalidPort");
+      } else {
+        // Явный блок else, не меняющий errorMessage (остается default)
+        // Эта ветка должна покрываться тестом generic error
       }
-      // Добавить другие специфичные проверки ошибок от бэкенда, если они появятся
 
       setStatusMessage(errorMessage);
       if (onConnectionTest) {
@@ -86,7 +88,13 @@ export const useConnectionTest = (
   // Сбрасываем статус соединения при изменении настроек
   useEffect(() => {
     resetStatus();
-  }, [settings.host, settings.port, settings.username, settings.password, resetStatus]);
+  }, [
+    settings.host,
+    settings.port,
+    settings.username,
+    settings.password,
+    resetStatus,
+  ]);
 
   return {
     isTestingConnection,

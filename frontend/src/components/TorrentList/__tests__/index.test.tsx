@@ -1,4 +1,3 @@
-// filepath: /Users/plizkinzmey/SRC/transmission-client-go/frontend/src/components/TorrentList/__tests__/index.test.tsx
 import { describe, it, expect } from "vitest";
 import { TorrentList } from "../index"; // Import from index.ts
 import { TorrentList as OriginalTorrentList } from "../TorrentList"; // Import from the component file
@@ -16,8 +15,12 @@ describe("TorrentList index", () => {
         // Runtime type checking is difficult for interfaces/types.
         // This test mainly ensures the types can be imported without TS errors.
         // We can use a dummy variable assignment to satisfy the linter/compiler if needed.
+        // This test primarily ensures that the type is exported from index.ts.
+        // We assign `undefined` to a variable typed with `TorrentData`.
+        // If `TorrentData` is not exported or the name is wrong, TypeScript will fail compilation.
+        // The runtime assertion `expect(true).toBe(true)` is a placeholder,
+        // as we cannot directly test the type existence at runtime in JavaScript.
         const _dummyData: TorrentData | undefined = undefined;
-        const _dummyProps: TorrentListProps | undefined = undefined;
-        expect(true).toBe(true); // Placeholder assertion
+        expect(true).toBe(true); // Placeholder assertion for type export check
     });
 });

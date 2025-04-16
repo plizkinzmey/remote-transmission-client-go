@@ -137,12 +137,6 @@ describe('TorrentList', () => {
         // This accommodates potential double renders in StrictMode
         const renderedItems = screen.getAllByText(/Mocked TorrentItem:/);
         expect(renderedItems).toHaveLength(mockTorrents.length);
-
-        // Optional: Check the final count if needed, but be aware it might be higher than expected
-        // due to StrictMode or other factors causing double renders in test environments.
-        // If this fails consistently with double the count, it's likely StrictMode.
-        // Consider if checking the exact count is crucial if the correct items are rendered.
-        // expect(torrentItemMock.mock.calls.length).toBe(mockTorrents.length);
     });
 
     it('filters torrents based on searchTerm', () => {

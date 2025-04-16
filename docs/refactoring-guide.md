@@ -14,16 +14,18 @@
      ├── ComponentName.tsx      # Main component file
      ├── ComponentName.module.css # Component's CSS module
      ├── index.ts               # File for re-exporting the component and types
-     └── README.md              # Component documentation
+     ├── README.md              # Component documentation (English)
+     └── README.ru.md           # Component documentation (Russian)
      ```
 
-2. **Component Documentation (README.md)**
+2. **Component Documentation (README.md & README.ru.md)**
    - Brief description of the component and its purpose
    - Usage examples
    - Description of props and their types
    - Implementation details and important notes
    - Component dependencies
    - Code examples
+   - **Maintain documentation in both English (`README.md`) and Russian (`README.ru.md`).**
 
 3. **Styles**
    - Each component should have its own CSS module
@@ -40,6 +42,7 @@
      - Branches: 70%
      - Statements: 70%
    - Use data-testid for key elements
+   - **Refer to `testing-guide.md` for detailed testing practices.**
 
 ## Component Refactoring Plan
 
@@ -47,6 +50,8 @@
    ```bash
    # Create directory structure
    mkdir -p src/components/ComponentName/__tests__
+   # Create hooks directory if logic extraction is anticipated
+   # mkdir -p src/components/ComponentName/hooks
    ```
 
 2. **File Migration**
@@ -56,12 +61,15 @@
    - Move or create the main test file (`ComponentName.test.tsx`) to `src/components/ComponentName/__tests__/`.
    - Create the test file for `index.ts` (`index.test.tsx`) in `src/components/ComponentName/__tests__/`.
    - Create the `README.md` file in `src/components/ComponentName/`.
+   - **Create the `README.ru.md` file in `src/components/ComponentName/`.**
 
 3. **Component Refactoring**
    - Add JSDoc documentation
    - Define and type props
    - Add data-testid attributes
    - Update imports
+   - **Check `useEffect` dependencies against the `exhaustive-deps` rule (see `testing-guide.md`).**
+   - **Consider extracting complex logic into custom hooks (see "Decomposing Complex Components" section).**
 
 4. **Style Refactoring**
    - Move styles to the .module.css file
@@ -73,11 +81,16 @@
    - Create a test to check re-exports in `index.test.tsx`.
    - Ensure mocks are working.
    - Check code coverage (including `index.ts`).
+   - **Follow practices outlined in `testing-guide.md`.**
 
 6. **Import Verification**
    - Update all imports in other files
    - Check for cyclic dependencies
    - Update index files
+
+7. **Documentation**
+   - Fill `README.md` (English).
+   - Fill `README.ru.md` (Russian).
 
 ## Example index.ts
 ```typescript
@@ -89,6 +102,7 @@ export type { ComponentNameProps } from './ComponentName';
 ```typescript
 /**
  * @description Component description
+ * @param {ComponentNameProps} props - Component props
  */
 export interface ComponentNameProps {
   /** Prop description */
@@ -96,8 +110,15 @@ export interface ComponentNameProps {
 }
 
 export const ComponentName: React.FC<ComponentNameProps> = ({ prop1 }) => {
+  // ... component logic ...
+
+  // Example useEffect check
+  // useEffect(() => {
+  //   console.log(prop1);
+  // }, [prop1]); // Ensure prop1 is in dependency array if used
+
   return (
-    <div 
+    <div
       className={styles.container}
       data-testid="component-container"
     >
@@ -192,6 +213,7 @@ When refactoring components using Radix UI, follow these guidelines:
    ├── ComponentName.tsx
    ├── ComponentName.module.css
    ├── README.md
+   └── README.ru.md
    └── __tests__/
        └── ComponentName.test.tsx
    ```
@@ -297,6 +319,7 @@ When working with complex components that perform multiple functions, follow thi
    │   ├── SubComponent1/
    │   └── SubComponent2/
    ├── README.md                  # Documentation
+   ├── README.ru.md               # Documentation (Russian)
    └── __tests__/                 # Tests for all parts
    ```
 
@@ -1388,12 +1411,14 @@ When refactoring components, pay special attention to error handling and loading
    - [ ] Styles in a separate module
    - [ ] Tests in the __tests__ folder
    - [ ] README.md file created and filled
+   - [ ] **README.ru.md file created and filled**
 
 2. **Code**
    - [ ] JSDoc documentation
    - [ ] Props typing
    - [ ] Data-testid attributes
    - [ ] Correct imports
+   - [ ] **`useEffect` dependencies checked (`exhaustive-deps`)**
 
 3. **Tests**
    - [ ] Tests in English
@@ -1408,6 +1433,7 @@ When refactoring components, pay special attention to error handling and loading
 
 5. **Documentation**
    - [ ] README.md contains component description
+   - [ ] README.ru.md contains component description (Russian)
    - [ ] Usage examples
    - [ ] Props description and their types
    - [ ] Implementation details

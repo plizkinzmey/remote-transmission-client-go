@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import "@radix-ui/themes/styles.css";
 import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
-import { Settings } from "./components/settings/Settings";
+import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -34,7 +34,7 @@ export interface UIConfig {
 }
 
 // Полный интерфейс конфигурации
-export interface ConfigData extends ConnectionConfig, UIConfig {}
+export interface ConfigData extends ConnectionConfig, UIConfig { }
 
 /**
  * Основной компонент приложения.

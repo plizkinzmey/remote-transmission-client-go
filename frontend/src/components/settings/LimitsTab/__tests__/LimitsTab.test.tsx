@@ -158,6 +158,7 @@ describe("LimitsTab Component", () => {
 
     it('renders maxUploadRatio input with empty string when value is 0 or null/undefined', () => {
         renderComponent({ settings: { ...defaultSettings, maxUploadRatio: 0 } });
+        // Ожидаем null, так как input type="number" с value="" имеет .value === null в jsdom/RTL
         expect(screen.getByTestId('limits-max-upload-ratio-input')).toHaveValue(null);
     });
 
@@ -177,6 +178,7 @@ describe("LimitsTab Component", () => {
 
     it('renders slowSpeedLimit input with empty string when value is 0 or null/undefined', () => {
         renderComponent({ settings: { ...defaultSettings, slowSpeedLimit: 0 } });
+        // Ожидаем null, так как input type="number" с value="" имеет .value === null в jsdom/RTL
         expect(screen.getByTestId('limits-slow-speed-limit-input')).toHaveValue(null);
     });
 

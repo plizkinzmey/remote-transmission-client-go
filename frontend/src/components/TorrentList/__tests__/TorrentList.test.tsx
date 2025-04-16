@@ -24,7 +24,8 @@ vi.mock('../../TorrentItem', () => ({
 
 // Mock LocalizationContext
 vi.mock('../../../contexts/LocalizationContext');
-const mockT = vi.fn((key) => key);
+// Rename mockT to translateMock for clarity
+const translateMock = vi.fn((key) => key);
 const mockedUseLocalization = vi.mocked(useLocalization);
 
 // Mock LoadingSpinner
@@ -70,15 +71,16 @@ const torrentItemMock = vi.mocked(TorrentItem);
 describe('TorrentList', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Provide the mock 't' function
-        mockedUseLocalization.mockReturnValue({ t: mockT } as unknown as ReturnType<typeof useLocalization>);
+        // Provide the mock 't' function (now translateMock)
+        mockedUseLocalization.mockReturnValue({ t: translateMock } as unknown as ReturnType<typeof useLocalization>);
     });
 
     it('renders loading spinner when isLoading is true and not reconnecting', () => {
         render(<TorrentList {...defaultProps} isLoading={true} />);
         expect(screen.getByTestId('torrent-list-loading')).toBeInTheDocument();
         expect(screen.getByText('torrents.loading')).toBeInTheDocument();
-        expect(mockT).toHaveBeenCalledWith('torrents.loading');
+        // Update usage of mockT to translateMock
+        expect(translateMock).toHaveBeenCalledWith('torrents.loading');
         expect(screen.queryByTestId('torrent-list-empty')).not.toBeInTheDocument();
         expect(torrentItemMock).not.toHaveBeenCalled();
     });
@@ -97,7 +99,8 @@ describe('TorrentList', () => {
         render(<TorrentList {...defaultProps} torrents={[]} />);
         expect(screen.getByTestId('torrent-list-empty')).toBeInTheDocument();
         expect(screen.getByText('torrents.noTorrents')).toBeInTheDocument();
-        expect(mockT).toHaveBeenCalledWith('torrents.noTorrents');
+        // Update usage of mockT to translateMock
+        expect(translateMock).toHaveBeenCalledWith('torrents.noTorrents');
         expect(screen.queryByTestId('torrent-list-loading')).not.toBeInTheDocument();
         expect(torrentItemMock).not.toHaveBeenCalled();
     });
@@ -106,7 +109,8 @@ describe('TorrentList', () => {
         render(<TorrentList {...defaultProps} searchTerm="nonexistent" />);
         expect(screen.getByTestId('torrent-list-empty')).toBeInTheDocument();
         expect(screen.getByText('torrents.noTorrentsFound')).toBeInTheDocument();
-        expect(mockT).toHaveBeenCalledWith('torrents.noTorrentsFound');
+        // Update usage of mockT to translateMock
+        expect(translateMock).toHaveBeenCalledWith('torrents.noTorrentsFound');
         expect(screen.queryByTestId('torrent-list-loading')).not.toBeInTheDocument();
         expect(torrentItemMock).not.toHaveBeenCalled();
     });

@@ -123,13 +123,14 @@ describe('TorrentList', () => {
         expect(screen.queryByTestId('torrent-list-empty')).not.toBeInTheDocument();
 
         // Check that each expected torrent item was rendered with the correct basic props
-        // This is less brittle to potential double-renders (e.g., React StrictMode)
-        // than checking the exact call count immediately.
+        // and that its mocked content is visible
         mockTorrents.forEach(torrent => {
             expect(torrentItemMock).toHaveBeenCalledWith(
                 expect.objectContaining({ id: torrent.ID }),
                 {}
             );
+            // Check if the mocked item's text content is rendered
+            expect(screen.getByText(`Mocked TorrentItem: ${torrent.Name}`)).toBeInTheDocument();
         });
 
         // Optional: Check the final count if needed, but be aware it might be higher than expected

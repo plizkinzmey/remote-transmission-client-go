@@ -3,7 +3,7 @@ import { Progress } from "@radix-ui/themes";
 import { getStatusData } from "../../../utils/torrentStatus";
 import styles from "./TorrentItemProgress.module.css";
 
-interface TorrentItemProgressProps {
+export interface TorrentItemProgressProps {
   progress: number;
   status: string;
 }
@@ -24,6 +24,7 @@ export const TorrentItemProgress: React.FC<TorrentItemProgressProps> = ({
       value={progress}
       className={styles.progressWrapper}
       color={color}
+      data-testid="torrent-progress" // Add data-testid
     />
   );
 };

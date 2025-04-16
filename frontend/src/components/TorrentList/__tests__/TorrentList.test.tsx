@@ -134,6 +134,7 @@ describe('TorrentList', () => {
         });
 
         // Assert the number of rendered TorrentItem elements by checking the rendered text
+        // This accommodates potential double renders in StrictMode
         const renderedItems = screen.getAllByText(/Mocked TorrentItem:/);
         expect(renderedItems).toHaveLength(mockTorrents.length);
 
@@ -168,6 +169,12 @@ describe('TorrentList', () => {
             expect.objectContaining({ id: 3 }),
             {}
         );
+
+        // Verify the rendered output for the filtered item using DOM query
+        expect(screen.getByText('Mocked TorrentItem: Torrent B')).toBeInTheDocument();
+        // Verify that the other items are not rendered using DOM query
+        expect(screen.queryByText('Mocked TorrentItem: Torrent A')).not.toBeInTheDocument();
+        expect(screen.queryByText('Mocked TorrentItem: Another Torrent C')).not.toBeInTheDocument();
     });
 
     it('passes correct props to TorrentItem', () => {

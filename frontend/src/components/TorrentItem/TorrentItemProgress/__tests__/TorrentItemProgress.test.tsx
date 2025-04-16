@@ -19,8 +19,8 @@ vi.mock('../TorrentItemProgress.module.css', () => ({
 }));
 
 // Mock implementations
-// Use ReturnType or rely on inference instead of vi.Mock
-const mockGetStatusData = StatusUtils.getStatusData as ReturnType<typeof vi.fn>;
+// Use vi.mocked() for better type inference and rename variable
+const mockedGetStatusData = vi.mocked(StatusUtils.getStatusData);
 
 const defaultProps: TorrentItemProgressProps = {
     progress: 75.2,
@@ -30,8 +30,8 @@ const defaultProps: TorrentItemProgressProps = {
 describe('TorrentItemProgress', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Setup default mock return value for getStatusData
-        mockGetStatusData.mockReturnValue({ color: 'blue', icon: null });
+        // Setup default mock return value for getStatusData - remove icon property
+        mockedGetStatusData.mockReturnValue({ color: 'blue' });
     });
 
     it('renders correctly with default props', () => {
@@ -41,7 +41,7 @@ describe('TorrentItemProgress', () => {
         expect(progressElement).toBeInTheDocument();
 
         // Check if getStatusData was called with the correct status
-        expect(mockGetStatusData).toHaveBeenCalledWith(defaultProps.status);
+        expect(mockedGetStatusData).toHaveBeenCalledWith(defaultProps.status);
 
         // Check if the Progress component received the correct props
         expect(progressElement).toHaveAttribute('data-value', String(defaultProps.progress));
@@ -50,13 +50,13 @@ describe('TorrentItemProgress', () => {
     });
 
     it('updates color based on status', () => {
-        // Override mock return value for this specific test
-        mockGetStatusData.mockReturnValue({ color: 'green', icon: null });
+        // Override mock return value for this specific test - use valid color 'grass'
+        mockedGetStatusData.mockReturnValue({ color: 'grass' });
         render(<TorrentItemProgress {...defaultProps} status="seeding" />);
 
         const progressElement = screen.getByTestId('torrent-progress');
-        expect(mockGetStatusData).toHaveBeenCalledWith('seeding');
-        expect(progressElement).toHaveAttribute('data-color', 'green');
+        expect(mockedGetStatusData).toHaveBeenCalledWith('seeding');
+        expect(progressElement).toHaveAttribute('data-color', 'grass'); // Use 'grass' instead of 'green'
     });
 
     it('renders with different progress value', () => {

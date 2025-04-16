@@ -18,7 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import styles from "./TorrentItemActions.module.css";
 
-interface TorrentItemActionsProps {
+export interface TorrentItemActionsProps {
   id: number;
   status: string;
   isLoading: boolean;
@@ -56,7 +56,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
   const renderActionButton = () => {
     if (isLoading && lastAction !== "verify") {
       return (
-        <IconButton disabled variant="soft" color="gray">
+        <IconButton disabled variant="soft" color="gray" data-testid="torrent-actions-action-loading">
           <LoadingSpinner size="small" />
         </IconButton>
       );
@@ -71,6 +71,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
           onClick={() => onStop(id)}
           title={t("torrent.stop")}
           disabled={isCurrentlyBlocked}
+          data-testid="torrent-actions-action-pause"
         >
           <PauseIcon width={16} height={16} />
         </IconButton>
@@ -85,6 +86,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         onClick={() => onStart(id)}
         title={t("torrent.start")}
         disabled={isCurrentlyBlocked}
+        data-testid="torrent-actions-action-start"
       >
         <PlayIcon width={16} height={16} />
       </IconButton>
@@ -107,6 +109,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
               ? "torrent.verifying"
               : `torrent.status.${status}`
           )}
+          data-testid="torrent-actions-verify-loading"
         >
           <LoadingSpinner size="small" />
         </IconButton>
@@ -121,6 +124,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         onClick={() => onVerify(id)}
         title={t("torrent.verify")}
         disabled={isLoading || isCurrentlyBlocked}
+        data-testid="torrent-actions-verify"
       >
         <CheckCircleIcon width={16} height={16} />
       </IconButton>
@@ -139,6 +143,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
         disabled={isChecking(status) || status === "queuedCheck"}
+        data-testid="torrent-actions-speed-limit"
       >
         <SnailIcon style={{ width: 16, height: 16 }} />
       </IconButton>
@@ -154,6 +159,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         onClick={onViewContent}
         title={t("torrent.viewContent")}
         disabled={isCurrentlyBlocked}
+        data-testid="torrent-actions-view-content"
       >
         <FolderIcon width={16} height={16} />
       </IconButton>
@@ -169,6 +175,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         onClick={() => onRemove(id)}
         title={t("torrent.remove")}
         disabled={isCurrentlyBlocked}
+        data-testid="torrent-actions-remove"
       >
         <TrashIcon width={16} height={16} />
       </IconButton>

@@ -5,7 +5,7 @@ import { formatRatio } from "../../../utils/formatters";
 import styles from "./TorrentItemHeader.module.css";
 import { getStatusData } from "../../../utils/torrentStatus";
 
-interface TorrentItemHeaderProps {
+export interface TorrentItemHeaderProps { // Add export keyword
   name: string;
   status: string;
   progress: number;
@@ -33,19 +33,20 @@ export const TorrentItemHeader: React.FC<TorrentItemHeaderProps> = ({
           weight="medium"
           className={styles.textEllipsis}
           title={name}
+          data-testid="torrent-header-name"
         >
           {name}
         </Text>
-        <Badge variant="surface" size="1" title={t("torrent.uploadRatio")}>
+        <Badge variant="surface" size="1" title={t("torrent.uploadRatio")} data-testid="torrent-header-ratio">
           {t("torrent.ratio")}: {formatRatio(uploadRatio)}
         </Badge>
       </Flex>
 
       <Flex gap="2" align="center" mb="2">
-        <Badge variant="soft" size="1" color={color}>
+        <Badge variant="soft" size="1" color={color} data-testid="torrent-header-status">
           {t(`torrent.status.${status}`)}
         </Badge>
-        <Text size="1">{progress.toFixed(1)}%</Text>
+        <Text size="1" data-testid="torrent-header-progress">{progress.toFixed(1)}%</Text>
       </Flex>
     </>
   );

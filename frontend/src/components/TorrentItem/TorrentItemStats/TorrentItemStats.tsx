@@ -5,7 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import { normalizeValue } from "../../../utils/formatters";
 import styles from "./TorrentItemStats.module.css";
 
-interface TorrentItemStatsProps {
+export interface TorrentItemStatsProps {
   sizeFormatted: string;
   seedsConnected: number;
   seedsTotal: number;
@@ -32,7 +32,7 @@ export const TorrentItemStats: React.FC<TorrentItemStatsProps> = ({
   const { t } = useLocalization();
 
   const renderStatItem = (label: string, value: string) => (
-    <Flex gap="1" align="center">
+    <Flex gap="1" align="center" data-testid={`torrent-stat-${label}`}>
       <Text size="1" weight="medium">
         {t(`torrent.${label}`)}:
       </Text>
@@ -41,11 +41,11 @@ export const TorrentItemStats: React.FC<TorrentItemStatsProps> = ({
   );
 
   const renderSpeedInfo = () => (
-    <Flex gap="1" align="center">
-      <ArrowDownIcon width={16} height={16} className={styles.downloadIcon} />
-      <Text size="1">{downloadSpeedFormatted}</Text>
-      <ArrowUpIcon width={16} height={16} className={styles.uploadIcon} />
-      <Text size="1">{uploadSpeedFormatted}</Text>
+    <Flex gap="1" align="center" data-testid="torrent-stat-speed">
+      <ArrowDownIcon width={16} height={16} className={styles.downloadIcon} data-testid="download-icon" />
+      <Text size="1" data-testid="download-speed">{downloadSpeedFormatted}</Text>
+      <ArrowUpIcon width={16} height={16} className={styles.uploadIcon} data-testid="upload-icon" />
+      <Text size="1" data-testid="upload-speed">{uploadSpeedFormatted}</Text>
     </Flex>
   );
 

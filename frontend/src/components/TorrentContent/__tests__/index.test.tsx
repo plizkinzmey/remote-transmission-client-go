@@ -15,6 +15,7 @@ describe("TorrentContent index", () => {
         const testProps: TorrentContentProps = {
             id: 1,
             name: "Test",
+            open: true, // Add the missing 'open' property
             onClose: () => { },
         };
         expect(testProps).toBeDefined();

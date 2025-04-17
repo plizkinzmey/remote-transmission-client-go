@@ -1,5 +1,5 @@
 import React, { createRef } from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach, Mock } from "vitest";
 import { PathsTab, PathsTabRef } from "../PathsTab"; // Adjust import based on your structure
 import { usePathsManagement } from "../hooks/usePathsManagement";
@@ -105,10 +105,16 @@ describe("PathsTab Component", () => {
 
         // Check default path indicator (StarIcon should be present and colored)
         const defaultPathItem = screen.getByTestId("path-item-/path/one");
-        expect(defaultPathItem.querySelector("[data-testid='star-icon']")).toBeInTheDocument();
-        // Check tooltip for default path
-        const defaultTooltip = defaultPathItem.closest('[data-testid="mock-tooltip"]');
-        expect(defaultTooltip).toHaveAttribute("data-tooltip-content", "settings.isDefaultPath");
+        const defaultIndicatorButton = defaultPathItem.querySelector(
+            "[data-testid='is-default-indicator-/path/one']"
+        );
+        expect(defaultIndicatorButton).toBeInTheDocument();
+        expect(defaultIndicatorButton?.querySelector("[data-testid='star-icon']")).toBeInTheDocument();
+
+        // Check tooltip for default path indicator
+        const defaultTooltipWrapper = defaultIndicatorButton?.closest('[data-testid="mock-tooltip"]');
+        expect(defaultTooltipWrapper).toBeInTheDocument();
+        expect(defaultTooltipWrapper).toHaveAttribute("data-tooltip-content", "settings.isDefaultPath");
 
         // Check non-default path actions
         const nonDefaultPathItem = screen.getByTestId("path-item-/path/two");
@@ -145,11 +151,15 @@ describe("PathsTab Component", () => {
     it("should display duplicate path tooltip", () => {
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, isDuplicatePath: true, showDuplicateTooltip: true });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        const tooltip = screen.getByTestId("duplicate-path-tooltip");
-        expect(tooltip).toBeInTheDocument();
-        expect(tooltip).toHaveAttribute("data-tooltip-content", "settings.pathAlreadyExists");
-        // Check button color (assuming Radix applies color prop as class or style)
-        // expect(screen.getByTestId("add-path-button")).toHaveStyle({ color: 'red' });
+
+        // Find the add button first
+        const addButton = screen.getByTestId("add-path-button");
+        // Find the mock tooltip wrapper around the button
+        const tooltipWrapper = addButton.closest('[data-testid="mock-tooltip"]');
+
+        expect(tooltipWrapper).toBeInTheDocument();
+        expect(tooltipWrapper).toHaveAttribute("data-tooltip-content", "settings.pathAlreadyExists");
+        // Optionally check button color/state if needed and possible with the mock
     });
 
     it("should call handleAddPath on add button click", () => {
@@ -162,14 +172,17 @@ describe("PathsTab Component", () => {
 
     it("should disable add button if newPath is empty or loading", () => {
         // Test empty path
-        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "  " });
+        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "  ", isLoading: false }); // Ensure not loading
         const { rerender } = render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         expect(screen.getByTestId("add-path-button")).toBeDisabled();
 
         // Test loading state
-        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "/path", isLoading: true });
+        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, isLoading: true });
         rerender(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        expect(screen.getByTestId("add-path-button")).toBeDisabled();
+        // Button should not be present in loading state
+        expect(screen.queryByTestId("add-path-button")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("new-path-input")).not.toBeInTheDocument();
+        expect(screen.getByTestId("loading-indicator")).toBeInTheDocument(); // Verify loading indicator is shown
     });
 
     it("should call handleSetDefaultPath on set default button click", () => {
@@ -219,19 +232,14 @@ describe("PathsTab Component", () => {
         expect(mockCancelDelete).toHaveBeenCalledTimes(1);
     });
 
-    it("should call onPathsChanged when hasChanges updates", () => {
-        const { rerender } = render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        expect(mockOnPathsChanged).not.toHaveBeenCalled(); // Initially false
-
-        // Simulate hook updating hasChanges to true
-        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, hasChanges: true });
-        rerender(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        expect(mockOnPathsChanged).toHaveBeenCalledWith(true);
-
-        // Simulate hook updating hasChanges back to false
-        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, hasChanges: false });
-        rerender(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        expect(mockOnPathsChanged).toHaveBeenCalledWith(false);
+    it("should pass onPathsChanged to usePathsManagement hook", () => {
+        // Свежий мок для каждого теста
+        const localMockOnPathsChanged = vi.fn();
+        
+        render(<PathsTab onPathsChanged={localMockOnPathsChanged} />);
+        
+        // Проверяем, что хук вызывается с правильным аргументом
+        expect(usePathsManagement).toHaveBeenCalledWith({ onPathsChanged: localMockOnPathsChanged });
     });
 
     it("should expose saveChanges, resetChanges, getPathChanges, and hasChanges via ref", async () => {

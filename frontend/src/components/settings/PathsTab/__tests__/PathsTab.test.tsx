@@ -235,9 +235,9 @@ describe("PathsTab Component", () => {
     it("should pass onPathsChanged to usePathsManagement hook", () => {
         // Свежий мок для каждого теста
         const localMockOnPathsChanged = vi.fn();
-        
+
         render(<PathsTab onPathsChanged={localMockOnPathsChanged} />);
-        
+
         // Проверяем, что хук вызывается с правильным аргументом
         expect(usePathsManagement).toHaveBeenCalledWith({ onPathsChanged: localMockOnPathsChanged });
     });
@@ -274,20 +274,20 @@ describe("PathsTab Component", () => {
             paths: ["/path/three", "/path/one", "/path/two"],
             defaultPath: "/path/two"
         });
-        
+
         const { rerender } = render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        
+
         // Проверяем, что defaultPath находится первым в списке
         const pathItems = screen.getAllByTestId(/^path-item-/);
         expect(pathItems[0]).toHaveAttribute("data-testid", "path-item-/path/two");
-        
+
         // Изменяем defaultPath и проверяем изменение порядка
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             paths: ["/path/three", "/path/one", "/path/two"],
             defaultPath: "/path/three"
         });
-        
+
         rerender(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const updatedPathItems = screen.getAllByTestId(/^path-item-/);
         expect(updatedPathItems[0]).toHaveAttribute("data-testid", "path-item-/path/three");
@@ -299,9 +299,9 @@ describe("PathsTab Component", () => {
             pathError: "Invalid path error",
             isDuplicatePath: false
         });
-        
+
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        
+
         // Проверяем, что TextField получил верный цвет с ошибкой
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).toHaveAttribute("data-accent-color", "red");
@@ -313,9 +313,9 @@ describe("PathsTab Component", () => {
             pathError: "",
             isDuplicatePath: true
         });
-        
+
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        
+
         // Проверяем, что TextField получил верный цвет при дубликате
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).toHaveAttribute("data-accent-color", "red");
@@ -327,9 +327,9 @@ describe("PathsTab Component", () => {
             pathError: "",
             isDuplicatePath: false
         });
-        
+
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        
+
         // Проверяем, что TextField не имеет красного цвета
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).not.toHaveAttribute("data-accent-color", "red");
@@ -338,11 +338,11 @@ describe("PathsTab Component", () => {
     it("should apply correct CSS classes to path items", () => {
         mockUsePathsManagement.mockReturnValue(defaultHookState);
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        
+
         // Проверяем, что у элемента с defaultPath есть дополнительный класс
         const defaultPathItem = screen.getByTestId("path-item-/path/one");
         expect(defaultPathItem.className).toContain("defaultPathItem");
-        
+
         // Проверяем, что обычный путь не имеет класса defaultPathItem
         const nonDefaultPathItem = screen.getByTestId("path-item-/path/two");
         expect(nonDefaultPathItem.className).not.toContain("defaultPathItem");

@@ -102,4 +102,33 @@ describe("usePathsManagement - Add Path", () => {
     expect(result.current.pathError).toBe("Bad");
     expect(result.current.getPathChanges().pathsToAdd).toEqual([]);
   });
+
+  it("должен корректно обработать добавление пути, который уже есть в initialPaths", async () => {
+    const onPathsChanged = vi.fn();
+    const { result, rerender } = renderHook(() =>
+      usePathsManagement({ onPathsChanged })
+    );
+    await act(async () => {
+      rerender();
+    });
+    await act(async () => {});
+
+    // Сначала удалим путь, чтобы он был в pathsToRemove
+    const pathToReadd = initialPaths[0];
+    act(() => result.current.handleDeletePathRequest(pathToReadd));
+    await act(async () =>
+      result.current.handleConfirmInlineDelete(pathToReadd)
+    );
+
+    // Теперь попробуем добавить его снова
+    act(() => result.current.setNewPathValue(pathToReadd));
+    await act(async () => result.current.handleAddPath());
+
+    // Проверяем, что путь добавлен, но не в pathsToAdd, так как он уже был в initialPaths
+    expect(result.current.paths).toContain(pathToReadd);
+    expect(result.current.getPathChanges().pathsToAdd).toEqual([]);
+    expect(result.current.getPathChanges().pathsToRemove).toEqual([]);
+    expect(result.current.hasChanges).toBe(false);
+    expect(onPathsChanged).toHaveBeenLastCalledWith(false);
+  });
 });

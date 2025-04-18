@@ -148,7 +148,8 @@ export const usePathsManagement = ({
 
   // Validate path function
   const validateNewPath = useCallback(async (): Promise<boolean> => {
-    if (!newPath) {
+    // Не допускаем пустые или содержащие только пробелы пути
+    if (!newPath || !newPath.trim()) {
       setPathError(t("settings.pathRequired"));
       return false;
     }

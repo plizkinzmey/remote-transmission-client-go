@@ -1,0 +1,39 @@
+.pathsTabContainer {
+  position: relative; /* From original Grid */
+}
+
+.pathsListScrollbox {
+  max-height: 200px;
+  overflow-y: auto; /* Changed from 'auto' to 'auto' for clarity */
+  border: 1px solid var(--gray-a5); /* Adjusted border color for theme consistency */
+  border-radius: var(--radius-3); /* Use theme variable */
+  padding: var(--space-2); /* Use theme variable */
+}
+
+.pathItem {
+  padding: var(--space-1) var(--space-2); /* Use theme variables */
+  border-radius: var(--radius-2); /* Use theme variable */
+  background-color: transparent;
+  transition: background-color 0.1s ease-in-out;
+}
+
+.defaultPathItem {
+  background-color: var(--accent-3);
+}
+
+.pathText {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Add some margin to the right if needed, e.g. */
+  /* margin-right: var(--space-2); */
+}
+
+.deleteConfirmFlex {
+  width: 100%;
+}
+
+.nonClickableIcon {
+  cursor: default;
+}

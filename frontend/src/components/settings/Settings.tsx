@@ -361,7 +361,6 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
                   <RadixTabs.Content value="paths">
                     <PathsTab
                       ref={pathsTabRef}
-                      errors={errors}
                       onPathsChanged={setHasPendingPathsChanges}
                     />
                   </RadixTabs.Content>

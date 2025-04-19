@@ -123,7 +123,7 @@ export interface StatusMessageProps {
   /** Тип статуса сообщения */
   status: StatusType;
   /** Текст сообщения */
-  message: string;
+  message?: string; // Made optional
   /** Использовать ли фиксированную высоту */
   fixedHeight?: boolean;
   /** Значение высоты в пикселях или других единицах измерения CSS */

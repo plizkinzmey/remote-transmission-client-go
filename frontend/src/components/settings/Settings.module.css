@@ -1,0 +1,8 @@
+/* Styles for the Settings component */
+
+.tabTrigger {
+  white-space: normal; /* Allow text wrapping */
+  min-height: 32px; /* Ensure minimum height */
+  height: auto; /* Allow height to adjust to content */
+  /* Add any other specific styles for the trigger if needed */
+}

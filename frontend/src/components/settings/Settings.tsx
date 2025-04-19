@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react'; // Add useEffect
 import {
   Dialog,
   Button as RadixButton,
@@ -6,243 +6,159 @@ import {
   Flex,
   Box,
   Text,
-} from "@radix-ui/themes";
-import { LoadConfig, SaveAllSettings } from "../../../wailsjs/go/main/App";
-import { useLocalization } from "../../contexts/LocalizationContext";
-import { LoadingSpinner } from "../LoadingSpinner";
-import { ConnectionTab } from "./ConnectionTab";
-import { LimitsTab } from "./LimitsTab";
-import { PathsTab, PathsTabRef } from "./PathsTab"; // Changed imports to named and added PathsTabRef
-import { ConnectionConfig } from "../../App";
-import { LanguageSelector } from "../LanguageSelector";
-import StatusMessage from "../StatusMessage";
+} from '@radix-ui/themes';
+import { useLocalization } from '../../contexts/LocalizationContext';
+import { LoadingSpinner } from '../LoadingSpinner';
+import { ConnectionTab } from './ConnectionTab';
+import { LimitsTab } from './LimitsTab';
+import { PathsTab, PathsTabRef } from './PathsTab';
+import { ConnectionConfig } from '../../App';
+import { LanguageSelector } from '../LanguageSelector';
+import StatusMessage from '../StatusMessage';
+import { useSettingsLoader } from './hooks/useSettingsLoader';
+import { useSettingsSaver } from './hooks/useSettingsSaver';
+import { useConnectionTester } from './hooks/useConnectionTester';
+import { useSettingsStateManagement } from './hooks/useSettingsStateManagement';
+import styles from './Settings.module.css'; // Import CSS module
 
-interface SettingsProps {
+/**
+ * @interface SettingsProps
+ * @description Props for the Settings component.
+ * @property {function(settings: ConnectionConfig): Promise<boolean>} onSave - Callback function triggered when settings need to be saved (especially for initial connection). Returns a promise indicating success.
+ * @property {function(): void} onClose - Callback function triggered when the settings dialog should be closed.
+ * @property {boolean} [isFirstStart=false] - Flag indicating if this is the first time the application is started, requiring initial setup.
+ */
+export interface SettingsProps {
   onSave: (settings: ConnectionConfig) => Promise<boolean>;
   onClose: () => void;
   isFirstStart?: boolean;
 }
 
+// Default settings remain the same
 const defaultSettings: ConnectionConfig = {
-  host: "",
+  host: '',
   port: 9091,
-  username: "",
-  password: "",
+  username: '',
+  password: '',
   maxUploadRatio: 0,
   slowSpeedLimit: 50,
-  slowSpeedUnit: "KiB/s",
+  slowSpeedUnit: 'KiB/s',
 };
 
-export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStart }) => {
-  const { t, currentLanguage, setLanguage } = useLocalization();
-  const [settings, setSettings] = useState<ConnectionConfig>(defaultSettings);
-  const [isLoading, setIsLoading] = useState(!isFirstStart);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [initialLanguage] = useState(currentLanguage); // Запоминаем начальный язык
+/**
+ * @component Settings
+ * @description A dialog component for configuring application settings, including connection, limits, and paths.
+ * It handles loading existing settings, validating user input, testing the connection, and saving changes.
+ * It adapts its behavior for the first application start.
+ * @param {SettingsProps} props - The props for the component.
+ * @returns {React.ReactElement} The rendered Settings dialog component.
+ */
+export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStart = false }) => {
+  const { t, currentLanguage } = useLocalization();
+  const [initialLanguage] = useState(currentLanguage);
 
-  const [isConnectionValid, setIsConnectionValid] = useState(false);
-  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
-
-  const handleConnectionTest = useCallback(
-    (success: boolean, errorMessage?: string) => {
-      setIsConnectionValid(success);
-      // Если тест успешен, показываем сообщение об успехе
-      if (success) {
-        setConnectionErrorMessage(t("settings.testSuccess"));
-      } else {
-        // Иначе показываем сообщение об ошибке
-        setConnectionErrorMessage(errorMessage || "");
-      }
-    },
-    [t]
-  );
-
-  // Ссылка на компонент PathsTab для доступа к его методам
-  const pathsTabRef = useRef<PathsTabRef>(null);
-  const [hasPendingPathsChanges, setHasPendingPathsChanges] = useState(false);
-
-  const loadSavedSettings = useCallback(async () => {
-    if (isFirstStart) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const savedConfig = await LoadConfig();
-      if (savedConfig) {
-        const connectionSettings: ConnectionConfig = {
-          host: savedConfig.host,
-          port: savedConfig.port,
-          username: savedConfig.username,
-          password: savedConfig.password,
-          maxUploadRatio: savedConfig.maxUploadRatio,
-          slowSpeedLimit: savedConfig.slowSpeedLimit,
-          slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
-            | "KiB/s"
-            | "MiB/s",
-        };
-        setSettings(connectionSettings);
-      }
-    } catch (error) {
-      console.error("Failed to load settings:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isFirstStart]);
-
-  useEffect(() => {
-    loadSavedSettings();
-  }, [loadSavedSettings]);
-
-  const handleSettingsChange = useCallback(
-    (newSettings: Partial<ConnectionConfig>) => {
-      setSettings((prev) => ({ ...prev, ...newSettings }));
-    },
-    []
-  );
-
-  const validateSettings = useCallback((): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!settings.host) {
-      newErrors.host = t("settings.hostRequired");
-    }
-
-    if (
-      settings.port !== undefined &&
-      (settings.port < 1 || settings.port > 65535)
-    ) {
-      newErrors.port = t("settings.invalidPort");
-    }
-
-    if (settings.maxUploadRatio < 0) {
-      newErrors.maxUploadRatio = t("settings.invalidRatio");
-    }
-
-    if (settings.slowSpeedLimit < 0) {
-      newErrors.slowSpeedLimit = t("settings.invalidSpeed");
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [settings, t]);
-
-  const handleSave = useCallback(async () => {
-    if (!validateSettings()) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Проверяем, был ли изменен язык при первом запуске
-      if (isFirstStart && currentLanguage !== initialLanguage) {
-        console.log(
-          `Language changed from ${initialLanguage} to ${currentLanguage} during first start`
-        );
-        // Особая логика для первого запуска с изменением языка
-        // Сначала сохраняем настройки, затем переключаем язык обратно и потом устанавливаем язык через API
-        const success = await onSave(settings);
-        if (success) {
-          onClose();
-        }
-      } else {
-        // Получаем изменения путей, если есть
-        let pathChanges = null;
-        if (hasPendingPathsChanges && pathsTabRef.current) {
-          const changes = pathsTabRef.current.getPathChanges();
-          pathChanges = {
-            pathsToAdd: changes.pathsToAdd || [],
-            pathsToRemove: changes.pathsToRemove || [],
-            defaultPath: changes.defaultPath || "",
-          };
-          console.log("Сохранение изменений путей:", pathChanges);
-        } else {
-          // Если изменений путей нет, передаем пустой объект вместо null
-          pathChanges = {
-            pathsToAdd: [],
-            pathsToRemove: [],
-            defaultPath: "",
-          };
-        }
-
-        // Сохраняем все настройки в одной транзакции через новый метод
-        try {
-          await SaveAllSettings(settings, pathChanges);
-          // После успешного сохранения настроек закрываем диалог
-          onClose();
-        } catch (error) {
-          console.error("Failed to save settings:", error);
-          // Проверяем, является ли ошибка ошибкой неинициализированного сервиса
-          const errorStr = String(error);
-          if (errorStr.includes("service not initialized")) {
-            // Если сервис не инициализирован, пробуем сначала инициализировать соединение
-            try {
-              // Используем onSave для инициализации соединения
-              const success = await onSave(settings);
-              if (success) {
-                // Если соединение успешно инициализировано, пробуем снова сохранить все настройки
-                await SaveAllSettings(settings, pathChanges);
-                onClose();
-                return;
-              }
-            } catch (initError) {
-              console.error("Failed to initialize connection:", initError);
-              // Если инициализация не удалась, показываем ошибку инициализации
-              setConnectionErrorMessage(
-                t("errors.failedToInitializeConnection", {
-                  0: String(initError),
-                })
-              );
-            }
-          } else {
-            // Для других ошибок используем существующий ключ локализации
-            setConnectionErrorMessage(
-              t("errors.failedToUpdateSettings", { 0: String(error) })
-            );
-          }
-          setIsConnectionValid(false);
-          // Важно: сбрасываем состояние сохранения, чтобы кнопка стала активной
-          setIsSaving(false);
-          // Прерываем выполнение, чтобы не попасть во внешний finally блок
-          return;
-        }
-      }
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      // Используем существующий ключ локализации для ошибки
-      setConnectionErrorMessage(
-        t("errors.failedToUpdateSettings", { 0: String(error) })
-      );
-      setIsConnectionValid(false);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    validateSettings,
+  const {
     settings,
-    onSave,
-    onClose,
-    t,
+    errors,
+    handleSettingsChange,
+    validateSettings,
+    updateSettings, // Renamed from setSettingsDirectly
+  } = useSettingsStateManagement({ initialSettings: defaultSettings });
+
+  const { isLoading, loadError } = useSettingsLoader({
+    isFirstStart,
+    defaultSettings,
+    onLoadSuccess: updateSettings, // Updated name here too
+  });
+
+  const {
+    isConnectionValid,
+    connectionErrorMessage,
+    handleConnectionTestResult,
+    resetConnectionTest,
+  } = useConnectionTester();
+
+  const pathsTabRef = useRef<PathsTabRef>(null);
+  const [pathsHaveChanges, setPathsHaveChanges] = useState(false);
+
+  // Улучшаем форматирование ошибок для пользователя
+  const formatErrorForDisplay = useCallback((error: unknown): string => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    // Для других типов ошибок делаем безопасное преобразование
+    return String(error).replace(/^Error:\s*/i, '');
+  }, []);
+
+  // Обновляем обработчик ошибок
+  const handleSaveError = useCallback((error: unknown) => {
+    console.error("Settings save/init failed:", error);
+    const errorMessage = formatErrorForDisplay(error);
+    handleConnectionTestResult(
+      false,
+      t('errors.failedToInitializeConnection', {
+        0: errorMessage
+      })
+    );
+  }, [handleConnectionTestResult, t, formatErrorForDisplay]);
+
+  const {
+    isSaving,
+    handleSave,
+    resetChanges: resetSaverChanges,
+  } = useSettingsSaver({
+    settings,
+    validateSettings,
+    onSaveSuccess: onClose,
+    onSaveError: handleSaveError,
+    onConnectionInitNeeded: async () => {
+      try {
+        resetConnectionTest();
+        const success = await onSave(settings);
+        if (!success) {
+          handleSaveError(new Error(t('errors.failedToInitializeConnection', { 0: 'onSave returned false' })));
+        }
+        return success;
+      } catch (initError) {
+        handleSaveError(initError);
+        return false;
+      }
+    },
+    pathsTabRef,
+    hasPendingPathsChanges: pathsHaveChanges,
     isFirstStart,
     currentLanguage,
     initialLanguage,
-    hasPendingPathsChanges,
-    pathsTabRef,
-  ]);
+  });
+
+  // Effect to reset connection test status when connection settings change
+  useEffect(() => {
+    resetConnectionTest();
+  }, [settings.host, settings.port, settings.username, settings.password, resetConnectionTest]);
 
   const handleCancel = useCallback(() => {
-    // Если есть ожидающие изменения в путях, сбрасываем их
-    if (hasPendingPathsChanges && pathsTabRef.current) {
+    resetSaverChanges();
+
+    if (pathsTabRef.current) {
       pathsTabRef.current.resetChanges();
     }
+
+    setPathsHaveChanges(false);
+
     onClose();
-  }, [hasPendingPathsChanges, onClose]);
+  }, [onClose, resetSaverChanges, setPathsHaveChanges]);
+
+  // Изменяем логику отображения статуса и сообщения
+  const displayStatus = loadError ? 'error' :
+    connectionErrorMessage === null ? 'none' :
+      (isConnectionValid ? 'success' : 'error');
+
+  const displayError = loadError || connectionErrorMessage;
 
   if (isLoading) {
     return (
       <Dialog.Root open>
-        <Dialog.Content style={{ maxWidth: 500 }}>
+        <Dialog.Content style={{ maxWidth: 500 }} data-testid="settings-loading">
           <LoadingSpinner />
         </Dialog.Content>
       </Dialog.Root>
@@ -253,12 +169,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     <Dialog.Root
       open
       onOpenChange={(open) => {
-        // Предотвращаем закрытие диалога, если это не явное действие пользователя
-        if (!open && !isFirstStart && !isSaving) {
+        if (!open && !isSaving) {
           handleCancel();
         }
-        // Если диалог пытается закрыться, но это первый запуск или идет сохранение,
-        // возвращаем false, чтобы предотвратить закрытие
         return !(isFirstStart || isSaving);
       }}
       data-testid="settings-modal"
@@ -266,37 +179,31 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
       <Dialog.Content
         style={{ maxWidth: 500 }}
         onPointerDownOutside={(e) => {
-          // Предотвращаем закрытие диалога при клике вне его
-          e.preventDefault();
+          if (isSaving || isFirstStart) {
+            e.preventDefault();
+          }
         }}
       >
         <Flex justify="between" align="center">
-          <Dialog.Title>
-            {isFirstStart ? t("settings.firstStartTitle") : t("settings.title")}
+          <Dialog.Title data-testid="settings-title">
+            {isFirstStart ? t('settings.firstStartTitle') : t('settings.title')}
           </Dialog.Title>
-          {/* Показываем селектор языка только при первичной настройке */}
-          {isFirstStart && <LanguageSelector />}
+          {isFirstStart && <LanguageSelector data-testid="settings-language-selector" />}
         </Flex>
 
         {isFirstStart && (
-          <Text as="p" size="2" mb="4" color="gray">
-            {t("settings.firstStartMessage")}
+          <Text as="p" size="2" mb="4" color="gray" data-testid="settings-first-start-message">
+            {t('settings.firstStartMessage')}
           </Text>
         )}
 
-        {/* Всегда отображаем блок для StatusMessage с фиксированной высотой для предотвращения "скачков" */}
         <StatusMessage
-          status={
-            connectionErrorMessage
-              ? isConnectionValid
-                ? "success"
-                : "error"
-              : "none"
-          }
-          message={connectionErrorMessage}
+          status={displayStatus}
+          message={displayStatus === 'none' ? undefined : displayError ? t(displayError) : undefined}
           fixedHeight={true}
-          height="60px" // Увеличили высоту для поддержки двух строк
-          maxLines={2} // Разрешаем отображение до двух строк текста
+          height="60px"
+          maxLines={2}
+          data-testid="settings-status-message"
         />
 
         <Box mt="4">
@@ -305,35 +212,26 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
               <RadixTabs.List>
                 <RadixTabs.Trigger
                   value="connection"
-                  style={{
-                    whiteSpace: "normal",
-                    minHeight: "32px",
-                    height: "auto",
-                  }}
+                  className={styles.tabTrigger}
+                  data-testid="settings-tab-connection"
                 >
-                  {t("settings.tabConnection")}
+                  {t('settings.tabConnection')}
                 </RadixTabs.Trigger>
                 {!isFirstStart && (
                   <>
                     <RadixTabs.Trigger
                       value="limits"
-                      style={{
-                        whiteSpace: "normal",
-                        minHeight: "32px",
-                        height: "auto",
-                      }}
+                      className={styles.tabTrigger}
+                      data-testid="settings-tab-limits"
                     >
-                      {t("settings.tabLimits")}
+                      {t('settings.tabLimits')}
                     </RadixTabs.Trigger>
                     <RadixTabs.Trigger
                       value="paths"
-                      style={{
-                        whiteSpace: "normal",
-                        minHeight: "32px",
-                        height: "auto",
-                      }}
+                      className={styles.tabTrigger}
+                      data-testid="settings-tab-paths"
                     >
-                      {t("settings.tabPaths")}
+                      {t('settings.tabPaths')}
                     </RadixTabs.Trigger>
                   </>
                 )}
@@ -343,7 +241,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
                 <ConnectionTab
                   settings={settings}
                   onSettingsChange={handleSettingsChange}
-                  onConnectionTest={handleConnectionTest}
+                  onConnectionTest={handleConnectionTestResult}
                   errors={errors}
                 />
               </RadixTabs.Content>
@@ -361,7 +259,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
                   <RadixTabs.Content value="paths">
                     <PathsTab
                       ref={pathsTabRef}
-                      onPathsChanged={setHasPendingPathsChanges}
+                      onPathsChanged={setPathsHaveChanges}
                     />
                   </RadixTabs.Content>
                 </>
@@ -377,8 +275,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
               variant="soft"
               onClick={handleCancel}
               disabled={isSaving}
+              data-testid="settings-cancel-button"
             >
-              {t("settings.cancel")}
+              {t('settings.cancel')}
             </RadixButton>
           )}
           <RadixButton
@@ -386,8 +285,9 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
             variant="solid"
             onClick={handleSave}
             disabled={isSaving || (isFirstStart && !isConnectionValid)}
+            data-testid="settings-save-button"
           >
-            {isSaving ? t("settings.saving") : t("settings.save")}
+            {isSaving ? t('settings.saving') : t('settings.save')}
           </RadixButton>
         </Flex>
       </Dialog.Content>

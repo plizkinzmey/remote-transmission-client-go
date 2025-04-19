@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 // Расширяем UserConfig из Vite, чтобы включить свойство test для Vitest
 declare module "vite" {
@@ -35,6 +36,7 @@ declare module "vite" {
 }
 
 export default defineConfig({
+  plugins: [tsconfigPaths()],
   test: {
     globals: true,
     environment: "jsdom",

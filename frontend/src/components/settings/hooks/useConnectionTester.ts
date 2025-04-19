@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 
 interface UseConnectionTesterResult {
   isConnectionValid: boolean;
   connectionErrorMessage: string;
   handleConnectionTestResult: (success: boolean, errorMessage?: string) => void;
-  resetConnectionTest: () => void; // Function to reset state
+  resetConnectionTest: () => void;
 }
 
 export const useConnectionTester = (): UseConnectionTesterResult => {
@@ -16,11 +16,11 @@ export const useConnectionTester = (): UseConnectionTesterResult => {
   const handleConnectionTestResult = useCallback(
     (success: boolean, errorMessage?: string) => {
       setIsConnectionValid(success);
-      if (success) {
-        setConnectionErrorMessage(t("settings.testSuccess"));
-      } else {
-        setConnectionErrorMessage(errorMessage || t("settings.testFailed")); // Provide a default fail message
-      }
+      setConnectionErrorMessage(
+        success
+          ? t("settings.testSuccess")
+          : errorMessage || t("settings.testFailed")
+      );
     },
     [t]
   );

@@ -2,22 +2,21 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useConnectionTester } from "../useConnectionTester";
 
-// Mock useLocalization
-vi.mock("../../../contexts/LocalizationContext", async () => {
-  const actual = await vi.importActual("../../../contexts/LocalizationContext");
-  return {
-    ...actual,
-    useLocalization: () => ({
-      t: (key: string, params?: any) => {
-        if (key === "settings.testSuccess") return "Test Success Message";
-        if (key === "settings.testFailed") return "Default Test Failed Message";
-        return key; // Return key if no specific mock
-      },
-      currentLanguage: "en",
-      setLanguage: vi.fn(),
-    }),
-  };
-});
+// Мок для useLocalization
+vi.mock("@contexts/LocalizationContext", () => ({
+  useLocalization: () => ({
+    t: (key: string) => {
+      // Теперь возвращаем сами сообщения вместо ключей
+      const translations: { [key: string]: string } = {
+        "settings.testSuccess": "Test Success Message",
+        "settings.testFailed": "Default Test Failed Message",
+      };
+      return translations[key];
+    },
+    currentLanguage: "en",
+    setLanguage: vi.fn(),
+  }),
+}));
 
 describe("useConnectionTester Hook", () => {
   it("initializes with default state", () => {
@@ -53,7 +52,7 @@ describe("useConnectionTester Hook", () => {
     const { result } = renderHook(() => useConnectionTester());
 
     act(() => {
-      result.current.handleConnectionTestResult(false); // No error message provided
+      result.current.handleConnectionTestResult(false);
     });
 
     expect(result.current.isConnectionValid).toBe(false);

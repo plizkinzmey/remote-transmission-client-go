@@ -116,6 +116,19 @@ vi.mock("../../wailsjs/runtime", () => ({
     EventsEmit: wailsMocks.EventsEmit,
 }));
 
+// Мок для функций Wails Go App
+const goAppMocks = {
+    LoadConfig: vi.fn(),
+    SaveAllSettings: vi.fn(),
+    // Добавьте другие функции из main/App по мере необходимости
+};
+
+// Создаем моки для Wails Go App API
+vi.mock("../../wailsjs/go/main/App", () => ({
+    LoadConfig: goAppMocks.LoadConfig,
+    SaveAllSettings: goAppMocks.SaveAllSettings,
+}));
+
 // Мок для CSS модулей - важно использовать правильный путь и формат с default экспортом
 vi.mock("../styles/StatusMessage.module.css", () => ({
     default: {

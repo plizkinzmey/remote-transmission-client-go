@@ -1,194 +1,197 @@
 // filepath: /Users/plizkinzmey/SRC/transmission-client-go/frontend/src/components/Settings/__tests__/Settings.NormalMode.Closing.test.tsx
 // Tests for Settings component - Normal Mode - Closing Logic
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 // Use aliases for imports
-import { Settings, SettingsProps } from '@components/Settings/Settings';
-import { LoadConfig } from '@wailsjs/go/main/App';
-import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exported from App.tsx at src level
-import { act } from 'react'; // Import act
-import userEvent from '@testing-library/user-event'; // Import userEvent
-import { within } from '@testing-library/react'; // Import within
+import { Settings } from '@components/Settings/Settings';
+import { PathsTabRef } from '@components/Settings/PathsTab';
 
-// --- Mocks ---
+// Mock components
+vi.mock('@components/Settings/ConnectionTab', () => ({
+    ConnectionTab: vi.fn(({ onChange }) => (
+        <div data-testid="connection-tab-mock">
+            <input
+                data-testid="connection-host-input"
+                onChange={(e) => onChange?.({ host: e.target.value })}
+            />
+            <button data-testid="connection-test-button">Test Connection</button>
+        </div>
+    ))
+}));
 
-// Define mock functions before they are used in vi.mock
-const mockGetPathChanges = vi.fn(() => ({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' }));
-const mockResetChanges = vi.fn();
+vi.mock('@components/Settings/LimitsTab', () => ({
+    LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>)
+}));
 
-// Mock components using aliases
-vi.mock('@components/Settings/ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
-vi.mock('@components/Settings/LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
-vi.mock('@components/LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
+// Mock for PathsTab ref's resetChanges and the ref object itself
+const mockPathsTabResetChanges = vi.fn();
+const mockPathsTabRefObject = {
+    getPathChanges: vi.fn(() => ({ pathsToAdd: [], pathsToRemove: [], defaultPath: null })),
+    resetChanges: mockPathsTabResetChanges,
+    saveChanges: vi.fn().mockResolvedValue(undefined),
+    hasChanges: false,
+};
 
-// Corrected mock for PathsTab using forwardRef correctly and adding simulation button
 interface MockPathsTabProps {
     onPathsChanged: (hasChanges: boolean) => void;
 }
+
 vi.mock('@components/Settings/PathsTab', () => ({
-    PathsTab: React.forwardRef(({ onPathsChanged }: MockPathsTabProps, ref: any) => {
-        React.useImperativeHandle(ref, () => ({
-            getPathChanges: mockGetPathChanges,
-            resetChanges: mockResetChanges,
-        }));
-        return (
-            <div data-testid="paths-tab-mock">
-                Paths Tab Mock
-                {/* Add a button to simulate making changes */}
-                <button data-testid="paths-simulate-change" onClick={() => onPathsChanged(true)}>
-                    Simulate Path Change
-                </button>
-                <button data-testid="paths-simulate-no-change" onClick={() => onPathsChanged(false)}>
-                    Simulate No Path Change
-                </button>
-            </div>
-        );
-    })
+    PathsTab: React.forwardRef<PathsTabRef, MockPathsTabProps>(
+        function MockedPathsTab({ onPathsChanged }, ref) {
+            // Directly assign the mock object to the ref's current property
+            // This is less standard but might bypass useEffect timing issues in mocks
+            if (ref && typeof ref === 'object') {
+                ref.current = mockPathsTabRefObject;
+            }
+            else if (typeof ref === 'function') {
+                // If it's a callback ref, call it immediately
+                // Note: This might not perfectly mimic real-world ref callback timing
+                ref(mockPathsTabRefObject);
+            }
+
+            return (
+                <div data-testid="paths-tab-mock">
+                    Paths Tab Mock
+                    <button
+                        data-testid="paths-simulate-change"
+                        onClick={() => onPathsChanged(true)}
+                    >
+                        Simulate Change
+                    </button>
+                </div>
+            );
+        }
+    )
 }));
 
-// Mock useLocalization - relying on global mock
-// Mock useSettingsSaver - default mock (isSaving: false) is sufficient for closing tests
+vi.mock('@components/LoadingSpinner', () => ({
+    LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>)
+}));
 
-// Default props for Normal Mode tests
-const defaultProps: SettingsProps = {
-    onSave: vi.fn().mockResolvedValue(true),
+vi.mock('@wailsjs/go/main/App', () => ({
+    LoadConfig: vi.fn().mockResolvedValue({
+        host: 'test-host',
+        port: 1234,
+        username: 'user',
+        password: 'pw',
+        maxUploadRatio: 2,
+        slowSpeedLimit: 100,
+        slowSpeedUnit: 'MiB/s'
+    }),
+    SaveAllSettings: vi.fn()
+}));
+
+// Hoist mock function declarations
+const { mockHandleSave, mockResetSaverChanges } = vi.hoisted(() => {
+    return {
+        mockHandleSave: vi.fn(),
+        mockResetSaverChanges: vi.fn(),
+    };
+});
+
+// Mock useSettingsSaver using vi.mock
+// Import the actual hook type if needed for casting, or use 'any'
+import { useSettingsSaver as actualUseSettingsSaver } from '@components/Settings/hooks/useSettingsSaver';
+
+vi.mock('@components/Settings/hooks/useSettingsSaver', () => ({
+    useSettingsSaver: vi.fn().mockReturnValue({ // Use vi.fn().mockReturnValue
+        isSaving: false,
+        handleSave: mockHandleSave, // Use hoisted mock
+        resetChanges: mockResetSaverChanges, // Use hoisted mock
+        // Add other properties returned by the hook if they are accessed by Settings component
+    }),
+}));
+
+const defaultProps = {
     onClose: vi.fn(),
+    onSave: vi.fn().mockResolvedValue(true),
     isFirstStart: false,
 };
-
-// Helper function to render the component
-const renderSettings = (props: Partial<SettingsProps> = {}) => {
-    // Ensure isFirstStart is explicitly false for normal mode tests
-    return render(<Settings {...defaultProps} {...props} isFirstStart={false} />);
-};
-
-// Mock config for loading
-const mockConfig: ConnectionConfig = {
-    host: 'test-host', port: 1234, username: 'user', password: 'pw',
-    maxUploadRatio: 2, slowSpeedLimit: 100, slowSpeedUnit: 'MiB/s'
-};
-
-// --- Tests ---
 
 describe('Settings Component - Normal Mode - Closing', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Ensure LoadConfig mock returns the correct type
-        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig as any); // Cast if necessary
-        (defaultProps.onClose as ReturnType<typeof vi.fn>).mockClear();
-        // Reset mocks defined outside
-        mockGetPathChanges.mockClear().mockReturnValue({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' });
-        mockResetChanges.mockClear();
+        // Reset useSettingsSaver mock
+        (actualUseSettingsSaver as ReturnType<typeof vi.fn>).mockReturnValue({
+            isSaving: false,
+            handleSave: mockHandleSave,
+            resetChanges: mockResetSaverChanges,
+        });
+        defaultProps.onClose.mockClear();
+        mockResetSaverChanges.mockClear();
+        // Reset the specific mock function for the ref method
+        mockPathsTabResetChanges.mockClear();
+        // Optionally reset other methods on the mock ref object if needed
+        mockPathsTabRefObject.getPathChanges.mockClear();
+        mockPathsTabRefObject.saveChanges.mockClear();
     });
 
-    // Helper to simulate path changes
-    const simulatePathChange = async () => {
-        const user = userEvent.setup();
-        const pathsTabTrigger = screen.getByTestId('settings-tab-paths');
-        await user.click(pathsTabTrigger);
+    afterEach(() => {
+        vi.resetModules();
+    });
 
-        // Wait for the correct Tabs.Content to become active and contain the mock
+    it('properly resets all states when closed via cancel button', async () => {
+        render(<Settings {...defaultProps} />);
+
         await waitFor(() => {
-            // Find the content panel that is currently visible (not hidden)
-            const activeTabPanel = screen.getByRole('tabpanel', { hidden: false });
-            // Verify it's the 'paths' panel by checking its 'aria-labelledby'
-            expect(activeTabPanel).toHaveAttribute('aria-labelledby', expect.stringContaining('trigger-paths'));
-            // Verify our mock content is rendered within the active panel
-            expect(within(activeTabPanel).getByTestId('paths-tab-mock')).toBeInTheDocument();
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
         });
 
-        // Now click the button inside the mock tab content
-        const simulateChangeButton = screen.getByTestId('paths-simulate-change');
-        await user.click(simulateChangeButton);
-        // Wait for any potential state updates triggered by onPathsChanged
-        await act(async () => { });
-    };
-
-    // --- Tests where changes ARE made ---
-    it('calls onClose and resets path changes when Cancel is clicked *if changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
-
-        await simulatePathChange(); // Simulate change
+        // Activate Paths tab first
+        const pathsTabTrigger = screen.getByTestId('settings-tab-paths');
+        await act(async () => {
+            await userEvent.click(pathsTabTrigger);
+        });
+        // Optional: Wait for potential tab content changes if needed
+        // await waitFor(() => expect(screen.getByTestId('paths-tab-mock')).toBeVisible());
 
         const cancelButton = screen.getByTestId('settings-cancel-button');
-        fireEvent.click(cancelButton);
+        await act(async () => {
+            await userEvent.click(cancelButton);
+        });
 
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).toHaveBeenCalledTimes(1); // Should be called
+        await waitFor(() => {
+            expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+            // Check both reset functions are called
+            expect(mockResetSaverChanges).toHaveBeenCalledTimes(1);
+            expect(mockPathsTabResetChanges).toHaveBeenCalledTimes(1);
+        });
     });
 
-    it('calls onClose and resets path changes via Escape key *if changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
+    it('properly resets all states when closed via dialog close', async () => {
+        render(<Settings {...defaultProps} />);
 
-        await simulatePathChange(); // Simulate change
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+        });
 
-        const dialogContent = screen.getByRole('dialog');
-        fireEvent.focus(dialogContent);
-        fireEvent.keyDown(dialogContent, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
+        // Activate Paths tab first
+        const pathsTabTrigger = screen.getByTestId('settings-tab-paths');
+        await act(async () => {
+            await userEvent.click(pathsTabTrigger);
+        });
+        // Optional: Wait for potential tab content changes if needed
+        // await waitFor(() => expect(screen.getByTestId('paths-tab-mock')).toBeVisible());
 
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).toHaveBeenCalledTimes(1); // Should be called
-    });
+        await act(async () => {
+            const overlay = document.querySelector('.rt-DialogOverlay');
+            if (overlay) {
+                fireEvent.pointerDown(overlay);
+            } else {
+                // Fallback if overlay selector changes
+                fireEvent.pointerDown(document.body);
+            }
+        });
 
-    it('calls onClose and resets path changes via outside click *if changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
-
-        await simulatePathChange(); // Simulate change
-
-        const dialogContent = screen.getByRole('dialog');
-        fireEvent.focus(dialogContent);
-        // Simulate Radix closing via Escape as proxy for outside click
-        fireEvent.keyDown(dialogContent, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
-
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).toHaveBeenCalledTimes(1); // Should be called
-    });
-
-    // --- Tests where NO changes are made ---
-
-    it('calls onClose but *does not* reset path changes when Cancel is clicked *if no changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
-
-        // No change simulation here
-
-        const cancelButton = screen.getByTestId('settings-cancel-button');
-        fireEvent.click(cancelButton);
-
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).not.toHaveBeenCalled(); // Should NOT be called
-    });
-
-    it('calls onClose but *does not* reset path changes via Escape key *if no changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
-
-        // No change simulation here
-
-        const dialogContent = screen.getByRole('dialog');
-        fireEvent.focus(dialogContent);
-        fireEvent.keyDown(dialogContent, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
-
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).not.toHaveBeenCalled(); // Should NOT be called
-    });
-
-    it('calls onClose but *does not* reset path changes via outside click *if no changes exist*', async () => {
-        renderSettings();
-        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
-
-        // No change simulation here
-
-        const dialogContent = screen.getByRole('dialog');
-        fireEvent.focus(dialogContent);
-        // Simulate Radix closing via Escape as proxy for outside click
-        fireEvent.keyDown(dialogContent, { key: 'Escape', code: 'Escape', keyCode: 27, charCode: 27 });
-
-        expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
-        expect(mockResetChanges).not.toHaveBeenCalled(); // Should NOT be called
+        await waitFor(() => {
+            expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+            // Check both reset functions are called
+            expect(mockResetSaverChanges).toHaveBeenCalledTimes(1);
+            expect(mockPathsTabResetChanges).toHaveBeenCalledTimes(1);
+        });
     });
 });

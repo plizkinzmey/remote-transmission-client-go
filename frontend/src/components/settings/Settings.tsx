@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react'; // Add useEffect
 import {
   Dialog,
   Button as RadixButton,
@@ -62,13 +62,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     errors,
     handleSettingsChange,
     validateSettings,
-    resetErrors,
-    setSettingsDirectly,
+    setSettingsDirectly, // Changed from setLoadedSettings
   } = useSettingsStateManagement({ initialSettings: defaultSettings });
 
-  const { isLoading } = useSettingsLoader({
+  const { isLoading, loadError } = useSettingsLoader({ // Get loadError
     isFirstStart,
     defaultSettings,
+    onLoadSuccess: setSettingsDirectly, // Pass setter as callback
   });
 
   const {
@@ -79,9 +79,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
   } = useConnectionTester();
 
   const pathsTabRef = useRef<PathsTabRef>(null);
-  const [hasPendingPathsChanges, setHasPendingPathsChanges] = useState(false);
+  const [pathsHaveChanges, setPathsHaveChanges] = useState(false);
 
-  const { isSaving, handleSave } = useSettingsSaver({
+  const {
+    isSaving,
+    handleSave,
+    resetChanges: resetSaverChanges,
+  } = useSettingsSaver({
     settings,
     validateSettings,
     onSaveSuccess: onClose,
@@ -101,64 +105,34 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
       }
     },
     pathsTabRef,
-    hasPendingPathsChanges,
+    hasPendingPathsChanges: pathsHaveChanges,
     isFirstStart,
     currentLanguage,
     initialLanguage,
   });
 
-  const [localSettings, setLocalSettings] = useState<ConnectionConfig>(defaultSettings);
-  const [localIsLoading, setLocalIsLoading] = useState(!isFirstStart);
-
-  const loadSavedSettings = useCallback(async () => {
-    if (isFirstStart) {
-      setLocalIsLoading(false);
-      setSettingsDirectly(defaultSettings);
-      return;
-    }
-    setLocalIsLoading(true);
-    try {
-      const savedConfig = await LoadConfig();
-      if (savedConfig) {
-        const loadedConfig: ConnectionConfig = {
-          host: savedConfig.host,
-          port: savedConfig.port,
-          username: savedConfig.username,
-          password: savedConfig.password,
-          maxUploadRatio: savedConfig.maxUploadRatio,
-          slowSpeedLimit: savedConfig.slowSpeedLimit,
-          slowSpeedUnit: (savedConfig.slowSpeedUnit || 'KiB/s') as 'KiB/s' | 'MiB/s',
-        };
-        setSettingsDirectly(loadedConfig);
-        setLocalSettings(loadedConfig);
-      } else {
-        setSettingsDirectly(defaultSettings);
-        setLocalSettings(defaultSettings);
-      }
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-      setSettingsDirectly(defaultSettings);
-      setLocalSettings(defaultSettings);
-    } finally {
-      setLocalIsLoading(false);
-    }
-  }, [isFirstStart, setSettingsDirectly, defaultSettings]);
-
+  // Effect to reset connection test status when connection settings change
   useEffect(() => {
-    loadSavedSettings();
-  }, [loadSavedSettings]);
+    resetConnectionTest();
+  }, [settings.host, settings.port, settings.username, settings.password, resetConnectionTest]);
 
   const handleCancel = useCallback(() => {
-    resetErrors();
-    resetConnectionTest();
-    if (hasPendingPathsChanges && pathsTabRef.current) {
-      pathsTabRef.current.resetChanges();
-      setHasPendingPathsChanges(false);
-    }
-    onClose();
-  }, [hasPendingPathsChanges, onClose, resetErrors, resetConnectionTest]);
+    resetSaverChanges();
 
-  if (localIsLoading) {
+    if (pathsTabRef.current) {
+      pathsTabRef.current.resetChanges();
+    }
+
+    setPathsHaveChanges(false);
+
+    onClose();
+  }, [onClose, resetSaverChanges, setPathsHaveChanges]);
+
+  // Combine load error and connection error for StatusMessage
+  const displayError = loadError || connectionErrorMessage;
+  const displayStatus = loadError ? 'error' : (connectionErrorMessage ? (isConnectionValid ? 'success' : 'error') : 'none');
+
+  if (isLoading) {
     return (
       <Dialog.Root open>
         <Dialog.Content style={{ maxWidth: 500 }} data-testid="settings-loading">
@@ -201,14 +175,8 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
         )}
 
         <StatusMessage
-          status={
-            connectionErrorMessage
-              ? isConnectionValid
-                ? 'success'
-                : 'error'
-              : 'none'
-          }
-          message={connectionErrorMessage}
+          status={displayStatus} // Use combined status
+          message={displayError ? t(displayError) : undefined} // Translate error key
           fixedHeight={true}
           height="60px"
           maxLines={2}
@@ -221,7 +189,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
               <RadixTabs.List>
                 <RadixTabs.Trigger
                   value="connection"
-                  className={styles.tabTrigger} // Apply CSS module class
+                  className={styles.tabTrigger}
                   data-testid="settings-tab-connection"
                 >
                   {t('settings.tabConnection')}
@@ -230,14 +198,14 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
                   <>
                     <RadixTabs.Trigger
                       value="limits"
-                      className={styles.tabTrigger} // Apply CSS module class
+                      className={styles.tabTrigger}
                       data-testid="settings-tab-limits"
                     >
                       {t('settings.tabLimits')}
                     </RadixTabs.Trigger>
                     <RadixTabs.Trigger
                       value="paths"
-                      className={styles.tabTrigger} // Apply CSS module class
+                      className={styles.tabTrigger}
                       data-testid="settings-tab-paths"
                     >
                       {t('settings.tabPaths')}
@@ -268,7 +236,7 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
                   <RadixTabs.Content value="paths">
                     <PathsTab
                       ref={pathsTabRef}
-                      onPathsChanged={setHasPendingPathsChanges}
+                      onPathsChanged={setPathsHaveChanges}
                     />
                   </RadixTabs.Content>
                 </>
@@ -303,5 +271,3 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     </Dialog.Root>
   );
 };
-
-import { LoadConfig } from '../../../wailsjs/go/main/App';

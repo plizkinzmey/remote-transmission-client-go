@@ -21,6 +21,7 @@ interface UseSettingsSaverProps {
 interface UseSettingsSaverResult {
   isSaving: boolean;
   handleSave: () => Promise<void>;
+  resetChanges: () => void; // Add resetChanges to the result type
 }
 
 export const useSettingsSaver = ({
@@ -135,5 +136,10 @@ export const useSettingsSaver = ({
     // isSaving removed previously
   ]);
 
-  return { isSaving, handleSave };
+  const resetChanges = useCallback(() => {
+    setIsSaving(false);
+    // Add any other state resets needed within this hook
+  }, []); // Add dependencies if needed, likely none for just resetting isSaving
+
+  return { isSaving, handleSave, resetChanges };
 };

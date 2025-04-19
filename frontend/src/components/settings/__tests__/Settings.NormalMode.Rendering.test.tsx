@@ -14,8 +14,31 @@ import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exp
 const mockGetPathChanges = vi.fn();
 const mockResetChanges = vi.fn();
 
-// Mock components using aliases
-vi.mock('@components/Settings/ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
+// Mock ConnectionTab with required test elements
+vi.mock('@components/Settings/ConnectionTab', () => ({
+    ConnectionTab: vi.fn(({ settings }) => (
+        <div data-testid="connection-tab-mock">
+            <input
+                data-testid="connection-host-input"
+                value={settings?.host || ''}
+            />
+            <input
+                data-testid="connection-port-input"
+                value={settings?.port || ''}
+            />
+            <input
+                data-testid="connection-username-input"
+                value={settings?.username || ''}
+            />
+            <input
+                data-testid="connection-password-input"
+                value={settings?.password || ''}
+            />
+        </div>
+    ))
+}));
+
+// Mock other components using aliases
 vi.mock('@components/Settings/LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
 vi.mock('@components/LanguageSelector', () => ({ LanguageSelector: vi.fn(() => <div data-testid="language-selector-mock">Language Selector Mock</div>) }));
 vi.mock('@components/StatusMessage', () => ({ default: vi.fn(({ message, 'data-testid': dataTestId }) => <div data-testid={dataTestId || 'status-message-mock'}>{message}</div>) }));
@@ -96,5 +119,50 @@ describe('Settings Component - Normal Mode - Rendering', () => {
         // Check that the default tab content (ConnectionTab mock) is rendered
         expect(screen.getByTestId('connection-tab-mock')).toBeInTheDocument();
         expect(screen.getByTestId('settings-save-button')).not.toBeDisabled(); // Enabled by default
+    });
+
+    // Новые тесты для загрузки начальных настроек
+    it('handles initial settings load error', async () => {
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Load error'));
+        renderSettings();
+
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+            expect(screen.getByTestId('settings-status-message'))
+                .toHaveTextContent('errors.failedToLoadSettings');
+        });
+    });
+
+    it('handles empty initial settings', async () => {
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        renderSettings();
+
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+            // Проверяем, что используются дефолтные настройки
+            const hostInput = screen.getByTestId('connection-host-input');
+            expect(hostInput).toHaveValue('');
+        });
+    });
+
+    it('loads and displays initial settings successfully', async () => {
+        const testSettings = {
+            host: 'test-host',
+            port: 9091,
+            username: 'test-user',
+            password: 'test-pass',
+            maxUploadRatio: 2,
+            slowSpeedLimit: 50,
+            slowSpeedUnit: 'KiB/s'
+        };
+
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(testSettings);
+        renderSettings();
+
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+            const hostInput = screen.getByTestId('connection-host-input');
+            expect(hostInput).toHaveValue('test-host');
+        });
     });
 });

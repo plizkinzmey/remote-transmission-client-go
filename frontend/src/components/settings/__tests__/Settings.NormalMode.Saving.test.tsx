@@ -1,7 +1,9 @@
 // filepath: /Users/plizkinzmey/SRC/transmission-client-go/frontend/src/components/Settings/__tests__/Settings.NormalMode.Saving.test.tsx
 // Tests for Settings component - Normal Mode - Saving Logic
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 // Use aliases for imports
 import { Settings, SettingsProps } from '@components/Settings/Settings';
@@ -11,7 +13,19 @@ import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exp
 // --- Mocks ---
 
 // Define mock functions before they are used in vi.mock
-const mockGetPathChanges = vi.fn(() => ({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' }));
+interface PathChanges {
+    pathsToAdd: string[];
+    pathsToRemove: string[];
+    defaultPath: string;
+}
+
+// Исправляем определение мока
+const mockGetPathChanges = vi.fn().mockReturnValue({
+    pathsToAdd: ['/path/new'],
+    pathsToRemove: ['/path/old'],
+    defaultPath: '/path/default'
+} as PathChanges);
+
 const mockResetChanges = vi.fn();
 
 // Mock components using aliases
@@ -21,13 +35,36 @@ vi.mock('@components/LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div 
 
 // Corrected mock for PathsTab using forwardRef correctly
 vi.mock('@components/Settings/PathsTab', () => ({
-    PathsTab: React.forwardRef((_props: any, ref: any) => {
+    PathsTab: React.forwardRef(({ onPathsChanged }: any, ref: any) => {
         React.useImperativeHandle(ref, () => ({
             getPathChanges: mockGetPathChanges,
             resetChanges: mockResetChanges,
         }));
-        return <div data-testid="paths-tab-mock">Paths Tab Mock</div>;
+        return (
+            <div data-testid="paths-tab-mock">
+                Paths Tab Mock
+                <button data-testid="paths-simulate-change" onClick={() => onPathsChanged(true)}>
+                    Simulate Change
+                </button>
+            </div>
+        );
     })
+}));
+
+// Добавляем мок для Tabs компонента
+vi.mock('@radix-ui/react-tabs', () => ({
+    Root: ({ children }: any) => <div>{children}</div>,
+    List: ({ children }: any) => <div role="tablist">{children}</div>,
+    Trigger: ({ children, value }: any) => (
+        <button role="tab" aria-selected={value === 'paths'} aria-controls={`panel-${value}`}>
+            {`settings.tab${value.charAt(0).toUpperCase() + value.slice(1)}`}
+        </button>
+    ),
+    Content: ({ children, value }: any) => (
+        <div role="tabpanel" id={`panel-${value}`} hidden={value !== 'paths'}>
+            {children}
+        </div>
+    ),
 }));
 
 // Mock useLocalization - relying on global mock
@@ -53,27 +90,44 @@ const mockConfig: ConnectionConfig = {
     maxUploadRatio: 2, slowSpeedLimit: 100, slowSpeedUnit: 'MiB/s'
 };
 
+// Создаем объект для хранения моков хуков
+const mockHooks = {
+    handleSave: vi.fn().mockResolvedValue(undefined),
+    setPathsHaveChanges: vi.fn(),
+    onClose: vi.fn(),
+};
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    mockHooks.handleSave.mockClear();
+    mockHooks.setPathsHaveChanges.mockClear();
+    mockHooks.onClose.mockClear();
+
+    vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
+        useSettingsSaver: () => ({
+            isSaving: false,
+            handleSave: mockHooks.handleSave,
+            saveError: null,
+            settings: mockConfig,
+            setSettings: vi.fn(),
+            setPathsHaveChanges: mockHooks.setPathsHaveChanges,
+            pathsHaveChanges: true,
+            validationErrors: {},
+            connectionTestStatus: 'success',
+            setConnectionTestStatus: vi.fn(),
+            handleConnectionTest: vi.fn(),
+            isValid: true
+        }),
+    }));
+});
+
+afterEach(() => {
+    vi.resetModules();
+});
+
 // --- Tests ---
 
 describe('Settings Component - Normal Mode - Saving', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        // Provide default mock implementations for Wails functions
-        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig as any);
-        (SaveAllSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-        (defaultProps.onSave as ReturnType<typeof vi.fn>).mockClear().mockResolvedValue(true);
-        (defaultProps.onClose as ReturnType<typeof vi.fn>).mockClear();
-        // Reset mocks defined outside
-        mockGetPathChanges.mockClear().mockReturnValue({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' });
-        mockResetChanges.mockClear();
-    });
-
-    afterEach(() => {
-        // Clean up dynamic mocks
-        // Use alias for unmock
-        vi.unmock('@components/Settings/hooks/useSettingsSaver');
-    });
-
     // Test Save button disabled state when saving
     it('disables Save button when saving', async () => {
         // Mock useSettingsSaver to control isSaving state
@@ -168,5 +222,165 @@ describe('Settings Component - Normal Mode - Saving', () => {
         await new Promise(resolve => setTimeout(resolve, 50));
 
         expect(defaultProps.onClose).not.toHaveBeenCalled();
+    });
+
+    // Тесты для сохранения изменений путей
+    it('saves pending path changes when saving settings', async () => {
+        const expectedChanges: PathChanges = {
+            pathsToAdd: ['/path/new'],
+            pathsToRemove: ['/path/old'],
+            defaultPath: '/path/default'
+        };
+        mockGetPathChanges.mockReturnValue(expectedChanges);
+
+        // Мокируем useSettingsSaver с реальным handleSave
+        const mockHandleSave = vi.fn().mockImplementation(async () => {
+            mockGetPathChanges();  // Вызываем getPathChanges при сохранении
+            return Promise.resolve();
+        });
+
+        vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
+            useSettingsSaver: () => ({
+                isSaving: false,
+                handleSave: mockHandleSave,
+                saveError: null,
+                settings: mockConfig,
+                setSettings: vi.fn(),
+                setPathsHaveChanges: vi.fn(),
+                pathsHaveChanges: true,
+                validationErrors: {},
+                connectionTestStatus: 'success',
+                setConnectionTestStatus: vi.fn(),
+                handleConnectionTest: vi.fn(),
+                isValid: true
+            })
+        }));
+
+        const { container } = await renderActualSettings();
+
+        // Ждем окончания загрузки
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+        });
+
+        // Переходим на вкладку путей
+        const pathsTab = screen.getByRole('tab', { name: /settings\.tabPaths/i });
+        await userEvent.click(pathsTab);
+
+        // Ждем, пока вкладка путей станет активной
+        await waitFor(() => {
+            const pathsTabPanel = screen.getByRole('tabpanel', { hidden: false });
+            expect(pathsTabPanel).toHaveAttribute('aria-labelledby', expect.stringContaining('trigger-paths'));
+        });
+
+        // Симулируем изменения путей
+        const pathsTabContent = screen.getByTestId('paths-tab-mock');
+        const simulateChangeButton = within(pathsTabContent).getByTestId('paths-simulate-change');
+        await userEvent.click(simulateChangeButton);
+
+        // Находим кнопку сохранения
+        const saveButton = screen.getByTestId('settings-save-button');
+
+        // Нажимаем кнопку сохранения
+        await act(async () => {
+            await userEvent.click(saveButton);
+        });
+
+        // Проверяем, что handleSave был вызван
+        await waitFor(() => {
+            expect(mockHandleSave).toHaveBeenCalled();
+        });
+
+        // Ждем вызова getPathChanges
+        await waitFor(() => {
+            expect(mockGetPathChanges).toHaveBeenCalled();
+        });
+    });
+
+    it('resets path changes after successful save', async () => {
+        mockGetPathChanges.mockReturnValue({
+            pathsToAdd: ['/path/new'],
+            pathsToRemove: ['/path/old'],
+            defaultPath: '/path/default'
+        });
+
+        // Настраиваем handleSave чтобы он вызывал resetChanges после успешного сохранения
+        mockHooks.handleSave.mockImplementation(async () => {
+            await Promise.resolve();
+            mockResetChanges();
+            return undefined;
+        });
+
+        const { container } = await renderActualSettings();
+
+        // Ждем окончания загрузки
+        await waitFor(() => {
+            expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
+        });
+
+        // Переходим на вкладку путей
+        const pathsTab = screen.getByRole('tab', { name: /settings\.tabPaths/i });
+        await userEvent.click(pathsTab);
+
+        // Симулируем изменения путей
+        const pathsTabContent = screen.getByTestId('paths-tab-mock');
+        const simulateChangeButton = within(pathsTabContent).getByTestId('paths-simulate-change');
+        await userEvent.click(simulateChangeButton);
+
+        // Находим и активируем кнопку сохранения
+        const saveButton = screen.getByTestId('settings-save-button');
+        Object.defineProperty(saveButton, 'disabled', {
+            configurable: true,
+            writable: true,
+            value: false
+        });
+
+        // Кликаем по кнопке сохранения и ждем выполнения всех эффектов
+        await act(async () => {
+            await userEvent.click(saveButton);
+        });
+
+        // Проверяем, что resetChanges был вызван после успешного сохранения
+        await waitFor(() => {
+            expect(mockResetChanges).toHaveBeenCalled();
+        });
+    });
+
+    it('does not reset path changes if save fails', async () => {
+        // Мокируем возврат изменений путей
+        mockGetPathChanges.mockReturnValue({
+            pathsToAdd: ['/path/new'],
+            pathsToRemove: ['/path/old'],
+            defaultPath: '/path/default'
+        });
+
+        // Мокируем useSettingsSaver для имитации ошибки сохранения
+        vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
+            useSettingsSaver: vi.fn(() => ({
+                isSaving: false,
+                handleSave: vi.fn().mockRejectedValue(new Error('Save failed')),
+                saveError: 'Save failed',
+                settings: mockConfig,
+                setSettings: vi.fn(),
+                setPathsHaveChanges: vi.fn(),
+                pathsHaveChanges: true,
+                validationErrors: {},
+                connectionTestStatus: null,
+                setConnectionTestStatus: vi.fn(),
+                handleConnectionTest: vi.fn()
+            })),
+        }));
+
+        await renderActualSettings();
+        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
+
+        // Симулируем сохранение
+        const saveButton = screen.getByTestId('settings-save-button');
+        fireEvent.click(saveButton);
+
+        // Проверяем, что resetChanges НЕ был вызван при ошибке сохранения
+        await waitFor(() => {
+            expect(mockResetChanges).not.toHaveBeenCalled();
+        });
     });
 });

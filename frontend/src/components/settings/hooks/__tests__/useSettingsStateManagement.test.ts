@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSettingsStateManagement } from "../useSettingsStateManagement";
-import { ConnectionConfig } from "../../../../App";
+import { ConnectionConfig } from "@app/App"; // Use path alias
 
 // Mock useLocalization (relying on global mock from setup-tests.tsx)
-vi.mock("../../../contexts/LocalizationContext", async () => {
-  const actual = await vi.importActual("../../../contexts/LocalizationContext");
+vi.mock("@contexts/LocalizationContext", async () => {
+  // Use path alias
+  const actual = await vi.importActual("@contexts/LocalizationContext"); // Use path alias
   return {
     ...actual,
     useLocalization: () => ({

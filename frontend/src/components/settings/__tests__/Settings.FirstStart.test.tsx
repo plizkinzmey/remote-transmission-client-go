@@ -2,14 +2,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { Settings, SettingsProps } from '../Settings';
-import { LoadConfig, SaveAllSettings } from '../../../../wailsjs/go/main/App';
-import { ConnectionConfig } from '../../../App';
+import { Settings, SettingsProps } from '@components/Settings/Settings'; // Use path alias
+import { LoadConfig, SaveAllSettings } from '@wailsjs/go/main/App'; // Use path alias
+import { ConnectionConfig } from '@app/App'; // Use path alias
 
 // --- Mocks ---
 
 // Mock child components relevant to First Start
-vi.mock('../ConnectionTab', () => ({
+vi.mock('@components/Settings/ConnectionTab', () => ({ // Use path alias
     ConnectionTab: vi.fn(({ settings, onSettingsChange, onConnectionTest, errors }) => (
         <div data-testid="connection-tab-mock">
             Connection Tab Mock
@@ -27,11 +27,11 @@ vi.mock('../ConnectionTab', () => ({
 
 // LimitsTab and PathsTab are not rendered in first start, no need to mock them here.
 
-vi.mock('../../LanguageSelector', () => ({
+vi.mock('@components/LanguageSelector', () => ({ // Use path alias
     LanguageSelector: vi.fn(() => <div data-testid="language-selector-mock">Language Selector Mock</div>),
 }));
 
-vi.mock('../../StatusMessage', () => ({
+vi.mock('@components/StatusMessage', () => ({ // Use path alias
     default: vi.fn(({ status, message, 'data-testid': dataTestId }) => (
         <div data-testid={dataTestId || 'status-message-mock'} data-status={status}>
             {message}
@@ -39,7 +39,7 @@ vi.mock('../../StatusMessage', () => ({
     )),
 }));
 
-vi.mock('../../LoadingSpinner', () => ({
+vi.mock('@components/LoadingSpinner', () => ({ // Use path alias
     LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>),
 }));
 
@@ -76,7 +76,7 @@ describe('Settings Component - First Start Mode', () => {
         renderSettings();
         expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument();
         expect(screen.queryByTestId('loading-spinner-mock')).not.toBeInTheDocument();
-        expect(screen.getByTestId('settings-modal')).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     // Test rendering in first start mode

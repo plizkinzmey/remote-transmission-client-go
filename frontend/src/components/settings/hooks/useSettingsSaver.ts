@@ -45,18 +45,21 @@ export const useSettingsSaver = ({
 
     setIsSaving(true);
     try {
-      // Handle first start language change separately if needed (or simplify if logic is the same)
-      if (isFirstStart && currentLanguage !== initialLanguage) {
+      // Always use onConnectionInitNeeded for the first start scenario
+      if (isFirstStart) {
         console.log(
-          `Language changed from ${initialLanguage} to ${currentLanguage} during first start`
+          `First start save initiated. Language changed: ${
+            currentLanguage !== initialLanguage
+          }`
         );
         // Assuming onConnectionInitNeeded handles the initial save/connection attempt
-        const success = await onConnectionInitNeeded();
+        const success = await onConnectionInitNeeded(); // This maps to props.onSave in Settings
         if (success) {
-          onSaveSuccess(); // Close dialog on success
+          onSaveSuccess(); // This maps to props.onClose in Settings
         }
-        // Error handling is likely managed within onConnectionInitNeeded or its caller
+        // Error handling is likely managed within onConnectionInitNeeded (props.onSave) or its caller
       } else {
+        // Normal save logic for subsequent saves
         let pathChanges: PathChanges = {
           pathsToAdd: [],
           pathsToRemove: [],
@@ -108,14 +111,13 @@ export const useSettingsSaver = ({
         }
       }
     } catch (error) {
-      console.error("Error saving settings:", error);
+      console.error("Error during save process:", error);
+      // Use a generic error message or handle specific errors if needed
       onSaveError(t("errors.failedToUpdateSettings", { 0: String(error) }));
-      // Also set saving to false here in case of general catch
-      setIsSaving(false);
-      return; // Prevent falling through to finally
+      setIsSaving(false); // Ensure reset on general error
+      return; // Prevent falling through
     } finally {
-      // Always ensure isSaving is reset when the function completes execution
-      // The checks within try/catch handle specific scenarios, this is the final guarantee.
+      // Always ensure isSaving is reset
       setIsSaving(false);
     }
   }, [
@@ -125,12 +127,12 @@ export const useSettingsSaver = ({
     onSaveError,
     onConnectionInitNeeded,
     t,
-    isFirstStart,
-    currentLanguage,
+    isFirstStart, // Keep isFirstStart dependency
+    currentLanguage, // Keep language dependencies
     initialLanguage,
     hasPendingPathsChanges,
     pathsTabRef,
-    // Removed isSaving from dependencies as it caused potential issues with the finally block logic
+    // isSaving removed previously
   ]);
 
   return { isSaving, handleSave };

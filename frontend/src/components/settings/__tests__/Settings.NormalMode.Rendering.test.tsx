@@ -3,17 +3,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { Settings, SettingsProps } from '../Settings';
-import { LoadConfig } from '../../../../wailsjs/go/main/App';
-import { ConnectionConfig } from '../../../App';
+// Use aliases for imports
+import { Settings, SettingsProps } from '@components/Settings/Settings';
+import { LoadConfig } from '@wailsjs/go/main/App';
+import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exported from App.tsx at src level
 
 // --- Mocks ---
-vi.mock('../ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
-vi.mock('../LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
-vi.mock('../PathsTab', () => ({ PathsTab: vi.fn(React.forwardRef((_, ref) => { React.useImperativeHandle(ref, () => ({ getPathChanges: vi.fn(), resetChanges: vi.fn() })); return <div data-testid="paths-tab-mock">Paths Tab Mock</div>; })) }));
-vi.mock('../../LanguageSelector', () => ({ LanguageSelector: vi.fn(() => <div data-testid="language-selector-mock">Language Selector Mock</div>) }));
-vi.mock('../../StatusMessage', () => ({ default: vi.fn(({ message, 'data-testid': dataTestId }) => <div data-testid={dataTestId || 'status-message-mock'}>{message}</div>) }));
-vi.mock('../../LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
+
+// Define mock functions before they are used in vi.mock
+const mockGetPathChanges = vi.fn();
+const mockResetChanges = vi.fn();
+
+// Mock components using aliases
+vi.mock('@components/Settings/ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
+vi.mock('@components/Settings/LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
+vi.mock('@components/LanguageSelector', () => ({ LanguageSelector: vi.fn(() => <div data-testid="language-selector-mock">Language Selector Mock</div>) }));
+vi.mock('@components/StatusMessage', () => ({ default: vi.fn(({ message, 'data-testid': dataTestId }) => <div data-testid={dataTestId || 'status-message-mock'}>{message}</div>) }));
+vi.mock('@components/LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
+
+// Corrected mock for PathsTab using forwardRef correctly
+vi.mock('@components/Settings/PathsTab', () => ({
+    PathsTab: React.forwardRef((_props: any, ref: any) => {
+        React.useImperativeHandle(ref, () => ({
+            getPathChanges: mockGetPathChanges,
+            resetChanges: mockResetChanges,
+        }));
+        return <div data-testid="paths-tab-mock">Paths Tab Mock</div>;
+    })
+}));
+
 // Mock useLocalization - relying on global mock
 // Mock useSettingsSaver - default mock (isSaving: false) is sufficient for rendering tests
 
@@ -26,6 +44,7 @@ const defaultProps: SettingsProps = {
 
 // Helper function to render the component
 const renderSettings = (props: Partial<SettingsProps> = {}) => {
+    // Ensure isFirstStart is explicitly false for normal mode tests
     return render(<Settings {...defaultProps} {...props} isFirstStart={false} />);
 };
 
@@ -40,14 +59,18 @@ const mockConfig: ConnectionConfig = {
 describe('Settings Component - Normal Mode - Rendering', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig);
-        (defaultProps.onClose as unknown as ReturnType<typeof vi.fn>).mockClear();
+        // Ensure LoadConfig mock returns the correct type
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig as any); // Cast if necessary
+        (defaultProps.onClose as ReturnType<typeof vi.fn>).mockClear();
+        // Reset mocks defined outside
+        mockGetPathChanges.mockClear();
+        mockResetChanges.mockClear();
     });
 
     // Test initial rendering in loading state
     it('renders loading spinner initially', async () => {
         (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-            () => new Promise(resolve => setTimeout(() => resolve(mockConfig), 50))
+            () => new Promise(resolve => setTimeout(() => resolve(mockConfig as any), 50))
         );
         renderSettings();
         expect(screen.getByTestId('settings-loading')).toBeInTheDocument();
@@ -70,7 +93,8 @@ describe('Settings Component - Normal Mode - Rendering', () => {
         expect(screen.getByTestId('settings-tab-paths')).toBeInTheDocument();
         expect(screen.getByTestId('settings-save-button')).toBeInTheDocument();
         expect(screen.getByTestId('settings-cancel-button')).toBeInTheDocument();
-        expect(screen.getByTestId('connection-tab-mock')).toBeInTheDocument(); // Default tab
+        // Check that the default tab content (ConnectionTab mock) is rendered
+        expect(screen.getByTestId('connection-tab-mock')).toBeInTheDocument();
         expect(screen.getByTestId('settings-save-button')).not.toBeDisabled(); // Enabled by default
     });
 });

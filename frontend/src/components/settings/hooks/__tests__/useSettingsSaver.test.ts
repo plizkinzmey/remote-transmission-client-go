@@ -257,4 +257,139 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1); // Called if init succeeds
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
+
+  it("handles service not initialized error with successful retry", async () => {
+    const serviceError = new Error("service not initialized");
+    (SaveAllSettings as Mock)
+      .mockRejectedValueOnce(serviceError) // First call fails
+      .mockResolvedValueOnce(undefined); // Second call succeeds
+
+    const { result } = renderHook(() => useSettingsSaver(getHookProps()));
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(SaveAllSettings).toHaveBeenCalledTimes(2); // Called twice
+    expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveError).not.toHaveBeenCalled();
+  });
+
+  it("handles connection init failure during service not initialized retry", async () => {
+    const serviceError = new Error("service not initialized");
+    const initError = new Error("Connection failed");
+    (SaveAllSettings as Mock).mockRejectedValueOnce(serviceError);
+    mockOnConnectionInitNeeded.mockRejectedValue(initError);
+
+    const { result } = renderHook(() => useSettingsSaver(getHookProps()));
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(SaveAllSettings).toHaveBeenCalledTimes(1); // Called only once
+    expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveError).toHaveBeenCalledWith(`Init failed: ${initError}`);
+    expect(mockOnSaveSuccess).not.toHaveBeenCalled();
+  });
+
+  it("handles generic save error", async () => {
+    const saveError = new Error("Unknown error");
+    (SaveAllSettings as Mock).mockRejectedValue(saveError);
+
+    const { result } = renderHook(() => useSettingsSaver(getHookProps()));
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(SaveAllSettings).toHaveBeenCalledTimes(1);
+    expect(mockOnConnectionInitNeeded).not.toHaveBeenCalled();
+    expect(mockOnSaveError).toHaveBeenCalledWith(`Update failed: ${saveError}`);
+    expect(mockOnSaveSuccess).not.toHaveBeenCalled();
+  });
+
+  it("handles failed connection initialization (returns false)", async () => {
+    mockOnConnectionInitNeeded.mockResolvedValue(false);
+    (SaveAllSettings as Mock).mockRejectedValueOnce(
+      new Error("service not initialized")
+    );
+
+    const { result } = renderHook(() => useSettingsSaver(getHookProps()));
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveSuccess).not.toHaveBeenCalled();
+    expect(mockOnSaveError).toHaveBeenCalledWith(
+      `Init failed: Connection initialization failed`
+    );
+  });
+
+  it("handles error in first start mode", async () => {
+    const firstStartError = new Error("First start error");
+    mockOnConnectionInitNeeded.mockRejectedValue(firstStartError);
+
+    const { result } = renderHook(() =>
+      useSettingsSaver(getHookProps({ isFirstStart: true }))
+    );
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveSuccess).not.toHaveBeenCalled();
+    expect(mockOnSaveError).toHaveBeenCalledWith(
+      `Update failed: ${firstStartError}`
+    );
+    expect(result.current.isSaving).toBe(false);
+  });
+
+  it("resets saving state via resetChanges", async () => {
+    const { result } = renderHook(() => useSettingsSaver(getHookProps()));
+
+    await act(async () => {
+      result.current.handleSave();
+    });
+
+    act(() => {
+      result.current.resetChanges();
+    });
+
+    expect(result.current.isSaving).toBe(false);
+  });
+
+  it("handles undefined values in path changes", async () => {
+    // Create a new ref with mock that returns undefined values
+    mockPathsTabRef = {
+      current: {
+        getPathChanges: vi.fn().mockReturnValue({
+          pathsToAdd: undefined,
+          pathsToRemove: undefined,
+          defaultPath: undefined,
+        }),
+        resetChanges: vi.fn(),
+        saveChanges: vi.fn(),
+        hasChanges: true,
+      },
+    } as React.RefObject<PathsTabRef>;
+
+    const { result } = renderHook(() =>
+      useSettingsSaver(getHookProps({ hasPendingPathsChanges: true }))
+    );
+
+    await act(async () => {
+      await result.current.handleSave();
+    });
+
+    expect(SaveAllSettings).toHaveBeenCalledWith(defaultSettings, {
+      pathsToAdd: [],
+      pathsToRemove: [],
+      defaultPath: null,
+    });
+  });
 });

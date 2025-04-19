@@ -5,6 +5,12 @@ import { PathChanges } from "@app/types/settings"; // Исправлен имп�
 import { PathsTabRef } from "@components/Settings/PathsTab"; // Use path alias
 import { useLocalization } from "@contexts/LocalizationContext"; // Use path alias
 
+// Добавим типы для улучшения читаемости и безопасности
+type SaveResult = {
+  success: boolean;
+  error?: Error | string;
+};
+
 interface UseSettingsSaverProps {
   settings: ConnectionConfig;
   validateSettings: () => boolean;
@@ -39,6 +45,63 @@ export const useSettingsSaver = ({
   const { t } = useLocalization();
   const [isSaving, setIsSaving] = useState(false);
 
+  // Выносим логику сохранения в отдельную функцию
+  const executeSave = async (pathChanges: PathChanges): Promise<SaveResult> => {
+    try {
+      await SaveAllSettings(settings, pathChanges);
+      return { success: true };
+    } catch (error) {
+      const errorStr = String(error);
+
+      if (errorStr.includes("service not initialized")) {
+        try {
+          const success = await onConnectionInitNeeded();
+          if (!success) {
+            return {
+              success: false,
+              error: t("errors.failedToInitializeConnection", {
+                0: "Connection initialization failed",
+              }),
+            };
+          }
+          // Повторная попытка сохранения после успешной инициализации
+          await SaveAllSettings(settings, pathChanges);
+          return { success: true };
+        } catch (initError) {
+          return {
+            success: false,
+            error: t("errors.failedToInitializeConnection", {
+              0: String(initError),
+            }),
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: t("errors.failedToUpdateSettings", { 0: errorStr }),
+      };
+    }
+  };
+
+  // Выносим логику сборки изменений путей
+  const getPathChanges = useCallback((): PathChanges => {
+    if (!hasPendingPathsChanges || !pathsTabRef.current) {
+      return {
+        pathsToAdd: [],
+        pathsToRemove: [],
+        defaultPath: null,
+      };
+    }
+
+    const changes = pathsTabRef.current.getPathChanges();
+    return {
+      pathsToAdd: changes.pathsToAdd || [],
+      pathsToRemove: changes.pathsToRemove || [],
+      defaultPath: changes.defaultPath || null,
+    };
+  }, [hasPendingPathsChanges, pathsTabRef]);
+
   const handleSave = useCallback(async () => {
     if (!validateSettings()) {
       return;
@@ -46,79 +109,24 @@ export const useSettingsSaver = ({
 
     setIsSaving(true);
     try {
-      // Always use onConnectionInitNeeded for the first start scenario
       if (isFirstStart) {
-        console.log(
-          `First start save initiated. Language changed: ${
-            currentLanguage !== initialLanguage
-          }`
-        );
-        // Assuming onConnectionInitNeeded handles the initial save/connection attempt
-        const success = await onConnectionInitNeeded(); // This maps to props.onSave in Settings
+        const success = await onConnectionInitNeeded();
         if (success) {
-          onSaveSuccess(); // This maps to props.onClose in Settings
+          onSaveSuccess();
         }
-        // Error handling is likely managed within onConnectionInitNeeded (props.onSave) or its caller
       } else {
-        // Normal save logic for subsequent saves
-        let pathChanges: PathChanges = {
-          pathsToAdd: [],
-          pathsToRemove: [],
-          defaultPath: null, // Match the type definition (string | null)
-        };
+        const pathChanges = getPathChanges();
+        const result = await executeSave(pathChanges);
 
-        if (hasPendingPathsChanges && pathsTabRef.current) {
-          const changes = pathsTabRef.current.getPathChanges();
-          pathChanges = {
-            pathsToAdd: changes.pathsToAdd || [],
-            pathsToRemove: changes.pathsToRemove || [],
-            // Ensure defaultPath is null if not provided or empty
-            defaultPath: changes.defaultPath || null,
-          };
-          console.log("Saving path changes:", pathChanges);
-        }
-
-        try {
-          await SaveAllSettings(settings, pathChanges);
-          onSaveSuccess(); // Call success callback (e.g., close dialog)
-        } catch (error) {
-          console.error("Failed to save settings:", error);
-          const errorStr = String(error);
-
-          if (errorStr.includes("service not initialized")) {
-            try {
-              const success = await onConnectionInitNeeded();
-              if (success) {
-                // Retry saving after successful initialization
-                await SaveAllSettings(settings, pathChanges);
-                onSaveSuccess();
-                return; // Exit after successful retry
-              }
-              // If init failed, the error should be handled by the caller of onConnectionInitNeeded
-            } catch (initError) {
-              console.error("Failed to initialize connection:", initError);
-              onSaveError(
-                t("errors.failedToInitializeConnection", {
-                  0: String(initError),
-                })
-              );
-            }
-          } else {
-            onSaveError(t("errors.failedToUpdateSettings", { 0: errorStr }));
-          }
-          // Let the caller decide when to reset isSaving based on error display/handling
-          setIsSaving(false); // Reset saving state only if error is handled here
-          return; // Prevent falling through to finally if error occurred
+        if (result.success) {
+          onSaveSuccess();
+        } else if (result.error) {
+          onSaveError(result.error);
         }
       }
     } catch (error) {
-      console.error("Error during save process:", error);
-      // Use a generic error message or handle specific errors if needed
       onSaveError(t("errors.failedToUpdateSettings", { 0: String(error) }));
-      setIsSaving(false); // Ensure reset on general error
-      return; // Prevent falling through
     } finally {
-      // Always ensure isSaving is reset
       setIsSaving(false);
     }
   }, [
@@ -128,18 +136,15 @@ export const useSettingsSaver = ({
     onSaveError,
     onConnectionInitNeeded,
     t,
-    isFirstStart, // Keep isFirstStart dependency
-    currentLanguage, // Keep language dependencies
+    isFirstStart,
+    currentLanguage,
     initialLanguage,
-    hasPendingPathsChanges,
-    pathsTabRef,
-    // isSaving removed previously
+    getPathChanges,
   ]);
 
   const resetChanges = useCallback(() => {
     setIsSaving(false);
-    // Add any other state resets needed within this hook
-  }, []); // Add dependencies if needed, likely none for just resetting isSaving
+  }, []);
 
   return { isSaving, handleSave, resetChanges };
 };

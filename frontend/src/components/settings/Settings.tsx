@@ -81,6 +81,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
   const pathsTabRef = useRef<PathsTabRef>(null);
   const [pathsHaveChanges, setPathsHaveChanges] = useState(false);
 
+  // Define the error handler callback separately
+  const handleSaveError = useCallback((error: unknown) => {
+    console.error("Settings save/init failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    handleConnectionTestResult(false, t('errors.failedToInitializeConnection', { 0: errorMessage }));
+  }, [handleConnectionTestResult, t]);
+
   const {
     isSaving,
     handleSave,
@@ -89,18 +96,17 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     settings,
     validateSettings,
     onSaveSuccess: onClose,
-    onSaveError: (errorMsg) => {
-      handleConnectionTestResult(false, String(errorMsg));
-    },
+    onSaveError: handleSaveError,
     onConnectionInitNeeded: async () => {
       try {
         resetConnectionTest();
         const success = await onSave(settings);
-        handleConnectionTestResult(success, success ? undefined : t('errors.failedToInitializeConnection', { 0: 'Initialization failed' }));
+        if (!success) {
+          handleSaveError(new Error(t('errors.failedToInitializeConnection', { 0: 'onSave returned false' })));
+        }
         return success;
       } catch (initError) {
-        console.error("Failed to initialize connection via onSave:", initError);
-        handleConnectionTestResult(false, t('errors.failedToInitializeConnection', { 0: String(initError) }));
+        handleSaveError(initError);
         return false;
       }
     },

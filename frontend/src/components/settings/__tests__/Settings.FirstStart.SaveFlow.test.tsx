@@ -10,14 +10,13 @@ import { useSettingsSaver } from '@components/Settings/hooks/useSettingsSaver';
 
 // --- Mocks ---
 vi.mock('@components/Settings/ConnectionTab', () => ({
-    ConnectionTab: vi.fn(({ settings, onSettingsChange, onConnectionTest }) => ( // Removed errors prop for simplicity here
+    ConnectionTab: vi.fn(({ settings, onSettingsChange, onConnectionTest }) => (
         <div data-testid="connection-tab-mock">
             <input
                 data-testid="connection-host-input"
                 value={settings.host}
                 onChange={(e) => onSettingsChange({ host: e.target.value })}
             />
-            {/* Simulate test trigger */}
             <button data-testid="connection-test-button-success" onClick={() => onConnectionTest(true)}>Test Success</button>
         </div>
     )),
@@ -41,6 +40,7 @@ const { mockHandleConnectionTestResult, mockResetConnectionTest } = vi.hoisted((
     mockHandleConnectionTestResult: vi.fn(),
     mockResetConnectionTest: vi.fn(),
 }));
+
 const { mockSaverHandleSave, mockSaverResetChanges, mockUseSettingsSaver } = vi.hoisted(() => {
     const mockSaverHandleSave = vi.fn();
     const mockSaverResetChanges = vi.fn();
@@ -53,11 +53,16 @@ const { mockSaverHandleSave, mockSaverResetChanges, mockUseSettingsSaver } = vi.
                 try {
                     const success = await onConnectionInitNeeded();
                     if (success && onSaveSuccess) onSaveSuccess();
-                    // Error handling is done within onConnectionInitNeeded
                 } catch (e) {
-                    if (onSaveError) onSaveError("Unexpected error in mock saver");
+                    if (onSaveError) {
+                        if (e instanceof Error) {
+                            onSaveError(e);
+                        } else {
+                            onSaveError(String(e));
+                        }
+                    }
                 }
-            } else if (onSaveSuccess) { // Non-first start simplified
+            } else if (onSaveSuccess) {
                 onSaveSuccess();
             }
         });
@@ -96,9 +101,6 @@ const renderSettings = (props: Partial<SettingsProps> = {}) => {
 
 // --- Tests ---
 describe('Settings Component - First Start Mode - Save Flow', () => {
-    // Spy on console.error ONLY for the error test, restore afterwards
-    let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
-
     beforeEach(() => {
         vi.clearAllMocks();
         (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
@@ -109,7 +111,6 @@ describe('Settings Component - First Start Mode - Save Flow', () => {
         mockUseSettingsSaver.mockClear();
         mockSaverHandleSave.mockClear();
         (ConnectionTab as ReturnType<typeof vi.fn>).mockClear();
-        // Reset connection tester state
         (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
             isConnectionValid: false,
             connectionErrorMessage: null,
@@ -118,15 +119,8 @@ describe('Settings Component - First Start Mode - Save Flow', () => {
         }));
     });
 
-    afterEach(() => {
-        // Restore console.error if it was spied on
-        consoleErrorSpy?.mockRestore();
-        consoleErrorSpy = null;
-    });
-
-    // Test Save button disabled state
     it('enables Save button after successful connection test', async () => {
-        // Arrange: Mock connection tester to become valid on success
+        // Mock connection tester to become valid on success
         mockHandleConnectionTestResult.mockImplementation((success: boolean) => {
             if (success) {
                 (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
@@ -140,57 +134,53 @@ describe('Settings Component - First Start Mode - Save Flow', () => {
         const { rerender } = renderSettings();
         expect(screen.getByTestId('settings-save-button')).toBeDisabled();
 
-        // Act: Simulate successful test
+        // Simulate successful test
         fireEvent.click(screen.getByTestId('connection-test-button-success'));
         await waitFor(() => expect(mockHandleConnectionTestResult).toHaveBeenCalledWith(true));
         rerender(<Settings {...defaultProps} isFirstStart={true} />); // Rerender to reflect hook update
 
-        // Assert: Button is enabled
+        // Button is enabled
         await waitFor(() => expect(screen.getByTestId('settings-save-button')).not.toBeDisabled());
     });
 
-    // Test successful save
     it('calls onSave and onClose when saving after successful test', async () => {
-        // Arrange: Mock connection tester to enable save
+        // Mock validation success
         mockHandleConnectionTestResult.mockImplementation((success: boolean) => {
             if (success) {
                 (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
-                    isConnectionValid: true, connectionErrorMessage: null,
-                    handleConnectionTestResult: mockHandleConnectionTestResult, resetConnectionTest: mockResetConnectionTest,
+                    isConnectionValid: true,
+                    connectionErrorMessage: null,
+                    handleConnectionTestResult: mockHandleConnectionTestResult,
+                    resetConnectionTest: mockResetConnectionTest,
                 }));
             }
         });
-        const { rerender } = renderSettings(); // Uses defaultProps.onSave resolving true
+        const { rerender } = renderSettings();
 
-        // Act: Enable save button
+        // Setup test
         fireEvent.change(screen.getByTestId('connection-host-input'), { target: { value: 'good-host' } });
         fireEvent.click(screen.getByTestId('connection-test-button-success'));
         await waitFor(() => expect(mockHandleConnectionTestResult).toHaveBeenCalledWith(true));
         rerender(<Settings {...defaultProps} isFirstStart={true} />);
         await waitFor(() => expect(screen.getByTestId('settings-save-button')).not.toBeDisabled());
 
-        // Act: Click Save
+        // Click save
         fireEvent.click(screen.getByTestId('settings-save-button'));
 
-        // Assert
+        // Run checks
         await waitFor(() => expect(mockSaverHandleSave).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(defaultProps.onSave).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(defaultProps.onSave).toHaveBeenCalledWith(expect.objectContaining({ host: 'good-host' })));
-        await waitFor(() => expect(defaultProps.onClose).toHaveBeenCalledTimes(1)); // Check onClose
+        await waitFor(() => expect(defaultProps.onClose).toHaveBeenCalledTimes(1));
     });
 
-    // Test error handling during save
     it('handles error during initial save (onSave rejects)', async () => {
-        // Arrange: Setup error spy and rejecting onSave
-        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { }); // Silence console during test
         const mockError = new Error('Init Failed');
         const onSaveMock = vi.fn().mockRejectedValue(mockError);
         let currentErrorMessage: string | null = null;
 
-        // Arrange: Mock connection tester to enable save and capture error message
         mockHandleConnectionTestResult.mockImplementation((success: boolean, message?: string) => {
             const isValid = success;
-            // Capture the message passed to the handler (which should be the translation key)
             currentErrorMessage = isValid ? null : message || null;
             (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
                 isConnectionValid: isValid,
@@ -202,36 +192,137 @@ describe('Settings Component - First Start Mode - Save Flow', () => {
 
         const { rerender } = renderSettings({ onSave: onSaveMock });
 
-        // Act: Enable save button
         fireEvent.change(screen.getByTestId('connection-host-input'), { target: { value: 'fail-host' } });
-        fireEvent.click(screen.getByTestId('connection-test-button-success')); // Simulate initial successful test
-        // Wait specifically for the first call (true)
+        fireEvent.click(screen.getByTestId('connection-test-button-success'));
+
         await waitFor(() => expect(mockHandleConnectionTestResult).toHaveBeenCalledWith(true));
         rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
         await waitFor(() => expect(screen.getByTestId('settings-save-button')).not.toBeDisabled());
 
-        // Act: Click Save (will trigger rejection)
         fireEvent.click(screen.getByTestId('settings-save-button'));
 
-        // Assert: Check the last call to handleConnectionTestResult
+        await waitFor(() => expect(mockSaverHandleSave).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(onSaveMock).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(onSaveMock).toHaveBeenCalledWith(
+            expect.objectContaining({ host: 'fail-host' })
+        ));
+
         await waitFor(() => {
             expect(mockHandleConnectionTestResult).toHaveBeenCalledTimes(2);
         });
         expect(mockHandleConnectionTestResult).toHaveBeenLastCalledWith(
-            false, // Indicates failure
-            'errors.failedToInitializeConnection' // Expect the translation key
+            false,
+            'errors.failedToInitializeConnection'
         );
 
-        // Assert: Check UI update
         rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
         await waitFor(() => {
             const statusMessage = screen.getByTestId('settings-status-message');
             expect(statusMessage).toHaveAttribute('data-status', 'error');
-            // Expect the StatusMessage to display the translation key (assuming mock t returns the key)
             expect(statusMessage.textContent).toBe('errors.failedToInitializeConnection');
         });
 
-        // Assert: onClose was NOT called
+        expect(defaultProps.onClose).not.toHaveBeenCalled();
+    });
+
+    it('handles false return from onSave without exception', async () => {
+        const onSaveMock = vi.fn().mockResolvedValue(false);
+        let currentErrorMessage: string | null = null;
+
+        // Mock connection tester
+        mockHandleConnectionTestResult.mockImplementation((success: boolean, message?: string) => {
+            const isValid = success;
+            currentErrorMessage = isValid ? null : message || null;
+            (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+                isConnectionValid: isValid,
+                connectionErrorMessage: currentErrorMessage,
+                handleConnectionTestResult: mockHandleConnectionTestResult,
+                resetConnectionTest: mockResetConnectionTest,
+            }));
+        });
+
+        const { rerender } = renderSettings({ onSave: onSaveMock });
+
+        // Enable save button
+        fireEvent.change(screen.getByTestId('connection-host-input'), { target: { value: 'test-host' } });
+        fireEvent.click(screen.getByTestId('connection-test-button-success'));
+        await waitFor(() => expect(mockHandleConnectionTestResult).toHaveBeenCalledWith(true));
+        rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
+        await waitFor(() => expect(screen.getByTestId('settings-save-button')).not.toBeDisabled());
+
+        // Click Save
+        fireEvent.click(screen.getByTestId('settings-save-button'));
+
+        // Check that onSave was called
+        await waitFor(() => expect(onSaveMock).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(onSaveMock).toHaveBeenCalledWith(
+            expect.objectContaining({ host: 'test-host' })
+        ));
+
+        // Check that error handling was triggered
+        await waitFor(() => {
+            expect(mockHandleConnectionTestResult).toHaveBeenLastCalledWith(
+                false,
+                'errors.failedToInitializeConnection'
+            );
+        });
+
+        // Check UI shows error
+        rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
+        await waitFor(() => {
+            const statusMessage = screen.getByTestId('settings-status-message');
+            expect(statusMessage).toHaveAttribute('data-status', 'error');
+            expect(statusMessage.textContent).toBe('errors.failedToInitializeConnection');
+        });
+
+        // Verify onClose was not called
+        expect(defaultProps.onClose).not.toHaveBeenCalled();
+    });
+
+    it('handles non-Error rejection from onSave', async () => {
+        const nonErrorValue = 'custom error string';
+        const onSaveMock = vi.fn().mockRejectedValue(nonErrorValue);
+        let currentErrorMessage: string | null = null;
+
+        mockHandleConnectionTestResult.mockImplementation((success: boolean, message?: string) => {
+            const isValid = success;
+            currentErrorMessage = isValid ? null : message || null;
+            (useConnectionTester as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+                isConnectionValid: isValid,
+                connectionErrorMessage: currentErrorMessage,
+                handleConnectionTestResult: mockHandleConnectionTestResult,
+                resetConnectionTest: mockResetConnectionTest,
+            }));
+        });
+
+        const { rerender } = renderSettings({ onSave: onSaveMock });
+
+        fireEvent.change(screen.getByTestId('connection-host-input'), { target: { value: 'fail-host' } });
+        fireEvent.click(screen.getByTestId('connection-test-button-success'));
+        await waitFor(() => expect(mockHandleConnectionTestResult).toHaveBeenCalledWith(true));
+        rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
+        await waitFor(() => expect(screen.getByTestId('settings-save-button')).not.toBeDisabled());
+
+        fireEvent.click(screen.getByTestId('settings-save-button'));
+
+        await waitFor(() => expect(mockSaverHandleSave).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(onSaveMock).toHaveBeenCalledTimes(1));
+
+        await waitFor(() => {
+            expect(mockHandleConnectionTestResult).toHaveBeenCalledTimes(2);
+        });
+        expect(mockHandleConnectionTestResult).toHaveBeenLastCalledWith(
+            false,
+            'errors.failedToInitializeConnection'
+        );
+
+        rerender(<Settings {...defaultProps} onSave={onSaveMock} isFirstStart={true} />);
+        await waitFor(() => {
+            const statusMessage = screen.getByTestId('settings-status-message');
+            expect(statusMessage).toHaveAttribute('data-status', 'error');
+            expect(statusMessage.textContent).toBe('errors.failedToInitializeConnection');
+        });
+
         expect(defaultProps.onClose).not.toHaveBeenCalled();
     });
 });

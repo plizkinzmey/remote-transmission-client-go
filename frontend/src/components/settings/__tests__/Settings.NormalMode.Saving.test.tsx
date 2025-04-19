@@ -3,27 +3,33 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { Settings, SettingsProps } from '../Settings';
-import { LoadConfig, SaveAllSettings } from '../../../../wailsjs/go/main/App';
-import { ConnectionConfig } from '../../../App';
+// Use aliases for imports
+import { Settings, SettingsProps } from '@components/Settings/Settings';
+import { LoadConfig, SaveAllSettings } from '@wailsjs/go/main/App';
+import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exported from App.tsx at src level
 
 // --- Mocks ---
-vi.mock('../ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
-vi.mock('../LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
 
+// Define mock functions before they are used in vi.mock
 const mockGetPathChanges = vi.fn(() => ({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' }));
 const mockResetChanges = vi.fn();
-vi.mock('../PathsTab', () => ({
-    PathsTab: vi.fn(React.forwardRef((_, ref) => {
+
+// Mock components using aliases
+vi.mock('@components/Settings/ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
+vi.mock('@components/Settings/LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
+vi.mock('@components/LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
+
+// Corrected mock for PathsTab using forwardRef correctly
+vi.mock('@components/Settings/PathsTab', () => ({
+    PathsTab: React.forwardRef((_props: any, ref: any) => {
         React.useImperativeHandle(ref, () => ({
             getPathChanges: mockGetPathChanges,
             resetChanges: mockResetChanges,
         }));
         return <div data-testid="paths-tab-mock">Paths Tab Mock</div>;
-    })),
+    })
 }));
 
-vi.mock('../../LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
 // Mock useLocalization - relying on global mock
 
 // Default props for Normal Mode tests
@@ -36,7 +42,8 @@ const defaultProps: SettingsProps = {
 // Helper function to render the component using the *actual* Settings component
 // This is needed because we need to mock useSettingsSaver dynamically within tests
 const renderActualSettings = async (props: Partial<SettingsProps> = {}) => {
-    const { Settings: ActualSettings } = await import('../Settings');
+    // Use alias for import
+    const { Settings: ActualSettings } = await import('@components/Settings/Settings');
     return render(<ActualSettings {...defaultProps} {...props} isFirstStart={false} />);
 };
 
@@ -52,23 +59,26 @@ describe('Settings Component - Normal Mode - Saving', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Provide default mock implementations for Wails functions
-        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig);
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig as any);
         (SaveAllSettings as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-        (defaultProps.onSave as unknown as ReturnType<typeof vi.fn>).mockClear().mockResolvedValue(true);
-        (defaultProps.onClose as unknown as ReturnType<typeof vi.fn>).mockClear();
+        (defaultProps.onSave as ReturnType<typeof vi.fn>).mockClear().mockResolvedValue(true);
+        (defaultProps.onClose as ReturnType<typeof vi.fn>).mockClear();
+        // Reset mocks defined outside
         mockGetPathChanges.mockClear().mockReturnValue({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' });
         mockResetChanges.mockClear();
     });
 
     afterEach(() => {
         // Clean up dynamic mocks
-        vi.unmock('../hooks/useSettingsSaver');
+        // Use alias for unmock
+        vi.unmock('@components/Settings/hooks/useSettingsSaver');
     });
 
     // Test Save button disabled state when saving
     it('disables Save button when saving', async () => {
         // Mock useSettingsSaver to control isSaving state
-        vi.doMock('../hooks/useSettingsSaver', () => ({
+        // Use alias for doMock
+        vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
             useSettingsSaver: vi.fn(() => ({
                 isSaving: true, // Force isSaving to true
                 handleSave: vi.fn(),
@@ -96,7 +106,8 @@ describe('Settings Component - Normal Mode - Saving', () => {
     // Test dialog closing prevention (onPointerDownOutside)
     it('prevents closing and does not call onClose when clicking outside if saving', async () => {
         // Mock useSettingsSaver to control isSaving state
-        vi.doMock('../hooks/useSettingsSaver', () => ({
+        // Use alias for doMock
+        vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
             useSettingsSaver: vi.fn(() => ({
                 isSaving: true, // Force isSaving to true
                 handleSave: vi.fn(),
@@ -129,7 +140,8 @@ describe('Settings Component - Normal Mode - Saving', () => {
     // Test dialog closing prevention (Escape key)
     it('prevents closing and does not call onClose on Escape key if saving', async () => {
         // Mock useSettingsSaver to control isSaving state
-        vi.doMock('../hooks/useSettingsSaver', () => ({
+        // Use alias for doMock
+        vi.doMock('@components/Settings/hooks/useSettingsSaver', () => ({
             useSettingsSaver: vi.fn(() => ({
                 isSaving: true, // Force isSaving to true
                 handleSave: vi.fn(),

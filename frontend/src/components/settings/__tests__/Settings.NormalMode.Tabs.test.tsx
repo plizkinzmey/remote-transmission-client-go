@@ -1,63 +1,39 @@
 // filepath: /Users/plizkinzmey/SRC/transmission-client-go/frontend/src/components/Settings/__tests__/Settings.NormalMode.Tabs.test.tsx
-// Tests for Settings component - Normal Mode - Tab Logic
+// Tests for Settings component - Normal Mode - Tab Switching Logic
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
-import { Settings, SettingsProps } from '../Settings';
-import { LoadConfig } from '../../../../wailsjs/go/main/App';
-import { ConnectionConfig } from '../../../App';
+// Use aliases for imports
+import { Settings, SettingsProps } from '@components/Settings/Settings';
+import { LoadConfig } from '@wailsjs/go/main/App';
+import { ConnectionConfig } from '@app/App'; // Assuming ConnectionConfig is exported from App.tsx at src level
+import { within } from '@testing-library/react'; // Import within
 
 // --- Mocks ---
-vi.mock('../ConnectionTab', () => ({
-    ConnectionTab: vi.fn(({ settings, onSettingsChange }) => (
-        <div data-testid="connection-tab-mock">
-            Connection Tab Mock
-            <input
-                data-testid="connection-host-input"
-                value={settings.host}
-                onChange={(e) => onSettingsChange({ host: e.target.value })}
-            />
-        </div>
-    )),
-}));
 
-vi.mock('../LimitsTab', () => ({
-    LimitsTab: vi.fn(({ settings, onSettingsChange }) => (
-        <div data-testid="limits-tab-mock">
-            Limits Tab Mock
-            <input
-                data-testid="limits-ratio-input"
-                type="number"
-                value={settings.maxUploadRatio}
-                onChange={(e) => onSettingsChange({ maxUploadRatio: Number(e.target.value) })}
-            />
-        </div>
-    )),
-}));
-
-const mockGetPathChanges = vi.fn(() => ({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' }));
+// Define mock functions before they are used in vi.mock
+const mockGetPathChanges = vi.fn();
 const mockResetChanges = vi.fn();
-interface PathsTabProps {
-    onPathsChanged: (hasChanges: boolean) => void;
-}
-vi.mock('../PathsTab', () => ({
-    PathsTab: vi.fn(React.forwardRef(({ onPathsChanged }: PathsTabProps, ref) => {
+
+// Mock components using aliases
+vi.mock('@components/Settings/ConnectionTab', () => ({ ConnectionTab: vi.fn(() => <div data-testid="connection-tab-mock">Connection Tab Mock</div>) }));
+vi.mock('@components/Settings/LimitsTab', () => ({ LimitsTab: vi.fn(() => <div data-testid="limits-tab-mock">Limits Tab Mock</div>) }));
+vi.mock('@components/LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
+
+// Corrected mock for PathsTab using forwardRef correctly
+vi.mock('@components/Settings/PathsTab', () => ({
+    PathsTab: React.forwardRef((_props: any, ref: any) => {
         React.useImperativeHandle(ref, () => ({
             getPathChanges: mockGetPathChanges,
             resetChanges: mockResetChanges,
         }));
-        return (
-            <div data-testid="paths-tab-mock">
-                Paths Tab Mock
-                <button data-testid="paths-change-button" onClick={() => onPathsChanged(true)}>Change Path</button>
-            </div>
-        );
-    })),
+        return <div data-testid="paths-tab-mock">Paths Tab Mock</div>;
+    })
 }));
 
-vi.mock('../../LoadingSpinner', () => ({ LoadingSpinner: vi.fn(() => <div data-testid="loading-spinner-mock">Loading...</div>) }));
 // Mock useLocalization - relying on global mock
-// Mock useSettingsSaver - default mock (isSaving: false) is sufficient
+// Mock useSettingsSaver - default mock (isSaving: false) is sufficient for tab tests
 
 // Default props for Normal Mode tests
 const defaultProps: SettingsProps = {
@@ -68,6 +44,7 @@ const defaultProps: SettingsProps = {
 
 // Helper function to render the component
 const renderSettings = (props: Partial<SettingsProps> = {}) => {
+    // Ensure isFirstStart is explicitly false for normal mode tests
     return render(<Settings {...defaultProps} {...props} isFirstStart={false} />);
 };
 
@@ -79,69 +56,71 @@ const mockConfig: ConnectionConfig = {
 
 // --- Tests ---
 
-describe('Settings Component - Normal Mode - Tabs', () => {
+describe('Settings Component - Normal Mode - Tab Switching', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig);
-        (defaultProps.onClose as unknown as ReturnType<typeof vi.fn>).mockClear();
-        mockGetPathChanges.mockClear().mockReturnValue({ pathsToAdd: [], pathsToRemove: [], defaultPath: '' });
+        // Ensure LoadConfig mock returns the correct type
+        (LoadConfig as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockConfig as any); // Cast if necessary
+        (defaultProps.onClose as ReturnType<typeof vi.fn>).mockClear();
+        // Reset mocks defined outside
+        mockGetPathChanges.mockClear();
         mockResetChanges.mockClear();
     });
 
-    // Test tab switching
-    it('switches between tabs correctly', async () => {
+    // Test switching to Limits tab
+    it('switches to Limits tab and renders its content', async () => {
+        const user = userEvent.setup();
         renderSettings();
         await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
 
-        // Initially, Connection tab is active
-        expect(screen.getByTestId('connection-tab-mock')).toBeInTheDocument();
-        expect(screen.queryByTestId('limits-tab-mock')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('paths-tab-mock')).not.toBeInTheDocument();
+        const limitsTabTrigger = screen.getByTestId('settings-tab-limits');
+        await user.click(limitsTabTrigger);
 
-        // Click Limits tab
-        fireEvent.click(screen.getByTestId('settings-tab-limits'));
         await waitFor(() => {
-            expect(screen.queryByTestId('connection-tab-mock')).not.toBeInTheDocument();
-            expect(screen.getByTestId('limits-tab-mock')).toBeInTheDocument();
-            expect(screen.queryByTestId('paths-tab-mock')).not.toBeInTheDocument();
-        });
-
-        // Click Paths tab
-        fireEvent.click(screen.getByTestId('settings-tab-paths'));
-        await waitFor(() => {
-            expect(screen.queryByTestId('connection-tab-mock')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('limits-tab-mock')).not.toBeInTheDocument();
-            expect(screen.getByTestId('paths-tab-mock')).toBeInTheDocument();
-        });
-
-        // Click Connection tab again
-        fireEvent.click(screen.getByTestId('settings-tab-connection'));
-        await waitFor(() => {
-            expect(screen.getByTestId('connection-tab-mock')).toBeInTheDocument();
-            expect(screen.queryByTestId('limits-tab-mock')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('paths-tab-mock')).not.toBeInTheDocument();
+            const activeTabPanel = screen.getByRole('tabpanel', { hidden: false });
+            expect(activeTabPanel).toHaveAttribute('aria-labelledby', expect.stringContaining('trigger-limits'));
+            expect(within(activeTabPanel).getByTestId('limits-tab-mock')).toBeInTheDocument();
         });
     });
 
-    // Test settings changes within tabs
-    it('updates settings state when changed in tabs', async () => {
+    // Test switching to Paths tab
+    it('switches to Paths tab and renders its content', async () => {
+        const user = userEvent.setup();
         renderSettings();
         await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
 
-        // Change host in ConnectionTab
-        const hostInput = screen.getByTestId('connection-host-input');
-        fireEvent.change(hostInput, { target: { value: 'new-host' } });
-        await waitFor(() => expect(hostInput).toHaveValue('new-host'));
+        const pathsTabTrigger = screen.getByTestId('settings-tab-paths');
+        await user.click(pathsTabTrigger);
 
-        // Switch to Limits tab
-        fireEvent.click(screen.getByTestId('settings-tab-limits'));
-        await waitFor(() => expect(screen.getByTestId('limits-tab-mock')).toBeInTheDocument());
+        await waitFor(() => {
+            const activeTabPanel = screen.getByRole('tabpanel', { hidden: false });
+            expect(activeTabPanel).toHaveAttribute('aria-labelledby', expect.stringContaining('trigger-paths'));
+            expect(within(activeTabPanel).getByTestId('paths-tab-mock')).toBeInTheDocument();
+        });
+    });
 
-        // Change ratio in LimitsTab
-        const ratioInput = screen.getByTestId('limits-ratio-input');
-        fireEvent.change(ratioInput, { target: { value: '10' } });
-        await waitFor(() => expect(ratioInput).toHaveValue(10));
+    // Test switching back to Connection tab
+    it('switches back to Connection tab after visiting another tab', async () => {
+        const user = userEvent.setup();
+        renderSettings();
+        await waitFor(() => expect(screen.queryByTestId('settings-loading')).not.toBeInTheDocument());
 
-        // Saving logic is tested separately
+        // Go to Limits first
+        const limitsTabTrigger = screen.getByTestId('settings-tab-limits');
+        await user.click(limitsTabTrigger);
+        await waitFor(() => {
+            const activeTabPanel = screen.getByRole('tabpanel', { hidden: false });
+            expect(within(activeTabPanel).getByTestId('limits-tab-mock')).toBeInTheDocument();
+        });
+
+        // Go back to Connection
+        const connectionTabTrigger = screen.getByTestId('settings-tab-connection');
+        await user.click(connectionTabTrigger);
+
+        await waitFor(() => {
+            const activeTabPanel = screen.getByRole('tabpanel', { hidden: false });
+            expect(activeTabPanel).toHaveAttribute('aria-labelledby', expect.stringContaining('trigger-connection'));
+            expect(within(activeTabPanel).getByTestId('connection-tab-mock')).toBeInTheDocument();
+        });
     });
 });

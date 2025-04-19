@@ -251,9 +251,10 @@ describe("useSettingsSaver Hook", () => {
     });
 
     expect(mockValidateSettings).toHaveBeenCalledTimes(1);
-    expect(SaveAllSettings).toHaveBeenCalledTimes(1);
-    expect(mockOnConnectionInitNeeded).not.toHaveBeenCalled();
-    expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1);
+    // In first start, it should always call onConnectionInitNeeded, not SaveAllSettings directly
+    expect(SaveAllSettings).not.toHaveBeenCalled();
+    expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
+    expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1); // Called if init succeeds
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 });

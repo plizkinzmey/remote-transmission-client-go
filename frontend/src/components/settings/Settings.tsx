@@ -134,9 +134,12 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     onClose();
   }, [onClose, resetSaverChanges, setPathsHaveChanges]);
 
-  // Combine load error and connection error for StatusMessage
+  // Изменяем логику отображения статуса и сообщения
+  const displayStatus = loadError ? 'error' :
+    connectionErrorMessage === null ? 'none' :
+      (isConnectionValid ? 'success' : 'error');
+
   const displayError = loadError || connectionErrorMessage;
-  const displayStatus = loadError ? 'error' : (connectionErrorMessage ? (isConnectionValid ? 'success' : 'error') : 'none');
 
   if (isLoading) {
     return (
@@ -181,8 +184,8 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
         )}
 
         <StatusMessage
-          status={displayStatus} // Use combined status
-          message={displayError ? t(displayError) : undefined} // Translate error key
+          status={displayStatus}
+          message={displayStatus === 'none' ? undefined : displayError ? t(displayError) : undefined}
           fixedHeight={true}
           height="60px"
           maxLines={2}

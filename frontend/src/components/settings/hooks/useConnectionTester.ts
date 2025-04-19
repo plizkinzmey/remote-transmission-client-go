@@ -3,7 +3,7 @@ import { useLocalization } from "@contexts/LocalizationContext";
 
 interface UseConnectionTesterResult {
   isConnectionValid: boolean;
-  connectionErrorMessage: string;
+  connectionErrorMessage: string | null;
   handleConnectionTestResult: (success: boolean, errorMessage?: string) => void;
   resetConnectionTest: () => void;
 }
@@ -11,23 +11,25 @@ interface UseConnectionTesterResult {
 export const useConnectionTester = (): UseConnectionTesterResult => {
   const { t } = useLocalization();
   const [isConnectionValid, setIsConnectionValid] = useState(false);
-  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState<
+    string | null
+  >(null);
 
   const handleConnectionTestResult = useCallback(
     (success: boolean, errorMessage?: string) => {
       setIsConnectionValid(success);
-      setConnectionErrorMessage(
-        success
-          ? t("settings.testSuccess")
-          : errorMessage || t("settings.testFailed")
-      );
+      if (success) {
+        setConnectionErrorMessage(t("settings.testSuccess"));
+      } else if (errorMessage) {
+        setConnectionErrorMessage(errorMessage);
+      }
     },
     [t]
   );
 
   const resetConnectionTest = useCallback(() => {
     setIsConnectionValid(false);
-    setConnectionErrorMessage("");
+    setConnectionErrorMessage(null);
   }, []);
 
   return {

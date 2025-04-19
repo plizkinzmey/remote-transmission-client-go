@@ -6,13 +6,18 @@ interface UseSettingsStateManagementProps {
   initialSettings: ConnectionConfig;
 }
 
+interface ValidationErrors {
+  [key: string]: string;
+}
+
 interface UseSettingsStateManagementResult {
   settings: ConnectionConfig;
-  errors: { [key: string]: string };
-  handleSettingsChange: (newSettings: Partial<ConnectionConfig>) => void;
+  errors: ValidationErrors;
+  handleSettingsChange: (changes: Partial<ConnectionConfig>) => void;
   validateSettings: () => boolean;
-  resetErrors: () => void;
-  setSettingsDirectly: React.Dispatch<React.SetStateAction<ConnectionConfig>>; // Allow direct setting
+  updateSettings: (newSettings: ConnectionConfig) => void;
+  setSettingsDirectly: (newSettings: ConnectionConfig) => void; // Алиас для обратной совместимости
+  resetErrors: () => void; // Добавляем новый метод
 }
 
 export const useSettingsStateManagement = ({
@@ -20,7 +25,7 @@ export const useSettingsStateManagement = ({
 }: UseSettingsStateManagementProps): UseSettingsStateManagementResult => {
   const { t } = useLocalization();
   const [settings, setSettings] = useState<ConnectionConfig>(initialSettings);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<ValidationErrors>({});
 
   const handleSettingsChange = useCallback(
     (newSettings: Partial<ConnectionConfig>) => {
@@ -38,7 +43,7 @@ export const useSettingsStateManagement = ({
   );
 
   const validateSettings = useCallback((): boolean => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: ValidationErrors = {};
 
     if (!settings.host) {
       newErrors.host = t("settings.hostRequired");
@@ -67,12 +72,18 @@ export const useSettingsStateManagement = ({
     setErrors({});
   }, []);
 
+  const updateSettings = useCallback((newSettings: ConnectionConfig) => {
+    setSettings(newSettings);
+    setErrors({});
+  }, []);
+
   return {
     settings,
     errors,
     handleSettingsChange,
     validateSettings,
+    updateSettings,
+    setSettingsDirectly: updateSettings, // Алиас для обратной совместимости
     resetErrors,
-    setSettingsDirectly: setSettings,
   };
 };

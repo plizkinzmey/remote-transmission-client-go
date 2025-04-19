@@ -19,13 +19,13 @@ vi.mock("@contexts/LocalizationContext", () => ({
 }));
 
 describe("useConnectionTester Hook", () => {
-  it("initializes with default state", () => {
+  it("initializes with null error message", () => {
     const { result } = renderHook(() => useConnectionTester());
     expect(result.current.isConnectionValid).toBe(false);
-    expect(result.current.connectionErrorMessage).toBe("");
+    expect(result.current.connectionErrorMessage).toBeNull();
   });
 
-  it("handles successful connection test result", () => {
+  it("sets success message on successful test", () => {
     const { result } = renderHook(() => useConnectionTester());
 
     act(() => {
@@ -36,9 +36,9 @@ describe("useConnectionTester Hook", () => {
     expect(result.current.connectionErrorMessage).toBe("Test Success Message");
   });
 
-  it("handles failed connection test result with custom message", () => {
+  it("sets provided error message on failed test", () => {
     const { result } = renderHook(() => useConnectionTester());
-    const customError = "My custom error";
+    const customError = "Custom error message";
 
     act(() => {
       result.current.handleConnectionTestResult(false, customError);
@@ -48,7 +48,7 @@ describe("useConnectionTester Hook", () => {
     expect(result.current.connectionErrorMessage).toBe(customError);
   });
 
-  it("handles failed connection test result without custom message (uses default)", () => {
+  it("keeps error message null on failed test without message", () => {
     const { result } = renderHook(() => useConnectionTester());
 
     act(() => {
@@ -56,27 +56,23 @@ describe("useConnectionTester Hook", () => {
     });
 
     expect(result.current.isConnectionValid).toBe(false);
-    expect(result.current.connectionErrorMessage).toBe(
-      "Default Test Failed Message"
-    );
+    expect(result.current.connectionErrorMessage).toBeNull();
   });
 
-  it("resets state correctly", () => {
+  it("resets to initial state", () => {
     const { result } = renderHook(() => useConnectionTester());
 
-    // Set some state
     act(() => {
       result.current.handleConnectionTestResult(true);
     });
     expect(result.current.isConnectionValid).toBe(true);
-    expect(result.current.connectionErrorMessage).not.toBe("");
+    expect(result.current.connectionErrorMessage).toBe("Test Success Message");
 
-    // Reset state
     act(() => {
       result.current.resetConnectionTest();
     });
 
     expect(result.current.isConnectionValid).toBe(false);
-    expect(result.current.connectionErrorMessage).toBe("");
+    expect(result.current.connectionErrorMessage).toBeNull();
   });
 });

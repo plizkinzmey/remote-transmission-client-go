@@ -62,13 +62,13 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
     errors,
     handleSettingsChange,
     validateSettings,
-    setSettingsDirectly, // Changed from setLoadedSettings
+    updateSettings, // Renamed from setSettingsDirectly
   } = useSettingsStateManagement({ initialSettings: defaultSettings });
 
-  const { isLoading, loadError } = useSettingsLoader({ // Get loadError
+  const { isLoading, loadError } = useSettingsLoader({
     isFirstStart,
     defaultSettings,
-    onLoadSuccess: setSettingsDirectly, // Pass setter as callback
+    onLoadSuccess: updateSettings, // Updated name here too
   });
 
   const {
@@ -81,12 +81,26 @@ export const Settings: React.FC<SettingsProps> = ({ onSave, onClose, isFirstStar
   const pathsTabRef = useRef<PathsTabRef>(null);
   const [pathsHaveChanges, setPathsHaveChanges] = useState(false);
 
-  // Define the error handler callback separately
+  // Улучшаем форматирование ошибок для пользователя
+  const formatErrorForDisplay = useCallback((error: unknown): string => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    // Для других типов ошибок делаем безопасное преобразование
+    return String(error).replace(/^Error:\s*/i, '');
+  }, []);
+
+  // Обновляем обработчик ошибок
   const handleSaveError = useCallback((error: unknown) => {
     console.error("Settings save/init failed:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    handleConnectionTestResult(false, t('errors.failedToInitializeConnection', { 0: errorMessage }));
-  }, [handleConnectionTestResult, t]);
+    const errorMessage = formatErrorForDisplay(error);
+    handleConnectionTestResult(
+      false,
+      t('errors.failedToInitializeConnection', {
+        0: errorMessage
+      })
+    );
+  }, [handleConnectionTestResult, t, formatErrorForDisplay]);
 
   const {
     isSaving,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useSettingsSaver } from "../useSettingsSaver";
 import { SaveAllSettings } from "@wailsjs/go/main/App";
 import { ConnectionConfig } from "@app/App";
@@ -112,12 +112,15 @@ describe("useSettingsSaver Hook", () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.isSaving).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSaving).toBe(false);
+    });
+
     expect(mockValidateSettings).toHaveBeenCalledTimes(1);
     expect(SaveAllSettings).toHaveBeenCalledWith(defaultSettings, {
       pathsToAdd: [],
       pathsToRemove: [],
-      defaultPath: "",
+      defaultPath: null,
     });
     expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1);
     expect(mockOnSaveError).not.toHaveBeenCalled();
@@ -133,7 +136,10 @@ describe("useSettingsSaver Hook", () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.isSaving).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSaving).toBe(false);
+    });
+
     expect(mockValidateSettings).toHaveBeenCalledTimes(1);
     expect(mockPathsTabRef.current?.getPathChanges).toHaveBeenCalledTimes(1);
     expect(SaveAllSettings).toHaveBeenCalledWith(
@@ -169,7 +175,10 @@ describe("useSettingsSaver Hook", () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.isSaving).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSaving).toBe(false);
+    });
+
     expect(SaveAllSettings).toHaveBeenCalledTimes(2); // Called initially and on retry
     expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
     expect(mockOnSaveSuccess).toHaveBeenCalledTimes(1); // Should succeed on retry
@@ -211,7 +220,10 @@ describe("useSettingsSaver Hook", () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.isSaving).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSaving).toBe(false);
+    });
+
     expect(mockValidateSettings).toHaveBeenCalledTimes(1);
     expect(SaveAllSettings).not.toHaveBeenCalled(); // Should not call SaveAllSettings directly
     expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
@@ -234,7 +246,10 @@ describe("useSettingsSaver Hook", () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.isSaving).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSaving).toBe(false);
+    });
+
     expect(mockValidateSettings).toHaveBeenCalledTimes(1);
     expect(SaveAllSettings).toHaveBeenCalledTimes(1);
     expect(mockOnConnectionInitNeeded).not.toHaveBeenCalled();

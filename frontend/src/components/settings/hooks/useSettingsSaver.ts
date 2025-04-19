@@ -102,7 +102,6 @@ export const useSettingsSaver = ({
           } else {
             onSaveError(t("errors.failedToUpdateSettings", { 0: errorStr }));
           }
-          // Important: Don't reset isSaving here if error handling happens in the caller
           // Let the caller decide when to reset isSaving based on error display/handling
           setIsSaving(false); // Reset saving state only if error is handled here
           return; // Prevent falling through to finally if error occurred
@@ -111,13 +110,13 @@ export const useSettingsSaver = ({
     } catch (error) {
       console.error("Error saving settings:", error);
       onSaveError(t("errors.failedToUpdateSettings", { 0: String(error) }));
+      // Also set saving to false here in case of general catch
+      setIsSaving(false);
+      return; // Prevent falling through to finally
     } finally {
-      // Only set isSaving to false if the operation completed (success or handled error)
-      // If an error occurred and wasn't handled above, it might need to stay true until user interaction
-      if (isSaving) {
-        // Check if it's still saving (might have been set to false in error handling)
-        setIsSaving(false);
-      }
+      // Always ensure isSaving is reset when the function completes execution
+      // The checks within try/catch handle specific scenarios, this is the final guarantee.
+      setIsSaving(false);
     }
   }, [
     validateSettings,
@@ -131,7 +130,7 @@ export const useSettingsSaver = ({
     initialLanguage,
     hasPendingPathsChanges,
     pathsTabRef,
-    isSaving, // Include isSaving if it's used in the finally block logic
+    // Removed isSaving from dependencies as it caused potential issues with the finally block logic
   ]);
 
   return { isSaving, handleSave };

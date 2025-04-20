@@ -1,3 +1,4 @@
+import React from 'react'; // Добавляем импорт React
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useTranslations } from './useTranslations';
@@ -293,5 +294,54 @@ describe('useTranslations hook', () => {
         );
 
         errorSpy.mockRestore();
+    });
+
+    it('handles null/undefined keys in useEffect', async () => {
+        // Мокируем GetAllTranslationKeys, чтобы он вернул null при инициализации
+        (GetAllTranslationKeys as any).mockResolvedValue(null);
+        const setTranslationsSpy = vi.fn();
+        // Мокируем useState, чтобы перехватить вызов setAllTranslations
+        const useStateSpy = vi.spyOn(React, 'useState').mockImplementation(() => [{}, setTranslationsSpy]); // Используем useStateSpy
+
+        renderHook(() => useTranslations('en'));
+        await act(async () => { }); // Позволяем useEffect выполниться
+
+        // Ожидаем, что setAllTranslations не будет вызван с новыми переводами,
+        // так как произошел выход по `if (!keys) return;`
+        // Он может быть вызван с начальным состоянием, но не с результатом загрузки
+        // Проверяем, что он не был вызван с объектом, содержащим 'en'
+        expect(setTranslationsSpy).not.toHaveBeenCalledWith(expect.objectContaining({ en: expect.any(Object) }));
+
+        // Восстанавливаем мок useState
+        useStateSpy.mockRestore(); // Восстанавливаем через spy
+    });
+
+    it('handles null/undefined keys in loadAllTranslations', async () => {
+        // Инициализация
+        (GetAllTranslationKeys as any).mockResolvedValueOnce(['key1']);
+        (GetTranslation as any).mockResolvedValueOnce('key1-en');
+
+        // Мокируем для вызова loadAllTranslations
+        (GetAllTranslationKeys as any)
+            .mockResolvedValueOnce(['keyA']) // Успешно для 'fr'
+            .mockResolvedValueOnce(null)     // null для 'de'
+            .mockResolvedValueOnce(['keyC']); // Успешно для 'es'
+        (GetTranslation as any)
+            .mockResolvedValueOnce('keyA-fr') // Для 'fr'
+            .mockResolvedValueOnce('keyC-es'); // Для 'es'
+
+        const { result } = renderHook(() => useTranslations('en'));
+        await act(async () => { }); // Инициализация
+
+        await act(async () => {
+            await result.current.loadAllTranslations(['fr', 'de', 'es']);
+        });
+
+        // Проверяем, что 'fr' и 'es' загружены, а 'de' пропущен
+        expect(result.current.allTranslations.fr).toEqual({ keyA: 'keyA-fr' });
+        expect(result.current.allTranslations.de).toBeUndefined();
+        expect(result.current.allTranslations.es).toEqual({ keyC: 'keyC-es' });
+        // 'en' должен остаться от инициализации
+        expect(result.current.allTranslations.en).toEqual({ key1: 'key1-en' });
     });
 });

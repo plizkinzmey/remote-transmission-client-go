@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { GetTranslation, GetAllTranslationKeys } from "@wailsjs/go/main/App";
 import type { TranslationsCache } from "../types";
 
@@ -16,6 +16,54 @@ export function useTranslations(
 ): UseTranslationsResult {
   const [allTranslations, setAllTranslations] = useState<TranslationsCache>({});
 
+  // Загружаем переводы при изменении языка
+  useEffect(() => {
+    const loadTranslations = async () => {
+      try {
+        const keys = await GetAllTranslationKeys(currentLanguage);
+        if (!keys) return;
+
+        const translations = await Promise.all(
+          keys.map(async (key) => {
+            try {
+              const translation = await GetTranslation(
+                key,
+                currentLanguage,
+                []
+              );
+              return { key, translation };
+            } catch (error) {
+              console.error(
+                `Failed to load translation for key: ${key} (${currentLanguage})`,
+                error
+              );
+              return { key, translation: key };
+            }
+          })
+        );
+
+        const newTranslations: TranslationsCache = {
+          [currentLanguage]: {},
+        };
+
+        translations.forEach(({ key, translation }) => {
+          if (translation !== key) {
+            newTranslations[currentLanguage][key] = translation;
+          }
+        });
+
+        setAllTranslations((prev) => ({
+          ...prev,
+          ...newTranslations,
+        }));
+      } catch (error) {
+        console.error("Failed to load translations:", error);
+      }
+    };
+
+    loadTranslations();
+  }, [currentLanguage]);
+
   const t = useCallback(
     (
       key: string,
@@ -26,11 +74,12 @@ export function useTranslations(
       const translations = allTranslations[currentLanguage] || {};
       let translation = translations[key];
 
-      // Если перевод не найден, запрашиваем его и возвращаем ключ как fallback
       if (!translation) {
+        translation = key;
+        // Асинхронно загружаем перевод для будущего использования
         GetTranslation(key, currentLanguage, [])
           .then((fetchedTranslation) => {
-            if (fetchedTranslation && fetchedTranslation !== key) {
+            if (fetchedTranslation !== key) {
               setAllTranslations((prev) => ({
                 ...prev,
                 [currentLanguage]: {
@@ -43,29 +92,25 @@ export function useTranslations(
           .catch((error) => {
             console.error(`Failed to get translation for key: ${key}`, error);
           });
-
-        translation = key;
       }
 
       if (!params) {
         return translation;
       }
 
-      // Если params - строка, просто заменяем {0}
       if (typeof params === "string") {
         return translation.replace("{0}", params);
       }
 
-      // Если params - массив, заменяем {0}, {1}, etc.
       if (Array.isArray(params)) {
         return params.reduce((result, param, index) => {
-          return result.replace(`{${index}}`, param);
+          return result.replace(`{${index}}`, String(param));
         }, translation);
       }
 
-      // Если params - объект, заменяем {key}
       return Object.entries(params).reduce(
-        (result, [paramKey, value]) => result.replace(`{${paramKey}}`, value),
+        (result, [paramKey, value]) =>
+          result.replace(`{${paramKey}}`, String(value)),
         translation
       );
     },
@@ -76,64 +121,42 @@ export function useTranslations(
     async (languages: string[]): Promise<void> => {
       try {
         const newTranslations: TranslationsCache = {};
+        for (const langCode of languages) {
+          try {
+            const keys = await GetAllTranslationKeys(langCode);
+            if (!keys) continue;
 
-        await Promise.all(
-          languages.map(async (langCode) => {
-            try {
-              const keys = await GetAllTranslationKeys(langCode);
-              if (!keys) return;
-
-              const chunkSize = 100;
-              const chunks: string[][] = [];
-              for (let i = 0; i < keys.length; i += chunkSize) {
-                chunks.push(keys.slice(i, i + chunkSize));
-              }
-
-              const langTranslations: Record<string, string> = {};
-
-              await Promise.all(
-                chunks.map(async (chunk) => {
-                  const translationsForChunk = await Promise.all(
-                    chunk.map(async (key) => {
-                      try {
-                        const translation = await GetTranslation(
-                          key,
-                          langCode,
-                          []
-                        );
-                        return { key, translation };
-                      } catch (error) {
-                        console.error(
-                          `Failed to load translation for key: ${key} (${langCode})`,
-                          error
-                        );
-                        return { key, translation: key };
-                      }
-                    })
+            newTranslations[langCode] = {};
+            const translations = await Promise.all(
+              keys.map(async (key) => {
+                try {
+                  const translation = await GetTranslation(key, langCode, []);
+                  return { key, translation };
+                } catch (error) {
+                  console.error(
+                    `Failed to load translation for key: ${key} (${langCode})`,
+                    error
                   );
+                  return { key, translation: key };
+                }
+              })
+            );
 
-                  translationsForChunk.forEach(({ key, translation }) => {
-                    if (translation && translation !== key) {
-                      langTranslations[key] = translation;
-                    }
-                  });
-                })
-              );
-
-              if (Object.keys(langTranslations).length > 0) {
-                newTranslations[langCode] = langTranslations;
+            translations.forEach(({ key, translation }) => {
+              if (translation !== key) {
+                newTranslations[langCode][key] = translation;
               }
-            } catch (error) {
-              console.error(
-                `Failed to load translations for language: ${langCode}`,
-                error
-              );
-            }
-          })
-        );
+            });
+          } catch (error) {
+            console.error(
+              `Failed to load translations for language: ${langCode}`,
+              error
+            );
+          }
+        }
 
-        setAllTranslations((prevTranslations) => ({
-          ...prevTranslations,
+        setAllTranslations((prev) => ({
+          ...prev,
           ...newTranslations,
         }));
       } catch (error) {

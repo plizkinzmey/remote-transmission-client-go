@@ -12,19 +12,18 @@ describe('useTranslations', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (GetAllTranslationKeys as ReturnType<typeof vi.fn>).mockResolvedValue(['test.key', 'test.paramKey']);
-        (GetTranslation as ReturnType<typeof vi.fn>).mockImplementation((key) => Promise.resolve(`Translated: ${key}`));
+        (GetTranslation as ReturnType<typeof vi.fn>).mockImplementation((key) => Promise.resolve(`${key}-translated`));
     });
 
     it('returns translation function', async () => {
         const { result } = renderHook(() => useTranslations('en'));
 
-        // Ждем загрузки переводов
         await act(async () => {
             await new Promise(resolve => setTimeout(resolve, 0));
         });
 
         // Проверяем базовый перевод
-        expect(result.current.t('test.key')).toBe('test.key');
+        expect(result.current.t('test.key')).toBe('test.key-translated');
     });
 
     it('handles string parameters correctly', async () => {
@@ -35,7 +34,7 @@ describe('useTranslations', () => {
         });
 
         // Проверяем перевод с параметром-строкой
-        expect(result.current.t('test.paramKey', 'value')).toBe('test.paramKey');
+        expect(result.current.t('test.paramKey', 'value')).toBe('test.paramKey-translated');
     });
 
     it('handles object parameters correctly', async () => {
@@ -46,7 +45,7 @@ describe('useTranslations', () => {
         });
 
         // Проверяем перевод с параметрами-объектом
-        expect(result.current.t('test.key', { param: 'value' })).toBe('test.key');
+        expect(result.current.t('test.key', { param: 'value' })).toBe('test.key-translated');
     });
 
     it('loads translations on language change', async () => {

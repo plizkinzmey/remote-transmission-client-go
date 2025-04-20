@@ -201,9 +201,9 @@ export const Header: React.FC<HeaderProps> = ({
             variant="soft"
             color="red"
             onClick={handleRemoveClick}
-            aria-label={t("torrents.commands.remove")}
+            aria-label={t("remove.title")}
             disabled={!hasSelectedTorrents || removeLoading || isReconnecting}
-            title={isReconnecting ? t("errors.needConnection") : t("torrents.commands.remove")}
+            title={isReconnecting ? t("errors.needConnection") : t("remove.title")}
           >
             {removeLoading ? (
               <LoadingSpinner size="small" />

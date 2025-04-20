@@ -1,46 +1,69 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { LoadingSpinner } from '@components/LoadingSpinner';
-import { useLanguageInitialization } from './hooks/useLanguageInitialization';
 import { useTranslations } from './hooks/useTranslations';
+import { useLanguageInitialization } from './hooks/useLanguageInitialization';
 import type { LocalizationContextType, LocalizationProviderProps } from './types';
+import styles from './LocalizationContext.module.css';
 
-const LocalizationContext = createContext<LocalizationContextType | null>(null);
+export const LocalizationContext = createContext<LocalizationContextType>({
+    t: (key) => key,
+    currentLanguage: 'en',
+    setLanguage: () => Promise.resolve(),
+    availableLanguages: [{ code: 'en', name: 'English' }],
+    isLoading: true,
+});
 
-export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({ children }) => {
+export const useLocalization = () => {
+    const context = useContext(LocalizationContext);
+    if (!context) {
+        throw new Error('useLocalization must be used within LocalizationProvider');
+    }
+    return context;
+};
+
+export const LocalizationProvider: React.FC<LocalizationProviderProps> = ({
+    children,
+}) => {
     const {
         currentLanguage,
         availableLanguages,
         setLanguage,
-        isLoading
+        isLoading: isLanguageLoading,
     } = useLanguageInitialization();
 
-    const { t } = useTranslations(currentLanguage);
+    const { t, allTranslations, loadAllTranslations } = useTranslations(currentLanguage);
 
-    if (isLoading) {
-        return <LoadingSpinner data-testid="loading-spinner" />;
+    useEffect(() => {
+        if (availableLanguages.length > 0) {
+            loadAllTranslations(availableLanguages.map(lang => lang.code))
+                .catch(error => {
+                    console.error('Failed to load translations:', error);
+                });
+        }
+    }, [availableLanguages, loadAllTranslations]);
+
+    const contextValue = useMemo(
+        () => ({
+            t,
+            currentLanguage,
+            setLanguage,
+            availableLanguages,
+            isLoading: isLanguageLoading || !Object.keys(allTranslations).length,
+        }),
+        [t, currentLanguage, setLanguage, availableLanguages, isLanguageLoading, allTranslations]
+    );
+
+    if (isLanguageLoading || !Object.keys(allTranslations).length) {
+        return (
+            <div className={styles.loadingContainer}>
+                <LoadingSpinner data-testid="loading-spinner" />
+            </div>
+        );
     }
 
     return (
-        <LocalizationContext.Provider
-            value={{
-                currentLanguage,
-                availableLanguages,
-                t,
-                setLanguage,
-                isLoading
-            }}
-        >
+        <LocalizationContext.Provider value={contextValue}>
             {children}
         </LocalizationContext.Provider>
     );
-};
-
-export const useLocalization = () => {
-    const context = useContext(LocalizationContext);
-
-    if (!context) {
-        throw new Error('useLocalization must be used within LocalizationProvider');
-    }
-
-    return context;
 };

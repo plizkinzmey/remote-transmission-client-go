@@ -3,13 +3,13 @@ import { render, screen, fireEvent, act, waitFor } from "@testing-library/react"
 import { vi, describe, it, expect, beforeEach, Mock } from "vitest";
 import { PathsTab, PathsTabRef } from "../PathsTab"; // Adjust import based on your structure
 import { usePathsManagement } from "../hooks/usePathsManagement";
-import { useLocalization } from "../../../../contexts/LocalizationContext"; // Corrected path again
+import { useLocalization } from "@contexts/LocalizationContext"; // Corrected path again
 
 // Mock the custom hook
 vi.mock("../hooks/usePathsManagement");
 
 // Mock Localization context
-vi.mock("../../../../contexts/LocalizationContext"); // Corrected path again
+vi.mock("@contexts/LocalizationContext"); // Corrected path again
 
 // Mock Radix Tooltip as it involves portals and complex interactions
 vi.mock("@radix-ui/themes", async (importOriginal) => {

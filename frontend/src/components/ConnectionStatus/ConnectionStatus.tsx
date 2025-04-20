@@ -1,6 +1,6 @@
 import React from "react";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./ConnectionStatus.module.css";
 
 interface ConnectionStatusProps {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Flex, Box, Text } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { formatTransferSpeed, formatStorageSize } from "../../utils/formatters";

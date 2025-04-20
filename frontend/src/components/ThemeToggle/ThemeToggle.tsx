@@ -3,7 +3,7 @@ import { IconButton, DropdownMenu, Flex, Text } from "@radix-ui/themes";
 import { useTheme } from "../../contexts/ThemeContext";
 import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { AutoThemeIcon } from "../icons/AutoThemeIcon";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from './ThemeToggle.module.css';
 
 /**

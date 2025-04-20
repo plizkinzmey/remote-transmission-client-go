@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, Checkbox } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./SelectAllFiles.module.css";
 
 export interface SelectAllFilesProps {

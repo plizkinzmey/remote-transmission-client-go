@@ -1,7 +1,7 @@
 import React from "react";
 import { Flex, Text } from "@radix-ui/themes";
 import { FolderIcon } from "@heroicons/react/24/outline";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./DownloadDirectoryInfo.module.css";
 
 export interface DownloadDirectoryInfoProps {

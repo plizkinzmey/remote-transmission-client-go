@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import React, { useState, useCallback } from 'react';
+import { useLocalization } from "@contexts/LocalizationContext";
 import { StatusFilter } from "../StatusFilter";
 import { StatusType } from "../../utils/torrentStatus";
 import { LoadingSpinner } from "../LoadingSpinner";
@@ -201,8 +201,8 @@ export const Header: React.FC<HeaderProps> = ({
             variant="soft"
             color="red"
             onClick={handleRemoveClick}
-            disabled={!hasSelectedTorrents || removeLoading || isReconnecting}
             aria-label={t("remove.title")}
+            disabled={!hasSelectedTorrents || removeLoading || isReconnecting}
             title={isReconnecting ? t("errors.needConnection") : t("remove.title")}
           >
             {removeLoading ? (
@@ -244,11 +244,10 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <Text size="1">
             {selectedTorrents.size > 0
-              ? t(
-                "torrents.selected",
+              ? t("torrents.selected", [
                 String(selectedTorrents.size),
                 String(filteredTorrents.length)
-              )
+              ])
               : t("torrents.selectAll")}
           </Text>
         </Flex>
@@ -269,14 +268,14 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       <DeleteDialog
-        mode="bulk"
+        open={showDeleteConfirmation}
+        mode={selectedTorrents.size > 1 ? "bulk" : "single"}
         count={selectedTorrents.size}
+        onCancel={() => setShowDeleteConfirmation(false)}
         onConfirm={(deleteData) => {
           onRemoveSelected(deleteData);
           setShowDeleteConfirmation(false);
         }}
-        onCancel={() => setShowDeleteConfirmation(false)}
-        open={showDeleteConfirmation}
       />
     </Box>
   );

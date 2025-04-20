@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, Select, TextField, Button, Flex } from "@radix-ui/themes";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import {
   GetDownloadPaths,
   ValidateDownloadPath,

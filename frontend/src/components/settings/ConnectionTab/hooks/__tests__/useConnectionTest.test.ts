@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi, MockedFunction } from "vitest";
 import { useConnectionTest } from "../useConnectionTest";
 import { ConnectionConfig } from "../../../../../App"; // Adjust path if needed
 import { TestConnection } from "../../../../../../wailsjs/go/main/App"; // Mock this
-import { useLocalization } from "../../../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 
 // Mock Wails Go function
 vi.mock("../../../../../../wailsjs/go/main/App", () => ({
@@ -11,7 +11,7 @@ vi.mock("../../../../../../wailsjs/go/main/App", () => ({
 }));
 
 // Mock useLocalization hook
-vi.mock("../../../../../contexts/LocalizationContext", () => ({
+vi.mock("@contexts/LocalizationContext", () => ({
   useLocalization: () => ({
     t: (key: string) => {
       const translations: { [key: string]: string } = {

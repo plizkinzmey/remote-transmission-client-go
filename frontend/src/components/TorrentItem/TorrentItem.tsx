@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, Flex, Box, Checkbox } from "@radix-ui/themes";
 import { DeleteDialog } from "../DeleteDialog";
 import { TorrentContent } from "../TorrentContent";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { TorrentItemHeader } from "./TorrentItemHeader";
 import { TorrentItemProgress } from "./TorrentItemProgress";
 import { TorrentItemStats } from "./TorrentItemStats";

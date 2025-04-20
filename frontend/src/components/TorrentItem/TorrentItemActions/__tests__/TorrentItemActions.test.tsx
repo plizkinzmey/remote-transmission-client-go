@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
 // Import from index file
 import { TorrentItemActions, TorrentItemActionsProps } from '..';
-import { useLocalization } from '../../../../contexts/LocalizationContext';
+import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from '../../../LoadingSpinner';
 import { SnailIcon } from '../../../icons/SnailIcon';
 import * as StatusUtils from '../../../../utils/torrentStatus';

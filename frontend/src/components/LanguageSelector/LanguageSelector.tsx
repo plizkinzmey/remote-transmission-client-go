@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { Select } from "@radix-ui/themes";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { CircleFlag } from "react-circle-flags";
 import { IconButton, DropdownMenu, Flex, Text } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import styles from "./LanguageSelector.module.css";
 

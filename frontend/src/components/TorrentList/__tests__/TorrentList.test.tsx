@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TorrentItem } from '../../TorrentItem';
 import { TorrentList } from '../TorrentList';
 import { Theme } from '@radix-ui/themes';
 import { useLocalization } from '@contexts/LocalizationContext';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { TorrentItemHeader } from '../TorrentItemHeader';
+import { TorrentItemHeader, TorrentItemHeaderProps } from '../TorrentItemHeader';
 import { Theme } from '@radix-ui/themes';
 import { useLocalization } from '@contexts/LocalizationContext';
 import * as Formatters from '../../../../utils/formatters';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { TorrentItemStats } from '../TorrentItemStats';
+import { TorrentItemStats, TorrentItemStatsProps } from '../TorrentItemStats';
 import { useLocalization } from '@contexts/LocalizationContext';
 import * as Formatters from '../../../../utils/formatters';
 

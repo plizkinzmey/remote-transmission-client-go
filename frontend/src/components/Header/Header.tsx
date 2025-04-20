@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocalization } from "@contexts/LocalizationContext";
 import { StatusFilter } from "../StatusFilter";
 import { StatusType } from "../../utils/torrentStatus";

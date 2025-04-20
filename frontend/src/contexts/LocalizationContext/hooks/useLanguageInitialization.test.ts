@@ -109,4 +109,103 @@ describe("useLanguageInitialization", () => {
     );
     expect(result.current.availableLanguages).toHaveLength(2);
   });
+
+  it("falls back to system language on initialization error", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Имитируем ошибку при загрузке конфига
+    (LoadConfig as any).mockRejectedValue(new Error("Config load failed"));
+    (GetAvailableLanguages as any).mockResolvedValue(["en", "ru"]);
+    // Системный язык должен успешно загрузиться
+    (GetSystemLanguage as any).mockResolvedValue("fr");
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Ожидаем, что язык установился в системный ('fr')
+    expect(result.current.currentLanguage).toBe("fr");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error initializing language:",
+      expect.any(Error)
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("falls back to 'en' on initialization and system language errors", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Имитируем ошибку при загрузке конфига
+    (LoadConfig as any).mockRejectedValue(new Error("Config load failed"));
+    (GetAvailableLanguages as any).mockResolvedValue(["en", "ru"]);
+    // Имитируем ошибку при получении системного языка
+    (GetSystemLanguage as any).mockRejectedValue(
+      new Error("System lang failed")
+    );
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Ожидаем, что язык установился в 'en' по умолчанию
+    expect(result.current.currentLanguage).toBe("en");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error initializing language:",
+      expect.any(Error)
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error getting system language:",
+      expect.any(Error)
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("falls back to system language when no available languages", async () => {
+    // Нет доступных языков
+    (GetAvailableLanguages as any).mockResolvedValue([]);
+    (LoadConfig as any).mockResolvedValue({});
+    // Системный язык должен успешно загрузиться
+    (GetSystemLanguage as any).mockResolvedValue("fr");
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Ожидаем, что язык установился в системный ('fr')
+    expect(result.current.currentLanguage).toBe("fr");
+    // Список доступных языков должен быть пуст (или дефолтный из catch в loadAvailableLanguages)
+    // В данном случае loadAvailableLanguages отработает и вернет пустой массив
+    expect(result.current.availableLanguages).toEqual([]);
+  });
+
+  it("falls back to 'en' when no available languages and system language fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Нет доступных языков
+    (GetAvailableLanguages as any).mockResolvedValue([]);
+    (LoadConfig as any).mockResolvedValue({});
+    // Имитируем ошибку при получении системного языка
+    (GetSystemLanguage as any).mockRejectedValue(
+      new Error("System lang failed")
+    );
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Ожидаем, что язык установился в 'en' по умолчанию
+    expect(result.current.currentLanguage).toBe("en");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error getting system language:",
+      expect.any(Error)
+    );
+    // Список доступных языков должен быть пуст
+    expect(result.current.availableLanguages).toEqual([]);
+    errorSpy.mockRestore();
+  });
 });

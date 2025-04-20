@@ -76,4 +76,34 @@ describe('useTranslations hook', () => {
 
         expect(GetTranslation).toHaveBeenCalledWith('x', 'en', []);
     });
+
+    it('logs and falls back when individual key fetch fails', async () => {
+        (GetAllTranslationKeys as any).mockResolvedValue(['fail.key']);
+        (GetTranslation as any).mockRejectedValueOnce(new Error('key fetch failed'));
+
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+        const { result } = renderHook(() => useTranslations('en'));
+        await act(async () => { });
+
+        // t должен вернуть ключ при ошибке и залогировать
+        expect(result.current.t('fail.key')).toBe('fail.key');
+        expect(errorSpy).toHaveBeenCalledWith(
+            `Failed to load translation for key: fail.key (en)`,
+            expect.any(Error)
+        );
+
+        errorSpy.mockRestore();
+    });
+
+    it('t returns empty on empty key', async () => {
+        (GetAllTranslationKeys as any).mockResolvedValue(['a']);
+        (GetTranslation as any).mockResolvedValueOnce('a-en');
+
+        const { result } = renderHook(() => useTranslations('en'));
+        await act(async () => { });
+
+        // На пустой ключ возвращаем ""
+        expect(result.current.t('')).toBe('');
+    });
 });

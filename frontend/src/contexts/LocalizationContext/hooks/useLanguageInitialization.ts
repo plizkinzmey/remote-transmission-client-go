@@ -34,8 +34,11 @@ export const useLanguageInitialization = () => {
   const initializeLanguage = useCallback(async () => {
     try {
       const config = await LoadConfig();
-      if (config?.language) {
+      const languages = await GetAvailableLanguages();
+      if (config?.language && languages.includes(config.language)) {
         setCurrentLanguage(config.language);
+      } else if (languages.length > 0) {
+        setCurrentLanguage(languages[0]);
       } else {
         try {
           const systemLang = await GetSystemLanguage();

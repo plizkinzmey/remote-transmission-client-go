@@ -5,17 +5,22 @@ import {
   GetAvailableLanguages,
   LoadConfig,
   GetSystemLanguage,
+  GetTranslation,
 } from "@wailsjs/go/main/App";
 
 vi.mock("@wailsjs/go/main/App", () => ({
   GetAvailableLanguages: vi.fn(),
   LoadConfig: vi.fn(),
   GetSystemLanguage: vi.fn(),
+  GetTranslation: vi.fn(),
 }));
 
 describe("useLanguageInitialization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (GetTranslation as any).mockImplementation((key: string, lang: string) =>
+      Promise.resolve(`${key}-${lang}`)
+    );
   });
 
   it("loads languages and config language", async () => {
@@ -42,10 +47,11 @@ describe("useLanguageInitialization", () => {
 
     const { result } = renderHook(() => useLanguageInitialization());
 
-    await act(async () => {});
-
     await waitFor(() => {
-      expect(result.current.currentLanguage).toBe("ru");
+      // Если конфиг пуст, хук должен выбрать ПЕРВЫЙ доступный язык ('en'),
+      // а не системный ('ru').
+      expect(result.current.currentLanguage).toBe("en");
+      expect(result.current.isLoading).toBe(false); // Убедимся, что загрузка завершена
     });
   });
 
@@ -81,5 +87,26 @@ describe("useLanguageInitialization", () => {
     });
 
     expect(result.current.currentLanguage).toBe("ru");
+  });
+
+  it("falls back to first language if config.language not in available languages", async () => {
+    (GetAvailableLanguages as any).mockResolvedValue(["en", "ru"]);
+    (LoadConfig as any).mockResolvedValue({ language: "de" }); // "de" нет в списке
+    (GetSystemLanguage as any).mockResolvedValue("ru");
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      // Сначала убедимся, что загрузка завершена
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Теперь проверяем состояние
+    expect(result.current.currentLanguage).toBe("en"); // Выбрали первый язык ('en')
+    // Проверяем, что оба языка загружены
+    expect(result.current.availableLanguages.map((l) => l.code)).toEqual(
+      expect.arrayContaining(["en", "ru"])
+    );
+    expect(result.current.availableLanguages).toHaveLength(2);
   });
 });

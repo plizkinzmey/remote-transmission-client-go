@@ -1,13 +1,14 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TorrentItemHeader, TorrentItemHeaderProps } from '..'; // Import from index
-import { useLocalization } from '../../../../contexts/LocalizationContext';
+import { describe, it, expect, vi } from 'vitest';
+import { TorrentItemHeader, TorrentItemHeaderProps } from '../TorrentItemHeader';
+import { Theme } from '@radix-ui/themes';
+import { useLocalization } from '@contexts/LocalizationContext';
 import * as Formatters from '../../../../utils/formatters';
 import * as StatusUtils from '../../../../utils/torrentStatus';
 
 // Mocks
-vi.mock('../../../../contexts/LocalizationContext');
+vi.mock('@contexts/LocalizationContext');
 vi.mock('../../../../utils/formatters');
 vi.mock('../../../../utils/torrentStatus');
 vi.mock('@radix-ui/themes', () => ({

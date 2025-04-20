@@ -1,12 +1,10 @@
 import React from 'react';
-// Add 'within' import
-import { render, screen } from '@testing-library/react'; // Removed 'within' as it's not needed for the corrected test
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TorrentList } from '../TorrentList';
-// Import TorrentItem directly for use with vi.mocked later
-// Correct the import path for TorrentItem
 import { TorrentItem } from '../../TorrentItem';
-import { useLocalization } from '../../../contexts/LocalizationContext';
+import { TorrentList } from '../TorrentList';
+import { Theme } from '@radix-ui/themes';
+import { useLocalization } from '@contexts/LocalizationContext';
 import { TorrentData as Torrent, TorrentListProps } from '../types'; // Assuming Torrent type is defined here. Added TorrentListProps
 
 // --- Mocks ---

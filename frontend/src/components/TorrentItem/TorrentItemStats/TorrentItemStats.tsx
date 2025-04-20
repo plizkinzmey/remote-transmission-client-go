@@ -1,6 +1,6 @@
 import React from "react";
 import { Flex, Text } from "@radix-ui/themes";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import { normalizeValue } from "../../../utils/formatters";
 import styles from "./TorrentItemStats.module.css";

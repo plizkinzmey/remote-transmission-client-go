@@ -1,6 +1,6 @@
 import React from "react";
 import { Flex, IconButton } from "@radix-ui/themes";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from "../../LoadingSpinner";
 import {
   isBlocked,

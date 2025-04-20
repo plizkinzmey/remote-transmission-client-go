@@ -1,7 +1,7 @@
 import React from "react";
 import { TextField, Flex, Text, Grid, Box, Button } from "@radix-ui/themes";
 import { ConnectionConfig } from "../../../App"; // Путь может измениться в зависимости от структуры
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { useConnectionTest } from "./hooks/useConnectionTest";
 import styles from "./ConnectionTab.module.css"; // Импорт стилей
 

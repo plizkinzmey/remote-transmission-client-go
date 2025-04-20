@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { Button, Flex } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { StatusFilterProps, StatusOption } from "./types";
 import styles from "./StatusFilter.module.css";
 

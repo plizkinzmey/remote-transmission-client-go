@@ -1,7 +1,7 @@
 import React from "react";
 import { TextField, Select, Flex, Text, Grid, Box } from "@radix-ui/themes";
 import { ConnectionConfig } from "../../../App";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./LimitsTab.module.css"; // Импорт стилей
 
 /**

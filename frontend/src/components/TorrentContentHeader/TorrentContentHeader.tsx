@@ -1,7 +1,7 @@
 import React from "react";
-import { Heading, IconButton } from "@radix-ui/themes";
+import { Dialog, Heading, IconButton } from "@radix-ui/themes";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./TorrentContentHeader.module.css";
 
 export interface TorrentContentHeaderProps {

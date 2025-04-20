@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TorrentData } from "../components/TorrentList";
-import { useLocalization } from "../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { ConnectionConfig, UIConfig, ConfigData } from "../App";
 import {
   GetTorrents,
@@ -44,8 +44,12 @@ const withTimeout = <T>(
 export function useTorrentData() {
   const { t, currentLanguage: languageState } = useLocalization();
   const [torrents, setTorrents] = useState<TorrentData[]>([]);
-  const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(null);
-  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(new Set());
+  const [sessionStats, setSessionStats] = useState<SessionStatsData | null>(
+    null
+  );
+  const [selectedTorrents, setSelectedTorrents] = useState<Set<number>>(
+    new Set()
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -142,7 +146,9 @@ export function useTorrentData() {
           const config: ConfigData = {
             ...savedConfig,
             theme: (savedConfig.theme || "light") as "light" | "dark" | "auto",
-            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as "KiB/s" | "MiB/s",
+            slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
+              | "KiB/s"
+              | "MiB/s",
           };
 
           setConfig(config);
@@ -282,7 +288,7 @@ export function useTorrentData() {
   const handleSettingsSave = async (connectionSettings: ConnectionConfig) => {
     try {
       setIsSettingsSaving(true);
-      
+
       // При первом запуске у нас нет текущего конфига, используем значения по умолчанию
       // но сохраняем текущий язык если он есть
       const uiSettings: UIConfig = {
@@ -298,7 +304,7 @@ export function useTorrentData() {
 
       // Инициализация с новыми настройками
       await Initialize(JSON.stringify(fullConfig));
-      
+
       // Сброс состояния
       setError(null);
       setIsReconnecting(false);

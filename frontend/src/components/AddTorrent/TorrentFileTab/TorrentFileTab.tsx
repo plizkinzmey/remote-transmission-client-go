@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Box, Flex, Text } from "@radix-ui/themes";
 import { FolderIcon } from "@heroicons/react/24/outline";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { ReadFile } from "../../../../wailsjs/go/main/App";
 import "./TorrentFileTab.css";
 

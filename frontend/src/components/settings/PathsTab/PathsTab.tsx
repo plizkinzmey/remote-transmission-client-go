@@ -12,7 +12,7 @@ import {
   IconButton,
   Tooltip,
 } from "@radix-ui/themes";
-import { useLocalization } from "../../../contexts/LocalizationContext"; // Corrected path
+import { useLocalization } from "@contexts/LocalizationContext";
 import { TrashIcon, StarIcon } from "@heroicons/react/24/outline";
 import { usePathsManagement } from "./hooks/usePathsManagement";
 import styles from "./PathsTab.module.css"; // Импортируем CSS модуль

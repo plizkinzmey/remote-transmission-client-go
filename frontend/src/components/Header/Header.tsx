@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from "react";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import React from 'react';
+import { useLocalization } from "@contexts/LocalizationContext";
 import { StatusFilter } from "../StatusFilter";
 import { StatusType } from "../../utils/torrentStatus";
 import { LoadingSpinner } from "../LoadingSpinner";

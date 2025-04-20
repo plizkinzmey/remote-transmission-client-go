@@ -6,7 +6,7 @@ import {
   SavePathsChanges,
   GetPathsState,
 } from "../../../../../wailsjs/go/main/App"; // Corrected path
-import { useLocalization } from "../../../../contexts/LocalizationContext"; // Corrected path
+import { useLocalization } from "@contexts/LocalizationContext";
 
 /**
  * Props for the usePathsManagement hook.

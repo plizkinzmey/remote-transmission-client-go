@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
-import { TorrentItemStats, TorrentItemStatsProps } from '..';
-import { useLocalization } from '../../../../contexts/LocalizationContext';
+import { describe, it, expect, vi } from 'vitest';
+import { TorrentItemStats } from '../TorrentItemStats';
+import { useLocalization } from '@contexts/LocalizationContext';
 import * as Formatters from '../../../../utils/formatters';
 
 // Mocks
-vi.mock('../../../../contexts/LocalizationContext');
+vi.mock('@contexts/LocalizationContext');
 vi.mock('../../../../utils/formatters');
 vi.mock('@radix-ui/themes', () => ({
     Flex: ({ children, 'data-testid': dataTestId, ...props }: any) => <div data-testid={dataTestId} {...props}>{children}</div>,

@@ -1,6 +1,6 @@
 import React from "react";
 import { Flex, Text, Badge } from "@radix-ui/themes";
-import { useLocalization } from "../../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { formatRatio } from "../../../utils/formatters";
 import styles from "./TorrentItemHeader.module.css";
 import { getStatusData } from "../../../utils/torrentStatus";

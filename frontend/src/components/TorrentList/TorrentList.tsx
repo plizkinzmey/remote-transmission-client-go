@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { TorrentItem } from "../TorrentItem";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { TorrentListProps } from "./types";
 import styles from "./TorrentList.module.css";

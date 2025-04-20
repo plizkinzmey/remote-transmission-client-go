@@ -1,7 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Header } from '../Header';
-import { LocalizationProvider } from '../../../contexts/LocalizationContext';
+import { LocalizationProvider } from '@contexts/LocalizationContext';
 import { Theme } from '@radix-ui/themes';
 
 describe('Компонент Header', () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useLocalization } from "../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { FileNode } from "../types/FileTree";
 import { GetTorrentFiles, SetFilesWanted } from "../../wailsjs/go/main/App";
 import { buildFileTree } from "../utils/fileTree/buildFileTree";

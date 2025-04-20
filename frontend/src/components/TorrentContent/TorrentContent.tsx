@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Box, Text, ScrollArea, Dialog } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { TorrentContentHeader } from "../TorrentContentHeader";
 import { DownloadDirectoryInfo } from "../DownloadDirectoryInfo";

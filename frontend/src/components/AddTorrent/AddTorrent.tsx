@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, Button, Tabs, Flex, Box, Portal } from "@radix-ui/themes";
-import { useLocalization } from "../../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import { TorrentUrlTab } from "./TorrentUrlTab/TorrentUrlTab";
 import { TorrentFileTab } from "./TorrentFileTab/TorrentFileTab";

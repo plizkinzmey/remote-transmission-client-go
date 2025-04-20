@@ -7,7 +7,7 @@ import {
   Box,
   Text,
 } from '@radix-ui/themes';
-import { useLocalization } from '../../contexts/LocalizationContext';
+import { useLocalization } from '@contexts/LocalizationContext';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { ConnectionTab } from './ConnectionTab';
 import { LimitsTab } from './LimitsTab';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TorrentData } from "../components/TorrentList";
-import { useLocalization } from "../contexts/LocalizationContext";
+import { useLocalization } from "@contexts/LocalizationContext";
 import {
   StartTorrents,
   StopTorrents,

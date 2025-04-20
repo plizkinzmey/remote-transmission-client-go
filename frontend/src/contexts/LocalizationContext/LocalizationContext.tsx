@@ -5,13 +5,8 @@ import { useLanguageInitialization } from './hooks/useLanguageInitialization';
 import type { LocalizationContextType, LocalizationProviderProps } from './types';
 import styles from './LocalizationContext.module.css';
 
-export const LocalizationContext = createContext<LocalizationContextType>({
-    t: (key) => key,
-    currentLanguage: 'en',
-    setLanguage: () => Promise.resolve(),
-    availableLanguages: [{ code: 'en', name: 'English' }],
-    isLoading: true,
-});
+// Инициализируем контекст как undefined
+export const LocalizationContext = createContext<LocalizationContextType | undefined>(undefined);
 
 export const useLocalization = () => {
     const context = useContext(LocalizationContext);

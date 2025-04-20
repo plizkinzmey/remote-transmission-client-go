@@ -1,28 +1,36 @@
 import { useCallback, useState } from "react";
 import { GetTranslation, GetAllTranslationKeys } from "@wailsjs/go/main/App";
-import type { TranslationCache } from "../types";
+import type { TranslationsCache } from "../types";
 
 export interface UseTranslationsResult {
-  t: (key: string, ...params: any[]) => string;
-  allTranslations: TranslationCache;
+  t: (
+    key: string,
+    params?: string | string[] | Record<string, string>
+  ) => string;
+  allTranslations: TranslationsCache;
   loadAllTranslations: (languages: string[]) => Promise<void>;
 }
 
 export function useTranslations(
   currentLanguage: string
 ): UseTranslationsResult {
-  const [allTranslations, setAllTranslations] = useState<TranslationCache>({});
+  const [allTranslations, setAllTranslations] = useState<TranslationsCache>({});
 
   const t = useCallback(
-    (key: string, ...params: any[]): string => {
-      const translations = allTranslations[currentLanguage] || {};
-      const translation = translations[key];
+    (
+      key: string,
+      params?: string | string[] | Record<string, string>
+    ): string => {
+      if (!key) return "";
 
+      const translations = allTranslations[currentLanguage] || {};
+      let translation = translations[key];
+
+      // Если перевод не найден, запрашиваем его и возвращаем ключ как fallback
       if (!translation) {
-        // If translation is not in cache, request it and add to cache
-        GetTranslation(key, currentLanguage, params)
+        GetTranslation(key, currentLanguage, [])
           .then((fetchedTranslation) => {
-            if (fetchedTranslation !== key) {
+            if (fetchedTranslation && fetchedTranslation !== key) {
               setAllTranslations((prev) => ({
                 ...prev,
                 [currentLanguage]: {
@@ -36,19 +44,30 @@ export function useTranslations(
             console.error(`Failed to get translation for key: ${key}`, error);
           });
 
-        return key;
+        translation = key;
       }
 
-      // If parameters were passed, replace placeholders
-      if (params.length > 0) {
-        let result = translation;
-        const paramsArray = Array.isArray(params[0]) ? params[0] : params;
-        paramsArray.forEach((param, index) => {
-          result = result.replace(`{${index}}`, String(param));
-        });
-        return result;
+      if (!params) {
+        return translation;
       }
-      return translation;
+
+      // Если params - строка, просто заменяем {0}
+      if (typeof params === "string") {
+        return translation.replace("{0}", params);
+      }
+
+      // Если params - массив, заменяем {0}, {1}, etc.
+      if (Array.isArray(params)) {
+        return params.reduce((result, param, index) => {
+          return result.replace(`{${index}}`, param);
+        }, translation);
+      }
+
+      // Если params - объект, заменяем {key}
+      return Object.entries(params).reduce(
+        (result, [paramKey, value]) => result.replace(`{${paramKey}}`, value),
+        translation
+      );
     },
     [currentLanguage, allTranslations]
   );
@@ -56,7 +75,7 @@ export function useTranslations(
   const loadAllTranslations = useCallback(
     async (languages: string[]): Promise<void> => {
       try {
-        const newTranslations: TranslationCache = {};
+        const newTranslations: TranslationsCache = {};
 
         await Promise.all(
           languages.map(async (langCode) => {
@@ -94,12 +113,16 @@ export function useTranslations(
                   );
 
                   translationsForChunk.forEach(({ key, translation }) => {
-                    langTranslations[key] = translation;
+                    if (translation && translation !== key) {
+                      langTranslations[key] = translation;
+                    }
                   });
                 })
               );
 
-              newTranslations[langCode] = langTranslations;
+              if (Object.keys(langTranslations).length > 0) {
+                newTranslations[langCode] = langTranslations;
+              }
             } catch (error) {
               console.error(
                 `Failed to load translations for language: ${langCode}`,
@@ -109,7 +132,10 @@ export function useTranslations(
           })
         );
 
-        setAllTranslations(newTranslations);
+        setAllTranslations((prevTranslations) => ({
+          ...prevTranslations,
+          ...newTranslations,
+        }));
       } catch (error) {
         console.error("Failed to preload all translations:", error);
       }

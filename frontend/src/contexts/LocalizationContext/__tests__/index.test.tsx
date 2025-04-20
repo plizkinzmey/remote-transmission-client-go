@@ -6,20 +6,19 @@ import {
     useLanguageInitialization
 } from '..';
 
-// Мокаем зависимости для хуков
-vi.mock('../hooks/useTranslations', () => ({
+// Мокаем root-модуль вместо отдельных хуков
+vi.mock('..', () => ({
+    LocalizationProvider: vi.fn(),
+    useLocalization: vi.fn(),
     useTranslations: vi.fn(),
-}));
-
-vi.mock('../hooks/useLanguageInitialization', () => ({
     useLanguageInitialization: vi.fn(),
+    // Если есть другие экспорты, которые нужны для тестов, их тоже нужно добавить
 }));
 
 // Мокаем компонент LoadingSpinner
-// @ts-expect-error: TS не распознает перегрузку vi.mock с 3 аргументами, но Vitest работает
 vi.mock('@components/LoadingSpinner', () => ({
     LoadingSpinner: () => null
-}), { virtual: true });
+}));
 
 describe('LocalizationContext exports', () => {
     it('should export LocalizationProvider', () => {

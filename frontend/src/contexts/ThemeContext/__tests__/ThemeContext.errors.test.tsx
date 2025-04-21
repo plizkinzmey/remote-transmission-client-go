@@ -53,12 +53,14 @@ describe("ThemeContext Error Handling", () => {
         );
 
         expect(screen.getByTestId("current-theme")).toHaveTextContent("auto");
-        expect(console.error).toHaveBeenCalledWith("Error accessing localStorage:", getItemError);
+        // Обновляем ожидаемое сообщение для ошибки чтения
+        expect(console.error).toHaveBeenCalledWith("Error accessing localStorage during initial state calculation:", getItemError);
 
         act(() => {
             fireEvent.click(screen.getByTestId("set-dark"));
         });
         expect(screen.getByTestId("current-theme")).toHaveTextContent("dark");
+        // Обновляем ожидаемое сообщение и ошибку для ошибки записи
         expect(console.error).toHaveBeenCalledWith("Error saving theme to localStorage:", setItemError);
     });
 

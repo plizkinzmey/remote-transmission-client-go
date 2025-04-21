@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { ThemeProvider, useTheme, ThemeType } from "../index";
+import { ThemeProvider, useTheme, ThemeType, getInitialThemeState } from "../index"; // Импортируем getInitialThemeState
 import {
     localStorageMock,
     matchMediaMock, // Убедитесь, что все необходимые моки и хелперы импортируются
@@ -91,5 +91,49 @@ describe("ThemeContext Initialization & Basic Functionality", () => {
             expect(localStorageMock.setItem).toHaveBeenCalledWith("theme", "auto");
         });
         expect(localStorageMock.getItem("theme")).toBe("auto");
+    });
+});
+
+// Добавляем новый describe блок для тестов getInitialThemeState
+describe("getInitialThemeState Utility Function", () => {
+    it("returns 'auto' when window is undefined (SSR environment)", () => {
+        const originalWindow = global.window;
+        // Удаляем window, чтобы симулировать SSR
+        Object.defineProperty(global, 'window', {
+            value: undefined,
+            writable: true // Делаем свойство перезаписываемым
+        });
+
+        expect(getInitialThemeState()).toBe("auto");
+
+        // Восстанавливаем window
+        Object.defineProperty(global, 'window', {
+            value: originalWindow,
+            writable: true
+        });
+    });
+
+    it("returns theme from localStorage if available and valid", () => {
+        localStorageMock.setItem("theme", "dark");
+        expect(getInitialThemeState()).toBe("dark");
+        localStorageMock.clear(); // Очищаем мок после теста
+    });
+
+    it("returns 'auto' if localStorage theme is invalid", () => {
+        localStorageMock.setItem("theme", "invalid-value");
+        expect(getInitialThemeState()).toBe("auto");
+        localStorageMock.clear();
+    });
+
+    it("returns 'auto' if localStorage access throws an error", () => {
+        const originalGetItem = localStorageMock.getItem;
+        localStorageMock.getItem = vi.fn(() => {
+            throw new Error("Access Denied");
+        });
+
+        expect(getInitialThemeState()).toBe("auto");
+
+        localStorageMock.getItem = originalGetItem; // Восстанавливаем
+        localStorageMock.clear();
     });
 });

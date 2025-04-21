@@ -73,6 +73,29 @@ export const getSystemTheme = (): "light" | "dark" => {
 };
 
 /**
+ * Determines the initial theme state based on localStorage and window availability.
+ * @returns {ThemeType} The initial theme type.
+ */
+export const getInitialThemeState = (): ThemeType => {
+    if (typeof window === "undefined") {
+        console.debug("Window is not available during initial state calculation, defaulting to 'auto' theme.");
+        return "auto";
+    }
+
+    try {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "auto") {
+            return savedTheme;
+        }
+        console.debug("No valid theme found in localStorage, defaulting to 'auto'.");
+        return "auto";
+    } catch (e) {
+        console.error("Error accessing localStorage during initial state calculation:", e);
+        return "auto";
+    }
+};
+
+/**
  * Provides the theme state and management functions to its children.
  * Handles theme persistence in localStorage and system theme detection ('auto' mode).
  * Integrates with Radix UI's `<RadixTheme>` component.
@@ -82,20 +105,7 @@ export const getSystemTheme = (): "light" | "dark" => {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
-    const [themeState, setThemeState] = useState<ThemeType>(() => {
-        if (typeof window === "undefined") return "auto";
-
-        try {
-            const savedTheme = localStorage.getItem("theme");
-            if (savedTheme === "light" || savedTheme === "dark" || savedTheme === "auto") {
-                return savedTheme;
-            }
-            return "auto";
-        } catch (e) {
-            console.error("Error accessing localStorage:", e);
-            return "auto";
-        }
-    });
+    const [themeState, setThemeState] = useState<ThemeType>(getInitialThemeState);
 
     // State to store the current actual system theme
     const [systemTheme, setSystemTheme] = useState(getSystemTheme);

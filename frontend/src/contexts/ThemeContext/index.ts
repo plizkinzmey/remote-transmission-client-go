@@ -8,5 +8,6 @@ export {
   useTheme,
   ThemeContext,
   getSystemTheme,
+  getInitialThemeState, // Добавляем экспорт getInitialThemeState
 } from "./ThemeContext";
 export type { ThemeType, ThemeContextProps } from "./ThemeContext";

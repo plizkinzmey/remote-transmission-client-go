@@ -4,13 +4,13 @@ import { render, act, waitFor } from "@testing-library/react";
 import App from "../../../App";
 import { useTorrentData } from "../../../hooks/useTorrentData";
 import { useModals } from "../../../hooks/useModals";
-import { useFilteredTorrents } from "../../../hooks/useFilteredTorrents";
+import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
 import { useBulkOperations } from "../../../hooks/useBulkOperations";
 
 // Мокируем хуки
 vi.mock("../../../hooks/useTorrentData");
 vi.mock("../../../hooks/useModals");
-vi.mock("../../../hooks/useFilteredTorrents");
+vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
 vi.mock("../../../hooks/useBulkOperations");
 
 // Мокируем контекст темы и компоненты для упрощения тестов

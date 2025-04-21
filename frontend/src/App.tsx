@@ -11,7 +11,7 @@ import { useBulkOperations } from "./hooks/useBulkOperations";
 import { DragDropProvider } from "./components/DragDropProvider";
 import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useModals } from "./hooks/useModals";
-import { useFilteredTorrents } from "./hooks/useFilteredTorrents";
+import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
 import "./App.css";
 import "./styles/theme.css";
 import styles from "./styles/App.module.css";

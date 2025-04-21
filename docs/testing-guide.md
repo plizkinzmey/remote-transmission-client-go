@@ -13,6 +13,9 @@ This guide describes the principles and practices for testing frontend component
     - [CSS Modules](#css-modules)
     - [External Dependencies](#external-dependencies)
     - [Wails API and Go Functions](#wails-api-and-go-functions)
+    - [Vitest Mocks: порядок и импорт хуков](#vitest-mocks-порядок-и-импорт-хуков)
+    - [Отладка хуков и моков](#отладка-хуков-и-моков)
+    - [Пример теста для пользовательского хука с моками](#пример-теста-для-пользовательского-хука-с-моками)
   - [Test Naming](#test-naming)
   - [Selectors in Tests](#selectors-in-tests)
     - [Preferred selectors (in order of priority):](#preferred-selectors-in-order-of-priority)
@@ -35,6 +38,7 @@ This guide describes the principles and practices for testing frontend component
     - [1. CSS Module Issues](#1-css-module-issues)
     - [2. Re-rendering Issues](#2-re-rendering-issues)
     - [3. React Context Issues](#3-react-context-issues)
+    - [4. Vitest, React Testing Library и порядок моков](#4-vitest-react-testing-library-и-порядок-моков)
   - [Testing File Operations](#testing-file-operations)
     - [Mocking FileReader](#mocking-filereader)
   - [Testing Browser APIs](#testing-browser-apis)
@@ -180,6 +184,70 @@ vi.mock("../../wailsjs/go/main/App", () => ({
   // ...
 }));
 ```
+
+### Vitest Mocks: порядок и импорт хуков
+
+> **Важно:**  
+> Vitest применяет моки (`vi.mock`) только к тем модулям, которые импортируются после вызова `vi.mock`.  
+> Если вы импортируете хук или компонент до объявления моков, моки не будут работать!
+
+**Правильный порядок:**
+
+```typescript
+// 1. ВСЕ vi.mock и setupCommonMocks
+vi.mock("@wailsjs/go/main/App", () => ({ GetTorrentFiles: vi.fn(), SetFilesWanted: vi.fn() }));
+// ...другие моки...
+import { setupCommonMocks } from "./useTorrentFiles.setup";
+
+// 2. Только после этого импортируйте хук или компонент
+import { useTorrentFiles } from "../useTorrentFiles";
+```
+
+**Неправильно:**
+
+```typescript
+import { useTorrentFiles } from "../useTorrentFiles"; // ❌ импорт ДО vi.mock — моки не сработают!
+vi.mock("@wailsjs/go/main/App", ...);
+```
+
+**Рекомендация:**  
+- Всегда импортируйте тестируемый хук/компонент после всех vi.mock и setupCommonMocks.
+- Не импортируйте хук/компонент в других файлах, которые могут быть загружены раньше (например, в helpers).
+
+---
+
+### Отладка хуков и моков
+
+- Если тесты не видят мок, добавьте временно `console.log` в сам хук и в моки, чтобы убедиться, что они реально вызываются.
+- Если асинхронный тест "висит" на ожидании, проверьте, что мок возвращает ожидаемые данные (например, массив файлов, а не undefined).
+- После изменения моков перезапускайте Vitest полностью (не в режиме watch).
+
+---
+
+### Пример теста для пользовательского хука с моками
+
+```typescript
+// filepath: src/components/MyComponent/__tests__/useMyHook.test.ts
+import { describe, it, expect } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { setupCommonMocks, mockApiCall } from "./useMyHook.setup";
+
+// ВСЕ vi.mock и setupCommonMocks ДО импорта хука!
+import { useMyHook } from "../useMyHook";
+
+describe("useMyHook", () => {
+  setupCommonMocks();
+
+  it("loads data on mount", async () => {
+    mockApiCall.mockResolvedValue([{ id: 1, name: "test" }]);
+    const { result, waitForNextUpdate } = renderHook(() => useMyHook());
+    await waitForNextUpdate();
+    expect(result.current.data.length).toBe(1);
+  });
+});
+```
+
+---
 
 ## Test Naming
 
@@ -525,6 +593,23 @@ render(
 );
 ```
 
+### 4. Vitest, React Testing Library и порядок моков
+
+1. **Моки не работают:**  
+   - Проверьте, что все vi.mock идут до импорта тестируемого модуля.
+   - Перезапустите Vitest, если меняли порядок импортов.
+
+2. **fileTree всегда пустой в хуке:**  
+   - Проверьте, что мок возвращает массив, а не undefined.
+   - Проверьте, что buildFileTree возвращает дерево, а не пустой массив.
+   - Добавьте временно console.log в хук для отладки.
+
+3. **Тесты "висят" на waitFor:**  
+   - Проверьте, что асинхронные моки возвращают ожидаемые значения.
+   - Используйте waitForNextUpdate для хуков, если нужно дождаться useEffect.
+
+---
+
 ## Testing File Operations
 
 ### Mocking FileReader
@@ -692,6 +777,21 @@ it('cleans up on unmount', () => {
      return <Component onClick={handleClick} />;
      ```
    - This creates a stable function reference that coverage tools and tests can reliably track.
+
+7. **Test Edge Cases and Empty States**:
+   - **Empty Data**: Ensure components and hooks behave correctly when receiving empty arrays, null, or undefined where data is expected. Test initial states before data is loaded.
+     ```typescript
+     it('handles empty data gracefully', async () => {
+       mockApiCall.mockResolvedValue([]); // API returns empty array
+       const { result } = renderHook(() => useMyHook());
+       await waitForNextUpdate();
+       expect(result.current.data).toEqual([]);
+       expect(screen.queryByTestId('item-list')).toBeNull();
+       expect(screen.getByText('No items found.')).toBeInTheDocument();
+     });
+     ```
+   - **Boundary Values**: Test with minimum/maximum allowed values, zero, negative numbers (if applicable).
+   - **Invalid Inputs**: Test how the code handles unexpected or invalid input types or formats.
 
 ## Testing React.useState Mocking
 

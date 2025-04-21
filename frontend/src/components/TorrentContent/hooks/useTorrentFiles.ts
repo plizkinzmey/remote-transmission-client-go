@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocalization } from "@contexts/LocalizationContext";
-import { FileNode } from "../types/FileTree";
-import { GetTorrentFiles, SetFilesWanted } from "../../wailsjs/go/main/App";
-import { buildFileTree } from "../utils/fileTree/buildFileTree";
-import { collectFileIds } from "../utils/fileTree/collectFileIds";
-import { updateNodesWanted } from "../utils/fileTree/updateNodesWanted";
+import { FileNode } from "types/FileTree"; // Corrected path based on baseUrl
+import { GetTorrentFiles, SetFilesWanted } from "@wailsjs/go/main/App";
+import { buildFileTree } from "@utils/fileTree/buildFileTree"; // Corrected path
+import { collectFileIds } from "@utils/fileTree/collectFileIds"; // Corrected path
+import { updateNodesWanted } from "@utils/fileTree/updateNodesWanted"; // Corrected path
 
 /**
  * Хук для работы с файлами торрента
@@ -24,21 +24,37 @@ export const useTorrentFiles = (torrentId: number) => {
    * Обновляет состояние чекбоксов на основе дерева файлов
    */
   const updateAllCheckedState = useCallback((nodes: FileNode[]): void => {
-    let allWanted = true;
-    let anyWanted = false;
+    let allFilesWanted = true;
+    let anyFileWanted = false;
+    let hasFiles = false; // Флаг, что в дереве вообще есть файлы
 
     const checkNode = (node: FileNode): void => {
-      if (!node.children) {
-        if (node.Wanted) anyWanted = true;
-        else allWanted = false;
-        return;
+      if (node.isDirectory) {
+        if (node.children) {
+          node.children.forEach(checkNode);
+        }
+      } else {
+        hasFiles = true;
+        if (node.Wanted) {
+          anyFileWanted = true;
+        } else {
+          allFilesWanted = false;
+        }
       }
-      node.children.forEach(checkNode);
     };
 
     nodes.forEach(checkNode);
-    setAllChecked(allWanted);
-    setIndeterminate(anyWanted && !allWanted);
+
+    if (!hasFiles) {
+      setAllChecked(true);
+      setIndeterminate(false);
+      return;
+    }
+
+    const newAllChecked = allFilesWanted;
+    const newIndeterminate = anyFileWanted && !allFilesWanted;
+    setAllChecked(newAllChecked);
+    setIndeterminate(newIndeterminate);
   }, []);
 
   /**
@@ -93,7 +109,7 @@ export const useTorrentFiles = (torrentId: number) => {
 
     const collectAllFiles = (nodes: FileNode[]) => {
       nodes.forEach((node) => {
-        if (!node.isDirectory && node.ID >= 0) {
+        if (!node.isDirectory && node.ID !== undefined && node.ID >= 0) {
           allFiles.push(node.ID);
         } else if (node.children) {
           collectAllFiles(node.children);
@@ -103,35 +119,53 @@ export const useTorrentFiles = (torrentId: number) => {
 
     collectAllFiles(fileTree);
 
+    if (allFiles.length === 0) {
+      console.warn("toggleAll called with no files to toggle.");
+      return;
+    }
+
     try {
       await SetFilesWanted(torrentId, allFiles, newWanted);
       const updateAllNodes = (nodes: FileNode[]): FileNode[] => {
         return nodes.map((node) => ({
           ...node,
           Wanted: newWanted,
+          indeterminate: node.isDirectory ? false : undefined,
           children: node.children ? updateAllNodes(node.children) : undefined,
         }));
       };
 
       setFileTree((prev) => {
         const newTree = updateAllNodes(prev);
-        setAllChecked(newWanted);
-        setIndeterminate(false);
+        updateAllCheckedState(newTree);
         return newTree;
       });
+      setError(null);
     } catch (err) {
       console.error("Failed to update files:", err);
       setError(t("errors.failedToUpdateFiles", String(err)));
     }
-  }, [torrentId, fileTree, allChecked, indeterminate, t]);
+  }, [
+    torrentId,
+    fileTree,
+    allChecked,
+    indeterminate,
+    t,
+    updateAllCheckedState,
+  ]);
 
   /**
    * Переключает состояние развертывания узла
    */
   const toggleExpand = useCallback((node: FileNode) => {
+    // Не делаем ничего, если узел не является директорией
+    if (!node.isDirectory) {
+      return;
+    }
+
     const toggleNodeExpanded = (nodes: FileNode[]): FileNode[] => {
       return nodes.map((n) => {
-        if (n === node) {
+        if (n === node && n.isDirectory) {
           return { ...n, expanded: !n.expanded };
         }
         if (n.children) {

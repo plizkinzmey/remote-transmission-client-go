@@ -7,6 +7,7 @@ import React, {
     useMemo,
 } from "react";
 import { Theme as RadixTheme } from "@radix-ui/themes";
+import { themeCleanup } from "./themeCleanup";
 // import { LogDebug, LogError } from "../../../wailsjs/runtime";
 
 /**
@@ -134,15 +135,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
                 mediaQuery.addEventListener("change", handleSystemThemeChange);
                 console.debug("Added system theme change listener (addEventListener).");
                 return () => {
-                    mediaQuery?.removeEventListener("change", handleSystemThemeChange);
-                    console.debug("Removed system theme change listener (removeEventListener).");
+                    if (mediaQuery) {
+                        themeCleanup(mediaQuery, handleSystemThemeChange);
+                    }
                 };
             } else if (mediaQuery.addListener) {
                 mediaQuery.addListener(handleSystemThemeChange);
                 console.debug("Added system theme change listener (addListener - deprecated).");
                 return () => {
-                    mediaQuery?.removeListener(handleSystemThemeChange);
-                    console.debug("Removed system theme change listener (removeListener - deprecated).");
+                    if (mediaQuery) {
+                        themeCleanup(mediaQuery, handleSystemThemeChange);
+                    }
                 };
             }
         } catch (error) {
@@ -151,15 +154,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
         return () => {
             if (mediaQuery) {
-                try {
-                    if (mediaQuery.removeEventListener) {
-                        mediaQuery.removeEventListener("change", handleSystemThemeChange);
-                    } else if (mediaQuery.removeListener) {
-                        mediaQuery.removeListener(handleSystemThemeChange);
-                    }
-                } catch (cleanupError) {
-                    console.error("Error removing theme change listener:", cleanupError);
-                }
+                themeCleanup(mediaQuery, handleSystemThemeChange);
             }
         };
     }, [handleSystemThemeChange]);

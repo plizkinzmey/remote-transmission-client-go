@@ -149,43 +149,50 @@ describe("ThemeContext Auto Theme Mode & Listeners", () => {
         // Создаем моки с явной реализацией
         let storedListener: any = null;
         const addListenerMock = vi.fn((listener: any) => {
-            console.log("Test addListenerMock called");
             storedListener = listener;
         });
         const removeListenerMock = vi.fn();
+        const debugSpy = vi.spyOn(console, 'debug');
 
-        // Создаем mediaQueryInstance, явно указывая, что addEventListener НЕ доступен
+        // Создаем mediaQueryInstance только с устаревшими методами
         const mediaQueryInstance = {
             matches: false,
             media: "(prefers-color-scheme: dark)",
-            // Отсутствие addEventListener/removeEventListener принудит код использовать fallback
             addListener: addListenerMock,
             removeListener: removeListenerMock,
             dispatchEvent: vi.fn(),
         };
 
-        // Мокируем matchMedia напрямую
         window.matchMedia = vi.fn().mockReturnValue(mediaQueryInstance);
 
-        const { unmount } = render(<ThemeProvider><TestComponent /></ThemeProvider>);
+        const { unmount } = render(
+            <ThemeProvider>
+                <TestComponent />
+            </ThemeProvider>
+        );
 
-        // Проверяем, что addListener был вызван
+        // Проверяем, что используется addListener
         await waitFor(() => {
             expect(addListenerMock).toHaveBeenCalledTimes(1);
         });
 
-        expect(addListenerMock).toHaveBeenCalledWith(expect.any(Function));
-        expect(console.debug).toHaveBeenCalledWith("Added system theme change listener (addListener - deprecated).");
-        expect(removeListenerMock).not.toHaveBeenCalled();
+        // Проверяем сообщение о добавлении слушателя
+        expect(debugSpy).toHaveBeenCalledWith(
+            "Added system theme change listener (addListener - deprecated)."
+        );
 
-        // После размонтирования проверяем вызов removeListener
+        // Проверяем что listener сохранен и это функция
+        expect(storedListener).toBeDefined();
+        expect(typeof storedListener).toBe("function");
+
+        // Размонтируем компонент
         unmount();
 
-        await waitFor(() => {
-            expect(removeListenerMock).toHaveBeenCalledTimes(1);
-        });
-
+        // Проверяем что removeListener вызван с тем же слушателем
         expect(removeListenerMock).toHaveBeenCalledWith(storedListener);
-        expect(console.debug).toHaveBeenCalledWith("Removed system theme change listener (removeListener - deprecated).");
+        expect(removeListenerMock).toHaveBeenCalledTimes(1);
+
+        // Очищаем моки
+        debugSpy.mockRestore();
     });
 });

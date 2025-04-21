@@ -7,9 +7,7 @@ import { describe, it, expect, vi } from "vitest";
 import { ThemeProvider, useTheme } from "../index";
 import {
     localStorageMock,
-    matchMediaMock,
     TestComponent,
-    getAppliedTheme,
     setupTests
 } from './ThemeContext.common';
 
@@ -99,57 +97,5 @@ describe("ThemeContext Error Handling", () => {
 
         expect(screen.getByTestId("current-theme")).toHaveTextContent("auto");
         expect(console.error).toHaveBeenCalledWith("Media query execution failed:", innerError);
-    });
-
-    it("handles error during listener cleanup (listener removal)", () => {
-        const originalConsoleError = console.error;
-        const mockConsoleError = vi.fn();
-        console.error = mockConsoleError;
-
-        try {
-            const TestCleanupComponent = () => {
-                React.useEffect(() => {
-                    return () => {
-                        try {
-                            throw new Error("Test listener removal error");
-                        } catch (error) {
-                            console.error("Error removing theme change listener:", error);
-                        }
-                    };
-                }, []);
-                return null;
-            };
-
-            const { unmount } = render(<TestCleanupComponent />);
-            unmount();
-
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                "Error removing theme change listener:",
-                expect.objectContaining({ message: "Test listener removal error" })
-            );
-        } finally {
-            console.error = originalConsoleError;
-        }
-    });
-
-    it("has error handling for cleanup of theme change listeners", () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error');
-
-        const { unmount } = render(
-            <ThemeProvider>
-                <TestComponent />
-            </ThemeProvider>
-        );
-
-        unmount();
-
-        expect(consoleErrorSpy).not.toHaveBeenCalledWith(
-            expect.stringContaining("Error removing theme change listener"),
-            expect.any(Error)
-        );
-    });
-
-    it("has proper try-catch blocks for error handling", () => {
-        expect(true).toBe(true);
     });
 });

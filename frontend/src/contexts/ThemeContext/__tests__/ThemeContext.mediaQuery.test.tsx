@@ -104,6 +104,36 @@ describe("ThemeContext MediaQuery Handling", () => {
             errorSpy.mockRestore();
         });
 
+        it("handles getSystemTheme error when matchMedia throws error", () => {
+            const errorSpy = vi.spyOn(console, 'error');
+
+            // Создаем объект с ошибкой matches
+            const faultyMediaQuery = {
+                get matches() {
+                    throw new Error("Media query execution error");
+                },
+                media: "(prefers-color-scheme: dark)",
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            };
+
+            window.matchMedia = vi.fn().mockReturnValue(faultyMediaQuery);
+
+            render(
+                <ThemeProvider>
+                    <TestComponent />
+                </ThemeProvider>
+            );
+
+            // Проверяем правильное сообщение об ошибке для внутреннего try-catch
+            expect(errorSpy).toHaveBeenCalledWith(
+                "Media query execution failed:",
+                expect.any(Error)
+            );
+
+            errorSpy.mockRestore();
+        });
+
         it("catches error in removeEventListener cleanup (coverage 156,158-159,161-162)", () => {
             const errorSpy = vi.spyOn(console, 'error');
             const cleanupError = new Error("removeEventListener cleanup error");

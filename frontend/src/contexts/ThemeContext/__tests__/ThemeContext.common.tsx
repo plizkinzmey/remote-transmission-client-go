@@ -138,12 +138,26 @@ export const setupTests = () => {
     beforeEach(() => {
         localStorageMock.clear();
         mediaQueryListener = null;
-        // Создаем мок с addEventListener по умолчанию
-        window.matchMedia = vi.fn().mockImplementation(() => matchMediaMock(false));
-        Object.defineProperty(window, "localStorage", { value: localStorageMock, writable: true, configurable: true });
+
+        // Сохраняем оригинальный matchMedia
+        const originalMatchMedia = window.matchMedia;
+
+        // Создаем базовый мок
+        const mockMatchMedia = vi.fn().mockImplementation(() => matchMediaMock(false));
+        window.matchMedia = mockMatchMedia;
+
+        Object.defineProperty(window, "localStorage", {
+            value: localStorageMock,
+            writable: true,
+            configurable: true
+        });
+
         vi.spyOn(console, 'error').mockImplementation(() => { });
         vi.spyOn(console, 'debug').mockImplementation(() => { });
-        // Не мокируем console.log и console.warn для отладки
+
+        return () => {
+            window.matchMedia = originalMatchMedia;
+        };
     });
 
     afterEach(() => {

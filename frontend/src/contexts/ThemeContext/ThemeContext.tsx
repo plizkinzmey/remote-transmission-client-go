@@ -41,23 +41,31 @@ export const ThemeContext = createContext<ThemeContextProps | undefined>(
  */
 const getSystemTheme = (): "light" | "dark" => {
     try {
-        if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+        if (typeof window === "undefined") {
+            console.debug("window is not defined, defaulting to 'light' theme.");
+            return "light";
+        }
+
+        if (typeof window.matchMedia !== "function") {
             console.debug("window.matchMedia not available, defaulting to 'light' theme.");
             return "light";
         }
 
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
         try {
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-            if (mediaQuery && typeof mediaQuery.matches === 'boolean') {
-                return mediaQuery.matches ? "dark" : "light";
+            if (!mediaQuery || typeof mediaQuery.matches !== 'boolean') {
+                console.warn("Could not determine system theme from media query, defaulting to 'light'.");
+                return "light";
             }
-            console.warn("Could not determine system theme from media query, defaulting to 'light'.");
-            return "light";
+            return mediaQuery.matches ? "dark" : "light";
         } catch (innerError) {
+            // Для ошибок при доступе к matches
             console.error("Media query execution failed:", innerError);
             return "light";
         }
     } catch (error) {
+        // Для ошибок создания mediaQuery
         console.error("Error getting system theme:", error);
         return "light";
     }

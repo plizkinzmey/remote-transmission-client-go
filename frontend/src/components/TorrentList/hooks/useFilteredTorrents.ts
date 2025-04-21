@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { TorrentData } from "../components/TorrentList";
-import { StatusType } from "../utils/torrentStatus";
+import { TorrentData } from "../types"; // Corrected relative path
+import { StatusType } from "@utils/torrentStatus"; // Corrected path using alias
 
 /**
  * Хук для управления фильтрацией торрентов

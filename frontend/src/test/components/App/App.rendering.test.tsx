@@ -4,13 +4,13 @@ import { render, screen } from "@testing-library/react";
 import App from "../../../App";
 import { useTorrentData } from "../../../hooks/useTorrentData";
 import { useModals } from "../../../hooks/useModals";
-import { useFilteredTorrents } from "../../../hooks/useFilteredTorrents";
+import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
 import { useBulkOperations } from "../../../hooks/useBulkOperations";
 
 // Мокаем все хуки, используемые в App
 vi.mock("../../../hooks/useTorrentData");
 vi.mock("../../../hooks/useModals");
-vi.mock("../../../hooks/useFilteredTorrents");
+vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
 vi.mock("../../../hooks/useBulkOperations");
 
 // Мок для контекста темы

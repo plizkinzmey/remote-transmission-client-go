@@ -104,7 +104,15 @@ describe('TorrentList', () => {
     });
 
     it('renders "no torrents found" message when search yields no results', () => {
-        render(<TorrentList {...defaultProps} searchTerm="nonexistent" />);
+        // Test now assumes the parent component handles filtering.
+        // Pass an empty array to simulate no results after filtering.
+        // Create a fresh props object for this test
+        const props = {
+            ...defaultProps,
+            torrents: [],
+            searchTerm: "nonexistent"
+        };
+        render(<TorrentList {...props} />);
         expect(screen.getByTestId('torrent-list-empty')).toBeInTheDocument();
         expect(screen.getByText('torrents.noTorrentsFound')).toBeInTheDocument();
         // Update usage of mockT to translateMock
@@ -138,9 +146,19 @@ describe('TorrentList', () => {
     });
 
     it('filters torrents based on searchTerm', () => {
-        render(<TorrentList {...defaultProps} searchTerm="Torrent B" />);
+        // This test is no longer relevant as TorrentList doesn't filter internally.
+        // The parent component using useFilteredTorrents is responsible for filtering.
+        // We'll test that it renders the torrents it receives.
+        const filtered = [mockTorrents[1]]; // Simulate parent filtering for "Torrent B"
+        // Create a fresh props object for this test
+        const props = {
+            ...defaultProps,
+            torrents: filtered,
+            searchTerm: "Torrent B"
+        };
+        render(<TorrentList {...props} />);
 
-        // Check that TorrentItem was called exactly once
+        // Check that TorrentItem was called exactly once for the filtered torrent
         expect(torrentItemMock).toHaveBeenCalledTimes(1);
 
         // Check that it was called with the props for 'Torrent B'
@@ -150,16 +168,6 @@ describe('TorrentList', () => {
                 name: 'Torrent B',
             }),
             {} // Second argument for context
-        );
-
-        // Verify items A and C were NOT rendered by checking they weren't called
-        expect(torrentItemMock).not.toHaveBeenCalledWith(
-            expect.objectContaining({ id: 1 }),
-            {}
-        );
-        expect(torrentItemMock).not.toHaveBeenCalledWith(
-            expect.objectContaining({ id: 3 }),
-            {}
         );
 
         // Verify the rendered output for the filtered item using DOM query

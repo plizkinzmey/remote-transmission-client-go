@@ -49,11 +49,9 @@ export default defineConfig({
         "src/test/",
         "wailsjs/",
         "**/*.d.ts",
-        "**/*.test.tsx",
+        "**/__tests__/**", // <-- Исключаем все содержимое папок __tests__
         "src/main.tsx",
         "src/vite-env.d.ts",
-        "src/contexts/ThemeContext/__tests__/ThemeContext.common.tsx", // Исключаем общий файл для тестов ThemeContext
-        "src/contexts/ThemeContext/__tests__/mocks.tsx", // Исключаем моки для тестов ThemeContext
         "**/types.ts", // Все файлы с именем types.ts
         "src/types/**/*.ts", // Все файлы в директории src/types
       ],

@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import App from "../../../App";
 import { useTorrentData } from "../../../hooks/useTorrentData";
-import { useFilteredTorrents } from "../../../hooks/useFilteredTorrents";
+import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
 
 // Мокируем хуки
 vi.mock("../../../hooks/useTorrentData");
-vi.mock("../../../hooks/useFilteredTorrents");
+vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
 
 // Мокируем компоненты, которые не тестируются в этом файле
 vi.mock("../../../components/Header", () => ({

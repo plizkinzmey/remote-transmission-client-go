@@ -9,8 +9,8 @@ import { MockLocalizationProvider } from "../../../test/mocks/localization-conte
 import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 // Удаляем GetTorrentDownloadDirectory, SetFilesWanted
 // Импортируем хуки для мокирования
-import { useTorrentFiles } from "../../../hooks/useTorrentFiles";
-import { useDownloadDirectory } from "../../../hooks/useDownloadDirectory";
+import { useTorrentFiles } from "../hooks/useTorrentFiles";
+import { useDownloadDirectory } from "../hooks/useDownloadDirectory";
 // Предполагаемый путь к типу FileNode
 import { FileNode } from "../../../types/FileTree";
 // Добавляем Dialog из Radix для мокирования
@@ -22,8 +22,8 @@ vi.mock("../../../../wailsjs/go/main/App", () => ({
 }));
 
 // Мок хуков
-vi.mock("../../../hooks/useTorrentFiles");
-vi.mock("../../../hooks/useDownloadDirectory");
+vi.mock("../hooks/useTorrentFiles");
+vi.mock("../hooks/useDownloadDirectory");
 
 // Мок дочерних компонентов для упрощения тестов взаимодействия
 vi.mock("../../SelectAllFiles", () => ({
@@ -70,7 +70,7 @@ vi.mock("../../FileNode", () => {
                     {node.Name}
                 </button>
             ) : (
-                 <span>{node.Name}</span>
+                <span>{node.Name}</span>
             )}
             {/* Рекурсивный рендеринг дочерних узлов */}
             {node.isDirectory && node.expanded && node.children && (
@@ -116,10 +116,10 @@ vi.mock("@radix-ui/themes", async () => {
                 <div data-testid="torrent-content-dialog" {...props}>{children}</div>
             ),
             // Добавляем моки для других частей Dialog, если они используются неявно
-             Trigger: ({ children }: any) => <div data-testid="mock-dialog-trigger">{children}</div>,
-             Close: ({ children }: any) => <div data-testid="mock-dialog-close">{children}</div>,
-             Title: ({ children }: any) => <div data-testid="mock-dialog-title">{children}</div>,
-             Description: ({ children }: any) => <div data-testid="mock-dialog-description">{children}</div>,
+            Trigger: ({ children }: any) => <div data-testid="mock-dialog-trigger">{children}</div>,
+            Close: ({ children }: any) => <div data-testid="mock-dialog-close">{children}</div>,
+            Title: ({ children }: any) => <div data-testid="mock-dialog-title">{children}</div>,
+            Description: ({ children }: any) => <div data-testid="mock-dialog-description">{children}</div>,
         },
         // Мокаем ScrollArea, если он мешает
         ScrollArea: ({ children, ...props }: any) => <div {...props}>{children}</div>,
@@ -306,7 +306,7 @@ describe("TorrentContent", () => {
 
         // Перерендериваем с open=false
         rerender(
-             <TestThemeProvider>
+            <TestThemeProvider>
                 <MockLocalizationProvider>
                     <TorrentContent
                         id={123}
@@ -367,7 +367,7 @@ describe("TorrentContent", () => {
             // Присваиваем локальной переменной для помощи TypeScript
             const handler = capturedOnOpenChange;
             act(() => {
-                 handler(false); // Вызываем локальную переменную
+                handler(false); // Вызываем локальную переменную
             });
         } else {
             throw new Error("capturedOnOpenChange was not defined in the mock");
@@ -378,13 +378,13 @@ describe("TorrentContent", () => {
         mockOnClose.mockClear();
         // Имитируем вызов onOpenChange с true (открытие - не должно вызывать onClose)
         if (capturedOnOpenChange) {
-             // Присваиваем локальной переменной для помощи TypeScript
-             const handler = capturedOnOpenChange;
-             act(() => {
+            // Присваиваем локальной переменной для помощи TypeScript
+            const handler = capturedOnOpenChange;
+            act(() => {
                 handler(true); // Вызываем локальную переменную
-             });
+            });
         } else {
-             throw new Error("capturedOnOpenChange was not defined in the mock");
+            throw new Error("capturedOnOpenChange was not defined in the mock");
         }
         expect(mockOnClose).not.toHaveBeenCalled();
     });

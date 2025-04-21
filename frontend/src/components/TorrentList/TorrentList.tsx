@@ -25,13 +25,8 @@ export const TorrentList: React.FC<TorrentListProps> = ({
 }) => {
     const { t } = useLocalization();
 
-    // Мемоизированная фильтрация торрентов по поисковому запросу
-    const filteredTorrents = useMemo(() =>
-        torrents.filter((torrent) =>
-            torrent.Name.toLowerCase().includes(searchTerm.toLowerCase())
-        ),
-        [torrents, searchTerm]
-    );
+    // Предполагаем, что родительский компонент теперь фильтрует торренты и передает отфильтрованный список
+    const filteredTorrents = torrents;
 
     // Функция для рендеринга содержимого списка
     const renderContent = () => {

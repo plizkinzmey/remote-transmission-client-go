@@ -6,8 +6,8 @@ import { TorrentContentHeader } from "../TorrentContentHeader";
 import { DownloadDirectoryInfo } from "../DownloadDirectoryInfo";
 import { SelectAllFiles } from "../SelectAllFiles";
 import { FileNode as FileNodeComponent } from "../FileNode";
-import { useTorrentFiles } from "../../hooks/useTorrentFiles";
-import { useDownloadDirectory } from "../../hooks/useDownloadDirectory";
+import { useTorrentFiles } from "./hooks/useTorrentFiles";
+import { useDownloadDirectory } from "./hooks/useDownloadDirectory";
 import styles from "./TorrentContent.module.css";
 
 export interface TorrentContentProps {

@@ -48,11 +48,11 @@ export function useBulkOperations(
   >(new Map());
   const [error, setError] = useState<string | null>(null);
 
-  const isRunningTorrent = (status: string): boolean => {
+  const isRunningTorrent = useCallback((status: string): boolean => {
     const isDownloading = status === "downloading";
     const isSeeding = status === "seeding";
     return isDownloading || isSeeding;
-  };
+  }, []);
 
   // Effect for monitoring bulk operations
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { GetTorrentDownloadDirectory } from "../../wailsjs/go/main/App";
+import { GetTorrentDownloadDirectory } from "@wailsjs/go/main/App";
 
 /**
  * Хук для получения директории загрузки торрента

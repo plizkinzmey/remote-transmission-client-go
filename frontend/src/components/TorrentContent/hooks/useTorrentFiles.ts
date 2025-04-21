@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocalization } from "@contexts/LocalizationContext";
-import { FileNode } from "../types/FileTree";
-import { GetTorrentFiles, SetFilesWanted } from "../../wailsjs/go/main/App";
-import { buildFileTree } from "../utils/fileTree/buildFileTree";
-import { collectFileIds } from "../utils/fileTree/collectFileIds";
-import { updateNodesWanted } from "../utils/fileTree/updateNodesWanted";
+import { FileNode } from "types/FileTree"; // Corrected path based on baseUrl
+import { GetTorrentFiles, SetFilesWanted } from "@wailsjs/go/main/App";
+import { buildFileTree } from "@utils/fileTree/buildFileTree"; // Corrected path
+import { collectFileIds } from "@utils/fileTree/collectFileIds"; // Corrected path
+import { updateNodesWanted } from "@utils/fileTree/updateNodesWanted"; // Corrected path
 
 /**
  * Хук для работы с файлами торрента

@@ -42,4 +42,32 @@ describe("useTorrentFiles Hook - Toggle Expand", () => {
         updatedNode = findNodeByPath(result.current.fileTree, "folder");
         expect(updatedNode?.expanded).toBe(false); // Должно стать false
     });
+
+    it("should not change state when toggling expand on a node without children", async () => {
+        // Настройка мока для этого теста
+        mockBuildFileTree.mockImplementationOnce(() => JSON.parse(JSON.stringify(mockFileTreeInitial)));
+
+        const { result } = renderHook(() => useTorrentFiles(torrentId));
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        const fileNode = findNodeByPath(result.current.fileTree, "file1.txt");
+        expect(fileNode).not.toBeNull();
+        if (!fileNode) return;
+        expect(fileNode.expanded).toBeUndefined(); // Файлы не имеют expanded
+
+        const initialTreeState = JSON.stringify(result.current.fileTree);
+
+        act(() => {
+            // Пытаемся "развернуть" файл
+            result.current.toggleExpand(fileNode);
+        });
+
+        // Проверяем, что состояние дерева не изменилось
+        const finalTreeState = JSON.stringify(result.current.fileTree);
+        expect(finalTreeState).toBe(initialTreeState);
+
+        // Проверяем сам узел - expanded не должен появиться
+        const updatedFileNode = findNodeByPath(result.current.fileTree, "file1.txt");
+        expect(updatedFileNode?.expanded).toBeUndefined();
+    });
 });

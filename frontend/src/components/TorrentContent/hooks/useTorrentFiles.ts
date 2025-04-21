@@ -218,9 +218,16 @@ export const useTorrentFiles = (torrentId: number) => {
    * Переключает состояние развертывания узла
    */
   const toggleExpand = useCallback((node: FileNode) => {
+    // Не делаем ничего, если узел не является директорией
+    if (!node.isDirectory) {
+      return;
+    }
+
     const toggleNodeExpanded = (nodes: FileNode[]): FileNode[] => {
       return nodes.map((n) => {
-        if (n === node) {
+        // Добавляем проверку на isDirectory здесь тоже, на всякий случай,
+        // хотя основная проверка выше должна предотвратить вызов для файлов.
+        if (n === node && n.isDirectory) {
           return { ...n, expanded: !n.expanded };
         }
         if (n.children) {

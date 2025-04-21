@@ -778,6 +778,21 @@ it('cleans up on unmount', () => {
      ```
    - This creates a stable function reference that coverage tools and tests can reliably track.
 
+7. **Test Edge Cases and Empty States**:
+   - **Empty Data**: Ensure components and hooks behave correctly when receiving empty arrays, null, or undefined where data is expected. Test initial states before data is loaded.
+     ```typescript
+     it('handles empty data gracefully', async () => {
+       mockApiCall.mockResolvedValue([]); // API returns empty array
+       const { result } = renderHook(() => useMyHook());
+       await waitForNextUpdate();
+       expect(result.current.data).toEqual([]);
+       expect(screen.queryByTestId('item-list')).toBeNull();
+       expect(screen.getByText('No items found.')).toBeInTheDocument();
+     });
+     ```
+   - **Boundary Values**: Test with minimum/maximum allowed values, zero, negative numbers (if applicable).
+   - **Invalid Inputs**: Test how the code handles unexpected or invalid input types or formats.
+
 ## Testing React.useState Mocking
 
 In some cases, you need to mock React.useState to test specific state conditions:

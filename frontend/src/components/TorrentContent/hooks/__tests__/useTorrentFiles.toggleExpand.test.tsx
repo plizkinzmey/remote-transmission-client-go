@@ -15,7 +15,8 @@ import { useTorrentFiles } from "../useTorrentFiles";
 describe("useTorrentFiles Hook - Toggle Expand", () => {
     setupCommonMocks(); // Применяет beforeEach с vi.resetAllMocks() и моками по умолчанию
 
-    it("should toggle expand state of a node", async () => {
+    it("should toggle expand state of a top-level node with children", async () => {
+        // Переименовали для ясности
         // Настройка мока для этого теста
         mockBuildFileTree.mockImplementationOnce(() => JSON.parse(JSON.stringify(mockFileTreeInitial)));
 
@@ -40,6 +41,37 @@ describe("useTorrentFiles Hook - Toggle Expand", () => {
             result.current.toggleExpand(updatedNode!);
         });
         updatedNode = findNodeByPath(result.current.fileTree, "folder");
+        expect(updatedNode?.expanded).toBe(false); // Должно стать false
+    });
+
+    it("should toggle expand state of a nested node with children", async () => {
+        // Настройка мока для этого теста
+        mockBuildFileTree.mockImplementationOnce(() => JSON.parse(JSON.stringify(mockFileTreeInitial)));
+
+        const { result } = renderHook(() => useTorrentFiles(torrentId));
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        const nestedNodePath = "folder/subfolder";
+        const nodeToExpand = findNodeByPath(result.current.fileTree, nestedNodePath);
+        expect(nodeToExpand).not.toBeNull();
+        if (!nodeToExpand) return;
+        expect(nodeToExpand.expanded).toBeUndefined(); // Начальное состояние
+
+        // Первый вызов - развернуть
+        act(() => {
+            result.current.toggleExpand(nodeToExpand);
+        });
+        let updatedNode = findNodeByPath(result.current.fileTree, nestedNodePath);
+        expect(updatedNode?.expanded).toBe(true); // Должно стать true
+        // Проверим, что родительский узел не изменился (кроме ссылки на children)
+        const parentNode = findNodeByPath(result.current.fileTree, "folder");
+        expect(parentNode?.expanded).toBeUndefined();
+
+        // Второй вызов - свернуть
+        act(() => {
+            result.current.toggleExpand(updatedNode!);
+        });
+        updatedNode = findNodeByPath(result.current.fileTree, nestedNodePath);
         expect(updatedNode?.expanded).toBe(false); // Должно стать false
     });
 

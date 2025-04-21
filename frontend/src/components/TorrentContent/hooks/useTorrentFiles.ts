@@ -231,9 +231,10 @@ export const useTorrentFiles = (torrentId: number) => {
           return { ...n, expanded: !n.expanded };
         }
         if (n.children) {
+          // Эта ветка выполняется, когда узел n НЕ является целевым, но у него есть дети
           return { ...n, children: toggleNodeExpanded(n.children) };
         }
-        return n;
+        return n; // Узел не целевой и без детей
       });
     };
 

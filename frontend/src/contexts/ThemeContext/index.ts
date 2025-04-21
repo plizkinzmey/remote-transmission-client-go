@@ -3,5 +3,10 @@
  * @module contexts/ThemeContext
  */
 
-export { ThemeProvider, useTheme, ThemeContext } from "./ThemeContext";
+export {
+  ThemeProvider,
+  useTheme,
+  ThemeContext,
+  getSystemTheme,
+} from "./ThemeContext";
 export type { ThemeType, ThemeContextProps } from "./ThemeContext";

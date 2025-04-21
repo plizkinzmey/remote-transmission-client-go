@@ -39,34 +39,35 @@ export const ThemeContext = createContext<ThemeContextProps | undefined>(
  * Defaults to 'light' in case of errors or non-browser environments.
  * @returns {'light' | 'dark'} The detected system theme.
  */
-const getSystemTheme = (): "light" | "dark" => {
+export const getSystemTheme = (): "light" | "dark" => {
+    // Проверяем наличие window
+    if (typeof window === "undefined" || !window) {
+        console.debug("Window is not available, defaulting to 'light' theme.");
+        return "light";
+    }
+
+    // Проверяем наличие matchMedia
+    if (typeof window.matchMedia !== "function") {
+        console.debug("window.matchMedia not available, defaulting to 'light' theme.");
+        return "light";
+    }
+
+    let mediaQuery: MediaQueryList;
     try {
-        if (typeof window === "undefined") {
-            console.debug("window is not defined, defaulting to 'light' theme.");
-            return "light";
-        }
-
-        if (typeof window.matchMedia !== "function") {
-            console.debug("window.matchMedia not available, defaulting to 'light' theme.");
-            return "light";
-        }
-
-        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-        try {
-            if (!mediaQuery || typeof mediaQuery.matches !== 'boolean') {
-                console.warn("Could not determine system theme from media query, defaulting to 'light'.");
-                return "light";
-            }
-            return mediaQuery.matches ? "dark" : "light";
-        } catch (innerError) {
-            // Для ошибок при доступе к matches
-            console.error("Media query execution failed:", innerError);
-            return "light";
-        }
+        mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     } catch (error) {
-        // Для ошибок создания mediaQuery
-        console.error("Error getting system theme:", error);
+        console.error("Error creating media query:", error);
+        return "light";
+    }
+
+    try {
+        if (!mediaQuery || typeof mediaQuery.matches !== 'boolean') {
+            console.warn("Invalid media query result, defaulting to 'light'.");
+            return "light";
+        }
+        return mediaQuery.matches ? "dark" : "light";
+    } catch (matchesError) {
+        console.error("Error accessing media query matches:", matchesError);
         return "light";
     }
 };

@@ -4,7 +4,7 @@ import './mocks'; // Импортируем моки первыми
 import React from "react";
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { ThemeProvider, useTheme } from "../index";
+import { ThemeProvider, useTheme, getSystemTheme } from "../index";
 import {
     localStorageMock,
     TestComponent,
@@ -96,6 +96,136 @@ describe("ThemeContext Error Handling", () => {
         );
 
         expect(screen.getByTestId("current-theme")).toHaveTextContent("auto");
-        expect(console.error).toHaveBeenCalledWith("Media query execution failed:", innerError);
+        expect(console.error).toHaveBeenCalledWith("Error accessing media query matches:", innerError);
+    });
+
+    it("handles undefined window gracefully", () => {
+        const debugSpy = vi.spyOn(console, 'debug');
+        const originalWindow = global.window;
+
+        // Создаем расширенное минимальное окружение
+        const mockWindow = {
+            document: {
+                createElement: () => ({
+                    style: {},
+                    classList: { add: vi.fn(), remove: vi.fn() }
+                }),
+                documentElement: {
+                    style: {},
+                    classList: { add: vi.fn(), remove: vi.fn() }
+                }
+            },
+            HTMLIFrameElement: function () { },
+            event: { type: null },  // Добавляем type для event
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+            getComputedStyle: () => ({
+                getPropertyValue: () => ''
+            })
+        };
+
+        // Переопределяем window
+        Object.defineProperty(global, 'window', {
+            value: mockWindow,
+            writable: true,
+            configurable: true
+        });
+
+        // Проверяем getSystemTheme напрямую
+        expect(getSystemTheme()).toBe('light');
+
+        render(
+            <ThemeProvider>
+                <TestComponent />
+            </ThemeProvider>
+        );
+
+        expect(debugSpy).toHaveBeenCalledWith("window.matchMedia not available, defaulting to 'light' theme.");
+        expect(screen.getByTestId("current-theme")).toBeInTheDocument();
+
+        // Восстанавливаем window
+        Object.defineProperty(global, 'window', {
+            value: originalWindow,
+            writable: true,
+            configurable: true
+        });
+
+        debugSpy.mockRestore();
+    });
+
+    describe("getSystemTheme edge cases", () => {
+        let originalWindow: Window;
+        let debugSpy: any;
+        let errorSpy: any;
+        let warnSpy: any;
+
+        beforeEach(() => {
+            originalWindow = global.window;
+            debugSpy = vi.spyOn(console, 'debug');
+            errorSpy = vi.spyOn(console, 'error');
+            warnSpy = vi.spyOn(console, 'warn');
+        });
+
+        afterEach(() => {
+            Object.defineProperty(global, 'window', {
+                value: originalWindow,
+                writable: true,
+                configurable: true
+            });
+            debugSpy.mockRestore();
+            errorSpy.mockRestore();
+            warnSpy.mockRestore();
+        });
+
+        it("handles completely undefined window", () => {
+            Object.defineProperty(global, 'window', { value: undefined });
+            expect(getSystemTheme()).toBe('light');
+            expect(debugSpy).toHaveBeenCalledWith("Window is not available, defaulting to 'light' theme.");
+        });
+
+        it("handles null window", () => {
+            Object.defineProperty(global, 'window', { value: null });
+            expect(getSystemTheme()).toBe('light');
+            expect(debugSpy).toHaveBeenCalledWith("Window is not available, defaulting to 'light' theme.");
+        });
+
+        it("handles window without matchMedia", () => {
+            const mockWindow = {
+                document: { createElement: vi.fn() },
+            };
+            Object.defineProperty(global, 'window', { value: mockWindow });
+            expect(getSystemTheme()).toBe('light');
+            expect(debugSpy).toHaveBeenCalledWith("window.matchMedia not available, defaulting to 'light' theme.");
+        });
+
+        it("handles matchMedia creation error", () => {
+            const mockWindow = {
+                matchMedia: vi.fn(() => { throw new Error('matchMedia creation failed'); }),
+            };
+            Object.defineProperty(global, 'window', { value: mockWindow });
+            expect(getSystemTheme()).toBe('light');
+            expect(errorSpy).toHaveBeenCalledWith("Error creating media query:", expect.any(Error));
+        });
+
+        it("handles invalid media query result", () => {
+            const mockWindow = {
+                matchMedia: vi.fn(() => ({ matches: undefined })),
+            };
+            Object.defineProperty(global, 'window', { value: mockWindow });
+            expect(getSystemTheme()).toBe('light');
+            expect(warnSpy).toHaveBeenCalledWith("Invalid media query result, defaulting to 'light'.");
+        });
+
+        it("handles error accessing matches property", () => {
+            const mockWindow = {
+                matchMedia: vi.fn(() => ({
+                    get matches() { throw new Error('matches access failed'); }
+                })),
+            };
+            Object.defineProperty(global, 'window', { value: mockWindow });
+            expect(getSystemTheme()).toBe('light');
+            expect(errorSpy).toHaveBeenCalledWith("Error accessing media query matches:", expect.any(Error));
+        });
     });
 });

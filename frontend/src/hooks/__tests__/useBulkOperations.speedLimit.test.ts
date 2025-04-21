@@ -9,6 +9,7 @@ import {
   mockConfig,
   setupMocks,
   mockSetTorrentSpeedLimit, // Импортируем нужный мок
+  mockUseLocalization, // Импортируем для проверки t()
 } from "./mocks/useBulkOperations.mocks"; // Импорт общих моков
 
 describe("useBulkOperations - handleSetSpeedLimit", () => {
@@ -150,5 +151,40 @@ describe("useBulkOperations - handleSetSpeedLimit", () => {
     expect(mockSetTorrentSpeedLimit).toHaveBeenCalledWith([1], true);
     expect(mockRefreshTorrents).not.toHaveBeenCalled();
     expect(result.current.error).toBe(`errors.failedToSetSpeedLimit:${error}`);
+  });
+
+  it("should set error and reset state on SetTorrentSpeedLimit failure", async () => {
+    const selected = new Set([1, 2]);
+    const errorMessage = "API Error Speed Limit";
+    mockSetTorrentSpeedLimit.mockRejectedValue(new Error(errorMessage)); // Мокируем ошибку
+    const mockT = vi.fn((key) => key); // Мокируем функцию t
+    mockUseLocalization.mockReturnValue({ t: mockT });
+
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+
+    await act(async () => {
+      await result.current.handleSetSpeedLimit(true); // isSlowMode = true
+    });
+
+    // Проверяем установку ошибки
+    expect(result.current.error).toContain("errors.failedToSetSpeedLimit");
+    expect(mockT).toHaveBeenCalledWith(
+      "errors.failedToSetSpeedLimit",
+      expect.stringContaining(errorMessage)
+    );
+
+    // Проверяем сброс состояния в finally
+    expect(result.current.bulkOperations.speedLimit).toBe(false);
+    // Дополнительно можно проверить lastBulkAction
+
+    // Убедимся, что refresh не вызывался после ошибки
+    expect(mockRefreshTorrents).not.toHaveBeenCalled();
   });
 });

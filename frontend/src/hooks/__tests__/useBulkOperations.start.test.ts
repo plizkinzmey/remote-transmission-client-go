@@ -10,6 +10,7 @@ import {
   mockConfig,
   setupMocks,
   mockStartTorrents,
+  mockUseLocalization, // Импортируем для проверки t()
 } from "./mocks/useBulkOperations.mocks";
 
 describe("useBulkOperations - handleStartSelected", () => {
@@ -41,6 +42,41 @@ describe("useBulkOperations - handleStartSelected", () => {
   });
 
   it("should set error and reset state on StartTorrents failure", async () => {
-    // ...existing code...
+    const selected = new Set([1]); // T1 is stopped
+    const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
+      selected.has(t.ID)
+    );
+    const errorMessage = "API Error Start";
+    mockStartTorrents.mockRejectedValue(new Error(errorMessage)); // Мокируем ошибку
+    const mockT = vi.fn((key) => key); // Мокируем функцию t
+    mockUseLocalization.mockReturnValue({ t: mockT });
+
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        initialTorrents,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+
+    await act(async () => {
+      await result.current.handleStartSelected();
+    });
+
+    // Проверяем установку ошибки
+    expect(result.current.error).toContain("errors.failedToStartTorrents");
+    expect(mockT).toHaveBeenCalledWith(
+      "errors.failedToStartTorrents",
+      expect.stringContaining(errorMessage)
+    );
+
+    // Проверяем сброс состояния
+    expect(result.current.bulkOperations.start).toBe(false);
+    // Дополнительно можно проверить, что lastBulkAction и lastTorrentStates сброшены,
+    // но это внутреннее состояние, и сброс флага start косвенно это подтверждает.
+
+    // Убедимся, что refresh не вызывался
+    expect(mockRefreshTorrents).not.toHaveBeenCalled();
   });
 });

@@ -77,7 +77,7 @@ export function useBulkOperations(
       return;
     }
 
-    let operationCompleted = false;
+    let shouldResetFlag = false;
 
     if (lastBulkAction === "start") {
       const allStarted = selectedTorrentsArray.every((id) => {
@@ -97,7 +97,7 @@ export function useBulkOperations(
           (torrent.Status === "downloading" || torrent.Status === "seeding")
         );
       });
-      operationCompleted = allStarted;
+      shouldResetFlag = allStarted;
     } else if (lastBulkAction === "stop") {
       const allStopped = selectedTorrentsArray.every((id) => {
         const torrent = torrents.find((t) => t.ID === id);
@@ -110,10 +110,10 @@ export function useBulkOperations(
 
         return previousState !== torrent.Status && torrent.Status === "stopped";
       });
-      operationCompleted = allStopped;
+      shouldResetFlag = allStopped;
     }
 
-    if (operationCompleted) {
+    if (shouldResetFlag) {
       setBulkOperations((prev) => ({ ...prev, [lastBulkAction]: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());

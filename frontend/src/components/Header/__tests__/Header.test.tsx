@@ -3,7 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Header } from '../Header';
 import { LocalizationProvider } from '@contexts/LocalizationContext';
-import { Theme } from '@radix-ui/themes';
+// Импортируем ThemeProvider из контекста темы
+import { ThemeProvider } from '@contexts/ThemeContext';
+import { Theme as RadixTheme } from '@radix-ui/themes'; // Оставляем RadixTheme для стилизации
 
 describe('Компонент Header', () => {
   const defaultProps = {
@@ -32,17 +34,23 @@ describe('Компонент Header', () => {
 
   const renderHeader = (props = {}) => {
     return render(
-      <Theme>
-        <LocalizationProvider>
-          <Header {...defaultProps} {...props} />
-        </LocalizationProvider>
-      </Theme>
+      // Оборачиваем в наш ThemeProvider
+      <ThemeProvider>
+        {/* Оставляем RadixTheme для стилей */}
+        <RadixTheme>
+          <LocalizationProvider>
+            <Header {...defaultProps} {...props} />
+          </LocalizationProvider>
+        </RadixTheme>
+      </ThemeProvider>
     );
   };
 
   it('отрисовывается без ошибок', () => {
     renderHeader();
     expect(screen.getByTestId('header-main')).toBeInTheDocument();
+    // Дополнительная проверка на наличие ThemeToggle, который вызывает useTheme
+    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument();
   });
 
   it('обрабатывает изменения в поле поиска', () => {

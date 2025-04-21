@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useDownloadDirectory } from "./useDownloadDirectory";
+import { useDownloadDirectory } from "../useDownloadDirectory";
 import * as App from "@wailsjs/go/main/App";
 
 // Мокаем Wails Go функции

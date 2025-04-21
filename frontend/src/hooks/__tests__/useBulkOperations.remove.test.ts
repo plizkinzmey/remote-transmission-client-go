@@ -32,6 +32,39 @@ describe("useBulkOperations - handleRemoveSelected", () => {
     // ...existing code...
   });
 
+  it("should early return if already removing (branch coverage)", async () => {
+    const selected = new Set([1]);
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      result.current.bulkOperations.remove = true;
+      await result.current.handleRemoveSelected();
+    });
+    expect(mockRemoveTorrent).not.toHaveBeenCalled();
+  });
+
+  it("should early return if no torrents selected (branch coverage)", async () => {
+    const selected = new Set<number>();
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      await result.current.handleRemoveSelected();
+    });
+    expect(mockRemoveTorrent).not.toHaveBeenCalled();
+  });
+
   it("should call RemoveTorrent for each selected ID without deleting data", async () => {
     // ...existing code...
   });

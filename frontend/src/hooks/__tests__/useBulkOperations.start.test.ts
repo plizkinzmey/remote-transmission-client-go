@@ -79,4 +79,43 @@ describe("useBulkOperations - handleStartSelected", () => {
     // Убедимся, что refresh не вызывался
     expect(mockRefreshTorrents).not.toHaveBeenCalled();
   });
+
+  it("should early return if already starting (branch coverage)", async () => {
+    const selected = new Set([1]);
+    const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
+      selected.has(t.ID)
+    );
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        initialTorrents,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    // Симулируем уже идущую операцию
+    await act(async () => {
+      result.current.bulkOperations.start = true;
+      await result.current.handleStartSelected();
+    });
+    // Если ветка покрыта, то StartTorrents не вызовется
+    expect(mockStartTorrents).not.toHaveBeenCalled();
+  });
+
+  it("should early return if no torrents selected (branch coverage)", async () => {
+    const selected = new Set<number>();
+    const initialTorrents: TorrentData[] = [];
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        initialTorrents,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      await result.current.handleStartSelected();
+    });
+    expect(mockStartTorrents).not.toHaveBeenCalled();
+  });
 });

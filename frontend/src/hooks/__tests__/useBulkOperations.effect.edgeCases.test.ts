@@ -113,7 +113,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
     expect(result.current.bulkOperations.stop).toBe(true);
   });
 
-  it("completes start operation even if some torrents were already running", async () => {
+  it("completes start operation even if some torrents were already running (covers line 131)", async () => {
     const selected = new Set([1, 2]); // 1 - stopped, 2 - downloading
     const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
       selected.has(t.ID)
@@ -130,31 +130,39 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
       { initialProps: { torrentsData: initialTorrents } }
     );
 
+    // 1. Start the operation (только T1 должен быть отправлен в API)
     await act(async () => {
       await result.current.handleStartSelected();
     });
     expect(mockStartTorrents).toHaveBeenCalledWith([1]);
     expect(result.current.bulkOperations.start).toBe(true);
+    // Ожидаемое внутреннее состояние lastTorrentStates: { 1: 'stopped', 2: 'downloading' }
 
-    const updatedTorrents: TorrentData[] = initialTorrents.map((t) =>
-      t.ID === 1
-        ? {
-            ...t,
-            Status: "downloading",
-            DownloadSpeedFormatted: "10 B/s",
-            SeedsConnected: 1,
-            PeersConnected: 1,
-          }
-        : t
+    // 2. Simulate T1 updating its status
+    const updatedTorrents: TorrentData[] = initialTorrents.map(
+      (t) =>
+        t.ID === 1
+          ? {
+              ...t,
+              Status: "downloading", // T1 перешел в downloading
+              DownloadSpeedFormatted: "10 B/s",
+              SeedsConnected: 1,
+              PeersConnected: 1,
+            }
+          : t // T2 остается downloading
     );
     rerender({ torrentsData: updatedTorrents });
 
+    // 3. Wait for useEffect to run and reset the flag.
+    // Для T1: previousState ('stopped') !== Status ('downloading') -> true
+    // Для T2: previousState ('downloading') === 'downloading' -> isIrrelevantOrAlreadyDone -> true (Ветка строки 131)
+    // every() -> true
     await waitFor(() => {
       expect(result.current.bulkOperations.start).toBe(false);
     });
   });
 
-  it("completes stop operation even if some torrents were already stopped", async () => {
+  it("completes stop operation even if some torrents were already stopped (covers line 173)", async () => {
     const selected = new Set([1, 2]); // 1 - stopped, 2 - downloading
     const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
       selected.has(t.ID)
@@ -171,26 +179,34 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
       { initialProps: { torrentsData: initialTorrents } }
     );
 
+    // 1. Start the stop operation (только T2 должен быть отправлен в API)
     await act(async () => {
       await result.current.handleStopSelected();
     });
     expect(mockStopTorrents).toHaveBeenCalledWith([2]);
     expect(result.current.bulkOperations.stop).toBe(true);
+    // Ожидаемое внутреннее состояние lastTorrentStates: { 1: 'stopped', 2: 'downloading' }
 
-    const updatedTorrents: TorrentData[] = initialTorrents.map((t) =>
-      t.ID === 2
-        ? {
-            ...t,
-            Status: "stopped",
-            DownloadSpeedFormatted: "0 B/s",
-            UploadSpeedFormatted: "0 B/s",
-            SeedsConnected: 0,
-            PeersConnected: 0,
-          }
-        : t
+    // 2. Simulate T2 updating status
+    const updatedTorrents: TorrentData[] = initialTorrents.map(
+      (t) =>
+        t.ID === 2
+          ? {
+              ...t,
+              Status: "stopped", // T2 перешел в stopped
+              DownloadSpeedFormatted: "0 B/s",
+              UploadSpeedFormatted: "0 B/s",
+              SeedsConnected: 0,
+              PeersConnected: 0,
+            }
+          : t // T1 остается stopped
     );
     rerender({ torrentsData: updatedTorrents });
 
+    // 3. Wait for flag reset.
+    // Для T1: previousState ('stopped') === 'stopped' -> isIrrelevantOrAlreadyDone -> true (Ветка строки 173)
+    // Для T2: previousState ('downloading') !== Status ('stopped') && Status === 'stopped' -> true
+    // every() -> true
     await waitFor(() => {
       expect(result.current.bulkOperations.stop).toBe(false);
     });
@@ -427,8 +443,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
     });
   });
 
-  // Тест для строки 97 - проверка условия isRunningTorrent(torrent.Status) в hasTorrentsToProcess для stop
-  it("correctly identifies if a torrent needs processing during stop operation (covers line 97 branch)", async () => {
+  it("correctly identifies torrents needing processing during stop operation (line 97 - isRunningTorrent)", async () => {
     const selected = new Set([2, 3]); // downloading, seeding
     const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
       selected.has(t.ID)
@@ -453,47 +468,14 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
     expect(mockStopTorrents).toHaveBeenCalledWith([2, 3]);
 
     // 2. Вызываем rerender с теми же данными, чтобы запустить useEffect
-    // Это заставит hasTorrentsToProcess вычислиться снова
+    // hasTorrentsToProcess должен использовать isRunningTorrent и вернуть true
     rerender({ torrentsData: initialTorrents });
 
-    // 3. Проверяем, что флаг stop все еще true, так как торренты не изменили статус
-    // Важно: Этот тест проверяет, что hasTorrentsToProcess правильно использует isRunningTorrent (строка 97)
-    // когда lastBulkAction === 'stop'. Он не проверяет сброс флага.
+    // 3. Проверяем, что флаг stop все еще true
     expect(result.current.bulkOperations.stop).toBe(true);
   });
 
-  // Тест для ветки torrent.Status === 'seeding' на строке 128 (из старого файла)
-  it("checks hasTorrentsToProcess correctly for seeding torrent during stop", async () => {
-    const selected = new Set([3]); // T3 в состоянии seeding
-    const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
-      selected.has(t.ID)
-    );
-
-    const { result, rerender } = renderHook(
-      ({ torrentsData }) =>
-        useBulkOperations(
-          torrentsData,
-          selected,
-          mockRefreshTorrents,
-          mockConfig
-        ),
-      { initialProps: { torrentsData: initialTorrents } }
-    );
-
-    await act(async () => {
-      await result.current.handleStopSelected();
-    });
-    expect(result.current.bulkOperations.stop).toBe(true); // Операция началась
-
-    // Вызываем rerender, чтобы useEffect проверил hasTorrentsToProcess
-    rerender({ torrentsData: initialTorrents });
-
-    // Флаг не должен сбрасываться, т.к. торрент все еще seeding и требует обработки
-    expect(result.current.bulkOperations.stop).toBe(true);
-  });
-
-  // Тест для строки 97 - проверка условия torrent.Status === "stopped" в hasTorrentsToProcess для start (из старого файла)
-  it("correctly identifies if a torrent needs processing during start operation", async () => {
+  it("correctly identifies torrents needing processing during start operation (line 97 - status stopped)", async () => {
     const selected = new Set([1, 4]); // Оба stopped
     const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
       selected.has(t.ID)
@@ -518,11 +500,184 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
     expect(mockStartTorrents).toHaveBeenCalledWith([1, 4]);
 
     // 2. Вызываем rerender с теми же данными, чтобы запустить useEffect
+    // hasTorrentsToProcess должен использовать status === 'stopped' и вернуть true
     rerender({ torrentsData: initialTorrents });
 
-    // 3. Проверяем, что флаг start все еще true, так как торренты не изменили статус
-    // Это подтверждает, что hasTorrentsToProcess правильно определил, что торренты
-    // (в статусе 'stopped') требуют обработки для операции 'start'.
+    // 3. Проверяем, что флаг start все еще true
     expect(result.current.bulkOperations.start).toBe(true);
+  });
+
+  it("completes start operation immediately if all selected were already running (covers line 131)", async () => {
+    const selected = new Set([2, 3]); // downloading, seeding
+    const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
+      selected.has(t.ID)
+    );
+
+    const { result, rerender } = renderHook(
+      ({ torrentsData }) =>
+        useBulkOperations(
+          torrentsData,
+          selected,
+          mockRefreshTorrents,
+          mockConfig
+        ),
+      { initialProps: { torrentsData: initialTorrents } }
+    );
+
+    // 1. Пытаемся запустить уже запущенные. API не должен вызываться, но флаг может кратковременно установиться,
+    //    если фильтр torrentsToStart пропустит что-то (например, 'completed').
+    //    Важно, что lastTorrentStates будет содержать { 2: 'downloading', 3: 'seeding' }
+    await act(async () => {
+      await result.current.handleStartSelected();
+    });
+    // API не должен вызываться, т.к. нет stopped/completed
+    expect(mockStartTorrents).not.toHaveBeenCalled();
+    // Флаг может быть false, если handleStartSelected вышел сразу, или true, если успел установиться.
+    // Нам важно состояние *после* rerender.
+
+    // 2. Вызываем rerender с теми же данными, чтобы запустить useEffect
+    rerender({ torrentsData: initialTorrents });
+
+    // 3. useEffect должен запуститься (если флаг start был true).
+    // lastBulkAction === 'start'.
+    // Проверка allStarted:
+    // - Для T2: previousState ('downloading') -> isIrrelevantOrAlreadyDone -> true (строка 131)
+    // - Для T3: previousState ('seeding') -> isIrrelevantOrAlreadyDone -> true (строка 131)
+    // every() -> true. Флаг должен сброситься.
+    await waitFor(() => {
+      expect(result.current.bulkOperations.start).toBe(false);
+    });
+    // Убедимся, что API так и не вызывался
+    expect(mockStartTorrents).not.toHaveBeenCalled();
+  });
+
+  it("completes stop operation immediately if all selected were already stopped (covers line 173)", async () => {
+    const selected = new Set([1, 4]); // Оба stopped
+    const initialTorrents: TorrentData[] = mockTorrentsBase.filter((t) =>
+      selected.has(t.ID)
+    );
+
+    const { result, rerender } = renderHook(
+      ({ torrentsData }) =>
+        useBulkOperations(
+          torrentsData,
+          selected,
+          mockRefreshTorrents,
+          mockConfig
+        ),
+      { initialProps: { torrentsData: initialTorrents } }
+    );
+
+    // 1. Пытаемся остановить уже остановленные. API не должен вызываться.
+    //    lastTorrentStates будет содержать { 1: 'stopped', 4: 'stopped' }
+    await act(async () => {
+      await result.current.handleStopSelected();
+    });
+    expect(mockStopTorrents).not.toHaveBeenCalled();
+
+    // 2. Вызываем rerender с теми же данными, чтобы запустить useEffect
+    rerender({ torrentsData: initialTorrents });
+
+    // 3. useEffect должен запуститься (если флаг stop был true).
+    // lastBulkAction === 'stop'.
+    // Проверка allStopped:
+    // - Для T1: previousState ('stopped') -> isIrrelevantOrAlreadyDone -> true (строка 173)
+    // - Для T4: previousState ('stopped') -> isIrrelevantOrAlreadyDone -> true (строка 173)
+    // every() -> true. Флаг должен сброситься.
+    await waitFor(() => {
+      expect(result.current.bulkOperations.stop).toBe(false);
+    });
+    // Убедимся, что API так и не вызывался
+    expect(mockStopTorrents).not.toHaveBeenCalled();
+  });
+
+  it("covers line 131: all selected torrents already running (isIrrelevantOrAlreadyDone=true for all, start)", async () => {
+    const selected = new Set([2, 3]); // оба уже running
+    const initialTorrents = [
+      { ...mockTorrentsBase[1] }, // downloading
+      { ...mockTorrentsBase[2] }, // seeding
+    ];
+    const { result, rerender } = renderHook(
+      ({ torrentsData }) =>
+        useBulkOperations(
+          torrentsData,
+          selected,
+          mockRefreshTorrents,
+          mockConfig
+        ),
+      { initialProps: { torrentsData: initialTorrents } }
+    );
+    await act(async () => {
+      await result.current.handleStartSelected();
+    });
+    // API не должен вызываться
+    expect(mockStartTorrents).not.toHaveBeenCalled();
+    // Симулируем обновление, чтобы useEffect прошёл по every с isIrrelevantOrAlreadyDone=true для всех
+    rerender({ torrentsData: initialTorrents });
+    await waitFor(() => {
+      expect(result.current.bulkOperations.start).toBe(false);
+    });
+  });
+
+  it("covers line 173: all selected torrents already stopped (isIrrelevantOrAlreadyDone=true for all, stop)", async () => {
+    const selected = new Set([1, 4]); // оба уже stopped
+    const initialTorrents = [
+      { ...mockTorrentsBase[0] }, // stopped
+      { ...mockTorrentsBase[3] }, // stopped
+    ];
+    const { result, rerender } = renderHook(
+      ({ torrentsData }) =>
+        useBulkOperations(
+          torrentsData,
+          selected,
+          mockRefreshTorrents,
+          mockConfig
+        ),
+      { initialProps: { torrentsData: initialTorrents } }
+    );
+    await act(async () => {
+      await result.current.handleStopSelected();
+    });
+    expect(mockStopTorrents).not.toHaveBeenCalled();
+    rerender({ torrentsData: initialTorrents });
+    await waitFor(() => {
+      expect(result.current.bulkOperations.stop).toBe(false);
+    });
+  });
+
+  it("covers line 97: hasTorrentsToProcess for start (torrent.Status === 'stopped')", async () => {
+    const selected = new Set([1]);
+    const initialTorrents = [{ ...mockTorrentsBase[0] }]; // stopped
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        initialTorrents,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      await result.current.handleStartSelected();
+    });
+    // Проверяем, что start был вызван
+    expect(result.current.bulkOperations.start).toBe(true);
+  });
+
+  it("covers line 97: hasTorrentsToProcess for stop (isRunningTorrent)", async () => {
+    const selected = new Set([2]);
+    const initialTorrents = [{ ...mockTorrentsBase[1] }]; // downloading
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        initialTorrents,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      await result.current.handleStopSelected();
+    });
+    // Проверяем, что stop был вызван
+    expect(result.current.bulkOperations.stop).toBe(true);
   });
 });

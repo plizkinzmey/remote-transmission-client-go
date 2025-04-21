@@ -187,4 +187,53 @@ describe("useBulkOperations - handleSetSpeedLimit", () => {
     // Убедимся, что refresh не вызывался после ошибки
     expect(mockRefreshTorrents).not.toHaveBeenCalled();
   });
+
+  it("should early return if already setting speed limit (branch coverage)", async () => {
+    const selected = new Set([1]);
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      result.current.bulkOperations.speedLimit = true;
+      await result.current.handleSetSpeedLimit(true);
+    });
+    expect(mockSetTorrentSpeedLimit).not.toHaveBeenCalled();
+  });
+
+  it("should early return if no torrents selected (branch coverage)", async () => {
+    const selected = new Set<number>();
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        mockConfig
+      )
+    );
+    await act(async () => {
+      await result.current.handleSetSpeedLimit(true);
+    });
+    expect(mockSetTorrentSpeedLimit).not.toHaveBeenCalled();
+  });
+
+  it("should early return if config is undefined (branch coverage)", async () => {
+    const selected = new Set([1]);
+    const { result } = renderHook(() =>
+      useBulkOperations(
+        mockTorrentsBase,
+        selected,
+        mockRefreshTorrents,
+        undefined
+      )
+    );
+    await act(async () => {
+      await result.current.handleSetSpeedLimit(true);
+    });
+    expect(mockSetTorrentSpeedLimit).not.toHaveBeenCalled();
+  });
 });

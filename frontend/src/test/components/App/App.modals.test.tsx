@@ -174,6 +174,7 @@ describe("App - Модальные окна", () => {
         remove: false,
         speedLimit: false,
       },
+      error: null, // Add missing error property
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

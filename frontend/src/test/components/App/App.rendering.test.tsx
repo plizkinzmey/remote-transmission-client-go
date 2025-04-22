@@ -160,6 +160,7 @@ describe("App - Рендеринг компонента", () => {
         remove: false,
         speedLimit: false,
       },
+      error: null,
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

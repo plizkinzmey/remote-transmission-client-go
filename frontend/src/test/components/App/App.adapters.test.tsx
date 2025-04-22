@@ -153,6 +153,7 @@ describe("App - Адаптеры и вспомогательные функци�
         remove: false,
         speedLimit: false,
       },
+      error: null,
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

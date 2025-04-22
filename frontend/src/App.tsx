@@ -176,7 +176,8 @@ function App() {
           onStatusFilterChange={setStatusFilter}
           torrents={torrents}
           onSetSpeedLimit={(isSlowMode) => {
-            handleSetSpeedLimit(Array.from(selectedTorrents), isSlowMode);
+            // Pass only isSlowMode, selectedTorrents are available in the hook
+            handleSetSpeedLimit(isSlowMode);
           }}
           isSlowModeEnabled={selectedHaveSlowMode}
           isReconnecting={isReconnecting}

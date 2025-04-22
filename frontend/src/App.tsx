@@ -6,14 +6,13 @@ import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import {
-  useModals,
-  useTorrentData,
-} from "@/hooks";
-import { useBulkOperations } from "@/hooks/useBulkOperations"; // Updated import path
+import { useModals } from "@hooks/useModals"; // Correct import for useModals
+import { useTorrentData } from "@hooks/useTorrentData"; // Add correct import for useTorrentData
+import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { DragDropProvider } from "./components/DragDropProvider";
 import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
+import { TorrentData } from "@components/TorrentList"; // Import TorrentData type
 import "./App.css";
 import "./styles/theme.css";
 import styles from "./styles/App.module.css";
@@ -140,8 +139,8 @@ function App() {
   };
 
   // Проверяем, есть ли замедленные торренты среди выбранных
-  const selectedHaveSlowMode = Array.from(selectedTorrents).some(
-    (id) => torrents.find((t) => t.ID === id)?.IsSlowMode
+  const selectedHaveSlowMode = Array.from(selectedTorrents).some((id) =>
+    torrents.find((t: TorrentData) => t.ID === id)?.IsSlowMode
   );
 
   // Адаптер для handleSelectAll без параметров

@@ -3,10 +3,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import App from "../../../App";
 import { TorrentData } from "../../../components/TorrentList";
-import { useTorrentData } from "../../../hooks/useTorrentData";
-import { useModals } from "../../../hooks/useModals";
+import {
+  useBulkOperations,
+  useModals,
+  useTorrentData,
+} from "@/hooks";
 import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
-import { useBulkOperations } from "../../../hooks/useBulkOperations";
 
 // Мокируем хуки
 vi.mock("../../../hooks/useTorrentData");
@@ -151,7 +153,6 @@ describe("App - Адаптеры и вспомогательные функци�
         remove: false,
         speedLimit: false,
       },
-      error: null,
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

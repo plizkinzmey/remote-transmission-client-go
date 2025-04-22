@@ -6,11 +6,13 @@ import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { useTorrentData } from "./hooks/useTorrentData";
-import { useBulkOperations } from "./hooks/useBulkOperations";
+import {
+  useModals,
+  useTorrentData,
+} from "@/hooks";
+import { useBulkOperations } from "@/hooks/useBulkOperations"; // Updated import path
 import { DragDropProvider } from "./components/DragDropProvider";
 import { ConnectionStatus } from "./components/ConnectionStatus";
-import { useModals } from "./hooks/useModals";
 import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
 import "./App.css";
 import "./styles/theme.css";
@@ -173,7 +175,9 @@ function App() {
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
           torrents={torrents}
-          onSetSpeedLimit={handleSetSpeedLimit}
+          onSetSpeedLimit={(isSlowMode) => {
+            handleSetSpeedLimit(Array.from(selectedTorrents), isSlowMode);
+          }}
           isSlowModeEnabled={selectedHaveSlowMode}
           isReconnecting={isReconnecting}
           isFirstStart={isFirstStart}

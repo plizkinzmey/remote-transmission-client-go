@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useLocalization } from "@contexts/LocalizationContext"; // Use alias
 import {
-  GetDownloadPaths,
-  GetDefaultDownloadDir,
+  GetPathsState,
   ValidateDownloadPath,
   SavePathsChanges,
-  GetPathsState,
-} from "../../../../../wailsjs/go/main/App"; // Corrected path
-import { useLocalization } from "@contexts/LocalizationContext";
+  GetDefaultDownloadDir, // Add missing import
+  GetDownloadPaths, // Add missing import
+} from "@wailsjs/go/main/App"; // Use alias
 
 /**
  * Props for the usePathsManagement hook.

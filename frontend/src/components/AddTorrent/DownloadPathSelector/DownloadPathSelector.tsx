@@ -5,7 +5,7 @@ import {
   GetDownloadPaths,
   ValidateDownloadPath,
   RemoveDownloadPath,
-} from "../../../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 import "./DownloadPathSelector.css";
 
 interface DownloadPathSelectorProps {

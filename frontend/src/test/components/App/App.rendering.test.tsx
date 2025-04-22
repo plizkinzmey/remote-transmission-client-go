@@ -2,15 +2,17 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import App from "../../../App";
-import { useTorrentData } from "../../../hooks/useTorrentData";
-import { useModals } from "../../../hooks/useModals";
-import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
-import { useBulkOperations } from "../../../hooks/useBulkOperations";
+import {
+  useBulkOperations, // Updated import path
+  useModals,
+  useTorrentData,
+} from "@/hooks";
+import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents"; // Correct mock path
 
 // Мокаем все хуки, используемые в App
 vi.mock("../../../hooks/useTorrentData");
 vi.mock("../../../hooks/useModals");
-vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
+vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents"); // Correct mock path
 vi.mock("../../../hooks/useBulkOperations");
 
 // Мок для контекста темы
@@ -158,7 +160,6 @@ describe("App - Рендеринг компонента", () => {
         remove: false,
         speedLimit: false,
       },
-      error: null, // Добавляю обязательное поле error
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

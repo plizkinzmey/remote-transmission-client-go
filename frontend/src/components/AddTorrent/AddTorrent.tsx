@@ -5,7 +5,7 @@ import { LoadingSpinner } from "../LoadingSpinner";
 import { TorrentUrlTab } from "./TorrentUrlTab/TorrentUrlTab";
 import { TorrentFileTab } from "./TorrentFileTab/TorrentFileTab";
 import { DownloadPathSelector } from "./DownloadPathSelector/DownloadPathSelector";
-import { ValidateDownloadPath } from "../../../wailsjs/go/main/App";
+import { ValidateDownloadPath } from "@wailsjs/go/main/App"; // Use alias
 import "./AddTorrent.css";
 
 export interface AddTorrentProps {

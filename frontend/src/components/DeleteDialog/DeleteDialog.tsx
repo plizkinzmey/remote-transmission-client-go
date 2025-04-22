@@ -3,7 +3,7 @@ import { Dialog, Button, Text, Flex, Box, Checkbox, Portal } from "@radix-ui/the
 import { useLocalization } from "@contexts/LocalizationContext";
 import { LoadingSpinner } from "../LoadingSpinner";
 import styles from "./DeleteDialog.module.css";
-import { useLogger } from "../../hooks";
+import { useLogger } from "@/hooks/useLogger"; // Updated import path
 
 /**
  * Свойства диалога удаления

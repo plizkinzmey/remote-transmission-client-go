@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { EventsOn } from "../../wailsjs/runtime";
-import { LoadConfig } from "../../wailsjs/go/main/App";
+import { EventsOn } from "@wailsjs/runtime"; // Use alias
+import { LoadConfig } from "@wailsjs/go/main/App"; // Use alias
 
 interface TorrentFileData {
   name: string;

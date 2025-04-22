@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { TorrentData } from "../components/TorrentList";
+import { useState, useEffect, useCallback } from "react";
+import { TorrentData } from "@/components/TorrentList";
 import { useLocalization } from "@contexts/LocalizationContext";
 import {
   StartTorrents,
@@ -20,16 +20,19 @@ interface Config {
   slowSpeedUnit: "KiB/s" | "MiB/s";
 }
 
-/**
- * Хук для управления массовыми операциями запуска и остановки торрентов
- * Отслеживает состояние операций и изменения состояний торрентов
- */
 export function useBulkOperations(
   torrents: TorrentData[],
   selectedTorrents: Set<number>,
   refreshTorrents: () => Promise<void>,
   config: Config | undefined
-) {
+): {
+  bulkOperations: BulkOperationsState;
+  error: string | null;
+  handleStartSelected: () => Promise<void>;
+  handleStopSelected: () => Promise<void>;
+  handleRemoveSelected: (deleteData?: boolean) => Promise<void>;
+  handleSetSpeedLimit: (isSlowMode: boolean) => Promise<void>;
+} {
   const { t } = useLocalization();
   const [bulkOperations, setBulkOperations] = useState<BulkOperationsState>({
     start: false,
@@ -45,67 +48,73 @@ export function useBulkOperations(
   >(new Map());
   const [error, setError] = useState<string | null>(null);
 
-  // Эффект для отслеживания выполнения массовых операций
+  const isRunningTorrent = useCallback((status: string): boolean => {
+    const isDownloading = status === "downloading";
+    const isSeeding = status === "seeding";
+    return isDownloading || isSeeding;
+  }, []);
+
+  // Effect for monitoring bulk operations
   useEffect(() => {
-    if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop))
+    if (!lastBulkAction || !(bulkOperations.start || bulkOperations.stop)) {
       return;
+    }
 
     const selectedTorrentsArray = Array.from(selectedTorrents);
 
-    // Проверяем, есть ли торренты, которые можно обработать
     const hasTorrentsToProcess = selectedTorrentsArray.some((id) => {
       const torrent = torrents.find((t) => t.ID === id);
       if (!torrent) return false;
-
-      if (lastBulkAction === "start") {
-        return torrent.Status === "stopped";
-      } else {
-        return torrent.Status === "downloading" || torrent.Status === "seeding";
-      }
+      return lastBulkAction === "start"
+        ? torrent.Status === "stopped"
+        : isRunningTorrent(torrent.Status);
     });
 
-    // Если нет торрентов для обработки, отменяем операцию
-    if (!hasTorrentsToProcess) {
-      setBulkOperations((prev) => ({
-        ...prev,
-        [lastBulkAction]: false,
-      }));
+    if (!hasTorrentsToProcess || selectedTorrentsArray.length === 0) {
+      setBulkOperations((prev) => ({ ...prev, [lastBulkAction]: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
       return;
     }
 
-    // Проверяем изменение состояний торрентов
-    const allTorrentsChanged = selectedTorrentsArray.every((id) => {
-      const torrent = torrents.find((t) => t.ID === id);
-      const previousState = lastTorrentStates.get(id);
+    let shouldResetFlag = false;
 
-      if (!torrent || !previousState) return false;
+    if (lastBulkAction === "start") {
+      const allStarted = selectedTorrentsArray.every((id) => {
+        const torrent = torrents.find((t) => t.ID === id);
+        const previousState = lastTorrentStates.get(id);
 
-      // Торрент уже был в целевом состоянии
-      const wasAlreadyInTargetState =
-        (lastBulkAction === "start" &&
-          (previousState === "downloading" || previousState === "seeding")) ||
-        (lastBulkAction === "stop" && previousState === "stopped");
+        const isIrrelevantOrAlreadyDone =
+          !torrent ||
+          !previousState ||
+          previousState === "downloading" ||
+          previousState === "seeding";
 
-      if (wasAlreadyInTargetState) return true;
+        if (isIrrelevantOrAlreadyDone) return true;
 
-      // Проверяем, изменилось ли состояние на целевое
-      if (lastBulkAction === "start") {
         return (
           previousState !== torrent.Status &&
           (torrent.Status === "downloading" || torrent.Status === "seeding")
         );
-      } else {
-        return previousState !== torrent.Status && torrent.Status === "stopped";
-      }
-    });
+      });
+      shouldResetFlag = allStarted;
+    } else if (lastBulkAction === "stop") {
+      const allStopped = selectedTorrentsArray.every((id) => {
+        const torrent = torrents.find((t) => t.ID === id);
+        const previousState = lastTorrentStates.get(id);
 
-    if (allTorrentsChanged) {
-      setBulkOperations((prev) => ({
-        ...prev,
-        [lastBulkAction]: false,
-      }));
+        const isIrrelevantOrAlreadyDone =
+          !torrent || !previousState || previousState === "stopped";
+
+        if (isIrrelevantOrAlreadyDone) return true;
+
+        return previousState !== torrent.Status && torrent.Status === "stopped";
+      });
+      shouldResetFlag = allStopped;
+    }
+
+    if (shouldResetFlag) {
+      setBulkOperations((prev) => ({ ...prev, [lastBulkAction]: false }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
@@ -115,10 +124,10 @@ export function useBulkOperations(
     bulkOperations,
     lastBulkAction,
     lastTorrentStates,
+    isRunningTorrent,
   ]);
 
-  // Обработчик запуска выбранных торрентов
-  const handleStartSelected = async () => {
+  const handleStartSelected = useCallback(async () => {
     if (bulkOperations.start || selectedTorrents.size === 0) return;
 
     const torrentsToStart = torrents.filter(
@@ -135,28 +144,32 @@ export function useBulkOperations(
         .map((t) => [t.ID, t.Status])
     );
 
-    setBulkOperations((prev) => ({ ...prev, start: true }));
+    setBulkOperations((prev: BulkOperationsState) => ({
+      ...prev,
+      start: true,
+    }));
     setLastBulkAction("start");
     setLastTorrentStates(states);
+    setError(null);
 
     try {
-      // Преобразуем в массив int64
       const idsToStart = torrentsToStart.map((t) => Number(t.ID));
       console.log("Starting torrents with IDs:", idsToStart);
-
       await StartTorrents(idsToStart);
       await refreshTorrents();
-    } catch (error) {
-      console.error("Failed to start torrents:", error);
-      setError(t("errors.failedToStartTorrents", String(error)));
-      setBulkOperations((prev) => ({ ...prev, start: false }));
+    } catch (err) {
+      console.error("Failed to start torrents:", err);
+      setError(t("errors.failedToStartTorrents", String(err)));
+      setBulkOperations((prev: BulkOperationsState) => ({
+        ...prev,
+        start: false,
+      }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
-  };
+  }, [bulkOperations.start, selectedTorrents, torrents, refreshTorrents, t]);
 
-  // Обработчик остановки выбранных торрентов
-  const handleStopSelected = async () => {
+  const handleStopSelected = useCallback(async () => {
     if (bulkOperations.stop || selectedTorrents.size === 0) return;
 
     const torrentsToStop = torrents.filter(
@@ -173,84 +186,109 @@ export function useBulkOperations(
         .map((t) => [t.ID, t.Status])
     );
 
-    setBulkOperations((prev) => ({ ...prev, stop: true }));
+    setBulkOperations((prev: BulkOperationsState) => ({
+      ...prev,
+      stop: true,
+    }));
     setLastBulkAction("stop");
     setLastTorrentStates(states);
+    setError(null);
 
     try {
-      // Преобразуем в массив int64
       const idsToStop = torrentsToStop.map((t) => Number(t.ID));
       console.log("Stopping torrents with IDs:", idsToStop);
-
       await StopTorrents(idsToStop);
       await refreshTorrents();
-    } catch (error) {
-      console.error("Failed to stop torrents:", error);
-      setError(t("errors.failedToStopTorrents", String(error)));
-      setBulkOperations((prev) => ({ ...prev, stop: false }));
+    } catch (err) {
+      console.error("Failed to stop torrents:", err);
+      setError(t("errors.failedToStopTorrents", String(err)));
+      setBulkOperations((prev: BulkOperationsState) => ({
+        ...prev,
+        stop: false,
+      }));
       setLastBulkAction(null);
       setLastTorrentStates(new Map());
     }
-  };
+  }, [bulkOperations.stop, selectedTorrents, torrents, refreshTorrents, t]);
 
-  // Обработчик удаления выбранных торрентов
-  const handleRemoveSelected = async (deleteData: boolean = false) => {
-    if (bulkOperations.remove || selectedTorrents.size === 0) return;
+  const handleRemoveSelected = useCallback(
+    async (deleteData: boolean = false) => {
+      if (bulkOperations.remove || selectedTorrents.size === 0) return;
 
-    setBulkOperations((prev) => ({ ...prev, remove: true }));
+      setBulkOperations((prev: BulkOperationsState) => ({
+        ...prev,
+        remove: true,
+      }));
+      setLastBulkAction("remove");
+      setError(null);
 
-    try {
-      console.log(
-        `Removing ${selectedTorrents.size} torrents, deleteData: ${deleteData}`
-      );
+      try {
+        console.log(
+          `Removing ${selectedTorrents.size} torrents, deleteData: ${deleteData}`
+        );
 
-      // Обрабатываем торренты последовательно
-      for (const id of Array.from(selectedTorrents)) {
-        try {
-          console.log(`Removing torrent ID: ${id}, deleteData: ${deleteData}`);
-          await RemoveTorrent(Number(id), deleteData);
-        } catch (error) {
-          console.error(`Failed to remove torrent ${id}:`, error);
+        const idsToRemove = Array.from(selectedTorrents);
+
+        for (const id of idsToRemove) {
+          try {
+            console.log(
+              `Removing torrent ID: ${id}, deleteData: ${deleteData}`
+            );
+            await RemoveTorrent(Number(id), deleteData);
+          } catch (singleError) {
+            console.error(`Failed to remove torrent ${id}:`, singleError);
+          }
         }
+
+        await refreshTorrents();
+      } catch (err) {
+        console.error("Error in bulk remove operation:", err);
+        setError(t("errors.failedToRemoveTorrents", String(err)));
+      } finally {
+        setBulkOperations((prev: BulkOperationsState) => ({
+          ...prev,
+          remove: false,
+        }));
+        setLastBulkAction(null);
       }
+    },
+    [bulkOperations.remove, selectedTorrents, refreshTorrents, t]
+  );
 
-      // Обновляем список торрентов
-      await refreshTorrents();
-    } catch (error) {
-      console.error("Error in bulk remove operation:", error);
-      setError(t("errors.failedToRemoveTorrents", String(error)));
-    } finally {
-      setBulkOperations((prev) => ({ ...prev, remove: false }));
-    }
-  };
+  const handleSetSpeedLimit = useCallback(
+    async (isSlowMode: boolean) => {
+      if (bulkOperations.speedLimit || selectedTorrents.size === 0 || !config)
+        return;
 
-  // Обработчик установки ограничения скорости для выбранных торрентов
-  const handleSetSpeedLimit = async (isSlowMode: boolean) => {
-    if (bulkOperations.speedLimit || selectedTorrents.size === 0 || !config)
-      return;
+      setBulkOperations((prev: BulkOperationsState) => ({
+        ...prev,
+        speedLimit: true,
+      }));
+      setLastBulkAction("speedLimit");
+      setError(null);
 
-    setBulkOperations((prev) => ({ ...prev, speedLimit: true }));
+      try {
+        console.log(
+          `Setting speed limit (slow mode: ${isSlowMode}) for ${selectedTorrents.size} torrents`
+        );
 
-    try {
-      console.log(
-        `Setting speed limit (slow mode: ${isSlowMode}) for ${selectedTorrents.size} torrents`
-      );
+        const selectedIds = Array.from(selectedTorrents).map(Number);
 
-      // Получаем IDs выбранных торрентов
-      const selectedIds = Array.from(selectedTorrents).map(Number);
-
-      // Применяем ограничение скорости
-      await SetTorrentSpeedLimit(selectedIds, isSlowMode);
-
-      // Обновляем список торрентов для отображения изменений
-      await refreshTorrents();
-    } catch (error) {
-      console.error("Failed to set speed limit:", error);
-      setError(t("errors.failedToSetSpeedLimit", String(error)));
-    } finally {
-      setBulkOperations((prev) => ({ ...prev, speedLimit: false }));
-    }
-  };
+        await SetTorrentSpeedLimit(selectedIds, isSlowMode);
+        await refreshTorrents();
+      } catch (err) {
+        console.error("Failed to set speed limit:", err);
+        setError(t("errors.failedToSetSpeedLimit", String(err)));
+      } finally {
+        setBulkOperations((prev: BulkOperationsState) => ({
+          ...prev,
+          speedLimit: false,
+        }));
+        setLastBulkAction(null);
+      }
+    },
+    [bulkOperations.speedLimit, selectedTorrents, config, refreshTorrents, t]
+  );
 
   return {
     bulkOperations,

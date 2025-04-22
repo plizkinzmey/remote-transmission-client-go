@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
-import { SaveAllSettings } from "../../../../wailsjs/go/main/App"; // Corrected wailsjs path (relative)
+import { useCallback, useState } from "react";
+import { SaveAllSettings } from "@wailsjs/go/main/App"; // Use alias
+import { useLocalization } from "@contexts/LocalizationContext"; // Use alias
 import { ConnectionConfig } from "@app/App";
 import { PathChanges } from "@app/types/settings"; // Исправлен импорт с @types/settings на @app/types/settings
 import { PathsTabRef } from "@components/Settings/PathsTab"; // Use path alias
-import { useLocalization } from "@contexts/LocalizationContext"; // Use path alias
 
 // Добавим типы для улучшения читаемости и безопасности
 type SaveResult = {

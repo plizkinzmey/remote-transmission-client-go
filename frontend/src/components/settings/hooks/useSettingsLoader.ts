@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { LoadConfig } from "../../../../wailsjs/go/main/App";
-import { ConnectionConfig } from "../../../App"; // Corrected import path
+import { LoadConfig } from "@wailsjs/go/main/App"; // Use alias
+import { ConnectionConfig } from "@/App"; // Use alias
 
 interface UseSettingsLoaderProps {
   isFirstStart?: boolean;

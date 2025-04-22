@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { ConnectionConfig } from "../../../../App";
-import { TestConnection } from "../../../../../wailsjs/go/main/App";
+import { TestConnection } from "@wailsjs/go/main/App"; // Use alias
 import { useLocalization } from "@contexts/LocalizationContext";
 import { StatusType } from "../../../StatusMessage"; // Предполагается, что StatusMessage экспортирует StatusType
 

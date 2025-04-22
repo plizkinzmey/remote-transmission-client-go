@@ -6,7 +6,7 @@ import {
   StopTorrents,
   RemoveTorrent,
   SetTorrentSpeedLimit,
-} from "../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App";
 
 interface BulkOperationsState {
   start: boolean;

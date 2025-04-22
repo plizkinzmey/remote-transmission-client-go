@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TorrentData } from "../components/TorrentList";
-import { useLocalization } from "@contexts/LocalizationContext";
+import { useLocalization } from "@/contexts/LocalizationContext"; // Use alias
 import { ConnectionConfig, UIConfig, ConfigData } from "../App";
 import {
   GetTorrents,
@@ -14,7 +14,7 @@ import {
   GetSessionStats,
   SetTorrentSpeedLimit,
   VerifyTorrent,
-} from "../../wailsjs/go/main/App";
+} from "@wailsjs/go/main/App"; // Use alias
 
 // Интерфейс для статистики сессии
 interface SessionStatsData {

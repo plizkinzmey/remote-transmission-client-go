@@ -2,16 +2,18 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, act, waitFor } from "@testing-library/react";
 import App from "../../../App";
-import { useTorrentData } from "../../../hooks/useTorrentData";
-import { useModals } from "../../../hooks/useModals";
+import {
+  useBulkOperations, // Updated import path
+  useModals,
+  useTorrentData,
+} from "@/hooks";
 import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
-import { useBulkOperations } from "../../../hooks/useBulkOperations";
 
 // Мокируем хуки
 vi.mock("../../../hooks/useTorrentData");
 vi.mock("../../../hooks/useModals");
 vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
-vi.mock("../../../hooks/useBulkOperations");
+vi.mock("../../../hooks/useBulkOperations"); // Corrected path for useBulkOperations mock
 
 // Мокируем контекст темы и компоненты для упрощения тестов
 vi.mock("../../../contexts/ThemeContext", () => ({
@@ -170,9 +172,8 @@ describe("App - Модальные окна", () => {
         start: false,
         stop: false,
         remove: false,
-        speedLimit: false, // Исправлено на boolean
+        speedLimit: false,
       },
-      error: null, // Добавлено свойство error
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),

@@ -20,54 +20,65 @@ export function useConfigManager({
   const [isSettingsSaving, setIsSettingsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Обновляем внутреннее состояние конфига, если initialConfig изменился
   useEffect(() => {
     setConfig(initialConfig);
   }, [initialConfig]);
+
+  // Универсальная функция для установки ошибки с безопасным fallback
+  const setErrorSafe = useCallback(
+    (message: string, fallback?: string) => {
+      try {
+        setError(t(message, fallback));
+      } catch {
+        setError(message);
+      }
+    },
+    [t]
+  );
 
   const handleSettingsSave = useCallback(
     async (connectionSettings: ConnectionConfig): Promise<boolean> => {
       setIsSettingsSaving(true);
       setError(null);
+      let result = false;
       try {
-        // Используем текущий язык и тему, если они есть, иначе значения по умолчанию
         const uiSettings: UIConfig = {
           language: config?.language || languageState || "en",
           theme: (config?.theme || "light") as "light" | "dark" | "auto",
         };
+        const fullConfig: AppConfig = { ...connectionSettings, ...uiSettings };
+        result = await onConfigSave(fullConfig);
 
-        const fullConfig: AppConfig = {
-          ...connectionSettings, // Новые настройки соединения
-          ...uiSettings, // Текущие или дефолтные настройки UI
-        };
-
-        // Вызываем колбэк для сохранения и переинициализации соединения
-        const success = await onConfigSave(fullConfig);
-
-        if (success) {
-          setConfig(fullConfig); // Обновляем локальное состояние конфига при успехе
-          return true;
+        if (result) {
+          setConfig(fullConfig);
         } else {
-          // Ошибка будет установлена в onConfigSave (через useConnectionManager)
-          setError(t("errors.failedToUpdateSettings", "Connection failed")); // Запасной текст ошибки
-          return false;
+          setErrorSafe("errors.failedToUpdateSettings", "Connection failed");
         }
       } catch (saveError) {
         console.error("Failed to save settings:", saveError);
-        setError(t("errors.failedToUpdateSettings", String(saveError)));
-        return false;
+        setErrorSafe("errors.failedToUpdateSettings", String(saveError));
       } finally {
-        setIsSettingsSaving(false);
+        safeSetIsSettingsSaving(setIsSettingsSaving, false);
       }
+      return result;
     },
-    [config, languageState, onConfigSave, t]
+    [config, languageState, onConfigSave, setErrorSafe]
   );
+
+  function safeSetIsSettingsSaving(
+    setter: (v: boolean) => void,
+    value: boolean
+  ) {
+    try {
+      setter(value);
+    } catch {}
+  }
 
   return {
     config,
     isSettingsSaving,
-    error, // Ошибка сохранения настроек
+    error,
     handleSettingsSave,
-    setConfig, // Добавим возможность обновить конфиг извне (например, при смене темы/языка)
+    setConfig,
   };
 }

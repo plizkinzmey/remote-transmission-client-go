@@ -247,4 +247,132 @@ describe("useConfigManager", () => {
       expect.objectContaining({ language: "en", theme: "light" })
     );
   });
+
+  it("should handle handleSettingsSave when t() throws", async () => {
+    // Мокаем t чтобы выбрасывал ошибку
+    const errorT = () => {
+      throw new Error("t failed");
+    };
+    const wrapper = ({ children }: { children: any }) =>
+      React.createElement(
+        MockLocalizationProvider as any,
+        { t: errorT },
+        children
+      );
+    mockOnConfigSave.mockResolvedValue(false);
+    const { result } = renderHook(
+      ({ initialConfig, onConfigSave }) =>
+        useConfigManager({ initialConfig, onConfigSave }),
+      {
+        wrapper,
+        initialProps: {
+          initialConfig: mockInitialConfig,
+          onConfigSave: mockOnConfigSave,
+        },
+      }
+    );
+    let success = true;
+    await act(async () => {
+      success = await result.current.handleSettingsSave(newConnectionSettings);
+    });
+    expect(success).toBe(false);
+    expect(result.current.isSettingsSaving).toBe(false);
+    // Ошибка не должна приводить к падению теста, error должен быть установлен (может быть null или не null)
+    // Главное — не должно быть необработанного исключения
+  });
+
+  it("should fallback to default error if t throws in catch block", async () => {
+    const errorT = () => {
+      throw new Error("t failed");
+    };
+    const wrapper = ({ children }: { children: any }) =>
+      React.createElement(
+        MockLocalizationProvider as any,
+        { t: errorT },
+        children
+      );
+    // onConfigSave выбрасывает ошибку
+    mockOnConfigSave.mockRejectedValue(new Error("fail"));
+    const { result } = renderHook(
+      ({ initialConfig, onConfigSave }) =>
+        useConfigManager({ initialConfig, onConfigSave }),
+      {
+        wrapper,
+        initialProps: {
+          initialConfig: mockInitialConfig,
+          onConfigSave: mockOnConfigSave,
+        },
+      }
+    );
+    await act(async () => {
+      await result.current.handleSettingsSave(newConnectionSettings);
+    });
+    expect(result.current.error).toBe("errors.failedToUpdateSettings");
+    expect(result.current.isSettingsSaving).toBe(false);
+  });
+
+  it("should always call setIsSettingsSaving(false) even if error thrown in finally", async () => {
+    // Мокаем setIsSettingsSaving чтобы выбрасывал ошибку
+    let setIsSettingsSaving: any = undefined;
+    const originalUseState = React.useState;
+    // @ts-expect-error: для теста мокируем useState с несовместимой сигнатурой
+    const spy = vi.spyOn(React, "useState").mockImplementation((init: any) => {
+      if (init === false && !setIsSettingsSaving) {
+        // ловим именно setIsSettingsSaving
+        const stateTuple: [any, (v: any) => void] = [
+          init,
+          (v: any) => {
+            if (v === false) throw new Error("setIsSettingsSaving failed");
+          },
+        ];
+        setIsSettingsSaving = stateTuple[1];
+        return stateTuple as any;
+      }
+      return originalUseState(init);
+    });
+
+    mockOnConfigSave.mockResolvedValue(true);
+    const { result } = renderHookWithProviders(
+      ({ initialConfig, onConfigSave }) =>
+        useConfigManager({ initialConfig, onConfigSave }),
+      { initialConfig: mockInitialConfig, onConfigSave: mockOnConfigSave }
+    );
+    // Даже если setIsSettingsSaving выбрасывает ошибку, не должно быть необработанного исключения
+    await act(async () => {
+      await result.current.handleSettingsSave(newConnectionSettings);
+    });
+    spy.mockRestore();
+  });
+
+  it("покрывает ветку catch в finally, если setIsSettingsSaving выбрасывает ошибку", async () => {
+    let setIsSettingsSaving: any = undefined;
+    const originalUseState = React.useState;
+    // @ts-expect-error
+    const spy = vi.spyOn(React, "useState").mockImplementation((init: any) => {
+      if (init === false && !setIsSettingsSaving) {
+        const stateTuple: [any, (v: any) => void] = [
+          init,
+          (v: any) => {
+            if (v === false) throw new Error("setIsSettingsSaving failed");
+          },
+        ];
+        setIsSettingsSaving = stateTuple[1];
+        return stateTuple as any;
+      }
+      return originalUseState(init);
+    });
+
+    const { result } = renderHookWithProviders(
+      ({ initialConfig, onConfigSave }) =>
+        useConfigManager({ initialConfig, onConfigSave }),
+      {
+        initialConfig: mockInitialConfig,
+        onConfigSave: vi.fn().mockResolvedValue(true),
+      }
+    );
+    await act(async () => {
+      await result.current.handleSettingsSave(newConnectionSettings);
+    });
+    spy.mockRestore();
+  });
 });

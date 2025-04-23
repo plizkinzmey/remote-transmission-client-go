@@ -1,3 +1,4 @@
+import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useConfigManager } from "../useConfigManager";
@@ -201,5 +202,49 @@ describe("useConfigManager", () => {
     });
 
     expect(result.current.config).toEqual(newConfigDirect);
+  });
+
+  it("should fallback to default UI settings when config language and localization language are empty", async () => {
+    mockOnConfigSave.mockResolvedValue(true);
+    // обёртка с пустым currentLanguage
+    const wrapper = ({ children }: { children: any }) =>
+      React.createElement(
+        MockLocalizationProvider as any,
+        { initialLanguage: "" },
+        children
+      );
+
+    const { result } = renderHook(
+      ({ initialConfig, onConfigSave }) =>
+        useConfigManager({ initialConfig, onConfigSave }),
+      {
+        wrapper,
+        initialProps: {
+          initialConfig: mockInitialConfig,
+          onConfigSave: mockOnConfigSave,
+        },
+      }
+    );
+
+    // принудительно задать пустые строки в config
+    act(() => {
+      result.current.setConfig({
+        ...mockInitialConfig,
+        language: "",
+        theme: "" as any,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSettingsSave(newConnectionSettings);
+    });
+
+    // Должен подставиться язык "en" и тема "light"
+    expect(mockOnConfigSave).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "en", theme: "light" })
+    );
+    expect(result.current.config).toEqual(
+      expect.objectContaining({ language: "en", theme: "light" })
+    );
   });
 });

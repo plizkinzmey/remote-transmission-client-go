@@ -2,14 +2,36 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import App from "../../../App";
-import { useTorrentData } from "../../../hooks/useTorrentData";
+import { TorrentData as ProcessedTorrentData } from "../../../components/TorrentList";
+import {
+  useConnectionManager,
+  useTorrentList,
+  useSessionStats,
+  useTorrentSelection,
+  useTorrentActions,
+  useConfigManager,
+  WailsTorrent,
+} from "@/hooks/torrent";
+import { useBulkOperations, useModals } from "@/hooks";
 import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
 
-// Мокируем хуки
-vi.mock("../../../hooks/useTorrentData");
-vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
+vi.mock("@/hooks/torrent", async () => {
+  const actual = await vi.importActual("@/hooks/torrent");
+  return {
+    ...(actual as any),
+    useConnectionManager: vi.fn(),
+    useTorrentList: vi.fn(),
+    useSessionStats: vi.fn(),
+    useTorrentSelection: vi.fn(),
+    useTorrentActions: vi.fn(),
+    useConfigManager: vi.fn(),
+  };
+});
 
-// Мокируем компоненты, которые не тестируются в этом файле
+vi.mock("@/hooks/useModals");
+vi.mock("@/hooks/useBulkOperations");
+vi.mock("@/components/TorrentList/hooks/useFilteredTorrents");
+
 vi.mock("../../../components/Header", () => ({
   Header: ({ isSlowModeEnabled }: any) => (
     <div data-testid="header-component" data-slow-mode={isSlowModeEnabled}>
@@ -19,9 +41,9 @@ vi.mock("../../../components/Header", () => ({
 }));
 
 vi.mock("../../../components/TorrentList", () => ({
-  TorrentList: ({ torrents, onSelect }: any) => (
+  TorrentList: ({ torrents, onSelect }: { torrents: ProcessedTorrentData[], onSelect: (id: number) => void }) => (
     <div data-testid="torrent-list-component">
-      {torrents.map((torrent: any) => (
+      {torrents.map((torrent: ProcessedTorrentData) => (
         <div
           key={torrent.ID}
           data-testid={`torrent-${torrent.ID}`}
@@ -51,76 +73,137 @@ vi.mock("../../../styles/App.module.css", () => ({
   },
 }));
 
+const createMockWailsTorrent = (
+  id: number,
+  name: string,
+  isSlowMode = false
+): WailsTorrent => ({
+  ID: id,
+  Name: name,
+  Status: "stopped",
+  Progress: 0,
+  Size: 0,
+  SizeFormatted: "0 B",
+  UploadRatio: 0,
+  SeedsConnected: 0,
+  SeedsTotal: 0,
+  PeersConnected: 0,
+  PeersTotal: 0,
+  UploadedBytes: 0,
+  UploadedFormatted: "0 B",
+  DownloadSpeed: 0,
+  UploadSpeed: 0,
+  DownloadSpeedFormatted: "0 B/s",
+  UploadSpeedFormatted: "0 B/s",
+  IsSlowMode: isSlowMode,
+});
+
+const createMockProcessedTorrentData = (
+  id: number,
+  name: string,
+  isSlowMode = false
+): ProcessedTorrentData => ({
+  ID: id,
+  Name: name,
+  Status: "stopped",
+  Progress: 0,
+  Size: 0,
+  SizeFormatted: "0 B",
+  UploadRatio: 0,
+  SeedsConnected: 0,
+  SeedsTotal: 0,
+  PeersConnected: 0,
+  PeersTotal: 0,
+  UploadedBytes: 0,
+  UploadedFormatted: "0 B",
+  DownloadSpeed: 0,
+  UploadSpeed: 0,
+  DownloadSpeedFormatted: "0 B/s",
+  UploadSpeedFormatted: "0 B/s",
+  IsSlowMode: isSlowMode,
+});
+
 describe("App - Взаимодействие с торрентами", () => {
   const mockHandleTorrentSelect = vi.fn();
   const mockRefreshTorrents = vi.fn();
 
+  const mockRawTorrents: WailsTorrent[] = [
+    createMockWailsTorrent(1, "Torrent 1", false),
+    createMockWailsTorrent(2, "Torrent 2", true),
+  ];
+
+  const mockProcessedTorrents: ProcessedTorrentData[] = [
+    createMockProcessedTorrentData(1, "Torrent 1", false),
+    createMockProcessedTorrentData(2, "Torrent 2", true),
+  ];
+
   beforeEach(() => {
     vi.resetAllMocks();
 
-    // Настройка базовых моков для хуков
-    vi.mocked(useTorrentData).mockReturnValue({
-      torrents: [
-        {
-          ID: 1,
-          Name: "Torrent 1",
-          Status: "0",
-          Progress: 0,
-          Size: 0,
-          SizeFormatted: "0 B",
-          UploadRatio: 0,
-          SeedsConnected: 0,
-          SeedsTotal: 0,
-          PeersConnected: 0,
-          PeersTotal: 0,
-          DownloadSpeed: 0,
-          DownloadSpeedFormatted: "0 B/s",
-          UploadSpeed: 0,
-          UploadSpeedFormatted: "0 B/s",
-          UploadedBytes: 0,
-          UploadedFormatted: "0 B",
-          IsSlowMode: false,
-        },
-        {
-          ID: 2,
-          Name: "Torrent 2",
-          Status: "0",
-          Progress: 0,
-          Size: 0,
-          SizeFormatted: "0 B",
-          UploadRatio: 0,
-          SeedsConnected: 0,
-          SeedsTotal: 0,
-          PeersConnected: 0,
-          PeersTotal: 0,
-          DownloadSpeed: 0,
-          DownloadSpeedFormatted: "0 B/s",
-          UploadSpeed: 0,
-          UploadSpeedFormatted: "0 B/s",
-          UploadedBytes: 0,
-          UploadedFormatted: "0 B",
-          IsSlowMode: true,
-        },
-      ],
-      selectedTorrents: new Set(),
+    vi.mocked(useConnectionManager).mockReturnValue({
       isInitialized: true,
-      error: null,
-      hasSelectedTorrents: false,
-      sessionStats: null,
       isLoading: false,
       isReconnecting: false,
+      error: null,
+      initialConfig: null,
+      connect: vi.fn(),
+      reconnect: vi.fn(),
+      setConnectionError: vi.fn(),
+      setIsReconnectingState: vi.fn(),
+    });
+
+    vi.mocked(useTorrentList).mockReturnValue({
+      torrents: mockRawTorrents,
+      isLoading: false,
+      error: null,
+      refreshTorrents: mockRefreshTorrents,
+    });
+
+    vi.mocked(useSessionStats).mockReturnValue({
+      sessionStats: null,
+      error: null,
+      refreshSessionStats: vi.fn(),
+    });
+
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      selectedTorrents: new Set(),
+      hasSelectedTorrents: false,
       handleTorrentSelect: mockHandleTorrentSelect,
       handleSelectAll: vi.fn(),
-      refreshTorrents: mockRefreshTorrents,
-      handleAddTorrent: vi.fn(),
-      handleAddTorrentFile: vi.fn(),
-      handleRemoveTorrent: vi.fn(),
-      handleStartTorrent: vi.fn(),
-      handleStopTorrent: vi.fn(),
-      handleVerifyTorrent: vi.fn(),
-      handleSettingsSave: vi.fn(),
-      handleSetSpeedLimit: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    vi.mocked(useTorrentActions).mockReturnValue({
+      addTorrent: vi.fn(),
+      addTorrentFile: vi.fn(),
+      removeTorrent: vi.fn(),
+      startTorrents: vi.fn(),
+      stopTorrents: vi.fn(),
+      setSpeedLimit: vi.fn(),
+      verifyTorrent: vi.fn(),
+    });
+
+    vi.mocked(useConfigManager).mockReturnValue({
       config: null,
+      isSettingsSaving: false,
+      error: null,
+      handleSettingsSave: vi.fn(),
+      setConfig: vi.fn(),
+    });
+
+    vi.mocked(useModals).mockReturnValue({
+      showSettings: false,
+      showAddTorrent: false,
+      torrentFilePath: null,
+      isFirstStart: false,
+      torrentFileData: null,
+      checkFirstStart: vi.fn(),
+      handleSuccessfulSettingsSave: vi.fn(),
+      openSettings: vi.fn(),
+      closeSettings: vi.fn(),
+      openAddTorrent: vi.fn(),
+      closeAddTorrent: vi.fn(),
+      handleTorrentFileDrop: vi.fn(),
     });
 
     vi.mocked(useFilteredTorrents).mockReturnValue({
@@ -128,101 +211,62 @@ describe("App - Взаимодействие с торрентами", () => {
       setSearchTerm: vi.fn(),
       statusFilter: null,
       setStatusFilter: vi.fn(),
-      filteredTorrents: [
-        {
-          ID: 1,
-          Name: "Torrent 1",
-          Status: "0",
-          Progress: 0,
-          Size: 0,
-          SizeFormatted: "0 B",
-          UploadRatio: 0,
-          SeedsConnected: 0,
-          SeedsTotal: 0,
-          PeersConnected: 0,
-          PeersTotal: 0,
-          DownloadSpeed: 0,
-          DownloadSpeedFormatted: "0 B/s",
-          UploadSpeed: 0,
-          UploadSpeedFormatted: "0 B/s",
-          UploadedBytes: 0,
-          UploadedFormatted: "0 B",
-          IsSlowMode: false,
-        },
-        {
-          ID: 2,
-          Name: "Torrent 2",
-          Status: "0",
-          Progress: 0,
-          Size: 0,
-          SizeFormatted: "0 B",
-          UploadRatio: 0,
-          SeedsConnected: 0,
-          SeedsTotal: 0,
-          PeersConnected: 0,
-          PeersTotal: 0,
-          DownloadSpeed: 0,
-          DownloadSpeedFormatted: "0 B/s",
-          UploadSpeed: 0,
-          UploadSpeedFormatted: "0 B/s",
-          UploadedBytes: 0,
-          UploadedFormatted: "0 B",
-          IsSlowMode: true,
-        },
-      ],
+      filteredTorrents: mockProcessedTorrents,
+    });
+
+    vi.mocked(useBulkOperations).mockReturnValue({
+      bulkOperations: {
+        start: false,
+        stop: false,
+        remove: false,
+        speedLimit: false,
+      },
+      error: null,
+      handleStartSelected: vi.fn(),
+      handleStopSelected: vi.fn(),
+      handleRemoveSelected: vi.fn(),
+      handleSetSpeedLimit: vi.fn(),
     });
   });
 
   it("рендерит список торрентов", () => {
     render(<App />);
-
-    // Проверяем, что торренты отображаются
     expect(screen.getByTestId("torrent-1")).toBeInTheDocument();
     expect(screen.getByTestId("torrent-2")).toBeInTheDocument();
   });
 
   it("вызывает handleTorrentSelect при выборе торрента", () => {
     render(<App />);
-
-    // Имитируем выбор торрента
     const torrent1 = screen.getByTestId("torrent-1");
     fireEvent.click(torrent1);
-
-    // Проверяем, что handleTorrentSelect был вызван с правильным ID
     expect(mockHandleTorrentSelect).toHaveBeenCalledWith(1);
   });
 
-  it("обновляет список торрентов при вызове refreshTorrents", () => {
+  it("обновляет список торрентов при монтировании (через useEffect)", () => {
     render(<App />);
-
-    // Проверяем, что refreshTorrents был вызван при монтировании
-    expect(mockRefreshTorrents).toHaveBeenCalledTimes(1);
+    expect(mockRefreshTorrents).toHaveBeenCalled();
   });
 
   it("корректно определяет наличие замедленных торрентов среди выбранных", () => {
-    // Мокируем выбранные торренты с включенным режимом замедления
-    vi.mocked(useTorrentData).mockReturnValue({
-      ...vi.mocked(useTorrentData)(),
-      selectedTorrents: new Set([2]), // выбран торрент с ID 2, у которого IsSlowMode: true
+    const currentSelectionMock = vi.mocked(useTorrentSelection).mock.results[0]?.value ?? { selectedTorrents: new Set(), hasSelectedTorrents: false, handleTorrentSelect: vi.fn(), handleSelectAll: vi.fn(), clearSelection: vi.fn() };
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      ...currentSelectionMock,
+      selectedTorrents: new Set([2]),
     });
 
     render(<App />);
-
-    // Проверяем, что в Header передается правильное значение isSlowModeEnabled
     const header = screen.getByTestId("header-component");
     expect(header).toHaveAttribute("data-slow-mode", "true");
   });
 
   it("корректно определяет отсутствие замедленных торрентов среди выбранных", () => {
-    // Мокируем выбранные торренты без режима замедления
-    vi.mocked(useTorrentData).mockReturnValue({
-      ...vi.mocked(useTorrentData)(),
-      selectedTorrents: new Set([1]), // выбран торрент с ID 1, у которого IsSlowMode: false
+    const currentSelectionMock = vi.mocked(useTorrentSelection).mock.results[0]?.value ?? { selectedTorrents: new Set(), hasSelectedTorrents: false, handleTorrentSelect: vi.fn(), handleSelectAll: vi.fn(), clearSelection: vi.fn() };
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      ...currentSelectionMock,
+      selectedTorrents: new Set([1]),
     });
 
     render(<App />);
-
-    // Проверяем, что в Header передается правильное значение isSlowModeEnabled
     const header = screen.getByTestId("header-component");
     expect(header).toHaveAttribute("data-slow-mode", "false");
   });

@@ -139,4 +139,17 @@ describe("useSessionStats", () => {
     });
     expect(AppAPI.GetSessionStats).toHaveBeenCalledTimes(1); // Вызов остался один
   });
+
+  it("устанавливает ошибку, если GetSessionStats выбрасывает", async () => {
+    // Мокаем GetSessionStats чтобы выбрасывал ошибку
+    const error = new Error("fail");
+    vi.mocked(AppAPI.GetSessionStats).mockRejectedValueOnce(error);
+
+    const { result } = renderHook(() => useSessionStats(true));
+    await act(async () => {
+      await result.current.refreshSessionStats();
+    });
+
+    expect(result.current.error).toBe("Failed to fetch session stats.");
+  });
 });

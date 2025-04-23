@@ -24,7 +24,7 @@ export function useConfigManager({
     setConfig(initialConfig);
   }, [initialConfig]);
 
-  // Универсальная функция для установки ошибки с безопасным fallback
+  // Универсальная функция для установки ошибки с fallback на message, если t выбрасывает
   const setErrorSafe = useCallback(
     (message: string, fallback?: string) => {
       try {
@@ -65,13 +65,12 @@ export function useConfigManager({
     [config, languageState, onConfigSave, setErrorSafe]
   );
 
+  // Просто вызываем setter напрямую
   function safeSetIsSettingsSaving(
     setter: (v: boolean) => void,
     value: boolean
   ) {
-    try {
-      setter(value);
-    } catch {}
+    setter(value);
   }
 
   return {

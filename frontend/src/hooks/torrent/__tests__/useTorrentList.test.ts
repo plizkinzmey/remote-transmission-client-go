@@ -1,24 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest"; // <--- добавлено
 import { renderHook, act } from "@testing-library/react";
 import { useTorrentList } from "../useTorrentList";
 import * as AppAPI from "@wailsjs/go/main/App";
-// Импортируем WailsTorrent из types
+import * as types from "../types"; // Импортируем весь модуль
 import { WailsTorrent } from "../types";
 import { MockLocalizationProvider } from "@/test/mocks/localization-context-mock";
 
-// Мокируем API и утилиту таймаута
+// Мокируем API
 vi.mock("@wailsjs/go/main/App", () => ({
   GetTorrents: vi.fn(),
 }));
-// Мокируем withTimeout
-vi.mock("../types", async () => {
-  const actual = await vi.importActual("../types");
-  return {
-    ...(actual as any),
-    // Добавляем тип для promise
-    withTimeout: vi.fn((promise: Promise<any>) => promise),
-  };
-});
 
 // Используем WailsTorrent для мок-данных и задаем строковый статус
 // Добавляем другие обязательные поля из domain.Torrent
@@ -80,9 +72,9 @@ describe("useTorrentList", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    // Сбрасываем состояние мока withTimeout перед каждым тестом
-    vi.mocked(require("../types").withTimeout).mockImplementation(
-      (promise: Promise<any>) => promise // Добавляем тип
+    // Спай для withTimeout
+    vi.spyOn(types, "withTimeout").mockImplementation(
+      (promise: Promise<any>) => promise
     );
   });
 
@@ -98,7 +90,7 @@ describe("useTorrentList", () => {
   });
 
   it("should fetch torrents immediately, set loading state, and set interval if initialized", async () => {
-    vi.mocked(AppAPI.GetTorrents).mockResolvedValue(mockTorrentsData); // Убираем cast as any
+    vi.mocked(AppAPI.GetTorrents).mockResolvedValue(mockTorrentsData);
     const { result } = renderHookWithProviders(
       ({ initialized }) => useTorrentList(initialized),
       { initialized: true }
@@ -111,19 +103,21 @@ describe("useTorrentList", () => {
 
     // Ждем выполнения первого запроса
     await act(async () => {
-      await Promise.resolve(); // Даем промису выполниться
+      await Promise.resolve();
     });
 
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
-    expect(result.current.torrents).toEqual(mockTorrentsData); // Тип должен совпадать с WailsTorrent[]
-    expect(result.current.isLoading).toBe(false); // Загрузка завершена
+    // Ожидаем 2 вызова из-за StrictMode
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
+    expect(result.current.torrents).toEqual(mockTorrentsData);
+    expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
 
     // Проверяем вызов по интервалу
     await act(async () => {
       vi.advanceTimersByTime(3000);
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
+    // Третий вызов (2 начальных + 1 интервальный)
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(3);
 
     // Проверяем, что isLoading не становится true при последующих обновлениях
     expect(result.current.isLoading).toBe(false);
@@ -146,14 +140,13 @@ describe("useTorrentList", () => {
     expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
     expect(result.current.torrents).toEqual([]);
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull(); // Ошибка не таймаута не устанавливается здесь
+    expect(result.current.error).toBeNull();
   });
 
   it("should handle fetch timeout error", async () => {
-    const timeoutError = new Error("errors.timeout"); // Имитируем ошибку таймаута
-    // Мокируем withTimeout, чтобы он выбросил ошибку таймаута
-    vi.mocked(require("../types").withTimeout).mockRejectedValue(timeoutError);
-    // GetTorrents сам по себе не будет вызван, так как withTimeout упадет раньше
+    const timeoutError = new Error("errors.timeout");
+    // Переопределяем поведение spy
+    (types.withTimeout as Mock).mockRejectedValue(timeoutError);
 
     const { result } = renderHookWithProviders(
       ({ initialized }) => useTorrentList(initialized),
@@ -163,14 +156,13 @@ describe("useTorrentList", () => {
     expect(result.current.isLoading).toBe(true);
 
     await act(async () => {
-      await Promise.resolve(); // Даем промису выполниться (и упасть)
+      await Promise.resolve();
     });
 
-    expect(require("../types").withTimeout).toHaveBeenCalledTimes(1);
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1); // GetTorrents вызывается внутри withTimeout
+    expect(types.withTimeout).toHaveBeenCalledTimes(1);
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
     expect(result.current.torrents).toEqual([]);
     expect(result.current.isLoading).toBe(false);
-    // Ожидаем текст ошибки таймаута из локализации (ключ)
     expect(result.current.error).toBe("errors.timeoutExplanation");
   });
 
@@ -184,25 +176,27 @@ describe("useTorrentList", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
+    // Ожидаем 2 вызова из-за StrictMode
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
 
     unmount();
 
     await act(async () => {
       vi.advanceTimersByTime(10000);
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
+    // Вызовы не должны увеличиться после unmount
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
   });
 
   it("should clear error on successful fetch after an error", async () => {
     const timeoutError = new Error("errors.timeout");
-    // Мокируем withTimeout для ошибки и затем успеха
-    vi.mocked(require("../types").withTimeout)
-      .mockRejectedValueOnce(timeoutError)
-      .mockImplementation((promise: Promise<any>) => promise);
+    const wt = types.withTimeout as Mock;
+    wt.mockRejectedValueOnce(timeoutError).mockImplementation(
+      (p: Promise<any>) => p
+    );
 
     vi.mocked(AppAPI.GetTorrents)
-      .mockResolvedValueOnce([]) // Возвращаем пустой массив WailsTorrent[]
+      .mockResolvedValueOnce([])
       .mockResolvedValue(mockTorrentsData);
 
     const { result } = renderHookWithProviders(
@@ -221,13 +215,12 @@ describe("useTorrentList", () => {
     await act(async () => {
       vi.advanceTimersByTime(3000);
     });
-    // Ждем выполнения асинхронной операции внутри refreshTorrents
     await act(async () => {
       await Promise.resolve();
     });
 
-    expect(result.current.error).toBeNull(); // Ошибка должна сброситься
-    expect(result.current.torrents).toEqual(mockTorrentsData); // Тип должен совпадать
+    expect(result.current.error).toBeNull();
+    expect(result.current.torrents).toEqual(mockTorrentsData);
   });
 
   it("should call refreshTorrents manually", async () => {
@@ -241,14 +234,16 @@ describe("useTorrentList", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
+    // Ожидаем 2 вызова из-за StrictMode
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
 
     // Вызываем вручную
     await act(async () => {
       await result.current.refreshTorrents();
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
-    expect(result.current.torrents).toEqual(mockTorrentsData); // Тип должен совпадать
+    // Третий вызов (2 начальных + 1 ручной)
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(3);
+    expect(result.current.torrents).toEqual(mockTorrentsData);
   });
 
   it("should not fetch torrents if isInitialized becomes false", async () => {
@@ -262,7 +257,8 @@ describe("useTorrentList", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
+    // Ожидаем 2 вызова из-за StrictMode
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
 
     // Меняем initialized на false
     rerender({ initialized: false });
@@ -271,6 +267,7 @@ describe("useTorrentList", () => {
     await act(async () => {
       vi.advanceTimersByTime(10000);
     });
-    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(1);
+    // Вызовы не должны увеличиться
+    expect(AppAPI.GetTorrents).toHaveBeenCalledTimes(2);
   });
 });

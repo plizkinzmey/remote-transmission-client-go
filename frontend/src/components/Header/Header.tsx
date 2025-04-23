@@ -238,7 +238,9 @@ export const Header: React.FC<HeaderProps> = ({
               selectedTorrents.size > 0 &&
               selectedTorrents.size === filteredTorrents.length
             }
-            onCheckedChange={onSelectAll}
+            onCheckedChange={() => {
+              onSelectAll();
+            }}
             disabled={filteredTorrents.length === 0 || isReconnecting}
             title={isReconnecting ? t("errors.needConnection") : undefined}
           />

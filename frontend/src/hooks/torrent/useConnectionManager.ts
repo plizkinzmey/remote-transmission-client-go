@@ -62,6 +62,7 @@ export function useConnectionManager() {
             slowSpeedUnit: (savedConfig.slowSpeedUnit || "KiB/s") as
               | "KiB/s"
               | "MiB/s",
+            language: savedConfig.language || "en", // Добавляем язык по умолчанию
           };
           setInitialConfig(config); // Сохраняем для возможных переподключений
           await connect(config); // Пытаемся подключиться

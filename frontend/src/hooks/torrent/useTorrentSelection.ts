@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 /**
  * Хук для управления состоянием выбора торрентов в списке.
@@ -22,13 +22,13 @@ export function useTorrentSelection() {
 
   const handleSelectAll = useCallback((torrentsWithId: { ID: number }[]) => {
     setSelectedTorrents((prev) => {
+      let next: Set<number>;
       if (prev.size === torrentsWithId.length && torrentsWithId.length > 0) {
-        // Если все видимые выбраны - снимаем выделение
-        return new Set();
+        next = new Set();
       } else {
-        // Иначе выбираем все видимые
-        return new Set(torrentsWithId.map((t) => t.ID));
+        next = new Set(torrentsWithId.map((t) => t.ID));
       }
+      return next;
     });
   }, []);
 
@@ -43,6 +43,6 @@ export function useTorrentSelection() {
     hasSelectedTorrents,
     handleTorrentSelect,
     handleSelectAll,
-    clearSelection, // Добавлено для сброса выделения при необходимости
+    clearSelection,
   };
 }

@@ -132,6 +132,8 @@ const createMockWailsTorrent = (
 describe("App - Адаптеры и вспомогательные функции", () => {
   const mockHandleSelectAll = vi.fn();
   const mockSetSpeedLimit = vi.fn(); // Из useTorrentActions
+  // Определим filteredTorrents здесь, чтобы использовать в тесте
+  let filteredTorrents: ProcessedTorrentData[];
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -164,9 +166,14 @@ describe("App - Адаптеры и вспомогательные функци�
     });
 
     vi.mocked(useSessionStats).mockReturnValue({
-      sessionStats: null,
+      sessionStats: {
+        TotalDownloadSpeed: 0,
+        TotalUploadSpeed: 0,
+        FreeSpace: 0,
+        TransmissionVersion: "",
+      },
       error: null,
-      refreshSessionStats: vi.fn(), // Добавляем refreshSessionStats
+      refreshSessionStats: vi.fn(),
     });
 
     vi.mocked(useTorrentSelection).mockReturnValue({
@@ -212,7 +219,8 @@ describe("App - Адаптеры и вспомогательные функци�
     });
 
     // Используем ProcessedTorrentData для filteredTorrents
-    const filteredTorrents: ProcessedTorrentData[] = [
+    // Присваиваем значение переменной, определенной выше
+    filteredTorrents = [
       createMockProcessedTorrentData(1, "Filtered 1", false),
       createMockProcessedTorrentData(2, "Filtered 2", true),
     ];
@@ -222,7 +230,7 @@ describe("App - Адаптеры и вспомогательные функци�
       setSearchTerm: vi.fn(),
       statusFilter: null,
       setStatusFilter: vi.fn(),
-      filteredTorrents,
+      filteredTorrents, // Используем переменную
     });
 
     vi.mocked(useBulkOperations).mockReturnValue({
@@ -273,8 +281,8 @@ describe("App - Адаптеры и вспомогательные функци�
     const headerProps = (window as any).mockHeaderProps;
     headerProps.onSelectAll();
 
-    // Проверяем, что handleSelectAll был вызван с массивом объектов { ID: number }
-    expect(mockHandleSelectAll).toHaveBeenCalledWith([{ ID: 1 }, { ID: 2 }]);
+    // Проверяем, что handleSelectAll был вызван с полным массивом filteredTorrents
+    expect(mockHandleSelectAll).toHaveBeenCalledWith(filteredTorrents);
   });
 
   it("корректно передает параметры в setSpeedLimit через адаптер", () => {

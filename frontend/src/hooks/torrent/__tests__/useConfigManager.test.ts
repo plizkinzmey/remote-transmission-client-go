@@ -138,9 +138,8 @@ describe("useConfigManager", () => {
     );
     // Внутренний конфиг не должен обновиться при ошибке
     expect(result.current.config).toEqual(originalConfig);
-    expect(result.current.error).toBe(
-      "errors.failedToUpdateSettings: Connection failed"
-    ); // Ожидаем запасной текст ошибки
+    // Ожидаем только ключ ошибки из-за мока t()
+    expect(result.current.error).toBe("errors.failedToUpdateSettings");
   });
 
   it("handleSettingsSave should return false and set error if onConfigSave throws", async () => {
@@ -158,9 +157,8 @@ describe("useConfigManager", () => {
     expect(result.current.isSettingsSaving).toBe(false);
     expect(mockOnConfigSave).toHaveBeenCalledTimes(1);
     expect(result.current.config).toEqual(originalConfig);
-    expect(result.current.error).toBe(
-      `errors.failedToUpdateSettings: Error: Internal save error`
-    );
+    // Ожидаем только ключ ошибки из-за мока t()
+    expect(result.current.error).toBe("errors.failedToUpdateSettings");
   });
 
   it("should update config when initialConfig prop changes", () => {

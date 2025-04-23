@@ -80,9 +80,7 @@ describe("useTorrentActions", () => {
       ""
     );
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToAddTorrent: Error: Failed to add"
-    );
+    expect(mockOnActionError).toHaveBeenCalledWith("errors.failedToAddTorrent");
   });
 
   // Тесты для addTorrentFile
@@ -122,9 +120,7 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.AddTorrentFile).toHaveBeenCalledWith("base64content", "");
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToAddTorrent: Error: File add failed"
-    );
+    expect(mockOnActionError).toHaveBeenCalledWith("errors.failedToAddTorrent");
   });
 
   // Тесты для removeTorrent
@@ -159,7 +155,7 @@ describe("useTorrentActions", () => {
     expect(AppAPI.RemoveTorrent).toHaveBeenCalledWith(1, false);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
     expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToRemoveTorrent: Error: Remove failed"
+      "errors.failedToRemoveTorrent"
     );
   });
 
@@ -197,7 +193,7 @@ describe("useTorrentActions", () => {
     expect(AppAPI.StartTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
     expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToStartTorrent: Error: Start failed"
+      "errors.failedToStartTorrent"
     );
   });
 
@@ -235,7 +231,7 @@ describe("useTorrentActions", () => {
     expect(AppAPI.StopTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
     expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToStopTorrent: Error: Stop failed"
+      "errors.failedToStopTorrent"
     );
   });
 
@@ -275,7 +271,7 @@ describe("useTorrentActions", () => {
     expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
     expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToSetSpeedLimit: Error: Speed limit failed"
+      "errors.failedToSetSpeedLimit"
     );
   });
 
@@ -313,7 +309,7 @@ describe("useTorrentActions", () => {
     expect(AppAPI.VerifyTorrent).toHaveBeenCalledWith(id);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
     expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToVerifyTorrent: Error: Verify failed"
+      "errors.failedToVerifyTorrent"
     );
   });
 });

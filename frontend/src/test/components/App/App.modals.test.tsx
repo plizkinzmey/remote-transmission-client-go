@@ -1,7 +1,8 @@
 import React from "react";
+// Добавляем импорт Mock
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, act, waitFor } from "@testing-library/react";
-import App from "../../../App";
+import { render, act, waitFor, screen } from "@testing-library/react";
+import App, { ConnectionConfig } from "../../../App"; // Импортируем ConnectionConfig из App
 // Импортируем новые хуки
 import {
   useConnectionManager,
@@ -45,29 +46,46 @@ vi.mock("../../../components/DragDropProvider", () => ({
   ),
 }));
 
-// Мок для Settings компонента с детальной проверкой пропсов
+// Определяем тип для мока useModals для лучшей типизации
+type MockUseModalsResult = {
+  showSettings: boolean;
+  showAddTorrent: boolean;
+  torrentFilePath: string | null;
+  isFirstStart: boolean;
+  torrentFileData: { name: string; data: string } | null;
+  // Используем правильный синтаксис для моков функций
+  checkFirstStart: ReturnType<typeof vi.fn>;
+  handleSuccessfulSettingsSave: ReturnType<typeof vi.fn>;
+  openSettings: ReturnType<typeof vi.fn>;
+  closeSettings: ReturnType<typeof vi.fn>;
+  openAddTorrent: ReturnType<typeof vi.fn>;
+  closeAddTorrent: ReturnType<typeof vi.fn>;
+  handleTorrentFileDrop: ReturnType<typeof vi.fn>;
+};
+
+// Мок для Settings компонента - сохраняем переданные колбэки
+let settingsOnSaveCallback: ((settings: any) => Promise<boolean>) | undefined;
+let settingsOnCloseCallback: (() => void) | undefined;
 vi.mock("../../../components/settings/Settings", () => ({
-  Settings: ({ onSave, onClose, isFirstStart, ...props }: any) => (
-    <div
-      data-testid="settings-modal" // Изменён с settings-component на settings-modal
-      data-is-first-start={isFirstStart}
-      onClick={() => {
-        onSave({
-          host: "test-host",
-          username: "test-user",
-          password: "test-pass",
-          maxUploadRatio: 2,
-        });
-        onClose();
-      }}
-      {...props}
-    >
-      Settings Mocked
-    </div>
-  ),
+  Settings: ({ onSave, onClose, isFirstStart, ...props }: any) => {
+    settingsOnSaveCallback = onSave;
+    settingsOnCloseCallback = onClose;
+    return (
+      <div
+        data-testid="settings-modal"
+        data-is-first-start={isFirstStart}
+        {...props}
+      >
+        Settings Mocked
+      </div>
+    );
+  },
 }));
 
-// Мок для AddTorrent компонента с детальной проверкой пропсов
+// Мок для AddTorrent компонента - сохраняем переданные колбэки
+let addTorrentOnAddCallback: ((url: string, downloadDir?: string) => Promise<boolean>) | undefined;
+let addTorrentOnAddFileCallback: ((base64: string, downloadDir?: string) => Promise<boolean>) | undefined;
+let addTorrentOnCloseCallback: (() => void) | undefined;
 vi.mock("../../../components/AddTorrent", () => ({
   AddTorrent: ({
     torrentFile,
@@ -76,21 +94,21 @@ vi.mock("../../../components/AddTorrent", () => ({
     onAddFile,
     onClose,
     ...props
-  }: any) => (
-    <div
-      data-testid="add-torrent-modal" // Изменён с add-torrent-component на add-torrent-modal
-      data-torrent-file={torrentFile}
-      data-has-file-data={torrentFileData ? "true" : "false"}
-      onClick={() => {
-        onAdd("magnet:test");
-        onAddFile("test-file-path", "test-name");
-        onClose();
-      }}
-      {...props}
-    >
-      AddTorrent Mocked
-    </div>
-  ),
+  }: any) => {
+    addTorrentOnAddCallback = onAdd;
+    addTorrentOnAddFileCallback = onAddFile;
+    addTorrentOnCloseCallback = onClose;
+    return (
+      <div
+        data-testid="add-torrent-modal"
+        data-torrent-file={torrentFile}
+        data-has-file-data={torrentFileData ? "true" : "false"}
+        {...props}
+      >
+        AddTorrent Mocked
+      </div>
+    );
+  },
 }));
 
 // Мокируем остальные компоненты более просто, т.к. они не важны для этих тестов
@@ -123,6 +141,10 @@ vi.mock("../../../styles/App.module.css", () => ({
 }));
 
 describe("App - Модальные окна", () => {
+  // Объявляем изменяемый объект для мока useModals
+  let mockModalsResult: MockUseModalsResult;
+
+  // Создаем моки без сложной типизации
   const mockCheckFirstStart = vi.fn();
   const mockHandleSuccessfulSettingsSave = vi.fn();
   const mockOpenSettings = vi.fn();
@@ -130,12 +152,35 @@ describe("App - Модальные окна", () => {
   const mockOpenAddTorrent = vi.fn();
   const mockCloseAddTorrent = vi.fn();
   const mockHandleTorrentFileDrop = vi.fn();
-  const mockSaveSettingsAndConnect = vi.fn(); // Из useConfigManager
-  const mockAddTorrent = vi.fn(); // Из useTorrentActions
-  const mockAddTorrentFile = vi.fn(); // Из useTorrentActions
+  const mockSaveSettingsAndConnect = vi.fn();
+  const mockAddTorrent = vi.fn();
+  const mockAddTorrentFile = vi.fn();
 
   beforeEach(() => {
     vi.resetAllMocks();
+    settingsOnSaveCallback = undefined;
+    settingsOnCloseCallback = undefined;
+    addTorrentOnAddCallback = undefined;
+    addTorrentOnAddFileCallback = undefined;
+    addTorrentOnCloseCallback = undefined;
+
+    // Инициализируем мок useModals перед каждым тестом
+    mockModalsResult = {
+      showSettings: false,
+      showAddTorrent: false,
+      torrentFilePath: null,
+      isFirstStart: false,
+      torrentFileData: null,
+      checkFirstStart: mockCheckFirstStart,
+      handleSuccessfulSettingsSave: mockHandleSuccessfulSettingsSave,
+      openSettings: mockOpenSettings,
+      closeSettings: mockCloseSettings,
+      openAddTorrent: mockOpenAddTorrent,
+      closeAddTorrent: mockCloseAddTorrent,
+      handleTorrentFileDrop: mockHandleTorrentFileDrop,
+    };
+    // Мокируем useModals один раз, чтобы он возвращал наш изменяемый объект
+    vi.mocked(useModals).mockReturnValue(mockModalsResult);
 
     // Настройка базовых моков для новых хуков
     vi.mocked(useConnectionManager).mockReturnValue({
@@ -145,7 +190,7 @@ describe("App - Модальные окна", () => {
       error: null,
       initialConfig: null,
       connect: vi.fn(),
-      reconnect: vi.fn(), // Добавляем reconnect
+      reconnect: vi.fn(),
       setConnectionError: vi.fn(),
       setIsReconnectingState: vi.fn(),
     });
@@ -158,9 +203,14 @@ describe("App - Модальные окна", () => {
     });
 
     vi.mocked(useSessionStats).mockReturnValue({
-      sessionStats: null,
+      sessionStats: {
+        TotalDownloadSpeed: 0,
+        TotalUploadSpeed: 0,
+        FreeSpace: 0,
+        TransmissionVersion: "",
+      },
       error: null,
-      refreshSessionStats: vi.fn(), // Добавляем refreshSessionStats
+      refreshSessionStats: vi.fn(),
     });
 
     vi.mocked(useTorrentSelection).mockReturnValue({
@@ -185,40 +235,8 @@ describe("App - Модальные окна", () => {
       config: null,
       isSettingsSaving: false,
       error: null,
-      handleSettingsSave: mockSaveSettingsAndConnect.mockResolvedValue(true),
-      setConfig: vi.fn(), // Добавляем setConfig
-    });
-
-    // Моки для остальных хуков
-    const currentModalsMock =
-      vi.mocked(useModals).mock.results[0]?.value ?? {
-        showSettings: false,
-        showAddTorrent: false,
-        torrentFilePath: null,
-        isFirstStart: false,
-        torrentFileData: null,
-        checkFirstStart: vi.fn(),
-        handleSuccessfulSettingsSave: vi.fn(),
-        openSettings: vi.fn(),
-        closeSettings: vi.fn(),
-        openAddTorrent: vi.fn(),
-        closeAddTorrent: vi.fn(),
-        handleTorrentFileDrop: vi.fn(),
-      };
-    vi.mocked(useModals).mockReturnValue({
-      ...currentModalsMock,
-      showSettings: false,
-      showAddTorrent: false,
-      torrentFilePath: null,
-      isFirstStart: false,
-      torrentFileData: { name: "test.torrent", data: "fake data" },
-      checkFirstStart: mockCheckFirstStart,
-      handleSuccessfulSettingsSave: mockHandleSuccessfulSettingsSave,
-      openSettings: mockOpenSettings,
-      closeSettings: mockCloseSettings,
-      openAddTorrent: mockOpenAddTorrent,
-      closeAddTorrent: mockCloseAddTorrent,
-      handleTorrentFileDrop: mockHandleTorrentFileDrop,
+      handleSettingsSave: mockSaveSettingsAndConnect,
+      setConfig: vi.fn(),
     });
 
     vi.mocked(useFilteredTorrents).mockReturnValue({
@@ -254,40 +272,41 @@ describe("App - Модальные окна", () => {
   });
 
   it("корректно обрабатывает успешное сохранение настроек", async () => {
-    const currentModalsMock =
-      vi.mocked(useModals).mock.results[0]?.value ?? {
-        showSettings: false,
-        showAddTorrent: false,
-        torrentFilePath: null,
-        isFirstStart: false,
-        torrentFileData: null,
-        checkFirstStart: vi.fn(),
-        handleSuccessfulSettingsSave: vi.fn(),
-        openSettings: vi.fn(),
-        closeSettings: vi.fn(),
-        openAddTorrent: vi.fn(),
-        closeAddTorrent: vi.fn(),
-        handleTorrentFileDrop: vi.fn(),
-      };
-    vi.mocked(useModals).mockReturnValue({
-      ...currentModalsMock,
-      showSettings: true,
-      isFirstStart: true,
-    });
-    mockSaveSettingsAndConnect.mockResolvedValue(true); // Успешное сохранение
+    // Устанавливаем состояние мока ПЕРЕД рендерингом
+    mockModalsResult.showSettings = true;
+    mockModalsResult.isFirstStart = true;
+    mockSaveSettingsAndConnect.mockResolvedValue(true);
 
-    const { container } = render(<App />);
-    let settingsModal: HTMLElement | null;
+    // Когда handleSuccessfulSettingsSave вызывается, мы должны также вызвать closeSettings,
+    // чтобы симулировать реальное поведение хука useModals
+    mockHandleSuccessfulSettingsSave.mockImplementation(() => {
+      mockCloseSettings();
+    });
+
+    render(<App />);
+
+    // Ждем рендеринга модального окна и присвоения колбэка
     await waitFor(() => {
-      settingsModal = container.querySelector('[data-testid="settings-modal"]');
-      expect(settingsModal).not.toBeNull();
+      expect(screen.getByTestId("settings-modal")).toBeInTheDocument();
+      expect(settingsOnSaveCallback).toBeDefined();
     });
 
+    // Вызываем колбэк
     await act(async () => {
-      settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      if (settingsOnSaveCallback) {
+        const success = await settingsOnSaveCallback({
+          host: "test-host",
+          username: "test-user",
+          password: "test-pass",
+          maxUploadRatio: 2,
+        });
+        expect(success).toBe(true);
+      } else {
+        throw new Error("settingsOnSaveCallback is undefined");
+      }
     });
 
-    // Проверяем вызов saveSettingsAndConnect из useConfigManager
+    // Проверяем результаты
     expect(mockSaveSettingsAndConnect).toHaveBeenCalledWith({
       host: "test-host",
       username: "test-user",
@@ -299,129 +318,96 @@ describe("App - Модальные окна", () => {
   });
 
   it("корректно обрабатывает неуспешное сохранение настроек", async () => {
-    const currentModalsMock =
-      vi.mocked(useModals).mock.results[0]?.value ?? {
-        showSettings: false,
-        showAddTorrent: false,
-        torrentFilePath: null,
-        isFirstStart: false,
-        torrentFileData: null,
-        checkFirstStart: vi.fn(),
-        handleSuccessfulSettingsSave: vi.fn(),
-        openSettings: vi.fn(),
-        closeSettings: vi.fn(),
-        openAddTorrent: vi.fn(),
-        closeAddTorrent: vi.fn(),
-        handleTorrentFileDrop: vi.fn(),
-      };
-    vi.mocked(useModals).mockReturnValue({
-      ...currentModalsMock,
-      showSettings: true,
-      isFirstStart: true,
-    });
-    mockSaveSettingsAndConnect.mockResolvedValue(false); // Неуспешное сохранение
+    // Устанавливаем состояние мока ПЕРЕД рендерингом
+    mockModalsResult.showSettings = true;
+    mockModalsResult.isFirstStart = true;
+    mockSaveSettingsAndConnect.mockResolvedValue(false);
 
-    const { container } = render(<App />);
-    let settingsModal: HTMLElement | null;
+    render(<App />);
+
     await waitFor(() => {
-      settingsModal = container.querySelector('[data-testid="settings-modal"]');
-      expect(settingsModal).not.toBeNull();
+      expect(screen.getByTestId("settings-modal")).toBeInTheDocument();
+      expect(settingsOnSaveCallback).toBeDefined();
     });
 
     await act(async () => {
-      settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      if (settingsOnSaveCallback) {
+        const success = await settingsOnSaveCallback({
+          host: "test-host",
+          username: "test-user",
+          password: "test-pass",
+          maxUploadRatio: 2,
+        });
+        expect(success).toBe(false);
+      } else {
+        throw new Error("settingsOnSaveCallback is undefined");
+      }
     });
 
     expect(mockSaveSettingsAndConnect).toHaveBeenCalledTimes(1);
     expect(mockHandleSuccessfulSettingsSave).not.toHaveBeenCalled();
-    // Окно не должно закрываться автоматически при неуспешном сохранении (если это логика Settings)
-    // expect(mockCloseSettings).not.toHaveBeenCalled(); // Зависит от реализации Settings
+    expect(mockCloseSettings).not.toHaveBeenCalled();
   });
 
   it("корректно обрабатывает окно добавления торрента", async () => {
-    const currentModalsMock =
-      vi.mocked(useModals).mock.results[0]?.value ?? {
-        showSettings: false,
-        showAddTorrent: false,
-        torrentFilePath: null,
-        isFirstStart: false,
-        torrentFileData: null,
-        checkFirstStart: vi.fn(),
-        handleSuccessfulSettingsSave: vi.fn(),
-        openSettings: vi.fn(),
-        closeSettings: vi.fn(),
-        openAddTorrent: vi.fn(),
-        closeAddTorrent: vi.fn(),
-        handleTorrentFileDrop: vi.fn(),
-      };
-    vi.mocked(useModals).mockReturnValue({
-      ...currentModalsMock,
-      showAddTorrent: true,
-      torrentFilePath: "/path/to/test.torrent",
-      torrentFileData: { name: "test.torrent", data: "fake torrent data" },
-    });
+    // Устанавливаем состояние мока ПЕРЕД рендерингом
+    mockModalsResult.showAddTorrent = true;
+    mockModalsResult.torrentFilePath = "/path/to/test.torrent";
+    mockModalsResult.torrentFileData = { name: "test.torrent", data: "fake torrent data" };
 
-    const { container } = render(<App />);
-    let addTorrentModal: HTMLElement | null;
+    render(<App />);
+
     await waitFor(() => {
-      addTorrentModal = container.querySelector(
-        '[data-testid="add-torrent-modal"]'
-      );
-      expect(addTorrentModal).not.toBeNull();
+      expect(screen.getByTestId("add-torrent-modal")).toBeInTheDocument();
+      expect(addTorrentOnAddCallback).toBeDefined();
+      expect(addTorrentOnAddFileCallback).toBeDefined();
+      expect(addTorrentOnCloseCallback).toBeDefined();
     });
 
     await act(async () => {
-      addTorrentModal?.dispatchEvent(
-        new MouseEvent("click", { bubbles: true })
-      );
+      if (addTorrentOnAddCallback && addTorrentOnAddFileCallback && addTorrentOnCloseCallback) {
+        await addTorrentOnAddCallback("magnet:test");
+        await addTorrentOnAddFileCallback("test-file-path");
+        addTorrentOnCloseCallback();
+      } else {
+        throw new Error("AddTorrent callbacks are undefined");
+      }
     });
 
-    // Проверяем вызовы addTorrent и addTorrentFile из useTorrentActions
-    expect(mockAddTorrent).toHaveBeenCalledWith("magnet:test", ""); // Проверяем второй аргумент downloadDir
-    expect(mockAddTorrentFile).toHaveBeenCalledWith("test-file-path", ""); // Проверяем второй аргумент downloadDir
+    expect(mockAddTorrent).toHaveBeenCalledWith("magnet:test", "");
+    expect(mockAddTorrentFile).toHaveBeenCalledWith("test-file-path", "");
     expect(mockCloseAddTorrent).toHaveBeenCalledTimes(1);
   });
 
   it("корректно обрабатывает ошибки при сохранении настроек", async () => {
-    const currentModalsMock =
-      vi.mocked(useModals).mock.results[0]?.value ?? {
-        showSettings: false,
-        showAddTorrent: false,
-        torrentFilePath: null,
-        isFirstStart: false,
-        torrentFileData: null,
-        checkFirstStart: vi.fn(),
-        handleSuccessfulSettingsSave: vi.fn(),
-        openSettings: vi.fn(),
-        closeSettings: vi.fn(),
-        openAddTorrent: vi.fn(),
-        closeAddTorrent: vi.fn(),
-        handleTorrentFileDrop: vi.fn(),
-      };
-    vi.mocked(useModals).mockReturnValue({
-      ...currentModalsMock,
-      showSettings: true,
-      isFirstStart: true,
-    });
-    mockSaveSettingsAndConnect.mockRejectedValue(new Error("Test error")); // Ошибка при сохранении
+    const testError = new Error("Test error");
+    // Устанавливаем состояние мока ПЕРЕД рендерингом
+    mockModalsResult.showSettings = true;
+    mockModalsResult.isFirstStart = true;
+    mockSaveSettingsAndConnect.mockRejectedValue(testError);
 
-    const { container } = render(<App />);
-    let settingsModal: HTMLElement | null;
+    render(<App />);
+
     await waitFor(() => {
-      settingsModal = container.querySelector('[data-testid="settings-modal"]');
-      expect(settingsModal).not.toBeNull();
+      expect(screen.getByTestId("settings-modal")).toBeInTheDocument();
+      expect(settingsOnSaveCallback).toBeDefined();
     });
 
-    // Оборачиваем клик в try/catch или используем expect().rejects если тестируем сам wrapper
-    try {
-      await act(async () => {
-        settingsModal?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      });
-    } catch (e) {
-      // Ожидаем ошибку, если она не перехватывается внутри handleSettingsSaveWrapper
-    }
+    await expect(act(async () => {
+      if (settingsOnSaveCallback) {
+        await settingsOnSaveCallback({
+          host: "test-host",
+          username: "test-user",
+          password: "test-pass",
+          maxUploadRatio: 2,
+        });
+      } else {
+        throw new Error("settingsOnSaveCallback is undefined");
+      }
+    })).rejects.toThrow(testError);
 
     expect(mockSaveSettingsAndConnect).toHaveBeenCalledTimes(1);
     expect(mockHandleSuccessfulSettingsSave).not.toHaveBeenCalled();
+    expect(mockCloseSettings).not.toHaveBeenCalled();
   });
 });

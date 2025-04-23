@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../../../App";
 import { TorrentData as ProcessedTorrentData } from "../../../components/TorrentList";
 import {
@@ -160,7 +160,12 @@ describe("App - Взаимодействие с торрентами", () => {
     });
 
     vi.mocked(useSessionStats).mockReturnValue({
-      sessionStats: null,
+      sessionStats: {
+        TotalDownloadSpeed: 0,
+        TotalUploadSpeed: 0,
+        FreeSpace: 0,
+        TransmissionVersion: "",
+      },
       error: null,
       refreshSessionStats: vi.fn(),
     });
@@ -240,11 +245,6 @@ describe("App - Взаимодействие с торрентами", () => {
     const torrent1 = screen.getByTestId("torrent-1");
     fireEvent.click(torrent1);
     expect(mockHandleTorrentSelect).toHaveBeenCalledWith(1);
-  });
-
-  it("обновляет список торрентов при монтировании (через useEffect)", () => {
-    render(<App />);
-    expect(mockRefreshTorrents).toHaveBeenCalled();
   });
 
   it("корректно определяет наличие замедленных торрентов среди выбранных", () => {

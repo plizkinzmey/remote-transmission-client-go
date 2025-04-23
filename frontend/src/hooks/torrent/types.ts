@@ -1,36 +1,32 @@
-// Данные торрента (из TorrentList)
+import { ConnectionConfig, UIConfig } from "@/App";
+import { domain } from "@wailsjs/go/models";
+
+// Экспортируем тип WailsTorrent из моделей Wails
+export type WailsTorrent = domain.Torrent;
+
+// Данные торрента (используется в тестах и компонентах)
 export interface TorrentData {
   ID: number;
   Name: string;
-  SizeWhenDone: number;
-  LeftUntilDone: number;
-  Eta: number;
+  Status: string;
+  Progress: number;
+  Size: number;
+  SizeFormatted: string;
   UploadRatio: number;
-  RateDownload: number;
-  RateUpload: number;
-  Status: number;
-  Error: number;
-  ErrorString: string;
-  IsFinished: boolean;
-  IsStalled: boolean;
-  IsPrivate: boolean;
-  PercentDone: number;
+  SeedsConnected: number;
+  SeedsTotal: number;
   PeersConnected: number;
-  PeersGettingFromUs: number;
-  PeersSendingToUs: number;
-  DownloadDir: string;
-  AddedDate: number;
-  DoneDate: number;
-  StartDate: number;
-  IsSeeding: boolean;
-  IsDownloading: boolean;
-  IsChecking: boolean;
-  IsQueued: boolean;
-  IsPaused: boolean;
+  PeersTotal: number;
+  UploadedBytes: number;
+  UploadedFormatted: string;
+  DownloadSpeed: number;
+  UploadSpeed: number;
+  DownloadSpeedFormatted: string;
+  UploadSpeedFormatted: string;
   IsSlowMode: boolean;
 }
 
-// Статистика сессии
+// Тип для статистики сессии
 export interface SessionStatsData {
   TotalDownloadSpeed: number;
   TotalUploadSpeed: number;
@@ -38,28 +34,35 @@ export interface SessionStatsData {
   TransmissionVersion: string;
 }
 
-// Определяем AppConfig напрямую, комбинируя необходимые части
-// Импортируем базовые типы, если они нужны
-import { ConnectionConfig, UIConfig } from "@/App";
-// Импортируем тип торрента из Wails, используя правильный namespace
-import { domain } from "@wailsjs/go/models";
-export type WailsTorrent = domain.Torrent; // Экспортируем для использования в других хуках
-
+// Конфигурация приложения
 export interface AppConfig extends ConnectionConfig, UIConfig {
-  // Можно добавить сюда поля, специфичные для AppConfig, если они есть
-  // Например, если бы ConnectionConfig или UIConfig были неполными
+  // Объединяем ConnectionConfig и UIConfig
 }
 
-// Утилита для таймаута
+/**
+ * Утилита для добавления таймаута к промисам
+ * @param promise - Промис, к которому добавляется таймаут
+ * @param timeout - Время таймаута в миллисекундах
+ * @param t - Функция перевода для сообщений об ошибках
+ */
 export const withTimeout = <T>(
   promise: Promise<T>,
   timeout: number,
   t: (key: string) => string
 ): Promise<T> => {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(t("errors.timeout"))), timeout)
-    ),
-  ]);
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(t("errors.timeout")));
+    }, timeout);
+
+    promise
+      .then((result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
 };

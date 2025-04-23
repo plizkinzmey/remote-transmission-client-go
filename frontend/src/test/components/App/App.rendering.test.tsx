@@ -122,7 +122,12 @@ describe("App - Рендеринг компонента", () => {
     });
 
     vi.mocked(useSessionStats).mockReturnValue({
-      sessionStats: null,
+      sessionStats: {
+        TotalDownloadSpeed: 0,
+        TotalUploadSpeed: 0,
+        FreeSpace: 0,
+        TransmissionVersion: "",
+      },
       error: null,
       refreshSessionStats: vi.fn(),
     });

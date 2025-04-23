@@ -159,7 +159,9 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
             <Checkbox
               size="1"
               checked={selected}
-              onCheckedChange={() => onSelect(id)}
+              onCheckedChange={() => {
+                onSelect(id);
+              }}
               aria-label={t("torrents.selectTorrent", name)}
               disabled={isCurrentlyBlocked || isChecking(status)}
               data-testid={`torrent-item-checkbox-${id}`}

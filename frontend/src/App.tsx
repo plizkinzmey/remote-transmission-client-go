@@ -60,8 +60,8 @@ function App() {
     error: connectionError,
     initialConfig,
     connect,
-    setConnectionError, // Функция для установки ошибки соединения из других хуков
-    setIsReconnectingState, // Функция для установки состояния реконнекта из других хуков
+    setConnectionError,
+    setIsReconnectingState,
   } = useConnectionManager();
 
   const {
@@ -71,12 +71,12 @@ function App() {
     handleSettingsSave: saveSettingsAndConnect,
   } = useConfigManager({
     initialConfig,
-    onConfigSave: connect, // Передаем функцию connect для сохранения и инициализации
+    onConfigSave: connect,
   });
 
   // 2. Получение данных (зависит от isInitialized)
   const {
-    torrents: rawTorrents, // Получаем "сырые" данные
+    torrents: rawTorrents,
     isLoading: isTorrentListLoading,
     error: torrentListError,
     refreshTorrents,
@@ -84,26 +84,25 @@ function App() {
 
   // Маппинг сырых данных в обработанные для компонента TorrentList
   const processedTorrents = useMemo((): ProcessedTorrentData[] => {
-    // Используем WailsTorrent (domain.Torrent)
     return rawTorrents.map((t: WailsTorrent): ProcessedTorrentData => ({
       ID: t.ID,
       Name: t.Name,
-      Status: t.Status, // Используем строковый статус напрямую
+      Status: t.Status,
       IsSlowMode: t.IsSlowMode,
       UploadRatio: t.UploadRatio,
-      Progress: t.Progress, // Используем t.Progress (число 0-100)
-      Size: t.Size, // Используем t.Size
-      SizeFormatted: t.SizeFormatted, // Используем t.SizeFormatted
-      SeedsConnected: t.SeedsConnected, // Используем t.SeedsConnected
-      SeedsTotal: t.SeedsTotal, // Используем t.SeedsTotal
+      Progress: t.Progress,
+      Size: t.Size,
+      SizeFormatted: t.SizeFormatted,
+      SeedsConnected: t.SeedsConnected,
+      SeedsTotal: t.SeedsTotal,
       PeersConnected: t.PeersConnected,
-      PeersTotal: t.PeersTotal, // Используем t.PeersTotal
-      UploadedBytes: t.UploadedBytes, // Используем t.UploadedBytes
-      UploadedFormatted: t.UploadedFormatted, // Используем t.UploadedFormatted
-      DownloadSpeed: t.DownloadSpeed, // Используем t.DownloadSpeed
-      DownloadSpeedFormatted: t.DownloadSpeedFormatted, // Используем t.DownloadSpeedFormatted
-      UploadSpeed: t.UploadSpeed, // Используем t.UploadSpeed
-      UploadSpeedFormatted: t.UploadSpeedFormatted, // Используем t.UploadSpeedFormatted
+      PeersTotal: t.PeersTotal,
+      UploadedBytes: t.UploadedBytes,
+      UploadedFormatted: t.UploadedFormatted,
+      DownloadSpeed: t.DownloadSpeed,
+      DownloadSpeedFormatted: t.DownloadSpeedFormatted,
+      UploadSpeed: t.UploadSpeed,
+      UploadSpeedFormatted: t.UploadSpeedFormatted,
     }));
   }, [rawTorrents]);
 
@@ -118,7 +117,7 @@ function App() {
     hasSelectedTorrents,
     handleTorrentSelect,
     handleSelectAll,
-    clearSelection, // Используем для сброса выделения
+    clearSelection,
   } = useTorrentSelection();
 
   // 4. Действия над торрентами
@@ -131,8 +130,9 @@ function App() {
     setSpeedLimit,
     verifyTorrent,
   } = useTorrentActions({
-    onActionSuccess: refreshTorrents, // Обновляем список после успешного действия
-    onActionError: setAppError, // Показываем ошибку действия пользователю
+    onActionStart: () => { },
+    onActionSuccess: refreshTorrents,
+    onActionError: setAppError,
   });
 
   // 5. Массовые операции (зависят от выбранных торрентов и действий)
@@ -193,7 +193,7 @@ function App() {
 
   useEffect(() => {
     if (!isReconnecting) {
-      checkFirstStart(isReconnecting); // Передаем isReconnecting
+      checkFirstStart(isReconnecting);
     }
   }, [checkFirstStart, isReconnecting, isInitialized]);
 
@@ -208,12 +208,11 @@ function App() {
   };
 
   const selectedHaveSlowMode = Array.from(selectedTorrents).some((id) =>
-    // Используем WailsTorrent здесь
     rawTorrents.find((t: WailsTorrent) => t.ID === id)?.IsSlowMode
   );
 
   const handleSelectAllAdapter = () => {
-    handleSelectAll(filteredTorrents.map(t => ({ ID: t.ID })));
+    handleSelectAll(filteredTorrents); // передаем полные объекты торрентов
   };
 
   const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {

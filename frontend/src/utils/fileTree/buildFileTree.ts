@@ -4,10 +4,12 @@ import { calculateDirStats } from "./calculateDirStats";
 import { createNodeForPath } from "./createNodeForPath";
 
 /**
- * Строит дерево файлов из массива файлов торрента
+ * Строит иерархическую структуру дерева файлов из плоского списка файлов торрента.
+ * Сортирует файлы по пути, создает узлы для файлов и директорий,
+ * устанавливает связи родитель-потомок и вычисляет статистику для директорий.
  *
- * @param files - Массив файлов торрента
- * @returns Массив корневых узлов дерева
+ * @param {TorrentFile[]} files - Массив объектов файлов торрента, полученных от бэкенда.
+ * @returns {FileNode[]} Массив корневых узлов построенного дерева файлов.
  */
 export const buildFileTree = (files: TorrentFile[]): FileNode[] => {
   const root: { [path: string]: FileNode } = {};

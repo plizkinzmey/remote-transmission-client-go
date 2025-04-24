@@ -66,11 +66,11 @@ export const getStatusData = (status: StatusType): { color: ColorType } => {
     queuedCheck: { color: "purple" },
     queuedDownload: { color: "purple" },
     stopped: { color: "gray" },
-    error: { color: "tomato" }, // Добавлена запись для 'error'
+    error: { color: "tomato" },
   };
 
-  // Используем StatusType для ключа и возвращаем значение по умолчанию, если статус неизвестен
-  // (хотя с StatusType это маловероятно, но безопасно)
+  // Возвращаем цвет для статуса. Fallback на 'gray' добавлен как мера предосторожности,
+  // на случай если в функцию попадет невалидное значение (например, через `as any`).
   return statusMap[status] || { color: "gray" };
 };
 

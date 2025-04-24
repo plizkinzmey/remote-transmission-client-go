@@ -111,6 +111,16 @@ describe("getStatusData", () => {
     // Этот тест больше для проверки логики fallback, хотя с StatusType он менее вероятен
     expect(getStatusData("unknownStatus" as any)).toEqual({ color: "gray" });
   });
+
+  it("должен возвращать 'gray' для неизвестных или невалидных статусов", () => {
+    // Этот тест проверяет fallback логику для различных невалидных входов,
+    // включая те, которые не должны проходить проверку типов StatusType.
+    expect(getStatusData("unknownStatus" as any)).toEqual({ color: "gray" });
+    expect(getStatusData(null as any)).toEqual({ color: "gray" });
+    expect(getStatusData(undefined as any)).toEqual({ color: "gray" });
+    expect(getStatusData("" as any)).toEqual({ color: "gray" });
+    expect(getStatusData(123 as any)).toEqual({ color: "gray" });
+  });
 });
 
 describe("getCardClassName", () => {

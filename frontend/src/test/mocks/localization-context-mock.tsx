@@ -19,7 +19,7 @@ interface LocalizationContextType {
 export const TestLocalizationContext = createContext<LocalizationContextType>({
   t: (key: string) => key,
   currentLanguage: "en",
-  setLanguage: async () => {},
+  setLanguage: async () => { },
   availableLanguages: [
     { code: "en", name: "English" },
     { code: "ru", name: "Русский" },
@@ -37,58 +37,60 @@ export const useLocalization = () => {
 };
 
 // Мокируем компонент LocalizationProvider
-export const LocalizationProvider: React.FC<{ 
+export const LocalizationProvider: React.FC<{
   children: ReactNode,
   isLoading?: boolean,
-  initialLanguage?: string
+  initialLanguage?: string,
+  t?: (key: string, ...args: any[]) => string
 }> = ({
   children,
   isLoading = false,
   initialLanguage = "en",
+  t: tProp,
 }) => {
-  const [currentLanguage, setCurrentLanguageState] = useState(initialLanguage);
-  const [loading, setLoading] = useState(isLoading);
+    const [currentLanguage, setCurrentLanguageState] = useState(initialLanguage);
+    const [loading, setLoading] = useState(isLoading);
 
-  // Функция для перевода с поддержкой параметров
-  const translate = (key: string, ...args: any[]): string => {
-    let translation = key;
-    if (args && args.length > 0) {
-      args.forEach((arg, index) => {
-        translation = translation.replace(`{${index}}`, String(arg));
-      });
-    }
-    return translation;
-  };
-
-  const contextValue = {
-    t: translate,
-    currentLanguage,
-    setLanguage: async (lang: string) => {
-      setLoading(true);
-      try {
-        setCurrentLanguageState(lang);
-      } finally {
-        setLoading(false);
+    // Функция для перевода с поддержкой параметров
+    const translate = tProp || ((key: string, ...args: any[]): string => {
+      let translation = key;
+      if (args && args.length > 0) {
+        args.forEach((arg, index) => {
+          translation = translation.replace(`{${index}}`, String(arg));
+        });
       }
-    },
-    availableLanguages: [
-      { code: "en", name: "English" },
-      { code: "ru", name: "Русский" },
-    ],
-    isLoading: loading,
-  };
+      return translation;
+    });
 
-  return (
-    <TestLocalizationContext.Provider value={contextValue}>
-      <div data-testid="mock-localization-provider" data-language={currentLanguage}>
-        {children}
-      </div>
-    </TestLocalizationContext.Provider>
-  );
-};
+    const contextValue = {
+      t: translate,
+      currentLanguage,
+      setLanguage: async (lang: string) => {
+        setLoading(true);
+        try {
+          setCurrentLanguageState(lang);
+        } finally {
+          setLoading(false);
+        }
+      },
+      availableLanguages: [
+        { code: "en", name: "English" },
+        { code: "ru", name: "Русский" },
+      ],
+      isLoading: loading,
+    };
+
+    return (
+      <TestLocalizationContext.Provider value={contextValue}>
+        <div data-testid="mock-localization-provider" data-language={currentLanguage}>
+          {children}
+        </div>
+      </TestLocalizationContext.Provider>
+    );
+  };
 
 // Для тестов, которым нужна обёртка
-export const MockLocalizationProvider: React.FC<{ 
+export const MockLocalizationProvider: React.FC<{
   children: ReactNode,
   isLoading?: boolean,
   initialLanguage?: string

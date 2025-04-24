@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { TorrentData } from "@/components/TorrentList";
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
 // Мокируем зависимости ДО импорта хука
 vi.mock("@contexts/LocalizationContext");
 vi.mock("@wailsjs/go/main/App");
@@ -53,7 +54,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
       index === 0
         ? {
             ...t,
-            Status: "downloading",
+            Status: "downloading" as StatusType,
             DownloadSpeedFormatted: "10 B/s",
             SeedsConnected: 1,
             PeersConnected: 1,
@@ -97,7 +98,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
       t.ID === 2
         ? {
             ...t,
-            Status: "stopped",
+            Status: "stopped" as StatusType,
             DownloadSpeedFormatted: "0 B/s",
             UploadSpeedFormatted: "0 B/s",
             SeedsConnected: 0,
@@ -144,7 +145,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
         t.ID === 1
           ? {
               ...t,
-              Status: "downloading", // T1 перешел в downloading
+              Status: "downloading" as StatusType, // T1 перешел в downloading
               DownloadSpeedFormatted: "10 B/s",
               SeedsConnected: 1,
               PeersConnected: 1,
@@ -193,7 +194,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
         t.ID === 2
           ? {
               ...t,
-              Status: "stopped", // T2 перешел в stopped
+              Status: "stopped" as StatusType, // T2 перешел в stopped
               DownloadSpeedFormatted: "0 B/s",
               UploadSpeedFormatted: "0 B/s",
               SeedsConnected: 0,
@@ -240,7 +241,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
         t.ID === 1
           ? {
               ...t,
-              Status: "downloading",
+              Status: "downloading" as StatusType,
               DownloadSpeedFormatted: "10 B/s",
               SeedsConnected: 1,
               PeersConnected: 1,
@@ -284,7 +285,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
         t.ID === 2
           ? {
               ...t,
-              Status: "stopped",
+              Status: "stopped" as StatusType,
               DownloadSpeedFormatted: "0 B/s",
               UploadSpeedFormatted: "0 B/s",
               SeedsConnected: 0,
@@ -331,7 +332,9 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
 
     const updatedTorrents: TorrentData[] = mockTorrentsBase
       .filter((t) => t.ID === 1 || t.ID === 4)
-      .map((t) => (t.ID === 1 ? { ...t, Status: "downloading" } : t));
+      .map((t) =>
+        t.ID === 1 ? { ...t, Status: "downloading" as StatusType } : t
+      );
     const newSelected = new Set([1, 4]);
 
     rerender({ torrentsData: updatedTorrents, currentSelected: newSelected });
@@ -371,7 +374,7 @@ describe("useBulkOperations - useEffect Edge Cases", () => {
 
     const updatedTorrents: TorrentData[] = mockTorrentsBase
       .filter((t) => t.ID === 1 || t.ID === 2)
-      .map((t) => (t.ID === 2 ? { ...t, Status: "stopped" } : t));
+      .map((t) => (t.ID === 2 ? { ...t, Status: "stopped" as StatusType } : t));
     const newSelected = new Set([1, 2]);
 
     rerender({ torrentsData: updatedTorrents, currentSelected: newSelected });

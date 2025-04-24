@@ -6,6 +6,7 @@ import { TorrentList } from '../TorrentList';
 import { Theme } from '@radix-ui/themes';
 import { useLocalization } from '@contexts/LocalizationContext';
 import { TorrentData as Torrent, TorrentListProps } from '../types'; // Assuming Torrent type is defined here. Added TorrentListProps
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
 
 // --- Mocks ---
 // Mock TorrentItem component
@@ -43,10 +44,67 @@ vi.mock('../TorrentList.module.css', () => ({
 }));
 
 // --- Test Data & Setup ---
-const mockTorrents: Torrent[] = [
-    { ID: 1, Name: 'Torrent A', Status: '4', Progress: 50, Size: 1073741824, SizeFormatted: '1 GB', UploadRatio: 1.2, SeedsConnected: 5, SeedsTotal: 10, PeersConnected: 10, PeersTotal: 20, UploadedBytes: 524288000, UploadedFormatted: '500 MB', DownloadSpeed: 1048576, DownloadSpeedFormatted: '1 MB/s', UploadSpeed: 102400, UploadSpeedFormatted: '100 KB/s', IsSlowMode: false },
-    { ID: 2, Name: 'Torrent B', Status: '6', Progress: 100, Size: 2147483648, SizeFormatted: '2 GB', UploadRatio: 2.5, SeedsConnected: 8, SeedsTotal: 15, PeersConnected: 15, PeersTotal: 25, UploadedBytes: 1073741824, UploadedFormatted: '1 GB', DownloadSpeed: 0, DownloadSpeedFormatted: '0 KB/s', UploadSpeed: 51200, UploadSpeedFormatted: '50 KB/s', IsSlowMode: true },
-    { ID: 3, Name: 'Another Torrent C', Status: '0', Progress: 0, Size: 524288000, SizeFormatted: '500 MB', UploadRatio: 0, SeedsConnected: 0, SeedsTotal: 5, PeersConnected: 2, PeersTotal: 8, UploadedBytes: 0, UploadedFormatted: '0 B', DownloadSpeed: 512000, DownloadSpeedFormatted: '500 KB/s', UploadSpeed: 10240, UploadSpeedFormatted: '10 KB/s', IsSlowMode: false },
+export const mockTorrents: Torrent[] = [
+    {
+        ID: 1,
+        Name: "Torrent 1",
+        Status: "downloading" as StatusType, // <-- Приводим к StatusType
+        Progress: 50,
+        Size: 1024 * 1024 * 100, // 100 MB
+        SizeFormatted: "100 MB",
+        UploadRatio: 1.5,
+        SeedsConnected: 10,
+        SeedsTotal: 20,
+        PeersConnected: 5,
+        PeersTotal: 10,
+        UploadedBytes: 1024 * 1024 * 50, // 50 MB
+        UploadedFormatted: "50 MB",
+        DownloadSpeed: 1024 * 1024, // 1 MB/s
+        UploadSpeed: 1024 * 512, // 512 KB/s
+        DownloadSpeedFormatted: "1 MB/s",
+        UploadSpeedFormatted: "512 KB/s",
+        IsSlowMode: false,
+    },
+    {
+        ID: 2,
+        Name: "Torrent 2 - Seeding",
+        Status: "seeding" as StatusType, // <-- Приводим к StatusType
+        Progress: 100,
+        Size: 1024 * 1024 * 200, // 200 MB
+        SizeFormatted: "200 MB",
+        UploadRatio: 2.1,
+        SeedsConnected: 15,
+        SeedsTotal: 25,
+        PeersConnected: 0,
+        PeersTotal: 0,
+        UploadedBytes: 1024 * 1024 * 420, // 420 MB
+        UploadedFormatted: "420 MB",
+        DownloadSpeed: 0,
+        UploadSpeed: 1024 * 100, // 100 KB/s
+        DownloadSpeedFormatted: "0 B/s",
+        UploadSpeedFormatted: "100 KB/s",
+        IsSlowMode: true,
+    },
+    {
+        ID: 3,
+        Name: "Torrent 3 - Stopped",
+        Status: "stopped" as StatusType, // <-- Приводим к StatusType
+        Progress: 75,
+        Size: 1024 * 1024 * 50, // 50 MB
+        SizeFormatted: "50 MB",
+        UploadRatio: 0.8,
+        SeedsConnected: 0,
+        SeedsTotal: 10,
+        PeersConnected: 0,
+        PeersTotal: 5,
+        UploadedBytes: 1024 * 1024 * 40, // 40 MB
+        UploadedFormatted: "40 MB",
+        DownloadSpeed: 0,
+        UploadSpeed: 0,
+        DownloadSpeedFormatted: "0 B/s",
+        UploadSpeedFormatted: "0 B/s",
+        IsSlowMode: false,
+    },
 ];
 
 const defaultProps: TorrentListProps = {
@@ -149,32 +207,32 @@ describe('TorrentList', () => {
         // This test is no longer relevant as TorrentList doesn't filter internally.
         // The parent component using useFilteredTorrents is responsible for filtering.
         // We'll test that it renders the torrents it receives.
-        const filtered = [mockTorrents[1]]; // Simulate parent filtering for "Torrent B"
+        const filtered = [mockTorrents[1]]; // Simulate parent filtering for "Torrent 2 - Seeding"
         // Create a fresh props object for this test
         const props = {
             ...defaultProps,
             torrents: filtered,
-            searchTerm: "Torrent B"
+            searchTerm: "Torrent 2 - Seeding" // Update search term to match data
         };
         render(<TorrentList {...props} />);
 
         // Check that TorrentItem was called exactly once for the filtered torrent
         expect(torrentItemMock).toHaveBeenCalledTimes(1);
 
-        // Check that it was called with the props for 'Torrent B'
+        // Check that it was called with the props for 'Torrent 2 - Seeding'
         expect(torrentItemMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: 2,
-                name: 'Torrent B',
+                name: 'Torrent 2 - Seeding', // <-- Corrected name expectation
             }),
             {} // Second argument for context
         );
 
         // Verify the rendered output for the filtered item using DOM query
-        expect(screen.getByText('Mocked TorrentItem: Torrent B')).toBeInTheDocument();
+        expect(screen.getByText('Mocked TorrentItem: Torrent 2 - Seeding')).toBeInTheDocument(); // <-- Corrected text expectation
         // Verify that the other items are not rendered using DOM query
-        expect(screen.queryByText('Mocked TorrentItem: Torrent A')).not.toBeInTheDocument();
-        expect(screen.queryByText('Mocked TorrentItem: Another Torrent C')).not.toBeInTheDocument();
+        expect(screen.queryByText('Mocked TorrentItem: Torrent 1')).not.toBeInTheDocument(); // <-- Corrected name
+        expect(screen.queryByText('Mocked TorrentItem: Torrent 3 - Stopped')).not.toBeInTheDocument(); // <-- Corrected name
     });
 
     it('passes correct props to TorrentItem', () => {

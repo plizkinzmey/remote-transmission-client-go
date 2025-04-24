@@ -7,7 +7,8 @@ export type StatusType =
   | "checking"
   | "queuedCheck"
   | "queuedDownload"
-  | "queued";
+  | "queued"
+  | "error";
 
 // Типы цветов для отображения статусов
 export type ColorType =
@@ -47,16 +48,16 @@ export const isQueued = (status: string): boolean => {
  * Определяет, должен ли торрент быть заблокированным для действий
  * @param status Статус торрента
  */
-export const isBlocked = (status: string): boolean => {
-  return isChecking(status) || isQueued(status);
+export const isBlocked = (status: StatusType): boolean => {
+  return isChecking(status) || isQueued(status) || status === "error"; // Добавлена проверка на 'error'
 };
 
 /**
  * Получает информацию о статусе торрента для отображения
  * @param status Статус торрента
  */
-export const getStatusData = (status: string): { color: ColorType } => {
-  const statusMap: Record<string, { color: ColorType }> = {
+export const getStatusData = (status: StatusType): { color: ColorType } => {
+  const statusMap: Record<StatusType, { color: ColorType }> = {
     downloading: { color: "blue" },
     seeding: { color: "grass" },
     completed: { color: "mint" },
@@ -65,23 +66,74 @@ export const getStatusData = (status: string): { color: ColorType } => {
     queuedCheck: { color: "purple" },
     queuedDownload: { color: "purple" },
     stopped: { color: "gray" },
+    error: { color: "tomato" },
   };
 
+  // Возвращаем цвет для статуса. Fallback на 'gray' добавлен как мера предосторожности,
+  // на случай если в функцию попадет невалидное значение (например, через `as any`).
   return statusMap[status] || { color: "gray" };
 };
 
 /**
  * Получает CSS класс для карточки торрента на основе его статуса
  * @param status Статус торрента
- * @param baseClass Базовый CSS класс
- * @param stylesModule Объект со стилями
+ * @param baseClass Ключ базового CSS класса в stylesModule
+ * @param stylesModule Объект со стилями (CSS Modules)
  */
 export const getCardClassName = (
-  status: string,
+  status: StatusType,
   baseClass: string,
   stylesModule: Record<string, string>
 ): string => {
   const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
-  const statusClassName = "card" + statusCapitalized;
-  return `${stylesModule[baseClass]} ${stylesModule[statusClassName] || ""}`;
+  const statusClassKey = "card" + statusCapitalized;
+
+  const baseClassName = stylesModule[baseClass];
+  const statusClassName = stylesModule[statusClassKey];
+
+  // Собираем классы, только если они существуют
+  const classes = [];
+  if (baseClassName) {
+    classes.push(baseClassName);
+  }
+  if (statusClassName) {
+    classes.push(statusClassName);
+  }
+
+  return classes.join(" "); // Объединяем через пробел
+};
+
+/**
+ * Преобразует статус, полученный от бэкенда (строка, null или undefined),
+ * в соответствующий StatusType для использования во фронтенде.
+ * Возвращает 'error' для неизвестных, неопределенных или null статусов.
+ *
+ * @param backendStatus - Статус от бэкенда (например, "downloading", "stopped", null, undefined).
+ * @returns Соответствующий StatusType или 'error' при невозможности маппинга.
+ */
+export const mapBackendStatusToFrontend = (
+  backendStatus: string | undefined | null
+): StatusType => {
+  if (backendStatus === undefined || backendStatus === null) {
+    return "error"; // Обработка null/undefined
+  }
+
+  // Проверяем, является ли полученный статус валидным StatusType
+  const validStatuses: StatusType[] = [
+    "downloading",
+    "seeding",
+    "stopped",
+    "completed",
+    "checking",
+    "queuedCheck",
+    "queuedDownload",
+    "queued",
+  ];
+
+  if (validStatuses.includes(backendStatus as StatusType)) {
+    return backendStatus as StatusType;
+  }
+
+  // Если статус не распознан, возвращаем 'error'
+  return "error";
 };

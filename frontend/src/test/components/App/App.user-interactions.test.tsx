@@ -3,9 +3,35 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import App from "../../../App";
 import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
 
 // Мокируем хуки
-vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents");
+vi.mock("../../../components/TorrentList/hooks/useFilteredTorrents", () => ({
+  useFilteredTorrents: vi.fn(() => ({
+    searchTerm: "",
+    setSearchTerm: vi.fn(),
+    statusFilter: "all",
+    setStatusFilter: vi.fn(),
+    filteredTorrents: [
+      {
+        ID: 1,
+        Name: "Test Torrent 1",
+        Status: "stopped" as StatusType, // <-- Приводим к StatusType
+        Progress: 50,
+        SizeFormatted: "100 MB",
+        UploadRatio: 1.5,
+        SeedsConnected: 10,
+        SeedsTotal: 20,
+        PeersConnected: 5,
+        PeersTotal: 10,
+        UploadedFormatted: "50 MB",
+        DownloadSpeedFormatted: "1 MB/s",
+        UploadSpeedFormatted: "500 KB/s",
+        IsSlowMode: false,
+      },
+    ],
+  })),
+}));
 
 // Мокируем компоненты, которые не тестируются в этом файле
 vi.mock("../../../components/Header", () => ({
@@ -66,7 +92,7 @@ describe("App - Пользовательские взаимодействия", 
         {
           ID: 1,
           Name: "Test Torrent",
-          Status: "0",
+          Status: "stopped" as StatusType, // <-- Исправляем тип
           Progress: 0,
           Size: 0,
           SizeFormatted: "0 B",
@@ -108,7 +134,7 @@ describe("App - Пользовательские взаимодействия", 
         {
           ID: 1,
           Name: "Test Torrent",
-          Status: "0",
+          Status: "stopped" as StatusType, // <-- Исправляем тип
           Progress: 0,
           Size: 0,
           SizeFormatted: "0 B",

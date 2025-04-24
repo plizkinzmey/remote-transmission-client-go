@@ -1,11 +1,11 @@
 import React from "react";
 import { Progress } from "@radix-ui/themes";
-import { getStatusData } from "../../../utils/torrentStatus";
+import { getStatusData, StatusType } from "../../../utils/torrentStatus"; // Импортируем StatusType
 import styles from "./TorrentItemProgress.module.css";
 
 export interface TorrentItemProgressProps {
   progress: number;
-  status: string;
+  status: StatusType; // <-- Изменяем тип на StatusType
 }
 
 /**

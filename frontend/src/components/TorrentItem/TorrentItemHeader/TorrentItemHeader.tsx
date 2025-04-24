@@ -3,11 +3,11 @@ import { Flex, Text, Badge } from "@radix-ui/themes";
 import { useLocalization } from "@contexts/LocalizationContext";
 import { formatRatio } from "../../../utils/formatters";
 import styles from "./TorrentItemHeader.module.css";
-import { getStatusData } from "../../../utils/torrentStatus";
+import { getStatusData, StatusType } from "../../../utils/torrentStatus";
 
-export interface TorrentItemHeaderProps { // Add export keyword
+export interface TorrentItemHeaderProps {
   name: string;
-  status: string;
+  status: StatusType;
   progress: number;
   uploadRatio: number;
 }

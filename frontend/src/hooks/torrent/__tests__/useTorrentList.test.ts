@@ -82,11 +82,18 @@ describe("useTorrentList", () => {
     vi.useRealTimers();
   });
 
-  it("should not fetch torrents if not initialized", () => {
-    renderHookWithProviders(({ initialized }) => useTorrentList(initialized), {
-      initialized: false,
-    });
+  it("should not fetch torrents if not initialized", async () => {
+    const { result } = renderHook(() => useTorrentList(false));
     expect(AppAPI.GetTorrents).not.toHaveBeenCalled();
+
+    // Вызываем refreshTorrents вручную
+    await act(async () => {
+      await result.current.refreshTorrents();
+    });
+
+    // Убеждаемся, что API все еще не было вызвано
+    expect(AppAPI.GetTorrents).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
   });
 
   it("should fetch torrents immediately, set loading state, and set interval if initialized", async () => {

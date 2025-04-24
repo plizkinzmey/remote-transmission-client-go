@@ -265,7 +265,6 @@ export function useBulkOperations(
         speedLimit: true,
       }));
       setLastBulkAction("speedLimit");
-      setError(null);
 
       try {
         console.log(
@@ -275,6 +274,7 @@ export function useBulkOperations(
         const selectedIds = Array.from(selectedTorrents).map(Number);
 
         await SetTorrentSpeedLimit(selectedIds, isSlowMode);
+        setError(null); // <--- Сбрасываем ошибку ПОСЛЕ успешного API вызова
         await refreshTorrents();
       } catch (err) {
         console.error("Failed to set speed limit:", err);

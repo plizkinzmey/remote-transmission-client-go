@@ -233,14 +233,15 @@ export const Header: React.FC<HeaderProps> = ({
       <Box className={styles.filterBar}>
         <Flex className={styles.selectAllContainer} data-testid="header-select-all-container">
           <Checkbox
-            size="1"
+            id="select-all-checkbox"
+            className={styles.selectAllCheckbox}
             checked={
               selectedTorrents.size > 0 &&
               selectedTorrents.size === filteredTorrents.length
             }
             onCheckedChange={onSelectAll}
-            disabled={filteredTorrents.length === 0 || isReconnecting}
-            title={isReconnecting ? t("errors.needConnection") : undefined}
+            aria-label={t("header.selectAllTorrents")}
+            data-testid="header-select-all-checkbox"
           />
           <Text size="1">
             {selectedTorrents.size > 0

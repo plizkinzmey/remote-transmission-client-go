@@ -26,9 +26,20 @@ describe("useSessionStats", () => {
     vi.useRealTimers(); // Возвращаем реальные таймеры
   });
 
-  it("should not fetch stats if not initialized", () => {
-    renderHook(() => useSessionStats(false));
+  it("should not fetch stats if not initialized", async () => {
+    // Делаем тест async
+    const { result } = renderHook(() => useSessionStats(false)); // Получаем result
     expect(AppAPI.GetSessionStats).not.toHaveBeenCalled();
+
+    // Вызываем refreshSessionStats вручную
+    await act(async () => {
+      // Используем async act
+      await result.current.refreshSessionStats();
+    });
+
+    // Убеждаемся, что API все еще не было вызвано
+    expect(AppAPI.GetSessionStats).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull(); // Ошибки тоже быть не должно
   });
 
   it("should fetch stats immediately and set interval if initialized", async () => {

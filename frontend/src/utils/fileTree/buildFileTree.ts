@@ -39,15 +39,6 @@ export const buildFileTree = (files: TorrentFile[]): FileNode[] => {
           const parentPath = pathParts.slice(0, i).join("/");
           addNodeToParent(root, node, parentPath);
         }
-      } else if (isLastPart) {
-        // Если узел уже существует, но это конечный файл, обновляем его свойства
-        const node = root[fullPath];
-        node.ID = file.ID;
-        node.Size = file.Size;
-        node.Progress = file.Progress;
-        node.Wanted = file.Wanted;
-        node.isDirectory = false;
-        node.children = undefined;
       }
     }
   });

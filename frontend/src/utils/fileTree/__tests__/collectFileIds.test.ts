@@ -95,4 +95,35 @@ describe("collectFileIds", () => {
     };
     expect(collectFileIds(dirWithId)).toEqual([5]);
   });
+
+  // New Test 1: File with negative ID
+  it("should return an empty array for a file node with negative ID", () => {
+    const fileWithNegativeId: FileNode = {
+      ID: -5, // Negative ID
+      Name: "neg.id",
+      Path: "neg.id",
+      Size: 10,
+      Progress: 1,
+      Wanted: true,
+      isDirectory: false,
+      expanded: false,
+    };
+    expect(collectFileIds(fileWithNegativeId)).toEqual([]);
+  });
+
+  // New Test 2: Directory with undefined children
+  it("should return an empty array for a directory node with undefined children", () => {
+    const dirWithUndefinedChildren: FileNode = {
+      ID: -1,
+      Name: "undef.dir",
+      Path: "undef.dir",
+      Size: 0,
+      Progress: 0,
+      Wanted: false,
+      isDirectory: true,
+      children: undefined, // Explicitly undefined
+      expanded: false,
+    };
+    expect(collectFileIds(dirWithUndefinedChildren)).toEqual([]);
+  });
 });

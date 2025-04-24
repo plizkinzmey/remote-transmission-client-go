@@ -39,7 +39,8 @@ export const calculateDirStats = (node: FileNode): DirStats => {
 
   // Обновление статистики текущего узла директории
   node.Size = totalSize;
-  node.Progress = totalCount > 0 ? totalProgressSum / totalCount : 0;
+  // totalCount всегда > 0, если node.children не пустой
+  node.Progress = totalProgressSum / totalCount;
   node.Wanted = allWanted; // Директория считается 'wanted', если все внутри 'wanted'
   node.indeterminate = anyWanted && !allWanted; // Промежуточное состояние, если выбраны не все, но хотя бы один
 

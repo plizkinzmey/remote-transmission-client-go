@@ -23,6 +23,7 @@ import {
   AppConfig,
   WailsTorrent, // Используем импорт WailsTorrent
 } from "@hooks/torrent"; // Используем реэкспорт
+import { useAppErrorHandler } from "@hooks/useAppErrorHandler/useAppErrorHandler"; // Используем прямой импорт пока пути не обновлены глобально
 import "./App.css";
 import "./styles/theme.css";
 import styles from "./styles/App.module.css";
@@ -49,8 +50,8 @@ export interface UIConfig {
  * Основной компонент приложения.
  */
 function App() {
-  const { t } = useLocalization(); // Получаем t для обработки ошибок
-  const [appError, setAppError] = useState<string | null>(null); // Общее состояние ошибки приложения
+  // const { t } = useLocalization(); // t больше не нужен здесь напрямую для ошибок
+  // const [appError, setAppError] = useState<string | null>(null); // Управляется новым хуком
 
   // 1. Управление соединением и конфигурацией
   const {
@@ -60,25 +61,25 @@ function App() {
     error: connectionError,
     initialConfig,
     connect,
-    setConnectionError,
-    setIsReconnectingState,
+    setConnectionError, // Передаем в новый хук
+    setIsReconnectingState, // Передаем в новый хук
   } = useConnectionManager();
 
   const {
     config,
     isSettingsSaving,
-    error: configError,
+    error: configError, // Передаем в новый хук
     handleSettingsSave: saveSettingsAndConnect,
   } = useConfigManager({
     initialConfig,
     onConfigSave: connect,
   });
 
-  // 2. Получение данных (зависит от isInitialized)
+  // 2. Получение данных
   const {
     torrents: rawTorrents,
     isLoading: isTorrentListLoading,
-    error: torrentListError,
+    error: torrentListError, // Передаем в новый хук
     refreshTorrents,
   } = useTorrentList(isInitialized);
 
@@ -108,8 +109,14 @@ function App() {
 
   const {
     sessionStats,
-    error: sessionStatsError,
+    error: sessionStatsError, // Передаем в новый хук
   } = useSessionStats(isInitialized);
+
+  // Используем новый хук для обработки ошибок
+  const appError = useAppErrorHandler(
+    { connectionError, configError, torrentListError, sessionStatsError },
+    { setConnectionError, setIsReconnectingState }
+  );
 
   // 3. Управление выбором
   const {
@@ -132,7 +139,7 @@ function App() {
   } = useTorrentActions({
     onActionStart: () => { },
     onActionSuccess: refreshTorrents,
-    onActionError: setAppError,
+    onActionError: () => { }, // Удаляем setAppError
   });
 
   // 5. Массовые операции (зависят от выбранных торрентов и действий)
@@ -174,24 +181,8 @@ function App() {
     filteredTorrents,
   } = useFilteredTorrents(processedTorrents);
 
-  // Обработка ошибок из разных хуков
   useEffect(() => {
-    if (connectionError) {
-      setAppError(connectionError);
-    } else if (configError) {
-      setAppError(configError);
-    } else if (torrentListError) {
-      setAppError(torrentListError);
-      setIsReconnectingState(true);
-      setConnectionError(t("errors.connectionFailed"));
-    } else if (sessionStatsError) {
-      setAppError(sessionStatsError);
-    } else {
-      setAppError(null);
-    }
-  }, [connectionError, configError, torrentListError, sessionStatsError, setConnectionError, setIsReconnectingState, t]);
-
-  useEffect(() => {
+    // Этот useEffect остается, он для проверки первого старта
     if (!isReconnecting) {
       checkFirstStart(isReconnecting);
     }

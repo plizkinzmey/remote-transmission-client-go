@@ -169,8 +169,12 @@ describe("useBulkOperations - handleSetSpeedLimit", () => {
       )
     );
 
+    // Сохраняем состояние ДО вызова
+    const initialBulkState = { ...result.current.bulkOperations };
+    expect(initialBulkState.speedLimit).toBe(false);
+
     await act(async () => {
-      await result.current.handleSetSpeedLimit(true); // isSlowMode = true
+      await result.current.handleSetSpeedLimit(true); // Вызываем с isSlowMode = true
     });
 
     // Проверяем установку ошибки
@@ -180,11 +184,14 @@ describe("useBulkOperations - handleSetSpeedLimit", () => {
       expect.stringContaining(errorMessage)
     );
 
-    // Проверяем сброс состояния в finally
+    // Проверяем сброс флага операции speedLimit в блоке finally
     expect(result.current.bulkOperations.speedLimit).toBe(false);
-    // Дополнительно можно проверить lastBulkAction
+    // Проверяем, что остальные флаги не изменились (если они были false)
+    expect(result.current.bulkOperations.start).toBe(initialBulkState.start);
+    expect(result.current.bulkOperations.stop).toBe(initialBulkState.stop);
+    expect(result.current.bulkOperations.remove).toBe(initialBulkState.remove);
 
-    // Убедимся, что refresh не вызывался после ошибки
+    // Убедимся, что refresh не вызывался в случае ошибки
     expect(mockRefreshTorrents).not.toHaveBeenCalled();
   });
 

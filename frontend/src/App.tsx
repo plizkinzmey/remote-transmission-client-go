@@ -11,8 +11,8 @@ import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { DragDropProvider } from "./components/DragDropProvider";
 import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
-// Импортируем тип TorrentData из компонента для маппинга
-import { TorrentData as ProcessedTorrentData } from "@components/TorrentList";
+import { mapBackendStatusToFrontend } from "@utils/torrentStatus"; // Импортируем функцию маппинга
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
 import {
   useConnectionManager,
   useTorrentList,
@@ -44,6 +44,30 @@ export interface ConnectionConfig {
 export interface UIConfig {
   language: string;
   theme: "light" | "dark" | "auto";
+}
+
+/**
+ * Тип данных торрента после обработки для UI
+ */
+interface ProcessedTorrentData {
+  ID: number;
+  Name: string;
+  Status: StatusType; // <-- Используем StatusType
+  Progress: number;
+  Size: number;
+  SizeFormatted: string;
+  UploadRatio: number;
+  SeedsConnected: number;
+  SeedsTotal: number;
+  PeersConnected: number;
+  PeersTotal: number;
+  UploadedBytes: number;
+  UploadedFormatted: string;
+  DownloadSpeed: number;
+  UploadSpeed: number;
+  DownloadSpeedFormatted: string;
+  UploadSpeedFormatted: string;
+  IsSlowMode: boolean;
 }
 
 /**
@@ -88,7 +112,7 @@ function App() {
     return rawTorrents.map((t: WailsTorrent): ProcessedTorrentData => ({
       ID: t.ID,
       Name: t.Name,
-      Status: t.Status,
+      Status: mapBackendStatusToFrontend(t.Status), // <-- Преобразуем статус
       IsSlowMode: t.IsSlowMode,
       UploadRatio: t.UploadRatio,
       Progress: t.Progress,

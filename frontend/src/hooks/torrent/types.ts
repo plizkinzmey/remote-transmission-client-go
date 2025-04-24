@@ -1,5 +1,6 @@
 import { ConnectionConfig, UIConfig } from "@/App";
 import { domain } from "@wailsjs/go/models";
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
 
 // Экспортируем тип WailsTorrent из моделей Wails
 export type WailsTorrent = domain.Torrent;
@@ -8,7 +9,7 @@ export type WailsTorrent = domain.Torrent;
 export interface TorrentData {
   ID: number;
   Name: string;
-  Status: string;
+  Status: StatusType; // <-- Изменяем тип на StatusType
   Progress: number;
   Size: number;
   SizeFormatted: string;

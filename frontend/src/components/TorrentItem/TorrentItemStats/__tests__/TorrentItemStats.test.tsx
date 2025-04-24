@@ -26,7 +26,7 @@ vi.mock('../TorrentItemStats.module.css', () => ({
 // Mock implementations
 const mockT = vi.fn((key) => key);
 const mockedUseLocalization = vi.mocked(useLocalization);
-// Correctly type the mock for normalizeValue (takes number, returns number)
+// Correctly type the mock for normalizeValue (takes number | undefined | null, returns number)
 const mockedNormalizeValue = vi.mocked(Formatters.normalizeValue);
 
 const defaultProps: TorrentItemStatsProps = {
@@ -45,8 +45,14 @@ describe('TorrentItemStats', () => {
         vi.clearAllMocks();
         // Mock only the 't' function, casting through unknown first
         mockedUseLocalization.mockReturnValue({ t: mockT } as unknown as ReturnType<typeof useLocalization>);
-        // Mock implementation should return a number, matching the original function
-        mockedNormalizeValue.mockImplementation((value: number): number => value < 0 ? 0 : value);
+        // Update mock implementation to accept number | undefined | null
+        mockedNormalizeValue.mockImplementation((value: number | undefined | null): number => {
+            const numericValue = Number(value);
+            if (value === undefined || value === null || Number.isNaN(numericValue) || numericValue < 0) {
+                return 0;
+            }
+            return numericValue;
+        });
     });
 
     it('renders correctly with default props', () => {
@@ -91,7 +97,14 @@ describe('TorrentItemStats', () => {
 
     it('uses normalizeValue correctly for seeds and peers', () => {
         // Example: Mock normalizeValue to return a modified number
-        mockedNormalizeValue.mockImplementation((value: number): number => (value < 0 ? 0 : value) * 10);
+        // Update mock implementation signature here as well
+        mockedNormalizeValue.mockImplementation((value: number | undefined | null): number => {
+            const numericValue = Number(value);
+            if (value === undefined || value === null || Number.isNaN(numericValue) || numericValue < 0) {
+                return 0;
+            }
+            return numericValue * 10; // Apply the test logic
+        });
         render(<TorrentItemStats {...defaultProps} />);
 
         // Assert the final string based on the modified numbers returned by the mock

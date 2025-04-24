@@ -3,7 +3,7 @@ import { Flex, Box, Text } from "@radix-ui/themes";
 import { useLocalization } from "@contexts/LocalizationContext";
 import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import { LoadingSpinner } from "../LoadingSpinner";
-import { formatTransferSpeed, formatStorageSize } from "../../utils/formatters";
+import { formatSpeed, formatSize } from "../../utils/formatters";
 import styles from "./Footer.module.css";
 
 /**
@@ -49,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Flex align="center" gap="1" className={styles.speedWrapper}>
                 <ArrowDownIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
-                  {formatTransferSpeed(totalDownloadSpeed)}
+                  {formatSpeed(totalDownloadSpeed)}
                 </Text>
               </Flex>
             )}
@@ -62,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Flex align="center" gap="1" className={styles.speedWrapper}>
                 <ArrowUpIcon className={styles.speedIcon} />
                 <Text size="1" color="gray">
-                  {formatTransferSpeed(totalUploadSpeed)}
+                  {formatSpeed(totalUploadSpeed)}
                 </Text>
               </Flex>
             )}
@@ -74,7 +74,7 @@ export const Footer: React.FC<FooterProps> = ({
             <LoadingSpinner size="small" />
           ) : (
             <Text size="1" color="gray">
-              {t("footer.freeSpace")} {formatStorageSize(freeSpace)}
+              {t("footer.freeSpace")} {formatSize(freeSpace)}
             </Text>
           )}
         </Flex>

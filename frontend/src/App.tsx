@@ -235,12 +235,20 @@ function App() {
     verifyTorrent(id);
   };
 
-  const handleAddTorrentAdapter = (url: string, downloadDir: string = "") => {
-    return addTorrent(url, downloadDir);
+  const handleAddTorrentAdapter = async (url: string, downloadDir: string = "") => { // Делаем функцию асинхронной
+    const success = await addTorrent(url, downloadDir); // Ожидаем результат
+    if (success) {
+      closeAddTorrent(); // Вызываем closeAddTorrent при успехе
+    }
+    return success; // Возвращаем результат
   };
 
-  const handleAddTorrentFileAdapter = (base64Content: string, downloadDir: string = "") => {
-    return addTorrentFile(base64Content, downloadDir);
+  const handleAddTorrentFileAdapter = async (base64Content: string, downloadDir: string = "") => { // Делаем функцию асинхронной
+    const success = await addTorrentFile(base64Content, downloadDir); // Ожидаем результат
+    if (success) {
+      closeAddTorrent(); // Вызываем closeAddTorrent при успехе
+    }
+    return success; // Возвращаем результат
   };
 
   return (

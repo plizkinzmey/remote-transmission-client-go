@@ -11,6 +11,7 @@ import {
   getCardClassName,
   isBlocked,
   isChecking,
+  StatusType,
 } from "../../utils/torrentStatus";
 import styles from "./TorrentItem.module.css";
 
@@ -23,7 +24,7 @@ export interface TorrentItemProps {
   /** @description Имя торрента. */
   name: string;
   /** @description Текущий статус торрента (например, 'stopped', 'downloading'). */
-  status: string;
+  status: StatusType;
   /** @description Прогресс загрузки торрента в процентах (0-100). */
   progress: number;
   /** @description Отформатированный размер торрента (например, '100 MB'). */

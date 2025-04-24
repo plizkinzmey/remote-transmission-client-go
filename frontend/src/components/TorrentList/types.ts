@@ -1,3 +1,5 @@
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
+
 /**
  * Интерфейс данных торрента
  */
@@ -7,7 +9,7 @@ export interface TorrentData {
   /** Название торрента */
   Name: string;
   /** Статус торрента */
-  Status: string;
+  Status: StatusType; // <-- Изменяем тип на StatusType
   /** Прогресс загрузки в процентах */
   Progress: number;
   /** Размер в байтах */

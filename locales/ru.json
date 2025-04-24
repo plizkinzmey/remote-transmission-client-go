@@ -108,7 +108,8 @@
       "completed": "Завершён",
       "slow": "Замедлен",
       "queuedCheck": "Ожидает проверки",
-      "queuedDownload": "Ожидает загрузки"
+      "queuedDownload": "Ожидает загрузки",
+      "error": "Ошибка"
     }
   },
 

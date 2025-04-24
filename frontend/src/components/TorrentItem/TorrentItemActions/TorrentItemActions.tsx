@@ -7,6 +7,7 @@ import {
   isRunning,
   isChecking,
   isQueued,
+  StatusType,
 } from "../../../utils/torrentStatus";
 import { SnailIcon } from "../../icons/SnailIcon";
 import {
@@ -20,7 +21,7 @@ import styles from "./TorrentItemActions.module.css";
 
 export interface TorrentItemActionsProps {
   id: number;
-  status: string;
+  status: StatusType; // <-- Изменяем тип на StatusType
   isLoading: boolean;
   lastAction: "start" | "stop" | "verify" | null;
   isSlowMode: boolean;

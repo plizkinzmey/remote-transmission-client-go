@@ -6,6 +6,7 @@ import { MockLocalizationProvider } from "../../../test/mocks/localization-conte
 import { TestThemeProvider } from "../../../test/mocks/theme-mock";
 import * as TorrentStatusUtils from "../../../utils/torrentStatus";
 import * as RadixDialog from "@radix-ui/themes"; // Импортируем для мокированияREM
+import { StatusType } from "../../../utils/torrentStatus"; // Импортируем StatusType
 
 // --- Убираем моки для DeleteDialog и TorrentContent ---
 // vi.mock("../DeleteDialog", ...);
@@ -131,7 +132,7 @@ describe("TorrentItem", () => {
     const defaultProps: TorrentItemProps = {
         id: 1,
         name: "Test Torrent",
-        status: "stopped",
+        status: "stopped" as StatusType, // <-- Добавляем as StatusType
         progress: 50,
         sizeFormatted: "100 MB",
         uploadRatio: 1.5,
@@ -154,10 +155,15 @@ describe("TorrentItem", () => {
     };
 
     const renderComponent = (props: Partial<TorrentItemProps> = {}) => {
+        // Убедимся, что если status передается в props, он тоже имеет правильный тип
+        const mergedProps = { ...defaultProps, ...props };
+        if (props.status && typeof props.status === 'string') {
+            mergedProps.status = props.status as StatusType; // <-- Приведение типа при переопределении
+        }
         return render(
             <TestThemeProvider>
                 <MockLocalizationProvider>
-                    <TorrentItem {...defaultProps} {...props} />
+                    <TorrentItem {...mergedProps} />
                 </MockLocalizationProvider>
             </TestThemeProvider>
         );
@@ -183,7 +189,7 @@ describe("TorrentItem", () => {
     });
 
     it("applies correct card class based on status", () => {
-        renderComponent({ status: "downloading" });
+        renderComponent({ status: "downloading" as StatusType }); // <-- Добавляем as StatusType
         expect(TorrentStatusUtils.getCardClassName).toHaveBeenCalledWith("downloading", "card", expect.any(Object));
     });
 
@@ -210,10 +216,10 @@ describe("TorrentItem", () => {
     });
 
     it.each([
-        { status: "error", expectedDisabled: true },
-        { status: "checking", expectedDisabled: true },
-        { status: "downloading", expectedDisabled: false },
-        { status: "stopped", expectedDisabled: false },
+        { status: "error" as StatusType, expectedDisabled: true }, // <-- Добавляем as StatusType
+        { status: "checking" as StatusType, expectedDisabled: true }, // <-- Добавляем as StatusType
+        { status: "downloading" as StatusType, expectedDisabled: false }, // <-- Добавляем as StatusType
+        { status: "stopped" as StatusType, expectedDisabled: false }, // <-- Добавляем as StatusType
     ])("disables checkbox when status is $status", ({ status, expectedDisabled }) => {
         if (status === "error") {
             isBlockedSpy.mockReturnValue(true);
@@ -226,7 +232,7 @@ describe("TorrentItem", () => {
             isCheckingSpy.mockReturnValue(false);
         }
 
-        renderComponent({ status });
+        renderComponent({ status }); // status уже имеет тип StatusType из it.each
         const checkbox = screen.getByRole("checkbox");
         if (expectedDisabled) {
             expect(checkbox).toBeDisabled();
@@ -239,21 +245,21 @@ describe("TorrentItem", () => {
 
     // --- Actions Tests ---
     it("calls onStart when start action is triggered", () => {
-        renderComponent({ status: "stopped" });
+        renderComponent({ status: "stopped" as StatusType }); // <-- Добавляем as StatusType
         fireEvent.click(screen.getByTestId("action-start"));
         expect(mockOnStart).toHaveBeenCalledTimes(1);
         expect(mockOnStart).toHaveBeenCalledWith(defaultProps.id);
     });
 
     it("calls onStop when stop action is triggered", () => {
-        renderComponent({ status: "downloading" });
+        renderComponent({ status: "downloading" as StatusType }); // <-- Добавляем as StatusType
         fireEvent.click(screen.getByTestId("action-stop"));
         expect(mockOnStop).toHaveBeenCalledTimes(1);
         expect(mockOnStop).toHaveBeenCalledWith(defaultProps.id);
     });
 
     it("calls onVerify when verify action is triggered", () => {
-        renderComponent({ status: "stopped" });
+        renderComponent({ status: "stopped" as StatusType }); // <-- Добавляем as StatusType
         fireEvent.click(screen.getByTestId("action-verify"));
         expect(mockOnVerify).toHaveBeenCalledTimes(1);
         expect(mockOnVerify).toHaveBeenCalledWith(defaultProps.id);
@@ -278,7 +284,7 @@ describe("TorrentItem", () => {
 
     // --- Loading State Tests ---
     it("sets loading state when start action is triggered and resets when status changes", async () => {
-        const { rerender } = renderComponent({ status: "stopped" });
+        const { rerender } = renderComponent({ status: "stopped" as StatusType }); // <-- Добавляем as StatusType
 
         await act(async () => {
             fireEvent.click(screen.getByTestId("action-start"));
@@ -289,7 +295,7 @@ describe("TorrentItem", () => {
         rerender(
             <TestThemeProvider>
                 <MockLocalizationProvider>
-                    <TorrentItem {...defaultProps} status="downloading" />
+                    <TorrentItem {...defaultProps} status={"downloading" as StatusType} /> {/* <-- Добавляем as StatusType */}
                 </MockLocalizationProvider>
             </TestThemeProvider>
         );
@@ -298,7 +304,7 @@ describe("TorrentItem", () => {
     });
 
     it("sets loading state when stop action is triggered and resets when status changes", async () => {
-        const { rerender } = renderComponent({ status: "downloading" });
+        const { rerender } = renderComponent({ status: "downloading" as StatusType }); // <-- Добавляем as StatusType
 
         await act(async () => {
             fireEvent.click(screen.getByTestId("action-stop"));
@@ -309,7 +315,7 @@ describe("TorrentItem", () => {
         rerender(
             <TestThemeProvider>
                 <MockLocalizationProvider>
-                    <TorrentItem {...defaultProps} status="stopped" />
+                    <TorrentItem {...defaultProps} status={"stopped" as StatusType} /> {/* <-- Добавляем as StatusType */}
                 </MockLocalizationProvider>
             </TestThemeProvider>
         );
@@ -318,7 +324,7 @@ describe("TorrentItem", () => {
     });
 
     it("sets loading state when verify action is triggered and resets when status becomes checking", async () => {
-        const { rerender } = renderComponent({ status: "stopped" });
+        const { rerender } = renderComponent({ status: "stopped" as StatusType }); // <-- Добавляем as StatusType
         const actionsMock = screen.getByTestId("torrent-item-actions-mock");
 
         act(() => {
@@ -338,7 +344,7 @@ describe("TorrentItem", () => {
             rerender(
                 <TestThemeProvider>
                     <MockLocalizationProvider>
-                        <TorrentItem {...defaultProps} status="checking" />
+                        <TorrentItem {...defaultProps} status={"checking" as StatusType} /> {/* <-- Добавляем as StatusType */}
                     </MockLocalizationProvider>
                 </TestThemeProvider>
             );
@@ -351,7 +357,7 @@ describe("TorrentItem", () => {
     });
 
     it("does not trigger actions if status is checking", () => {
-        renderComponent({ status: "checking" });
+        renderComponent({ status: "checking" as StatusType }); // <-- Добавляем as StatusType
         fireEvent.click(screen.getByTestId("action-start"));
         fireEvent.click(screen.getByTestId("action-stop"));
         fireEvent.click(screen.getByTestId("action-verify"));

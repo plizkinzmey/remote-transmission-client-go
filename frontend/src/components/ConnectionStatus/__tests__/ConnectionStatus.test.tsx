@@ -7,9 +7,12 @@ import styles from '../ConnectionStatus.module.css';
 // Мокаем локализацию
 vi.mock("../../../contexts/LocalizationContext", () => ({
   useLocalization: () => ({
-    t: (key: string) => key,
-    locale: "en",
-    setLocale: vi.fn()
+    t: (key: string) => key, // Простая заглушка для t
+    // Добавляем недостающие свойства из типа LocalizationContextType
+    currentLanguage: "en",
+    isLoading: false,
+    availableLanguages: [],
+    setLanguage: vi.fn(),
   })
 }));
 
@@ -63,5 +66,25 @@ describe('ConnectionStatus', () => {
     expect(container).toHaveClass(styles.connectionStatus);
     expect(container).toHaveClass(styles.error);
     expect(message).toHaveClass(styles.message);
+  });
+
+  it('отображается при ошибке во время переподключения', () => {
+    const errorMessage = 'errors.connectionFailedDuringReconnect';
+    render(<ConnectionStatus isReconnecting={true} error={errorMessage} />);
+
+    // Проверяем наличие контейнера
+    const container = screen.getByTestId('connection-status-container');
+    expect(container).toBeInTheDocument();
+
+    // Проверяем наличие спиннера (т.к. isReconnecting = true)
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
+    // Проверяем наличие сообщения об ошибке (т.к. error имеет приоритет)
+    const messageElement = screen.getByTestId('connection-status-message');
+    expect(messageElement).toBeInTheDocument();
+    expect(screen.getByText(errorMessage)).toBeInTheDocument(); // Должна отображаться ошибка, а не сообщение о реконнекте
+
+    // Проверяем наличие класса ошибки (т.к. error не null)
+    expect(container).toHaveClass(styles.error);
   });
 });

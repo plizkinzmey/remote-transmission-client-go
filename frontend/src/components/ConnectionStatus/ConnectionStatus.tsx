@@ -4,42 +4,40 @@ import { useLocalization } from "@contexts/LocalizationContext";
 import styles from "./ConnectionStatus.module.css";
 
 interface ConnectionStatusProps {
-  /** Флаг, указывающий на попытку переподключения */
   isReconnecting: boolean;
-  /** Сообщение об ошибке для отображения (может быть ключом локализации) */
   error: string | null;
 }
 
-/**
- * Компонент для отображения статуса соединения при потере связи или ошибке
- * @param {ConnectionStatusProps} props - Свойства компонента
- * @returns {React.ReactElement | null} Элемент статуса подключения или null
- */
 export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   isReconnecting,
   error,
 }) => {
   const { t } = useLocalization();
 
-  // Не отображаем, если нет ни реконнекта, ни ошибки
-  if (!isReconnecting && !error) {
+  // Определяем, нужно ли рендерить компонент
+  const shouldRender = isReconnecting || error;
+
+  if (!shouldRender) {
     return null;
   }
 
-  // Определяем сообщение для отображения
+  // Определяем сообщение и классы
   const message = error
-    ? t(error) // Пытаемся перевести ошибку
-    : isReconnecting
-      ? t("errors.timeoutExplanation") // Сообщение по умолчанию для реконнекта
-      : ""; // На всякий случай
+    ? t(error)
+    : t("errors.timeoutExplanation"); // Упрощено: если нет ошибки, значит идет реконнект
+
+  const containerClasses = [styles.connectionStatus];
+  if (error) {
+    containerClasses.push(styles.error);
+  }
 
   return (
     <div
-      className={`${styles.connectionStatus} ${error ? styles.error : ""}`} // Добавляем класс ошибки
+      className={containerClasses.join(" ")} // Используем рассчитанные классы
       data-testid="connection-status-container"
     >
       <div className={styles.messageContainer}>
-        {isReconnecting && <LoadingSpinner size="medium" />}
+        {isReconnecting && <LoadingSpinner size="medium" data-testid="loading-spinner" />} {/* Добавлен data-testid для спиннера */}
         <p className={styles.message} data-testid="connection-status-message">
           {message}
         </p>

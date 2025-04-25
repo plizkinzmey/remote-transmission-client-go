@@ -239,3 +239,107 @@ describe("App - Torrent Actions Adapters", () => {
     });
 
 });
+
+describe("App - Torrent Actions Callbacks", () => {
+    const mockStartTorrents = vi.fn();
+    const mockRefreshTorrents = vi.fn();
+
+    beforeEach(() => {
+        vi.resetAllMocks();
+        vi.mocked(useConnectionManager).mockReturnValue({
+            isInitialized: true, isLoading: false, isReconnecting: false, error: null, initialConfig: null,
+            connect: vi.fn(), reconnect: vi.fn(), setConnectionError: vi.fn(), setIsReconnectingState: vi.fn(),
+        });
+
+        vi.mocked(useTorrentList).mockReturnValue({
+            torrents: mockRawTorrents,
+            isLoading: false,
+            error: null,
+            refreshTorrents: mockRefreshTorrents,
+        });
+
+        vi.mocked(useSessionStats).mockReturnValue({
+            sessionStats: { TotalDownloadSpeed: 0, TotalUploadSpeed: 0, FreeSpace: 0, TransmissionVersion: "" },
+            error: null, refreshSessionStats: vi.fn(),
+        });
+
+        vi.mocked(useTorrentSelection).mockReturnValue({
+            selectedTorrents: new Set(), hasSelectedTorrents: false,
+            handleTorrentSelect: vi.fn(), handleSelectAll: vi.fn(), clearSelection: vi.fn(),
+        });
+
+        vi.mocked(useConfigManager).mockReturnValue({
+            config: null, isSettingsSaving: false, error: null,
+            handleSettingsSave: vi.fn(), setConfig: vi.fn(),
+        });
+
+        vi.mocked(useModals).mockReturnValue({
+            showSettings: false, showAddTorrent: false, torrentFilePath: null,
+            isFirstStart: false, torrentFileData: null, checkFirstStart: vi.fn(),
+            handleSuccessfulSettingsSave: vi.fn(), openSettings: vi.fn(),
+            closeSettings: vi.fn(), openAddTorrent: vi.fn(),
+            closeAddTorrent: vi.fn(), handleTorrentFileDrop: vi.fn(),
+        });
+
+        vi.mocked(useFilteredTorrents).mockReturnValue({
+            searchTerm: "", setSearchTerm: vi.fn(), statusFilter: null,
+            setStatusFilter: vi.fn(), filteredTorrents: mockProcessedTorrents,
+        });
+
+        vi.mocked(useBulkOperations).mockReturnValue({
+            bulkOperations: { start: false, stop: false, remove: false, speedLimit: false },
+            error: null, handleStartSelected: vi.fn(), handleStopSelected: vi.fn(),
+            handleRemoveSelected: vi.fn(), handleSetSpeedLimit: vi.fn(),
+        });
+    });
+
+    it("вызывает onActionStart и onActionSuccess при успешном выполнении действия", async () => {
+        // Мокируем успешный вызов API
+        vi.mocked(useTorrentActions).mockImplementation(({ onActionStart, onActionSuccess }) => ({
+            addTorrent: vi.fn(),
+            addTorrentFile: vi.fn(),
+            removeTorrent: vi.fn(),
+            startTorrents: async () => {
+                onActionStart?.(); // Вызываем колбэк старта
+                await Promise.resolve(); // Имитируем асинхронную операцию
+                onActionSuccess?.(); // Вызываем колбэк успеха
+                return true;
+            },
+            stopTorrents: vi.fn(),
+            setSpeedLimit: vi.fn(),
+            verifyTorrent: vi.fn(),
+        }));
+
+        render(<App />);
+        const torrentListProps = (window as any).mockTorrentListProps;
+        await torrentListProps.onStart(1);
+
+        // Проверяем, что был вызван refreshTorrents после успешной операции
+        expect(mockRefreshTorrents).toHaveBeenCalled();
+    });
+
+    it("вызывает onActionStart и onActionError при ошибке выполнения действия", async () => {
+        // Мокируем неуспешный вызов API
+        vi.mocked(useTorrentActions).mockImplementation(({ onActionStart, onActionError }) => ({
+            addTorrent: vi.fn(),
+            addTorrentFile: vi.fn(),
+            removeTorrent: vi.fn(),
+            startTorrents: async () => {
+                onActionStart?.(); // Вызываем колбэк старта
+                await Promise.resolve(); // Имитируем асинхронную операцию
+                onActionError?.("Test error"); // Вызываем колбэк ошибки
+                return false;
+            },
+            stopTorrents: vi.fn(),
+            setSpeedLimit: vi.fn(),
+            verifyTorrent: vi.fn(),
+        }));
+
+        render(<App />);
+        const torrentListProps = (window as any).mockTorrentListProps;
+        await torrentListProps.onStart(1);
+
+        // Проверяем, что refreshTorrents НЕ был вызван после ошибки
+        expect(mockRefreshTorrents).not.toHaveBeenCalled();
+    });
+});

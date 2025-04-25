@@ -79,7 +79,7 @@ func TestRollbackPathsTransaction_NilOriginalState(t *testing.T) {
 		DefaultDownloadPath: "/path/x",
 	}
 	initialPaths := append([]string{}, config.DownloadPaths...)
-	initialDefault := config.DefaultDownloadPath // Corrected field name here
+	initialDefault := config.DefaultDownloadPath
 
 	transaction := &PathsTransaction{
 		PathsToAdd:    []string{"/path/z"},

@@ -108,7 +108,8 @@
       "completed": "Completed",
       "slow": "Slowed Down",
       "queuedCheck": "Queued for checking",
-      "queuedDownload": "Queued for download"
+      "queuedDownload": "Queued for download",
+      "error": "Error"
     }
   },
 

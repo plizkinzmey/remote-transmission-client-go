@@ -1,22 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { EventsOn } from "../wailsjs/runtime";
+import React, { useEffect, useState, useCallback, useMemo } from "react"; // Добавлен useMemo
 import "@radix-ui/themes/styles.css";
 import { Header } from "./components/Header";
 import { TorrentList } from "./components/TorrentList";
-import { Settings } from "./components/settings/Settings";
+import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { useTorrentData } from "./hooks/useTorrentData";
-import { useBulkOperations } from "./hooks/useBulkOperations";
-import { LoadingSpinner } from "./components/LoadingSpinner";
-import { useLocalization } from "./contexts/LocalizationContext";
-import { LoadConfig } from "../wailsjs/go/main/App";
-import styles from "./styles/App.module.css";
+import { useModals } from "@hooks/useModals";
+import { useBulkOperations } from "@/hooks/useBulkOperations";
+import { DragDropProvider } from "./components/DragDropProvider";
+import { ConnectionStatus } from "./components/ConnectionStatus";
+import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
+import { mapBackendStatusToFrontend } from "@utils/torrentStatus"; // Импортируем функцию маппинга
+import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
+import {
+  useConnectionManager,
+  useTorrentList,
+  useSessionStats,
+  useTorrentSelection,
+  useTorrentActions,
+  useConfigManager,
+  AppConfig,
+  WailsTorrent, // Используем импорт WailsTorrent
+} from "@hooks/torrent"; // Используем реэкспорт
+import { useAppErrorHandler } from "@hooks/useAppErrorHandler/useAppErrorHandler"; // Используем прямой импорт пока пути не обновлены глобально
 import "./App.css";
 import "./styles/theme.css";
-
-type ThemeType = "light" | "dark" | "auto";
+import styles from "./styles/App.module.css";
+import { useLocalization } from "./contexts/LocalizationContext"; // Импорт useLocalization
 
 // Интерфейс для настроек подключения (используется в окне настроек)
 export interface ConnectionConfig {
@@ -32,225 +43,245 @@ export interface ConnectionConfig {
 // Интерфейс для настроек UI (используется в контекстах)
 export interface UIConfig {
   language: string;
-  theme: ThemeType;
+  theme: "light" | "dark" | "auto";
 }
 
-// Полный интерфейс конфигурации
-export interface ConfigData extends ConnectionConfig, UIConfig {}
+/**
+ * Тип данных торрента после обработки для UI
+ */
+interface ProcessedTorrentData {
+  ID: number;
+  Name: string;
+  Status: StatusType; // <-- Используем StatusType
+  Progress: number;
+  Size: number;
+  SizeFormatted: string;
+  UploadRatio: number;
+  SeedsConnected: number;
+  SeedsTotal: number;
+  PeersConnected: number;
+  PeersTotal: number;
+  UploadedBytes: number;
+  UploadedFormatted: string;
+  DownloadSpeed: number;
+  UploadSpeed: number;
+  DownloadSpeedFormatted: string;
+  UploadSpeedFormatted: string;
+  IsSlowMode: boolean;
+}
 
 /**
  * Основной компонент приложения.
- * Использует хуки для управления данными и состоянием приложения,
- * а также компоненты для отображения UI.
  */
 function App() {
-  const { t } = useLocalization();
+  // const { t } = useLocalization(); // t больше не нужен здесь напрямую для ошибок
+  // const [appError, setAppError] = useState<string | null>(null); // Управляется новым хуком
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showAddTorrent, setShowAddTorrent] = useState(false);
-  const [torrentFilePath, setTorrentFilePath] = useState<string | null>(null);
-  const [isFirstStart, setIsFirstStart] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [torrentFileData, setTorrentFileData] = useState<{
-    name: string;
-    data: string;
-  } | null>(null);
-
-  // Используем хук для работы с данными торрентов
+  // 1. Управление соединением и конфигурацией
   const {
-    torrents,
-    selectedTorrents,
-    error,
-    hasSelectedTorrents,
-    sessionStats,
-    isLoading,
+    isInitialized,
+    isLoading: isConnectionLoading,
     isReconnecting,
+    error: connectionError,
+    initialConfig,
+    connect,
+    setConnectionError, // Передаем в новый хук
+    setIsReconnectingState, // Передаем в новый хук
+  } = useConnectionManager();
+
+  const {
+    config,
+    isSettingsSaving,
+    error: configError, // Передаем в новый хук
+    handleSettingsSave: saveSettingsAndConnect,
+  } = useConfigManager({
+    initialConfig,
+    onConfigSave: connect,
+  });
+
+  // 2. Получение данных
+  const {
+    torrents: rawTorrents,
+    isLoading: isTorrentListLoading,
+    error: torrentListError, // Передаем в новый хук
+    refreshTorrents,
+  } = useTorrentList(isInitialized);
+
+  // Маппинг сырых данных в обработанные для компонента TorrentList
+  const processedTorrents = useMemo((): ProcessedTorrentData[] => {
+    return rawTorrents.map((t: WailsTorrent): ProcessedTorrentData => ({
+      ID: t.ID,
+      Name: t.Name,
+      Status: mapBackendStatusToFrontend(t.Status), // <-- Преобразуем статус
+      IsSlowMode: t.IsSlowMode,
+      UploadRatio: t.UploadRatio,
+      Progress: t.Progress,
+      Size: t.Size,
+      SizeFormatted: t.SizeFormatted,
+      SeedsConnected: t.SeedsConnected,
+      SeedsTotal: t.SeedsTotal,
+      PeersConnected: t.PeersConnected,
+      PeersTotal: t.PeersTotal,
+      UploadedBytes: t.UploadedBytes,
+      UploadedFormatted: t.UploadedFormatted,
+      DownloadSpeed: t.DownloadSpeed,
+      DownloadSpeedFormatted: t.DownloadSpeedFormatted,
+      UploadSpeed: t.UploadSpeed,
+      UploadSpeedFormatted: t.UploadSpeedFormatted,
+    }));
+  }, [rawTorrents]);
+
+  const {
+    sessionStats,
+    error: sessionStatsError, // Передаем в новый хук
+  } = useSessionStats(isInitialized);
+
+  // Создаем безопасный объект, чтобы убрать ветвления в JSX
+  const statsSafe = sessionStats ?? {
+    TotalDownloadSpeed: 0,
+    TotalUploadSpeed: 0,
+    FreeSpace: 0,
+    TransmissionVersion: "",
+  };
+
+  // Используем новый хук для обработки ошибок
+  const appError = useAppErrorHandler(
+    { connectionError, configError, torrentListError, sessionStatsError },
+    { setConnectionError, setIsReconnectingState }
+  );
+
+  // 3. Управление выбором
+  const {
+    selectedTorrents,
+    hasSelectedTorrents,
     handleTorrentSelect,
     handleSelectAll,
-    refreshTorrents,
-    handleAddTorrent,
-    handleAddTorrentFile,
-    handleRemoveTorrent,
-    handleStartTorrent,
-    handleStopTorrent,
-    handleVerifyTorrent,
-    handleSettingsSave,
-    handleSetSpeedLimit: handleTorrentSpeedLimit,
-    config,
-  } = useTorrentData();
+    clearSelection,
+  } = useTorrentSelection();
 
-  // Используем хук для массовых операций
+  // 4. Действия над торрентами
+  const {
+    addTorrent,
+    addTorrentFile,
+    removeTorrent,
+    startTorrents,
+    stopTorrents,
+    setSpeedLimit,
+    verifyTorrent,
+  } = useTorrentActions({
+    onActionStart: () => { },
+    onActionSuccess: refreshTorrents,
+    onActionError: () => { }, // Удаляем setAppError
+  });
+
+  // 5. Массовые операции (зависят от выбранных торрентов и действий)
   const {
     bulkOperations,
     handleStartSelected,
     handleStopSelected,
     handleRemoveSelected,
-    handleSetSpeedLimit,
+    handleSetSpeedLimit: handleBulkSetSpeedLimit,
   } = useBulkOperations(
-    torrents,
+    processedTorrents,
     selectedTorrents,
     refreshTorrents,
-    config || undefined
+    config || undefined,
   );
 
-  // Показываем окно настроек при первом запуске
+  // 6. Модальные окна
+  const {
+    showSettings,
+    showAddTorrent,
+    torrentFilePath,
+    isFirstStart,
+    torrentFileData,
+    checkFirstStart,
+    handleSuccessfulSettingsSave,
+    openSettings,
+    closeSettings,
+    openAddTorrent,
+    closeAddTorrent,
+    handleTorrentFileDrop,
+  } = useModals();
+
+  // 7. Фильтрация
+  const {
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    filteredTorrents,
+  } = useFilteredTorrents(processedTorrents);
+
   useEffect(() => {
-    const checkFirstStart = async () => {
-      try {
-        const savedConfig = await LoadConfig();
-        if (!savedConfig) {
-          setIsFirstStart(true);
-          setShowSettings(true);
-        }
-      } catch (error) {
-        console.error("Failed to check first start:", error);
-        setIsFirstStart(true);
-        setShowSettings(true);
-      }
-    };
-
+    // Этот useEffect остается, он для проверки первого старта
     if (!isReconnecting) {
-      checkFirstStart();
+      checkFirstStart(isReconnecting);
     }
-  }, [isReconnecting]);
+  }, [checkFirstStart, isReconnecting, isInitialized]);
 
-  // При сохранении настроек в режиме первого запуска
   const handleSettingsSaveWrapper = async (
     settings: ConnectionConfig
   ): Promise<boolean> => {
-    try {
-      // Предотвращаем миганиe UI при сохранении, не закрываем окно до завершения всех операций
-      const success = await handleSettingsSave(settings);
-      if (success) {
-        // Установка флагов после успешного сохранения настроек
-        setIsFirstStart(false);
-        setShowSettings(false);
-        return true;
-      } else {
-        // Если сохранение не удалось, оставляем окно открытым
-        console.error("Failed to save settings");
-        return false;
-      }
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      return false;
+    const success = await saveSettingsAndConnect(settings);
+    if (success) {
+      handleSuccessfulSettingsSave();
     }
+    return success;
   };
 
-  // Фильтрация торрентов по поисковому запросу и статусу
-  const filteredTorrents = torrents.filter((torrent) => {
-    const matchesSearch = torrent.Name.toLowerCase().includes(
-      searchTerm.toLowerCase()
-    );
-    const matchesStatus =
-      !statusFilter ||
-      (statusFilter === "slow"
-        ? torrent.IsSlowMode
-        : statusFilter === "queued"
-        ? ["queued", "queuedCheck", "queuedDownload"].includes(torrent.Status)
-        : torrent.Status === statusFilter);
-    return matchesSearch && matchesStatus;
-  });
-
-  // Проверяем, есть ли замедленные торренты среди выбранных
-  const selectedHaveSlowMode = Array.from(selectedTorrents).some(
-    (id) => torrents.find((t) => t.ID === id)?.IsSlowMode
+  const selectedHaveSlowMode = Array.from(selectedTorrents).some((id) =>
+    rawTorrents.find((t: WailsTorrent) => t.ID === id)?.IsSlowMode
   );
 
-  // Адаптер для handleSelectAll без параметров
   const handleSelectAllAdapter = () => {
-    handleSelectAll(filteredTorrents);
+    handleSelectAll(filteredTorrents); // передаем полные объекты торрентов
   };
 
-  // Адаптер для handleSetSpeedLimit для работы с одним id вместо массива
   const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {
-    handleTorrentSpeedLimit([id], isSlowMode);
+    setSpeedLimit([id], isSlowMode);
   };
 
-  // Обработчик события при перетаскивании файла над окном программы
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (!isDragging) {
-      setIsDragging(true);
+  const handleRemoveTorrentAdapter = (id: number, deleteData: boolean) => {
+    removeTorrent(id, deleteData);
+  };
+
+  const handleStartTorrentAdapter = (id: number) => {
+    startTorrents([id]);
+  };
+
+  const handleStopTorrentAdapter = (id: number) => {
+    stopTorrents([id]);
+  };
+
+  const handleVerifyTorrentAdapter = (id: number) => {
+    verifyTorrent(id);
+  };
+
+  const handleAddTorrentAdapter = async (url: string, downloadDir: string = "") => { // Делаем функцию асинхронной
+    const success = await addTorrent(url, downloadDir); // Ожидаем результат
+    if (success) {
+      closeAddTorrent(); // Вызываем closeAddTorrent при успехе
     }
+    return success; // Возвращаем результат
   };
 
-  // Обработчик события при уходе перетаскиваемого файла из окна программы
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    
-    // Проверяем, что курсор действительно покинул область окна
-    // Используем координаты события для более надежного определения
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-    
-    // Если курсор находится за пределами элемента, сбрасываем состояние
-    if (
-      x <= rect.left ||
-      x >= rect.right ||
-      y <= rect.top ||
-      y >= rect.bottom
-    ) {
-      setIsDragging(false);
+  const handleAddTorrentFileAdapter = async (base64Content: string, downloadDir: string = "") => { // Делаем функцию асинхронной
+    const success = await addTorrentFile(base64Content, downloadDir); // Ожидаем результат
+    if (success) {
+      closeAddTorrent(); // Вызываем closeAddTorrent при успехе
     }
+    return success; // Возвращаем результат
   };
-
-  // Обработчик события при сбросе файла в окно программы
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    const torrentFile = files.find((file) => file.name.endsWith(".torrent"));
-
-    if (torrentFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64Content = reader.result as string;
-        const base64Data = base64Content.split(",")[1];
-
-        // Открываем диалог добавления торрента с данными файла
-        setTorrentFileData({
-          name: torrentFile.name,
-          data: base64Data,
-        });
-        setShowAddTorrent(true);
-      };
-      reader.readAsDataURL(torrentFile);
-    }
-  };
-
-  useEffect(() => {
-    EventsOn("torrent-opened", (torrentPath: string) => {
-      console.log("Получен путь к торрент-файлу:", torrentPath);
-      setTorrentFilePath(torrentPath);
-      setShowAddTorrent(true);
-    });
-  }, []);
 
   return (
     <ThemeProvider>
-      <div
-        className={styles.appContainer}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {isDragging && (
-          <div className={styles.dragOverlay}>
-            <div className={styles.dropIndicator}>
-              {t("add.dropTorrentHere")}
-            </div>
-          </div>
-        )}
+      <DragDropProvider onFileDropped={handleTorrentFileDrop}>
         <Header
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
-          onAddTorrent={() => setShowAddTorrent(true)}
-          onSettings={() => setShowSettings(true)}
+          onAddTorrent={openAddTorrent}
+          onSettings={openSettings}
           onStartSelected={handleStartSelected}
           onStopSelected={handleStopSelected}
           onRemoveSelected={handleRemoveSelected}
@@ -263,27 +294,17 @@ function App() {
           onSelectAll={handleSelectAllAdapter}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          torrents={torrents}
-          onSetSpeedLimit={handleSetSpeedLimit}
+          torrents={rawTorrents}
+          onSetSpeedLimit={(isSlowMode) => {
+            handleBulkSetSpeedLimit(isSlowMode);
+          }}
           isSlowModeEnabled={selectedHaveSlowMode}
           isReconnecting={isReconnecting}
           isFirstStart={isFirstStart}
         />
-        {isReconnecting && (
-          <div className={styles.connectionStatus}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "12px",
-              }}
-            >
-              <LoadingSpinner size="medium" />
-              <p>{t("errors.timeoutExplanation")}</p>
-            </div>
-          </div>
-        )}
+
+        {(isReconnecting || appError) && <ConnectionStatus isReconnecting={isReconnecting} error={appError} />}
+
         <div className={styles.content}>
           <div className={styles.scrollableContent}>
             <TorrentList
@@ -291,50 +312,43 @@ function App() {
               searchTerm={searchTerm}
               selectedTorrents={selectedTorrents}
               onSelect={handleTorrentSelect}
-              onRemove={handleRemoveTorrent}
-              onStart={handleStartTorrent}
-              onStop={handleStopTorrent}
-              onVerify={handleVerifyTorrent}
-              isLoading={isLoading}
+              onRemove={handleRemoveTorrentAdapter}
+              onStart={handleStartTorrentAdapter}
+              onStop={handleStopTorrentAdapter}
+              onVerify={handleVerifyTorrentAdapter}
+              isLoading={isTorrentListLoading || isConnectionLoading}
               isReconnecting={isReconnecting}
               onSetSpeedLimit={handleTorrentSpeedLimitAdapter}
             />
           </div>
           <Footer
-            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
-            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
-            freeSpace={sessionStats?.FreeSpace}
-            transmissionVersion={sessionStats?.TransmissionVersion}
+            totalDownloadSpeed={statsSafe.TotalDownloadSpeed}
+            totalUploadSpeed={statsSafe.TotalUploadSpeed}
+            freeSpace={statsSafe.FreeSpace}
+            transmissionVersion={statsSafe.TransmissionVersion}
           />
         </div>
-        {/* Модальные окна */}
+
         {showSettings && (
           <Settings
-            onSave={
-              isFirstStart ? handleSettingsSaveWrapper : handleSettingsSave
-            }
-            onClose={() => {
-              if (!isFirstStart) {
-                setShowSettings(false);
-              }
-            }}
+            data-testid="settings-modal"
+            onSave={handleSettingsSaveWrapper}
+            onClose={closeSettings}
             isFirstStart={isFirstStart}
           />
         )}
+
         {showAddTorrent && (
           <AddTorrent
-            torrentFile={torrentFilePath || undefined} // передаётся путь, если есть
-            torrentFileData={torrentFileData || undefined} // передаются данные перетаскиваемого файла
-            onAdd={handleAddTorrent}
-            onAddFile={handleAddTorrentFile}
-            onClose={() => {
-              setShowAddTorrent(false);
-              setTorrentFilePath(null);
-              setTorrentFileData(null); // сбрасываем данные о файле при закрытии окна
-            }}
+            data-testid="add-torrent-modal"
+            torrentFile={torrentFilePath || undefined}
+            torrentFileData={torrentFileData || undefined}
+            onAdd={handleAddTorrentAdapter}
+            onAddFile={handleAddTorrentFileAdapter}
+            onClose={closeAddTorrent}
           />
         )}
-      </div>
+      </DragDropProvider>
     </ThemeProvider>
   );
 }

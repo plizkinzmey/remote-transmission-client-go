@@ -1,0 +1,16 @@
+.container {
+  position: relative;
+}
+
+.toggleButton {
+  transition: background-color 0.2s ease;
+}
+
+.toggleButton:hover {
+  background-color: var(--gray-4);
+}
+
+/* Только анимация для элементов меню */
+.menuItem {
+  transition: opacity 0.2s ease;
+}

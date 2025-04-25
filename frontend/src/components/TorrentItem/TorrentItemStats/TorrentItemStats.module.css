@@ -1,0 +1,19 @@
+/* Стили для компонента статистики */
+.downloadIcon { 
+  color: var(--blue-9); 
+}
+
+.uploadIcon { 
+  color: var(--grass-9); 
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .downloadIcon { 
+    color: var(--blue-8); 
+  }
+  
+  .uploadIcon { 
+    color: var(--grass-8); 
+  }
+}

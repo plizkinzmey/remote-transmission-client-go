@@ -1,0 +1,15 @@
+.hostInputContainer {
+  width: 300px; /* Заменяет inline style={{ width: "300px" }} */
+}
+
+.portInputContainer {
+  width: 100px; /* Заменяет inline style={{ width: "100px" }} */
+}
+
+.usernameInputContainer {
+  max-width: 250px; /* Заменяет inline style={{ maxWidth: "250px" }} */
+}
+
+.passwordInputContainer {
+  max-width: 250px; /* Заменяет inline style={{ maxWidth: "250px" }} */
+}

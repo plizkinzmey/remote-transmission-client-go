@@ -1,0 +1,362 @@
+import React from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import App from "../../../App";
+import { TorrentData as ProcessedTorrentData } from "../../../components/TorrentList";
+import {
+  useConnectionManager,
+  useTorrentList,
+  useSessionStats,
+  useTorrentSelection,
+  useTorrentActions,
+  useConfigManager,
+  WailsTorrent,
+} from "@/hooks/torrent";
+import { useBulkOperations, useModals } from "@/hooks";
+import { useFilteredTorrents } from "../../../components/TorrentList/hooks/useFilteredTorrents";
+
+vi.mock("@/hooks/torrent", async () => {
+  const actual = await vi.importActual("@/hooks/torrent");
+  return {
+    ...(actual as any),
+    useConnectionManager: vi.fn(),
+    useTorrentList: vi.fn(),
+    useSessionStats: vi.fn(),
+    useTorrentSelection: vi.fn(),
+    useTorrentActions: vi.fn(),
+    useConfigManager: vi.fn(),
+  };
+});
+
+vi.mock("@/hooks/useModals");
+vi.mock("@/hooks/useBulkOperations");
+vi.mock("@/components/TorrentList/hooks/useFilteredTorrents");
+
+vi.mock("../../../components/Header", () => ({
+  Header: (props: any) => {
+    // Save all props for testing
+    (window as any).mockHeaderProps = props;
+    return (
+      <div data-testid="header-component" data-slow-mode={props.isSlowModeEnabled}>
+        Header Mocked
+      </div>
+    );
+  },
+}));
+
+vi.mock("../../../components/TorrentList", () => ({
+  TorrentList: (props: any) => {
+    // Save all props for testing
+    (window as any).mockTorrentListProps = props;
+    return (
+      <div data-testid="torrent-list-component">
+        {props.torrents.map((torrent: ProcessedTorrentData) => (
+          <div
+            key={torrent.ID}
+            data-testid={`torrent-${torrent.ID}`}
+            onClick={() => props.onSelect(torrent.ID)}
+          >
+            {torrent.Name}
+          </div>
+        ))}
+      </div>
+    );
+  },
+}));
+
+vi.mock("../../../components/Footer", () => ({
+  Footer: (props: any) => {
+    // Сохраняем пропсы в window для явной проверки в тесте
+    (window as any).mockFooterProps = props;
+    return (
+      <div data-testid="footer-component">
+        {/* Отображение оставляем для предыдущих проверок */}
+        Down: {props.totalDownloadSpeed}
+        Up: {props.totalUploadSpeed}
+        Free: {props.freeSpace}
+        Ver: {props.transmissionVersion}
+      </div>
+    );
+  },
+}));
+
+vi.mock("../../../components/ConnectionStatus", () => ({
+  ConnectionStatus: () => (
+    <div data-testid="connection-status-component">ConnectionStatus Mocked</div>
+  ),
+}));
+
+vi.mock("../../../styles/App.module.css", () => ({
+  default: {
+    content: "content-mock",
+    scrollableContent: "scrollableContent-mock",
+  },
+}));
+
+vi.mock("@wailsjs/go/main/App", async () => {
+  const actual = await vi.importActual("@wailsjs/go/main/App");
+  return {
+    ...(actual as any),
+    GetDownloadPaths: vi.fn().mockResolvedValue(["/default/path"]),
+    ValidateDownloadPath: vi.fn().mockResolvedValue(true),
+  };
+});
+
+const createMockWailsTorrent = (
+  id: number,
+  name: string,
+  isSlowMode = false
+): WailsTorrent => ({
+  ID: id,
+  Name: name,
+  Status: "stopped",
+  Progress: 0,
+  Size: 0,
+  SizeFormatted: "0 B",
+  UploadRatio: 0,
+  SeedsConnected: 0,
+  SeedsTotal: 0,
+  PeersConnected: 0,
+  PeersTotal: 0,
+  UploadedBytes: 0,
+  UploadedFormatted: "0 B",
+  DownloadSpeed: 0,
+  UploadSpeed: 0,
+  DownloadSpeedFormatted: "0 B/s",
+  UploadSpeedFormatted: "0 B/s",
+  IsSlowMode: isSlowMode,
+});
+
+const createMockProcessedTorrentData = (
+  id: number,
+  name: string,
+  isSlowMode = false
+): ProcessedTorrentData => ({
+  ID: id,
+  Name: name,
+  Status: "stopped",
+  Progress: 0,
+  Size: 0,
+  SizeFormatted: "0 B",
+  UploadRatio: 0,
+  SeedsConnected: 0,
+  SeedsTotal: 0,
+  PeersConnected: 0,
+  PeersTotal: 0,
+  UploadedBytes: 0,
+  UploadedFormatted: "0 B",
+  DownloadSpeed: 0,
+  UploadSpeed: 0,
+  DownloadSpeedFormatted: "0 B/s",
+  UploadSpeedFormatted: "0 B/s",
+  IsSlowMode: isSlowMode,
+});
+
+const mockRawTorrents: WailsTorrent[] = [
+  createMockWailsTorrent(1, "Torrent 1", false),
+  createMockWailsTorrent(2, "Torrent 2", true),
+];
+
+const mockProcessedTorrents: ProcessedTorrentData[] = [
+  createMockProcessedTorrentData(1, "Torrent 1", false),
+  createMockProcessedTorrentData(2, "Torrent 2", true),
+];
+
+// Добавляем мок для handleBulkSetSpeedLimit
+const mockHandleBulkSetSpeedLimit = vi.fn();
+
+describe("App - Взаимодействие с торрентами", () => {
+  const mockHandleTorrentSelect = vi.fn();
+  const mockRefreshTorrents = vi.fn();
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+
+    vi.mocked(useConnectionManager).mockReturnValue({
+      isInitialized: true,
+      isLoading: false,
+      isReconnecting: false,
+      error: null,
+      initialConfig: null,
+      connect: vi.fn(),
+      reconnect: vi.fn(),
+      setConnectionError: vi.fn(),
+      setIsReconnectingState: vi.fn(),
+    });
+
+    vi.mocked(useTorrentList).mockReturnValue({
+      torrents: mockRawTorrents,
+      isLoading: false,
+      error: null,
+      refreshTorrents: mockRefreshTorrents,
+    });
+
+    vi.mocked(useSessionStats).mockReturnValue({
+      sessionStats: {
+        TotalDownloadSpeed: 1024, // Пример ненулевого значения
+        TotalUploadSpeed: 512,   // Пример ненулевого значения
+        FreeSpace: 1234567890, // <-- Изменено на ненулевое значение
+        TransmissionVersion: "4.0.0", // <-- Изменено на непустую строку
+      },
+      error: null,
+      refreshSessionStats: vi.fn(),
+    });
+
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      selectedTorrents: new Set(),
+      hasSelectedTorrents: false,
+      handleTorrentSelect: mockHandleTorrentSelect,
+      handleSelectAll: vi.fn(),
+      clearSelection: vi.fn(),
+    });
+
+    vi.mocked(useTorrentActions).mockReturnValue({
+      addTorrent: vi.fn(),
+      addTorrentFile: vi.fn(),
+      removeTorrent: vi.fn(),
+      startTorrents: vi.fn(),
+      stopTorrents: vi.fn(),
+      setSpeedLimit: vi.fn(),
+      verifyTorrent: vi.fn(),
+    });
+
+    vi.mocked(useConfigManager).mockReturnValue({
+      config: null,
+      isSettingsSaving: false,
+      error: null,
+      handleSettingsSave: vi.fn(),
+      setConfig: vi.fn(),
+    });
+
+    vi.mocked(useModals).mockReturnValue({
+      showSettings: false,
+      showAddTorrent: false,
+      torrentFilePath: null,
+      isFirstStart: false,
+      torrentFileData: null,
+      checkFirstStart: vi.fn(),
+      handleSuccessfulSettingsSave: vi.fn(),
+      openSettings: vi.fn(),
+      closeSettings: vi.fn(),
+      openAddTorrent: vi.fn(),
+      closeAddTorrent: vi.fn(),
+      handleTorrentFileDrop: vi.fn(),
+    });
+
+    vi.mocked(useFilteredTorrents).mockReturnValue({
+      searchTerm: "",
+      setSearchTerm: vi.fn(),
+      statusFilter: null,
+      setStatusFilter: vi.fn(),
+      filteredTorrents: mockProcessedTorrents,
+    });
+
+    vi.mocked(useBulkOperations).mockReturnValue({
+      bulkOperations: {
+        start: false,
+        stop: false,
+        remove: false,
+        speedLimit: false,
+      },
+      error: null,
+      handleStartSelected: vi.fn(),
+      handleStopSelected: vi.fn(),
+      handleRemoveSelected: vi.fn(),
+      handleSetSpeedLimit: mockHandleBulkSetSpeedLimit, // use our mock
+    });
+  });
+
+  it("рендерит список торрентов", () => {
+    render(<App />);
+    expect(screen.getByTestId("torrent-1")).toBeInTheDocument();
+    expect(screen.getByTestId("torrent-2")).toBeInTheDocument();
+  });
+
+  it("рендерит список торрентов и проверяет Footer", () => {
+    render(<App />); // Рендерим компонент
+
+    // Проверяем рендер торрентов
+    expect(screen.getByTestId("torrent-1")).toBeInTheDocument();
+    expect(screen.getByTestId("torrent-2")).toBeInTheDocument();
+
+    // Проверяем содержимое отрендеренного Footer (оставляем для надежности)
+    const footer = screen.getByTestId("footer-component");
+    expect(footer).toHaveTextContent("Free: 1234567890");
+    expect(footer).toHaveTextContent("Ver: 4.0.0");
+
+    // Явно проверяем пропсы, переданные в мок Footer
+    const footerProps = (window as any).mockFooterProps;
+    expect(footerProps).toBeDefined();
+    expect(footerProps.freeSpace).toBe(1234567890);
+    expect(footerProps.transmissionVersion).toBe("4.0.0");
+
+    // Проверки мока useSessionStats ПОСЛЕ рендера (оставляем)
+    const renderedMockStats = vi.mocked(useSessionStats).mock.results[0]?.value.sessionStats;
+    expect(renderedMockStats).toBeDefined();
+    expect(renderedMockStats?.FreeSpace).toBe(1234567890);
+    expect(renderedMockStats?.TransmissionVersion).toBe("4.0.0");
+  });
+
+  it("вызывает handleTorrentSelect при выборе торрента", () => {
+    render(<App />);
+    const torrent1 = screen.getByTestId("torrent-1");
+    fireEvent.click(torrent1);
+    expect(mockHandleTorrentSelect).toHaveBeenCalledWith(1);
+  });
+
+  it("корректно определяет наличие замедленных торрентов среди выбранных", () => {
+    const currentSelectionMock = vi.mocked(useTorrentSelection).mock.results[0]?.value ?? { selectedTorrents: new Set(), hasSelectedTorrents: false, handleTorrentSelect: vi.fn(), handleSelectAll: vi.fn(), clearSelection: vi.fn() };
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      ...currentSelectionMock,
+      selectedTorrents: new Set([2]),
+    });
+
+    render(<App />);
+    const header = screen.getByTestId("header-component");
+    expect(header).toHaveAttribute("data-slow-mode", "true");
+  });
+
+  it("корректно определяет отсутствие замедленных торрентов среди выбранных", () => {
+    const currentSelectionMock = vi.mocked(useTorrentSelection).mock.results[0]?.value ?? { selectedTorrents: new Set(), hasSelectedTorrents: false, handleTorrentSelect: vi.fn(), handleSelectAll: vi.fn(), clearSelection: vi.fn() };
+    vi.mocked(useTorrentSelection).mockReturnValue({
+      ...currentSelectionMock,
+      selectedTorrents: new Set([1]),
+    });
+
+    render(<App />);
+    const header = screen.getByTestId("header-component");
+    expect(header).toHaveAttribute("data-slow-mode", "false");
+  });
+
+  it("передает дефолтные значения в Footer, когда sessionStats равен null", () => {
+    // Переопределяем мок useSessionStats для этого теста
+    vi.mocked(useSessionStats).mockReturnValue({
+      sessionStats: null,
+      error: null,
+      refreshSessionStats: vi.fn(),
+    });
+
+    render(<App />); // Рендерим компонент
+
+    // Проверяем пропсы, переданные в мок Footer
+    const footerProps = (window as any).mockFooterProps;
+    expect(footerProps).toBeDefined();
+    expect(footerProps.freeSpace).toBe(0); // default
+    expect(footerProps.transmissionVersion).toBe(""); // default
+  });
+
+  it("вызывает handleBulkSetSpeedLimit с true при onSetSpeedLimit", () => {
+    render(<App />);
+    const headerProps = (window as any).mockHeaderProps;
+    headerProps.onSetSpeedLimit(true);
+    expect(mockHandleBulkSetSpeedLimit).toHaveBeenCalledWith(true);
+  });
+
+  it("вызывает handleBulkSetSpeedLimit с false при onSetSpeedLimit", () => {
+    render(<App />);
+    const headerProps = (window as any).mockHeaderProps;
+    headerProps.onSetSpeedLimit(false);
+    expect(mockHandleBulkSetSpeedLimit).toHaveBeenCalledWith(false);
+  });
+
+});

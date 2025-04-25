@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import App from "../../../App";
 import { TorrentData as ProcessedTorrentData } from "../../../components/TorrentList";
 import {
@@ -33,27 +33,35 @@ vi.mock("@/hooks/useBulkOperations");
 vi.mock("@/components/TorrentList/hooks/useFilteredTorrents");
 
 vi.mock("../../../components/Header", () => ({
-  Header: ({ isSlowModeEnabled }: any) => (
-    <div data-testid="header-component" data-slow-mode={isSlowModeEnabled}>
-      Header Mocked
-    </div>
-  ),
+  Header: (props: any) => {
+    // Save all props for testing
+    (window as any).mockHeaderProps = props;
+    return (
+      <div data-testid="header-component" data-slow-mode={props.isSlowModeEnabled}>
+        Header Mocked
+      </div>
+    );
+  },
 }));
 
 vi.mock("../../../components/TorrentList", () => ({
-  TorrentList: ({ torrents, onSelect }: { torrents: ProcessedTorrentData[], onSelect: (id: number) => void }) => (
-    <div data-testid="torrent-list-component">
-      {torrents.map((torrent: ProcessedTorrentData) => (
-        <div
-          key={torrent.ID}
-          data-testid={`torrent-${torrent.ID}`}
-          onClick={() => onSelect(torrent.ID)}
-        >
-          {torrent.Name}
-        </div>
-      ))}
-    </div>
-  ),
+  TorrentList: (props: any) => {
+    // Save all props for testing
+    (window as any).mockTorrentListProps = props;
+    return (
+      <div data-testid="torrent-list-component">
+        {props.torrents.map((torrent: ProcessedTorrentData) => (
+          <div
+            key={torrent.ID}
+            data-testid={`torrent-${torrent.ID}`}
+            onClick={() => props.onSelect(torrent.ID)}
+          >
+            {torrent.Name}
+          </div>
+        ))}
+      </div>
+    );
+  },
 }));
 
 vi.mock("../../../components/Footer", () => ({
@@ -72,6 +80,15 @@ vi.mock("../../../styles/App.module.css", () => ({
     scrollableContent: "scrollableContent-mock",
   },
 }));
+
+vi.mock("@wailsjs/go/main/App", async () => {
+  const actual = await vi.importActual("@wailsjs/go/main/App");
+  return {
+    ...(actual as any),
+    GetDownloadPaths: vi.fn().mockResolvedValue(["/default/path"]),
+    ValidateDownloadPath: vi.fn().mockResolvedValue(true),
+  };
+});
 
 const createMockWailsTorrent = (
   id: number,
@@ -123,19 +140,19 @@ const createMockProcessedTorrentData = (
   IsSlowMode: isSlowMode,
 });
 
+const mockRawTorrents: WailsTorrent[] = [
+  createMockWailsTorrent(1, "Torrent 1", false),
+  createMockWailsTorrent(2, "Torrent 2", true),
+];
+
+const mockProcessedTorrents: ProcessedTorrentData[] = [
+  createMockProcessedTorrentData(1, "Torrent 1", false),
+  createMockProcessedTorrentData(2, "Torrent 2", true),
+];
+
 describe("App - Взаимодействие с торрентами", () => {
   const mockHandleTorrentSelect = vi.fn();
   const mockRefreshTorrents = vi.fn();
-
-  const mockRawTorrents: WailsTorrent[] = [
-    createMockWailsTorrent(1, "Torrent 1", false),
-    createMockWailsTorrent(2, "Torrent 2", true),
-  ];
-
-  const mockProcessedTorrents: ProcessedTorrentData[] = [
-    createMockProcessedTorrentData(1, "Torrent 1", false),
-    createMockProcessedTorrentData(2, "Torrent 2", true),
-  ];
 
   beforeEach(() => {
     vi.resetAllMocks();

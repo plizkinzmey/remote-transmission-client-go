@@ -65,7 +65,19 @@ vi.mock("../../../components/TorrentList", () => ({
 }));
 
 vi.mock("../../../components/Footer", () => ({
-  Footer: () => <div data-testid="footer-component">Footer Mocked</div>,
+  Footer: (props: any) => {
+    // Сохраняем пропсы в window для явной проверки в тесте
+    (window as any).mockFooterProps = props;
+    return (
+      <div data-testid="footer-component">
+        {/* Отображение оставляем для предыдущих проверок */}
+        Down: {props.totalDownloadSpeed}
+        Up: {props.totalUploadSpeed}
+        Free: {props.freeSpace}
+        Ver: {props.transmissionVersion}
+      </div>
+    );
+  },
 }));
 
 vi.mock("../../../components/ConnectionStatus", () => ({
@@ -150,6 +162,9 @@ const mockProcessedTorrents: ProcessedTorrentData[] = [
   createMockProcessedTorrentData(2, "Torrent 2", true),
 ];
 
+// Добавляем мок для handleBulkSetSpeedLimit
+const mockHandleBulkSetSpeedLimit = vi.fn();
+
 describe("App - Взаимодействие с торрентами", () => {
   const mockHandleTorrentSelect = vi.fn();
   const mockRefreshTorrents = vi.fn();
@@ -178,10 +193,10 @@ describe("App - Взаимодействие с торрентами", () => {
 
     vi.mocked(useSessionStats).mockReturnValue({
       sessionStats: {
-        TotalDownloadSpeed: 0,
-        TotalUploadSpeed: 0,
-        FreeSpace: 0,
-        TransmissionVersion: "",
+        TotalDownloadSpeed: 1024, // Пример ненулевого значения
+        TotalUploadSpeed: 512,   // Пример ненулевого значения
+        FreeSpace: 1234567890, // <-- Изменено на ненулевое значение
+        TransmissionVersion: "4.0.0", // <-- Изменено на непустую строку
       },
       error: null,
       refreshSessionStats: vi.fn(),
@@ -247,7 +262,7 @@ describe("App - Взаимодействие с торрентами", () => {
       handleStartSelected: vi.fn(),
       handleStopSelected: vi.fn(),
       handleRemoveSelected: vi.fn(),
-      handleSetSpeedLimit: vi.fn(),
+      handleSetSpeedLimit: mockHandleBulkSetSpeedLimit, // use our mock
     });
   });
 
@@ -255,6 +270,31 @@ describe("App - Взаимодействие с торрентами", () => {
     render(<App />);
     expect(screen.getByTestId("torrent-1")).toBeInTheDocument();
     expect(screen.getByTestId("torrent-2")).toBeInTheDocument();
+  });
+
+  it("рендерит список торрентов и проверяет Footer", () => {
+    render(<App />); // Рендерим компонент
+
+    // Проверяем рендер торрентов
+    expect(screen.getByTestId("torrent-1")).toBeInTheDocument();
+    expect(screen.getByTestId("torrent-2")).toBeInTheDocument();
+
+    // Проверяем содержимое отрендеренного Footer (оставляем для надежности)
+    const footer = screen.getByTestId("footer-component");
+    expect(footer).toHaveTextContent("Free: 1234567890");
+    expect(footer).toHaveTextContent("Ver: 4.0.0");
+
+    // Явно проверяем пропсы, переданные в мок Footer
+    const footerProps = (window as any).mockFooterProps;
+    expect(footerProps).toBeDefined();
+    expect(footerProps.freeSpace).toBe(1234567890);
+    expect(footerProps.transmissionVersion).toBe("4.0.0");
+
+    // Проверки мока useSessionStats ПОСЛЕ рендера (оставляем)
+    const renderedMockStats = vi.mocked(useSessionStats).mock.results[0]?.value.sessionStats;
+    expect(renderedMockStats).toBeDefined();
+    expect(renderedMockStats?.FreeSpace).toBe(1234567890);
+    expect(renderedMockStats?.TransmissionVersion).toBe("4.0.0");
   });
 
   it("вызывает handleTorrentSelect при выборе торрента", () => {
@@ -287,4 +327,36 @@ describe("App - Взаимодействие с торрентами", () => {
     const header = screen.getByTestId("header-component");
     expect(header).toHaveAttribute("data-slow-mode", "false");
   });
+
+  it("передает дефолтные значения в Footer, когда sessionStats равен null", () => {
+    // Переопределяем мок useSessionStats для этого теста
+    vi.mocked(useSessionStats).mockReturnValue({
+      sessionStats: null,
+      error: null,
+      refreshSessionStats: vi.fn(),
+    });
+
+    render(<App />); // Рендерим компонент
+
+    // Проверяем пропсы, переданные в мок Footer
+    const footerProps = (window as any).mockFooterProps;
+    expect(footerProps).toBeDefined();
+    expect(footerProps.freeSpace).toBe(0); // default
+    expect(footerProps.transmissionVersion).toBe(""); // default
+  });
+
+  it("вызывает handleBulkSetSpeedLimit с true при onSetSpeedLimit", () => {
+    render(<App />);
+    const headerProps = (window as any).mockHeaderProps;
+    headerProps.onSetSpeedLimit(true);
+    expect(mockHandleBulkSetSpeedLimit).toHaveBeenCalledWith(true);
+  });
+
+  it("вызывает handleBulkSetSpeedLimit с false при onSetSpeedLimit", () => {
+    render(<App />);
+    const headerProps = (window as any).mockHeaderProps;
+    headerProps.onSetSpeedLimit(false);
+    expect(mockHandleBulkSetSpeedLimit).toHaveBeenCalledWith(false);
+  });
+
 });

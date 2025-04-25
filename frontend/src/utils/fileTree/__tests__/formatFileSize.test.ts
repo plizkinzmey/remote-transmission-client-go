@@ -2,35 +2,50 @@ import { describe, it, expect } from "vitest";
 import { formatFileSize } from "../formatFileSize";
 
 describe("formatFileSize", () => {
-  it("форматирует размер в байтах", () => {
-    expect(formatFileSize(100)).toBe("100.00 B");
-  });
-
-  it("форматирует размер в килобайтах", () => {
-    expect(formatFileSize(2048)).toBe("2.00 KiB");
-  });
-
-  it("форматирует размер в мегабайтах", () => {
-    expect(formatFileSize(5 * 1024 * 1024)).toBe("5.00 MiB");
-  });
-
-  it("форматирует размер в гигабайтах", () => {
-    expect(formatFileSize(3 * 1024 * 1024 * 1024)).toBe("3.00 GiB");
-  });
-
-  it("форматирует размер в терабайтах", () => {
-    expect(formatFileSize(2 * 1024 * 1024 * 1024 * 1024)).toBe("2.00 TiB");
-  });
-
-  it("корректно обрабатывает undefined", () => {
+  it("should return 0.00 B for undefined input", () => {
     expect(formatFileSize(undefined)).toBe("0.00 B");
   });
 
-  it("корректно обрабатывает отрицательные значения", () => {
+  it("should return 0.00 B for null input", () => {
+    // @ts-expect-error testing invalid input
+    expect(formatFileSize(null)).toBe("0.00 B");
+  });
+
+  it("should return 0.00 B for zero input", () => {
+    expect(formatFileSize(0)).toBe("0.00 B");
+  });
+
+  it("should return 0.00 B for negative input", () => {
     expect(formatFileSize(-100)).toBe("0.00 B");
   });
 
-  it("корректно обрабатывает 0", () => {
-    expect(formatFileSize(0)).toBe("0.00 B");
+  it("should format bytes correctly", () => {
+    expect(formatFileSize(500)).toBe("500.00 B");
+  });
+
+  it("should format KiB correctly", () => {
+    expect(formatFileSize(1024)).toBe("1.00 KiB");
+    expect(formatFileSize(1536)).toBe("1.50 KiB");
+  });
+
+  it("should format MiB correctly", () => {
+    expect(formatFileSize(1024 * 1024)).toBe("1.00 MiB");
+    expect(formatFileSize(1.5 * 1024 * 1024)).toBe("1.50 MiB");
+  });
+
+  it("should format GiB correctly", () => {
+    expect(formatFileSize(1024 * 1024 * 1024)).toBe("1.00 GiB");
+    expect(formatFileSize(2.75 * 1024 * 1024 * 1024)).toBe("2.75 GiB");
+  });
+
+  it("should format TiB correctly", () => {
+    expect(formatFileSize(1024 * 1024 * 1024 * 1024)).toBe("1.00 TiB");
+    expect(formatFileSize(3 * 1024 * 1024 * 1024 * 1024)).toBe("3.00 TiB");
+  });
+
+  it("should handle large numbers close to unit boundaries", () => {
+    expect(formatFileSize(1023)).toBe("1023.00 B");
+    expect(formatFileSize(1024 * 1024 - 1)).toBe("1024.00 KiB"); // Note: rounds up due to division
+    expect(formatFileSize(1024 * 1024 * 1024 - 1)).toBe("1024.00 MiB");
   });
 });

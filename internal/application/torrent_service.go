@@ -62,12 +62,7 @@ func (s *TorrentService) GetDefaultDownloadDir() (string, error) {
 	}
 
 	// Если нет, получаем из Transmission и сохраняем
-	client, ok := s.repo.(*transmission.TransmissionClient)
-	if !ok {
-		return "", fmt.Errorf("repository does not support getting default download directory")
-	}
-
-	path, err := client.GetDefaultDownloadDir()
+	path, err := s.repo.GetDefaultDownloadDir() // Используем метод интерфейса
 	if err != nil {
 		return "", err
 	}
@@ -159,12 +154,8 @@ func (s *TorrentService) fetchDefaultPathIfEmpty() string {
 
 // fetchPathFromClient пытается получить путь напрямую из клиента Transmission
 func (s *TorrentService) fetchPathFromClient() string {
-	client, ok := s.repo.(*transmission.TransmissionClient)
-	if !ok {
-		return ""
-	}
-
-	path, err := client.GetDefaultDownloadDir()
+	// Пытаемся получить путь из репозитория
+	path, err := s.repo.GetDefaultDownloadDir() // Используем метод интерфейса
 	if err != nil || path == "" {
 		return ""
 	}
@@ -233,12 +224,8 @@ func (s *TorrentService) AddTorrent(url string, downloadDir string) error {
 		_ = s.SaveDownloadPath(downloadDir)
 	}
 
-	client, ok := s.repo.(*transmission.TransmissionClient)
-	if !ok {
-		return fmt.Errorf("repository does not support setting download directory")
-	}
-
-	return client.Add(url, downloadDir)
+	// Используем метод Add из интерфейса repo
+	return s.repo.Add(url, downloadDir)
 }
 
 func (s *TorrentService) AddTorrentFile(filepath string, downloadDir string) error {
@@ -252,12 +239,8 @@ func (s *TorrentService) AddTorrentFile(filepath string, downloadDir string) err
 		_ = s.SaveDownloadPath(downloadDir)
 	}
 
-	client, ok := s.repo.(*transmission.TransmissionClient)
-	if !ok {
-		return fmt.Errorf("repository does not support setting download directory")
-	}
-
-	return client.AddFile(filepath, downloadDir)
+	// Используем метод AddFile из интерфейса repo
+	return s.repo.AddFile(filepath, downloadDir)
 }
 
 func (s *TorrentService) RemoveTorrent(id int64, deleteData bool) error {
@@ -351,13 +334,8 @@ func (s *TorrentService) ValidateDownloadPath(path string) error {
 		return fmt.Errorf("invalid path format: %w", err)
 	}
 
-	// Проверяем путь через клиент Transmission
-	client, ok := s.repo.(*transmission.TransmissionClient)
-	if !ok {
-		return fmt.Errorf("repository does not support path validation")
-	}
-
-	return client.ValidateDownloadPath(absPath)
+	// Проверяем путь через репозиторий
+	return s.repo.ValidateDownloadPath(absPath) // Используем метод интерфейса
 }
 
 // VerifyTorrent запускает процесс проверки целостности данных торрента

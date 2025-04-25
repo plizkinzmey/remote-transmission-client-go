@@ -136,6 +136,14 @@ function App() {
     error: sessionStatsError, // Передаем в новый хук
   } = useSessionStats(isInitialized);
 
+  // Создаем безопасный объект, чтобы убрать ветвления в JSX
+  const statsSafe = sessionStats ?? {
+    TotalDownloadSpeed: 0,
+    TotalUploadSpeed: 0,
+    FreeSpace: 0,
+    TransmissionVersion: "",
+  };
+
   // Используем новый хук для обработки ошибок
   const appError = useAppErrorHandler(
     { connectionError, configError, torrentListError, sessionStatsError },
@@ -314,10 +322,10 @@ function App() {
             />
           </div>
           <Footer
-            totalDownloadSpeed={sessionStats?.TotalDownloadSpeed}
-            totalUploadSpeed={sessionStats?.TotalUploadSpeed}
-            freeSpace={sessionStats?.FreeSpace}
-            transmissionVersion={sessionStats?.TransmissionVersion}
+            totalDownloadSpeed={statsSafe.TotalDownloadSpeed}
+            totalUploadSpeed={statsSafe.TotalUploadSpeed}
+            freeSpace={statsSafe.FreeSpace}
+            transmissionVersion={statsSafe.TransmissionVersion}
           />
         </div>
 

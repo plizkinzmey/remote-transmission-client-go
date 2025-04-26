@@ -42,7 +42,8 @@
      - Branches: 70%
      - Statements: 70%
    - Use data-testid for key elements
-   - **Refer to `testing-guide.md` for detailed testing practices.**
+   - **Refer to `testing-guide.md` for detailed frontend testing practices.**
+   - **Refer to `go-testing-best-practices.md` for Go testing practices.**
 
 ## Component Refactoring Plan
 
@@ -542,7 +543,7 @@ In the component's README.md, add:
 
 - [ ] Each component has a clear responsibility
 - [ ] Business logic is isolated in hooks
-- [ ] Subcomponents are independent and reusable
+- - [ ] Subcomponents are independent and reusable
 - [ ] Tests cover both individual parts and their interaction
 - [ ] Documentation reflects the new structure
 - [ ] Public API of the component is preserved

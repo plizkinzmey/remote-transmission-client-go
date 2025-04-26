@@ -1,11 +1,15 @@
 package transmission
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/hekmon/cunits/v2" // Импортируем пакет для типа Bits
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // TestNewTransmissionClient проверяет создание нового клиента Transmission
@@ -59,9 +63,12 @@ func TestValidatePath(t *testing.T) {
 	t.Run("EmptyPath", func(t *testing.T) {
 		_, err := dummyClient.validatePath("")
 		assert.Error(t, err)
-		localizedErr, ok := err.(*LocalizedError)
-		assert.True(t, ok)
-		assert.Equal(t, "errors.emptyPath", localizedErr.key)
+		// Используем assert.ErrorAs для проверки типа ошибки, если LocalizedError экспортирован
+		// или проверяем текст ошибки, если он не экспортирован
+		var localizedErr *LocalizedError // Предполагаем, что LocalizedError определен в errors.go
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.emptyPath", localizedErr.key)
+		}
 	})
 
 	t.Run("WindowsVolumePath", func(t *testing.T) {
@@ -105,9 +112,11 @@ func TestValidatePath(t *testing.T) {
 		path := "~/Downloads"
 		_, err := dummyClient.validatePath(path)
 		assert.Error(t, err)
-		localizedErr, ok := err.(*LocalizedError)
-		assert.True(t, ok)
-		assert.Equal(t, "errors.invalidPath", localizedErr.key)
+		// Используем assert.ErrorAs
+		var localizedErr *LocalizedError
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.invalidPath", localizedErr.key)
+		}
 	})
 
 	t.Run("AbsolutePath", func(t *testing.T) {
@@ -125,4 +134,109 @@ func TestValidatePath(t *testing.T) {
 	})
 }
 
-// TODO: Добавить тесты для ValidateDownloadPath с использованием моков
+// TestValidateDownloadPath проверяет ValidateDownloadPath с моком для FreeSpace
+func TestValidateDownloadPath(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("ValidPathAndAccessible", func(t *testing.T) {
+		mockRPC := new(MockRPCClient)
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "/downloads/valid"
+		parentDir := filepath.Dir(testPath)
+
+		// Настраиваем мок на успешный ответ, используя cunits.Bits
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(1024*1024*8), cunits.Bits(2048*1024*8), nil).Once()
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.NoError(t, err)
+		mockRPC.AssertExpectations(t) // Проверяем, что мок был вызван
+	})
+
+	t.Run("InvalidPathFormat", func(t *testing.T) {
+		mockRPC := new(MockRPCClient) // Мок не будет вызван
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "" // Пустой путь
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.Error(t, err)
+		var localizedErr *LocalizedError
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.emptyPath", localizedErr.key)
+		}
+		mockRPC.AssertNotCalled(t, "FreeSpace", mock.Anything, mock.Anything) // Убедимся, что FreeSpace не вызывался
+	})
+
+	t.Run("PermissionDenied", func(t *testing.T) {
+		mockRPC := new(MockRPCClient)
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "/restricted/path"
+		parentDir := filepath.Dir(testPath)
+
+		// ИСПРАВЛЕНО: Используем строку "permission denied" (маленькая 'p')
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("some error "+"permission denied")).Once()
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.Error(t, err)
+		var localizedErr *LocalizedError
+		// Теперь эта проверка должна пройти, т.к. checkAccessibility вернет правильный ключ
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.directoryAccessDenied", localizedErr.key)
+		}
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("NoSuchFileOrDirectory", func(t *testing.T) {
+		mockRPC := new(MockRPCClient)
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "/nonexistent/parent/path"
+		parentDir := filepath.Dir(testPath)
+
+		// Используем строки напрямую (убедимся, что совпадает с errors.go)
+		// В errors.go: errNoSuchFileOrDirectory = "No such file or directory"
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("No such file or directory"+" details")).Once()
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.Error(t, err)
+		var localizedErr *LocalizedError
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.parentDirectoryNotExists", localizedErr.key)
+		}
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("OtherAccessibilityError", func(t *testing.T) {
+		mockRPC := new(MockRPCClient)
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "/some/other/issue"
+		parentDir := filepath.Dir(testPath)
+
+		// Настраиваем мок на возврат другой ошибки
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("generic network error")).Once()
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.Error(t, err)
+		var localizedErr *LocalizedError
+		if assert.ErrorAs(t, err, &localizedErr) {
+			assert.Equal(t, "errors.directoryNotAccessible", localizedErr.key)
+		}
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("TildeExpansionAndAccessible", func(t *testing.T) {
+		home, homeErr := os.UserHomeDir()
+		assert.NoError(t, homeErr, "Failed to get user home directory for test setup")
+
+		mockRPC := new(MockRPCClient)
+		client := &TransmissionClient{client: mockRPC, ctx: ctx}
+		testPath := "~/downloads/valid_tilde"
+		expectedValidatedPath := filepath.Join(home, "downloads/valid_tilde")
+		parentDir := filepath.Dir(expectedValidatedPath)
+
+		// Настраиваем мок на успешный ответ для развернутого пути
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(1024*1024*8), cunits.Bits(2048*1024*8), nil).Once()
+
+		err := client.ValidateDownloadPath(testPath)
+		assert.NoError(t, err)
+		mockRPC.AssertExpectations(t)
+	})
+}

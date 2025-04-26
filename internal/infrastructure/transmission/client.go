@@ -19,7 +19,7 @@ type TransmissionConfig struct {
 }
 
 type TransmissionClient struct {
-	client *transmissionrpc.Client
+	client RPCClientInterface
 	ctx    context.Context
 }
 
@@ -48,14 +48,20 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 		endpoint.User = url.UserPassword(config.Username, config.Password)
 	}
 
-	// Создаем клиент
-	client, err := transmissionrpc.New(&endpoint, &transmissionrpc.Config{})
+	// Создаем конкретный клиент
+	concreteClient, err := transmissionrpc.New(&endpoint, &transmissionrpc.Config{}) // <- Ищем ошибку здесь
+	// NOTE: Покрытие тестами этой ветки затруднено.
+	// Библиотека transmissionrpc.New устойчива к некорректным URL
+	// на этапе создания клиента и редко возвращает ошибку здесь.
+	// Ошибки (сетевые, аутентификации) обычно возникают позже, при вызове методов клиента.
+	// Поэтому в unit-тестах сложно надежно спровоцировать эту ошибку.
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transmission client: %w", err)
 	}
 
+	// Возвращаем структуру, где конкретный клиент присвоен полю интерфейсного типа
 	return &TransmissionClient{
-		client: client,
+		client: concreteClient,
 		ctx:    context.Background(),
 	}, nil
 }
@@ -72,7 +78,7 @@ func (c *TransmissionClient) validatePath(path string) (string, error) {
 
 	if strings.HasPrefix(path, "~/") {
 		home, err := os.UserHomeDir()
-		if (err != nil) {
+		if err != nil {
 			return "", &LocalizedError{key: "errors.invalidPath"}
 		}
 		path = filepath.Join(home, path[2:])

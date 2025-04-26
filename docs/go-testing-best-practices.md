@@ -45,7 +45,9 @@
 ## 7. Use of Mocks
 - Manually implement mocks when possible.
 - For complex cases, use libraries like `golang/mock` or `testify/mock`.
-- **Important:** When mocking external libraries, ensure your mock interfaces **exactly** match the method signatures of the library version specified in your `go.mod`. Check library documentation or source code for correct signatures (including types like `cunits.Bits` vs `int64`).
+- **Important:** When mocking external libraries, ensure your mock interfaces **exactly** match the method signatures of the library version specified in your `go.mod`.
+  - **Verify All Types:** Тщательно проверяйте **все** типы в сигнатурах методов, включая стандартные (`int` vs `int64`), указатели (`*string`) и **пользовательские типы** (например, `cunits.Bits` vs `int64`). Неправильный тип в моке приведет к ошибкам компиляции или неверному поведению теста.
+  - **Источник Правды:** Обращайтесь к исходному коду или документации используемой версии библиотеки для получения точных сигнатур.
 
 ## 8. Test Coverage
 - Regularly run `go test -cover ./...` to track untested code.
@@ -87,6 +89,14 @@
 - **Verify Dependency Versions:** Before adding or updating a dependency in `go.mod` or using `go get <module>@<version>`, confirm that the specified version tag (e.g., `v2.1.0`) actually exists in the module's repository. Do not assume or guess versions.
 - **Synchronize Dependencies:** After adding new imports (especially from external libraries needed for mocks or tests) or modifying `go.mod`, **always** run `go mod tidy` and ensure it completes without errors. This updates `go.mod` and `go.sum` and downloads necessary modules.
 - **Resolve Module Errors First:** Errors like `unknown revision`, `missing metadata`, or `missing go.sum entry` during `go mod tidy`, `go get`, or compilation indicate problems with dependency resolution. Fix these module-related issues *before* debugging compilation errors like `undefined: <Type>`. Compilation often fails simply because the required packages could not be loaded.
-- **Interface Signature Accuracy:** When creating interfaces to abstract external dependencies (see Point 6 & 7), meticulously copy the exact method signatures from the library version you are using. Mismatched signatures will prevent your code (and mocks) from implementing the interface correctly.
+- **Interface Signature Accuracy:** When creating interfaces to abstract external dependencies (see Point 6 & 7), meticulously copy the exact method signatures from the library version you are using. Mismatched signatures (включая типы аргументов и возвращаемых значений) will prevent your code (and mocks) from implementing the interface correctly.
+
+## 15. Aligning Mock Data and Expected Results (New Section)
+
+- **Trace Data Flow:** При написании тестов с моками, четко проследите, как **тестируемый код** обрабатывает данные, возвращаемые моком.
+- **Calculate Expected Results:** Ожидаемые результаты (`expected`) в ваших утверждениях (`assert.Equal`, `if actual != expected`) должны быть вычислены **точно так же**, как их вычисляет тестируемый код на основе предоставленных моком данных (`mockInput`).
+  - **Учитывайте Преобразования:** Обращайте внимание на любые преобразования типов (например, биты в байты), расчеты, форматирование строк (`fmt.Sprintf` с определенными глаголами) и маппинг полей, которые выполняет ваш код.
+  - **Пример:** Если ваш код получает `cunits.Bits` от мока, делит на 8 для получения байт, а затем форматирует с `%.1f`, то ваш `expected` результат должен быть строкой, полученной точно таким же образом из исходного значения в битах, заданного в моке.
+- **Согласованность:** Несоответствие между логикой вычисления `expected` и логикой тестируемого кода — частая причина ложноотрицательных тестов.
 
 Adopting these best practices will keep your Go test suite clean, maintainable, and effective!

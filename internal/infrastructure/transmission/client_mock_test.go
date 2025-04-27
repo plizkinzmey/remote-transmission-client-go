@@ -113,3 +113,8 @@ func (m *MockRPCClient) TorrentVerifyIDs(ctx context.Context, ids []int64) (err 
 	err = args.Error(0)
 	return
 }
+
+// Helper function to create pointers for basic types, useful for transmissionrpc fields
+func ptr[T any](v T) *T {
+	return &v
+}

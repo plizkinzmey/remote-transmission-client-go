@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Helper function to create pointers for basic types, useful for transmissionrpc fields
-func ptr[T any](v T) *T {
-	return &v
-}
-
 func TestGetAll(t *testing.T) {
 	ctx := context.Background()
 
@@ -42,13 +37,13 @@ func TestGetAll(t *testing.T) {
 				Status:         ptr(transmissionrpc.TorrentStatusDownload),
 				PercentDone:    ptr(float64(0.5)),
 				SizeWhenDone:   ptr(cunits.Bits(2048)), // 256 Bytes total
-				LeftUntilDone:  ptr(int64(128)),        // 256 * 0.5 = 128 Bytes left
-				DownloadedEver: ptr(int64(128)),        // Added: 256 - 128 = 128 Bytes downloaded
-				RateDownload:   ptr(int64(100)),
-				RateUpload:     ptr(int64(50)),
-				UploadedEver:   ptr(int64(64)),    // Example upload
-				UploadRatio:    ptr(float64(0.5)), // 64 / 128 = 0.5
-				PeersConnected: ptr(int64(5)),     // Corrected type: int64
+				LeftUntilDone:  ptr(int64(1024)),       // Corrected: transmission uses bytes for LeftUntilDone. 256 * 0.5 = 128 bytes left. Let's assume API gives bits here for consistency with SizeWhenDone? No, docs say bytes. Let's use bytes. 128 bytes = 1024 bits.
+				DownloadedEver: ptr(int64(128)),        // Bytes downloaded
+				RateDownload:   ptr(int64(100)),        // Bytes/s
+				RateUpload:     ptr(int64(50)),         // Bytes/s
+				UploadedEver:   ptr(int64(64)),         // Bytes uploaded
+				UploadRatio:    ptr(float64(0.5)),      // 64 / 128 = 0.5
+				PeersConnected: ptr(int64(5)),
 				TrackerStats:   []transmissionrpc.TrackerStats{{SeederCount: 10, LeecherCount: 20}},
 			},
 			{
@@ -57,38 +52,40 @@ func TestGetAll(t *testing.T) {
 				Status:         ptr(transmissionrpc.TorrentStatusSeed),
 				PercentDone:    ptr(float64(1.0)),
 				SizeWhenDone:   ptr(cunits.Bits(1024)), // 128 Bytes total
-				LeftUntilDone:  ptr(int64(0)),
-				DownloadedEver: ptr(int64(128)), // Added: 128 Bytes downloaded
-				RateDownload:   ptr(int64(0)),
-				RateUpload:     ptr(int64(200)),
-				UploadedEver:   ptr(int64(256)), // 256 / 128 = 2.0 ratio
+				LeftUntilDone:  ptr(int64(0)),          // Bytes
+				DownloadedEver: ptr(int64(128)),        // Bytes downloaded
+				RateDownload:   ptr(int64(0)),          // Bytes/s
+				RateUpload:     ptr(int64(200)),        // Bytes/s
+				UploadedEver:   ptr(int64(256)),        // Bytes uploaded (256 / 128 = 2.0 ratio)
 				UploadRatio:    ptr(float64(2.0)),
-				PeersConnected: ptr(int64(8)), // Corrected type: int64
+				PeersConnected: ptr(int64(8)),
 				TrackerStats:   []transmissionrpc.TrackerStats{{SeederCount: 5, LeecherCount: 15}},
 				UploadLimited:  ptr(true),
 			},
 		}
 
-		// Expected result after conversion - UPDATED
+		// Expected result after conversion using utils.go helpers
+		// Assumes utils.go correctly converts SizeWhenDone (bits) to bytes (total=SizeWhenDone/8)
+		// and uses DownloadedEver (bytes) directly.
 		expectedDomainTorrents := []domain.Torrent{
 			{
 				ID:                     1,
-				Name:                   "Torrent One",
-				Status:                 domain.StatusDownloading,
-				Progress:               50.0,
-				Size:                   256,                 // Corrected: 2048 bits / 8 = 256 bytes
-				SizeFormatted:          "128.0 B / 256.0 B", // Corrected: formatBytes(128) / formatBytes(256)
+				Name:                   "Torrent One",            // Added missing Name
+				Status:                 domain.StatusDownloading, // Added missing Status
+				Progress:               50.0,                     // Added missing Progress
+				Size:                   256,                      // 2048 / 8
+				SizeFormatted:          "128.0 B / 256.0 B",      // Based on downloaded=128, total=256
 				UploadRatio:            0.5,
-				SeedsConnected:         5, // Corrected: Matches PeersConnected from test data
+				SeedsConnected:         5,
 				SeedsTotal:             10,
-				PeersConnected:         5, // Corrected: Matches PeersConnected from test data
+				PeersConnected:         5,
 				PeersTotal:             20,
-				UploadedBytes:          64,       // Corrected: Matches UploadedEver
-				UploadedFormatted:      "64.0 B", // Corrected: Added .0
+				UploadedBytes:          64,
+				UploadedFormatted:      "64.0 B",
 				DownloadSpeed:          100,
 				UploadSpeed:            50,
-				DownloadSpeedFormatted: "100.0 B/s", // Corrected: Added .0
-				UploadSpeedFormatted:   "50.0 B/s",  // Corrected: Added .0
+				DownloadSpeedFormatted: "100.0 B/s",
+				UploadSpeedFormatted:   "50.0 B/s",
 				IsSlowMode:             false,
 			},
 			{
@@ -96,19 +93,19 @@ func TestGetAll(t *testing.T) {
 				Name:                   "Torrent Two - Seeding",
 				Status:                 domain.StatusSeeding,
 				Progress:               100.0,
-				Size:                   128,       // Corrected: 1024 bits / 8 = 128 bytes
-				SizeFormatted:          "128.0 B", // Corrected: formatBytes(128)
+				Size:                   128,       // 1024 / 8
+				SizeFormatted:          "128.0 B", // Based on total=128
 				UploadRatio:            2.0,
-				SeedsConnected:         8, // Corrected: Matches PeersConnected from test data
+				SeedsConnected:         8,
 				SeedsTotal:             5,
-				PeersConnected:         8, // Corrected: Matches PeersConnected from test data
+				PeersConnected:         8,
 				PeersTotal:             15,
-				UploadedBytes:          256,       // Corrected: Matches UploadedEver
-				UploadedFormatted:      "256.0 B", // Corrected: formatBytes(256)
+				UploadedBytes:          256,
+				UploadedFormatted:      "256.0 B",
 				DownloadSpeed:          0,
 				UploadSpeed:            200,
-				DownloadSpeedFormatted: "0 B/s",     // Corrected: formatBytes(0) is "0 B"
-				UploadSpeedFormatted:   "200.0 B/s", // Corrected: Added .0
+				DownloadSpeedFormatted: "0 B/s",
+				UploadSpeedFormatted:   "200.0 B/s",
 				IsSlowMode:             true,
 			},
 		}
@@ -118,6 +115,8 @@ func TestGetAll(t *testing.T) {
 		result, err := client.GetAll()
 
 		assert.NoError(t, err)
+		// Use ElementsMatch for slice comparison where order might not be guaranteed
+		// or if subtle differences exist. For exact match, Equal is fine.
 		assert.Equal(t, expectedDomainTorrents, result)
 		mockRPC.AssertExpectations(t)
 	})
@@ -165,39 +164,39 @@ func TestGetAll(t *testing.T) {
 				Name:            ptr("Torrent Checking"),
 				Status:          ptr(transmissionrpc.TorrentStatusCheck),
 				RecheckProgress: ptr(float64(0.75)),
-				PercentDone:     ptr(float64(0.0)),      // Should be ignored
+				PercentDone:     ptr(float64(0.0)),      // Should be ignored by GetAll logic
 				SizeWhenDone:    ptr(cunits.Bits(1024)), // 128 Bytes
-				LeftUntilDone:   ptr(int64(128)),        // Assuming 0 downloaded
-				DownloadedEver:  ptr(int64(0)),          // Added: Bytes downloaded
+				LeftUntilDone:   ptr(int64(128)),        // Bytes
+				DownloadedEver:  ptr(int64(0)),          // Bytes downloaded
 				RateDownload:    ptr(int64(0)),
 				RateUpload:      ptr(int64(0)),
 				UploadedEver:    ptr(int64(0)),
 				UploadRatio:     ptr(float64(0.0)),
-				PeersConnected:  ptr(int64(0)), // Corrected type: int64
+				PeersConnected:  ptr(int64(0)),
 				TrackerStats:    []transmissionrpc.TrackerStats{},
 			},
 		}
 
-		// Expected result - UPDATED
+		// Expected result
 		expectedDomainTorrents := []domain.Torrent{
 			{
 				ID:                     3,
 				Name:                   "Torrent Checking",
 				Status:                 domain.StatusChecking,
 				Progress:               75.0,      // Based on RecheckProgress
-				Size:                   128,       // Corrected: 1024 bits / 8 = 128 bytes
-				SizeFormatted:          "128.0 B", // Corrected: formatBytes(128)
+				Size:                   128,       // 1024 / 8
+				SizeFormatted:          "128.0 B", // Based on total=128
 				UploadRatio:            0.0,
-				SeedsConnected:         0, // Corrected: Matches PeersConnected
+				SeedsConnected:         0,
 				SeedsTotal:             0,
-				PeersConnected:         0, // Corrected: Matches PeersConnected
+				PeersConnected:         0,
 				PeersTotal:             0,
 				UploadedBytes:          0,
-				UploadedFormatted:      "0 B", // Corrected: formatBytes(0)
+				UploadedFormatted:      "0 B",
 				DownloadSpeed:          0,
 				UploadSpeed:            0,
-				DownloadSpeedFormatted: "0 B/s", // Corrected: formatBytes(0) + "/s"
-				UploadSpeedFormatted:   "0 B/s", // Corrected: formatBytes(0) + "/s"
+				DownloadSpeedFormatted: "0 B/s",
+				UploadSpeedFormatted:   "0 B/s",
 				IsSlowMode:             false,
 			},
 		}
@@ -222,37 +221,37 @@ func TestGetAll(t *testing.T) {
 				Status:         ptr(transmissionrpc.TorrentStatusStopped),
 				PercentDone:    ptr(float64(1.0)),
 				SizeWhenDone:   ptr(cunits.Bits(1024)), // 128 Bytes
-				LeftUntilDone:  ptr(int64(0)),
-				DownloadedEver: ptr(int64(128)), // Added: Bytes downloaded
+				LeftUntilDone:  ptr(int64(0)),          // Bytes
+				DownloadedEver: ptr(int64(128)),        // Bytes downloaded
 				RateDownload:   ptr(int64(0)),
 				RateUpload:     ptr(int64(0)),
-				UploadedEver:   ptr(int64(64)),    // Example upload
+				UploadedEver:   ptr(int64(64)),    // Bytes uploaded
 				UploadRatio:    ptr(float64(0.5)), // 64 / 128 = 0.5
-				PeersConnected: ptr(int64(0)),     // Corrected type: int64
+				PeersConnected: ptr(int64(0)),
 				TrackerStats:   []transmissionrpc.TrackerStats{},
 			},
 		}
 
-		// Expected result - UPDATED
+		// Expected result
 		expectedDomainTorrents := []domain.Torrent{
 			{
 				ID:                     4,
 				Name:                   "Torrent Completed",
 				Status:                 domain.StatusCompleted,
 				Progress:               100.0,
-				Size:                   128,       // Corrected: 1024 bits / 8 = 128 bytes
-				SizeFormatted:          "128.0 B", // Corrected: formatBytes(128)
+				Size:                   128,       // 1024 / 8
+				SizeFormatted:          "128.0 B", // Based on total=128
 				UploadRatio:            0.5,
-				SeedsConnected:         0, // Corrected: Matches PeersConnected
+				SeedsConnected:         0,
 				SeedsTotal:             0,
-				PeersConnected:         0, // Corrected: Matches PeersConnected
+				PeersConnected:         0,
 				PeersTotal:             0,
-				UploadedBytes:          64,       // Corrected: Matches UploadedEver
-				UploadedFormatted:      "64.0 B", // Corrected: Added .0
+				UploadedBytes:          64,
+				UploadedFormatted:      "64.0 B",
 				DownloadSpeed:          0,
 				UploadSpeed:            0,
-				DownloadSpeedFormatted: "0 B/s", // Corrected: formatBytes(0) + "/s"
-				UploadSpeedFormatted:   "0 B/s", // Corrected: formatBytes(0) + "/s"
+				DownloadSpeedFormatted: "0 B/s",
+				UploadSpeedFormatted:   "0 B/s",
 				IsSlowMode:             false,
 			},
 		}
@@ -277,37 +276,37 @@ func TestGetAll(t *testing.T) {
 				Status:         ptr(transmissionrpc.TorrentStatusStopped),
 				PercentDone:    ptr(float64(0.8)),      // 80%
 				SizeWhenDone:   ptr(cunits.Bits(1024)), // 128 Bytes
-				LeftUntilDone:  ptr(int64(26)),         // 128 * 0.2 = 25.6 -> ~26 bytes left
-				DownloadedEver: ptr(int64(102)),        // Added: 128 - 26 = 102 bytes downloaded
+				LeftUntilDone:  ptr(int64(26)),         // Bytes left (approx 128 * 0.2)
+				DownloadedEver: ptr(int64(102)),        // Bytes downloaded (128 - 26)
 				RateDownload:   ptr(int64(0)),
 				RateUpload:     ptr(int64(0)),
-				UploadedEver:   ptr(int64(100)),
+				UploadedEver:   ptr(int64(100)),    // Bytes uploaded
 				UploadRatio:    ptr(float64(0.98)), // 100 / 102 ~ 0.98
-				PeersConnected: ptr(int64(0)),      // Corrected type: int64
+				PeersConnected: ptr(int64(0)),
 				TrackerStats:   []transmissionrpc.TrackerStats{},
 			},
 		}
 
-		// Expected result - UPDATED
+		// Expected result
 		expectedDomainTorrents := []domain.Torrent{
 			{
 				ID:                     5,
 				Name:                   "Torrent Stopped",
 				Status:                 domain.StatusStopped,
 				Progress:               80.0,
-				Size:                   128,       // Corrected: 1024 bits / 8 = 128 bytes
-				SizeFormatted:          "128.0 B", // Corrected: formatBytes(128)
-				UploadRatio:            0.98,      // Corrected based on Uploaded/Downloaded
-				SeedsConnected:         0,         // Corrected: Matches PeersConnected
+				Size:                   128,       // 1024 / 8
+				SizeFormatted:          "128.0 B", // Based on total=128
+				UploadRatio:            0.98,
+				SeedsConnected:         0,
 				SeedsTotal:             0,
-				PeersConnected:         0, // Corrected: Matches PeersConnected
+				PeersConnected:         0,
 				PeersTotal:             0,
 				UploadedBytes:          100,
-				UploadedFormatted:      "100.0 B", // Corrected: Added .0
+				UploadedFormatted:      "100.0 B",
 				DownloadSpeed:          0,
 				UploadSpeed:            0,
-				DownloadSpeedFormatted: "0 B/s", // Corrected: formatBytes(0) + "/s"
-				UploadSpeedFormatted:   "0 B/s", // Corrected: formatBytes(0) + "/s"
+				DownloadSpeedFormatted: "0 B/s",
+				UploadSpeedFormatted:   "0 B/s",
 				IsSlowMode:             false,
 			},
 		}

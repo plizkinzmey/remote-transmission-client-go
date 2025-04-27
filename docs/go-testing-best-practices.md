@@ -20,30 +20,42 @@
 - For better readability and failure reporting, consider using libraries like `testify`.
 - Always provide helpful messages in `t.Errorf` or `t.Fatalf`.
 
-## 4. Subtests
-- Use `t.Run` for table-driven tests and logically grouped scenarios.
+## 4. Subtests and Test Organization
+- Use `t.Run` to group related test cases within a single `Test` function. This is ideal for:
+    - **Table-Driven Tests:** Iterating over a slice of test inputs and expected outputs.
+    - **Scenario Grouping:** Testing different scenarios (e.g., success, specific errors, edge cases) of the *same function* under test. This keeps tests for one function logically contained.
+- **Organize by Function:** Aim to have one primary `Test` function (e.g., `TestAddTorrent`) for each public function in your code file. Use subtests (`t.Run`) within that primary function to cover all its different behaviors and potential outcomes.
 - Example:
   ```go
   func TestLogin(t *testing.T) {
-      tests := []struct { name string; input string; wantErr bool }{...}
-      for _, tt := range tests {
-          t.Run(tt.name, func(t *testing.T) {
-              // Test logic here
-          })
-      }
+      // Setup common to all login scenarios (if any)
+
+      t.Run("ValidCredentials", func(t *testing.T) {
+          // Test logic for successful login
+      })
+
+      t.Run("InvalidPassword", func(t *testing.T) {
+          // Test logic for login with wrong password
+      })
+
+      t.Run("UserNotFound", func(t *testing.T) {
+          // Test logic for non-existent user
+      })
+
+      // Teardown common to all login scenarios (if any)
   }
   ```
 
 ## 5. Isolation
 - Tests must not depend on shared mutable state.
-- Use setup and teardown logic inside each test if needed.
+- Use setup and teardown logic inside each test or subtest (`t.Run`) if needed. `t.Cleanup` is useful for teardown.
 
 ## 6. Dependency Injection
 - Prefer passing dependencies via interfaces.
 - Makes mocking easier and tests more reliable.
 
 ## 7. Use of Mocks
-- Manually implement mocks when possible.
+- Manually implement mocks when possible for simplicity.
 - For complex cases, use libraries like `golang/mock` or `testify/mock`.
 - **Important:** When mocking external libraries, ensure your mock interfaces **exactly** match the method signatures of the library version specified in your `go.mod`.
   - **Verify All Types:** Тщательно проверяйте **все** типы в сигнатурах методов, включая стандартные (`int` vs `int64`), указатели (`*string`) и **пользовательские типы** (например, `cunits.Bits` vs `int64`). Неправильный тип в моке приведет к ошибкам компиляции или неверному поведению теста.
@@ -51,10 +63,11 @@
 
 ## 8. Test Coverage
 - Regularly run `go test -cover ./...` to track untested code.
-- Aim for meaningful coverage, not 100% for the sake of it.
+- **Cover All Branches:** Aim to write test cases (often using subtests) that execute *every* branch (`if`/`else`, `switch` cases, error handling paths) within the functions you are testing.
+- Aim for meaningful coverage, not 100% for the sake of it, but ensure critical paths and error handling are tested.
 
 ## 9. Fast and Focused Tests
-- Keep unit tests fast and focused.
+- Keep unit tests fast and focused on a single unit of code.
 - Heavy operations (database, external API) belong to integration tests.
 
 ## 10. Continuous Integration
@@ -75,7 +88,7 @@
   - **`go list -m -versions <module>`**: Check available versions for a module.
 
 ## 12. Clear Failures
-- Fail tests early and loudly.
+- Fail tests early and loudly using `t.Fatal` or `t.Fatalf` when a condition prevents further meaningful testing within that scope. Use `t.Error` or `t.Errorf` to report failures but allow the test function (or other subtests) to continue.
 - Provide actionable messages to speed up debugging.
 
 ## 13. Documentation

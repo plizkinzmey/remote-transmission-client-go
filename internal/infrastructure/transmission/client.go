@@ -23,6 +23,8 @@ type TransmissionClient struct {
 	ctx    context.Context
 }
 
+var mockTransmissionRPCNew = transmissionrpc.New
+
 func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, error) {
 	// Формируем URL для подключения
 	var endpoint url.URL
@@ -48,13 +50,8 @@ func NewTransmissionClient(config TransmissionConfig) (*TransmissionClient, erro
 		endpoint.User = url.UserPassword(config.Username, config.Password)
 	}
 
-	// Создаем конкретный клиент
-	concreteClient, err := transmissionrpc.New(&endpoint, &transmissionrpc.Config{}) // <- Ищем ошибку здесь
-	// NOTE: Покрытие тестами этой ветки затруднено.
-	// Библиотека transmissionrpc.New устойчива к некорректным URL
-	// на этапе создания клиента и редко возвращает ошибку здесь.
-	// Ошибки (сетевые, аутентификации) обычно возникают позже, при вызове методов клиента.
-	// Поэтому в unit-тестах сложно надежно спровоцировать эту ошибку.
+	// Создаем конкретный клиент, используя переменную-функцию для возможности мокирования в тестах
+	concreteClient, err := mockTransmissionRPCNew(&endpoint, &transmissionrpc.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transmission client: %w", err)
 	}

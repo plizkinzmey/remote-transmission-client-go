@@ -3,7 +3,7 @@ package transmission
 import (
 	"context"
 
-	"github.com/hekmon/cunits/v2" // Импортируем пакет для типа Bits
+	"github.com/hekmon/cunits/v2"
 	"github.com/hekmon/transmissionrpc/v3"
 	"github.com/stretchr/testify/mock"
 )
@@ -16,27 +16,10 @@ type MockRPCClient struct {
 // Убедимся, что MockRPCClient удовлетворяет нашему интерфейсу RPCClientInterface.
 var _ RPCClientInterface = (*MockRPCClient)(nil)
 
-// FreeSpace мокирует метод FreeSpace
-// ИСПРАВЛЯЕМ СИГНАТУРУ ЗДЕСЬ: int64 -> cunits.Bits
-func (m *MockRPCClient) FreeSpace(ctx context.Context, path string) (freeSpace, totalSize cunits.Bits, err error) {
+// Реализуем методы интерфейса для мока
+func (m *MockRPCClient) FreeSpace(ctx context.Context, path string) (cunits.Bits, cunits.Bits, error) {
 	args := m.Called(ctx, path)
-
-	fsArg := args.Get(0)
-	tsArg := args.Get(1)
-
-	// Проверяем и присваиваем тип cunits.Bits
-	if fs, ok := fsArg.(cunits.Bits); ok {
-		freeSpace = fs
-	}
-	// else if fsInt, ok := fsArg.(int64); ok { freeSpace = cunits.Bits(fsInt) } // Оставляем для возможной отладки
-
-	if ts, ok := tsArg.(cunits.Bits); ok {
-		totalSize = ts
-	}
-	// else if tsInt, ok := tsArg.(int64); ok { totalSize = cunits.Bits(tsInt) } // Оставляем для возможной отладки
-
-	err = args.Error(2)
-	return
+	return args.Get(0).(cunits.Bits), args.Get(1).(cunits.Bits), args.Error(2)
 }
 
 // TorrentGet мокирует метод TorrentGet

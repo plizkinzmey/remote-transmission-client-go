@@ -45,7 +45,7 @@ func getTorrentSizes(t transmissionrpc.Torrent) (total uint64, downloaded uint64
 	if t.DownloadedEver != nil {
 		downloaded = uint64(*t.DownloadedEver)
 	} else if t.HaveValid != nil {
-		downloaded = uint64(*t.HaveValid) / 8
+		downloaded = uint64(*t.HaveValid) // HaveValid уже в байтах, не нужно делить на 8
 	}
 
 	return total, downloaded

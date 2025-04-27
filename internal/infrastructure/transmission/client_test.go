@@ -3,12 +3,14 @@ package transmission
 import (
 	"context"
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/hekmon/cunits/v2" // Импортируем пакет для типа Bits
+	"github.com/hekmon/cunits/v2"
+	"github.com/hekmon/transmissionrpc/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -29,7 +31,7 @@ func (m *MockFileInfo) ModTime() time.Time { return time.Time{} }
 func (m *MockFileInfo) IsDir() bool        { return m.FIsDir }
 func (m *MockFileInfo) Sys() interface{}   { return nil }
 
-// --- Переменные для мокирования OS функций ---
+// --- Переменные для мокирования функций ---
 var (
 	osStatTransmission = os.Stat
 )
@@ -144,6 +146,34 @@ func TestNewTransmissionClient(t *testing.T) {
 
 	// Тесты на невалидные конфигурации (например, пустой хост) можно добавить позже,
 	// если библиотека transmissionrpc не обрабатывает это сама.
+}
+
+// Дополнение к TestNewTransmissionClient для повышения покрытия
+func TestNewTransmissionClient_Error(t *testing.T) {
+	// Сохраняем оригинальную функцию
+	origNew := mockTransmissionRPCNew
+
+	// Восстанавливаем оригинальную функцию после теста
+	defer func() {
+		mockTransmissionRPCNew = origNew
+	}()
+
+	// Заменяем нашу переменную-функцию на версию, которая всегда возвращает ошибку
+	mockTransmissionRPCNew = func(endpoint *url.URL, config *transmissionrpc.Config) (*transmissionrpc.Client, error) {
+		return nil, errors.New("mock error creating client")
+	}
+
+	// Вызываем оригинальную функцию напрямую, но через mockTransmissionRPCNew будет вызвана наша мок-версия
+	config := TransmissionConfig{
+		Host: "localhost",
+		Port: 9091,
+	}
+	client, err := NewTransmissionClient(config)
+
+	// Проверяем результат
+	assert.Error(t, err, "Должна быть ошибка при создании клиента")
+	assert.Nil(t, client, "Клиент не должен быть создан при ошибке")
+	assert.Contains(t, err.Error(), "failed to create transmission client", "Сообщение об ошибке должно содержать правильный префикс")
 }
 
 // TestValidatePath проверяет функцию валидации пути

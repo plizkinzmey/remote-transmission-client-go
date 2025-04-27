@@ -97,19 +97,91 @@
 
 ---
 
-## 14. Dependency Management for Testing (New Section)
+## 14. Dependency Management for Testing
 
 - **Verify Dependency Versions:** Before adding or updating a dependency in `go.mod` or using `go get <module>@<version>`, confirm that the specified version tag (e.g., `v2.1.0`) actually exists in the module's repository. Do not assume or guess versions.
 - **Synchronize Dependencies:** After adding new imports (especially from external libraries needed for mocks or tests) or modifying `go.mod`, **always** run `go mod tidy` and ensure it completes without errors. This updates `go.mod` and `go.sum` and downloads necessary modules.
 - **Resolve Module Errors First:** Errors like `unknown revision`, `missing metadata`, or `missing go.sum entry` during `go mod tidy`, `go get`, or compilation indicate problems with dependency resolution. Fix these module-related issues *before* debugging compilation errors like `undefined: <Type>`. Compilation often fails simply because the required packages could not be loaded.
 - **Interface Signature Accuracy:** When creating interfaces to abstract external dependencies (see Point 6 & 7), meticulously copy the exact method signatures from the library version you are using. Mismatched signatures (включая типы аргументов и возвращаемых значений) will prevent your code (and mocks) from implementing the interface correctly.
 
-## 15. Aligning Mock Data and Expected Results (New Section)
+## 15. Aligning Mock Data and Expected Results
 
 - **Trace Data Flow:** При написании тестов с моками, четко проследите, как **тестируемый код** обрабатывает данные, возвращаемые моком.
 - **Calculate Expected Results:** Ожидаемые результаты (`expected`) в ваших утверждениях (`assert.Equal`, `if actual != expected`) должны быть вычислены **точно так же**, как их вычисляет тестируемый код на основе предоставленных моком данных (`mockInput`).
   - **Учитывайте Преобразования:** Обращайте внимание на любые преобразования типов (например, биты в байты), расчеты, форматирование строк (`fmt.Sprintf` с определенными глаголами) и маппинг полей, которые выполняет ваш код.
   - **Пример:** Если ваш код получает `cunits.Bits` от мока, делит на 8 для получения байт, а затем форматирует с `%.1f`, то ваш `expected` результат должен быть строкой, полученной точно таким же образом из исходного значения в битах, заданного в моке.
 - **Согласованность:** Несоответствие между логикой вычисления `expected` и логикой тестируемого кода — частая причина ложноотрицательных тестов.
+
+## 16. Патчинг стандартных функций в тестах
+
+В Go нельзя напрямую заменить (monkey patch) стандартные функции типа `os.ReadFile` или `runtime.Caller`. Используйте эти подходы для тестирования кода, зависящего от таких функций:
+
+- **Оберните вызовы в своем коде:** Создайте переменную-функцию в пакете и используйте её вместо прямого вызова:
+  ```go
+  // В основном коде
+  var osReadFileFunc = os.ReadFile  // По умолчанию использует стандартную функцию
+  
+  func MyFunc() {
+      data, err := osReadFileFunc("config.json")  // Используем переменную вместо прямого вызова
+      // ...
+  }
+  
+  // В тесте
+  func TestMyFunc(t *testing.T) {
+      origFunc := osReadFileFunc
+      defer func() { osReadFileFunc = origFunc }()  // Восстанавливаем после теста
+      
+      osReadFileFunc = func(name string) ([]byte, error) {
+          return []byte(`{"mocked":"data"}`), nil
+      }
+      
+      // Теперь MyFunc будет использовать мок-функцию
+      // ...
+  }
+  ```
+
+- **Создайте тестовую обертку:** Если изменение основного кода нежелательно, создайте тестовую обертку, использующую локальные переменные-функции:
+  ```go
+  // В тестовом файле
+  var testOsReadFile = os.ReadFile
+  
+  func setupMocks(t *testing.T) *mockFileSystem {
+      mockFS := new(mockFileSystem)
+      origReadFile := testOsReadFile
+      
+      testOsReadFile = func(name string) ([]byte, error) {
+          return mockFS.ReadFile(name)
+      }
+      
+      t.Cleanup(func() {
+          testOsReadFile = origReadFile
+      })
+      
+      return mockFS
+  }
+  
+  // Тестовая версия оригинальной функции, используемой в коде
+  func testLoadConfigFile(path string) error {
+      data, err := testOsReadFile(path)  // Используем переменную вместо прямого вызова
+      // ...
+  }
+  
+  func TestLoadConfig(t *testing.T) {
+      mockFS := setupMocks(t)
+      mockFS.On("ReadFile", "config.json").Return([]byte(`{"mocked":"data"}`), nil)
+      
+      // Используем тестовую обертку вместо реальной функции
+      err := testLoadConfigFile("config.json")
+      // ...
+  }
+  ```
+
+- **Используйте готовые библиотеки для патчинга:** Для сложных случаев рассмотрите специализированные библиотеки:
+  - [github.com/undefinedlabs/go-mpatch](https://github.com/undefinedlabs/go-mpatch)
+  - [github.com/bouk/monkey](https://github.com/bouk/monkey)
+
+  **Предупреждение:** Библиотеки monkey patching используют небезопасные приемы и могут вызвать проблемы на некоторых архитектурах или версиях Go.
+
+- **Предпочитайте внедрение зависимостей:** Лучшее решение — переработка кода для использования интерфейсов и внедрения зависимостей, что делает код более тестируемым изначально.
 
 Adopting these best practices will keep your Go test suite clean, maintainable, and effective!

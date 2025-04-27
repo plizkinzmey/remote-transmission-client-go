@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log" // Добавляем стандартный пакет логирования
 	"os"
 
 	"github.com/zalando/go-keyring"
@@ -160,26 +161,26 @@ func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
 		keyBytes, decodeErr := base64.StdEncoding.DecodeString(keyStr)
 		if decodeErr != nil {
 			// Если ключ в keyring поврежден, генерируем новый
-			fmt.Printf("Warning: Failed to decode key from keyring: %v. Generating new key.\n", decodeErr)
+			log.Printf("Warning: Failed to decode key from keyring: %v. Generating new key.", decodeErr)
 		} else {
 			return keyBytes, nil
 		}
 	}
 	// Игнорируем ошибку keyring.ErrNotFound, но логируем другие ошибки
 	if err != nil && !errors.Is(err, keyring.ErrNotFound) {
-		fmt.Printf("Warning: Failed to get key from keyring: %v. Generating new key.\n", err)
+		log.Printf("Warning: Failed to get key from keyring: %v. Generating new key.", err)
 	}
 
 	// Если ключ не найден или произошла ошибка, создаем новый
 	// Генерируем случайный ключ, используя переменную randReader
 	key := make([]byte, keySize)
 	if _, errGen := io.ReadFull(randReader, key); errGen != nil {
-		fmt.Printf("Warning: Failed to generate random key: %v. Using fallback PBKDF2 key.\n", errGen)
+		log.Printf("Warning: Failed to generate random key: %v. Using fallback PBKDF2 key.", errGen)
 		// Если не удалось сгенерировать случайный ключ, используем PBKDF2
 		// Используем переменную machineIDGetter
 		machineID, errID := machineIDGetter()
 		if errID != nil {
-			fmt.Printf("Warning: Failed to get machine ID: %v. Using fallback machine ID.\n", errID)
+			log.Printf("Warning: Failed to get machine ID: %v. Using fallback machine ID.", errID)
 			machineID = "transmission-client-machine-id"
 		}
 
@@ -192,7 +193,7 @@ func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
 
 	// Сохраняем ключ в Keychain, используя переменную keyringSet
 	if errSet := keyringSet(keyringServiceName, keyringUsername, keyStr); errSet != nil {
-		fmt.Printf("Warning: Failed to store encryption key in keyring: %v\n", errSet)
+		log.Printf("Warning: Failed to store encryption key in keyring: %v", errSet)
 	}
 
 	return key, nil

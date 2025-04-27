@@ -292,8 +292,8 @@ func (s *TorrentService) SetFilesWanted(id int64, fileIds []int, wanted bool) er
 	return s.repo.SetFilesWanted(id, fileIds, wanted)
 }
 
-// convertSpeedToKBps конвертирует скорость из указанных единиц в КБ/с
-func convertSpeedToKBps(speed int, unit string) int64 {
+// convertSpeedToKiBps конвертирует скорость из указанных единиц в КиБ/с (кибибайт в секунду, 1 KiB = 1024 байт)
+func convertSpeedToKiBps(speed int, unit string) int64 {
 	switch unit {
 	case "MiB/s":
 		return int64(speed) * 1024 // Конвертируем MiB/s в KiB/s
@@ -308,7 +308,7 @@ func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) erro
 	if isSlowMode {
 		if s.config != nil && s.config.SlowSpeedLimit > 0 {
 			// Используем значение из конфигурации
-			limit := convertSpeedToKBps(s.config.SlowSpeedLimit, s.config.SlowSpeedUnit)
+			limit := convertSpeedToKiBps(s.config.SlowSpeedLimit, s.config.SlowSpeedUnit)
 			downloadLimit = limit
 			uploadLimit = limit
 		} else {

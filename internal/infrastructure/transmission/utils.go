@@ -90,8 +90,8 @@ func getSpeedInfo(t *transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed 
 	return
 }
 
-// convertSpeedToKBps конвертирует скорость из KiB/s или MiB/s в KiB/s
-func convertSpeedToKBps(speed int, unit string) int64 {
+// convertSpeedToKiBps конвертирует скорость из указанных единиц в КиБ/с (кибибайт в секунду, 1 KiB = 1024 байт)
+func convertSpeedToKiBps(speed int, unit string) int64 {
 	switch unit {
 	case "MiB/s":
 		return int64(speed) * 1024 // Конвертируем MiB/s в KiB/s

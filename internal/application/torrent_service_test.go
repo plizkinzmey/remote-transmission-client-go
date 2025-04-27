@@ -1715,11 +1715,11 @@ func TestValidateDownloadPath_Success(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
-func TestConvertSpeedToKBps(t *testing.T) {
-	assert.Equal(t, int64(50), convertSpeedToKBps(50, "KiB/s"))
-	assert.Equal(t, int64(2048), convertSpeedToKBps(2, "MiB/s"))
-	assert.Equal(t, int64(100), convertSpeedToKBps(100, "unknown"))
-	assert.Equal(t, int64(0), convertSpeedToKBps(0, "MiB/s"))
+func TestConvertSpeedToKiBps(t *testing.T) {
+	assert.Equal(t, int64(50), convertSpeedToKiBps(50, "KiB/s"))
+	assert.Equal(t, int64(2048), convertSpeedToKiBps(2, "MiB/s"))
+	assert.Equal(t, int64(100), convertSpeedToKiBps(100, "unknown"))
+	assert.Equal(t, int64(0), convertSpeedToKiBps(0, "MiB/s"))
 }
 
 func TestValidateDownloadPath_NilConfig(t *testing.T) {

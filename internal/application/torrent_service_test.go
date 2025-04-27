@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"testing"
 	"transmission-client-go/internal/domain"
+	"transmission-client-go/internal/infrastructure" // Импортируем для интерфейса IConfigService
+	"transmission-client-go/internal/infrastructure/transmission"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require" // Используем require для проверок в setup/teardown
 )
 
 // MockTransmissionClient - мок для TransmissionClient
@@ -17,7 +20,6 @@ type MockTransmissionClient struct {
 
 func (m *MockTransmissionClient) GetAll() ([]domain.Torrent, error) {
 	args := m.Called()
-	// Добавляем проверку на nil перед преобразованием типа
 	var torrents []domain.Torrent
 	if args.Get(0) != nil {
 		torrents = args.Get(0).([]domain.Torrent)
@@ -60,6 +62,9 @@ func (m *MockTransmissionClient) GetSessionStats() (*domain.SessionStats, error)
 
 func (m *MockTransmissionClient) GetTorrentFiles(id int64) ([]domain.TorrentFile, error) {
 	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]domain.TorrentFile), args.Error(1)
 }
 
@@ -91,6 +96,63 @@ func (m *MockTransmissionClient) ValidateDownloadPath(path string) error {
 func (m *MockTransmissionClient) GetTorrentDownloadDirectory(id int64) (string, error) {
 	args := m.Called(id)
 	return args.String(0), args.Error(1)
+}
+
+// MockConfigService - мок для IConfigService
+type MockConfigService struct {
+	mock.Mock
+}
+
+func (m *MockConfigService) LoadConfig() (*domain.Config, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.Config), args.Error(1)
+}
+
+func (m *MockConfigService) SaveConfig(config *domain.Config) error {
+	args := m.Called(config)
+	return args.Error(0)
+}
+
+func (m *MockConfigService) ConfigExists() (bool, error) {
+	args := m.Called()
+	return args.Bool(0), args.Error(1)
+}
+
+// --- Глобальные переменные для хранения оригинальных фабрик ---
+var originalNewConfigServiceFunc configServiceFactory
+var originalNewTransmissionClientFunc transmissionClientFactory
+
+// --- Функция для установки моков перед тестами ---
+func setupMocks(t *testing.T) (*MockTransmissionClient, *MockConfigService) {
+	t.Helper()
+
+	// Сохраняем оригинальные фабрики
+	originalNewConfigServiceFunc = newConfigServiceFunc
+	originalNewTransmissionClientFunc = newTransmissionClientFunc
+
+	mockRepo := new(MockTransmissionClient)
+	mockCfgSvc := new(MockConfigService)
+
+	// Подменяем фабрику ConfigService
+	newConfigServiceFunc = func() infrastructure.IConfigService {
+		return mockCfgSvc
+	}
+
+	// Подменяем фабрику TransmissionClient
+	newTransmissionClientFunc = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
+		return mockRepo, nil
+	}
+
+	// Регистрируем очистку после теста
+	t.Cleanup(func() {
+		newConfigServiceFunc = originalNewConfigServiceFunc
+		newTransmissionClientFunc = originalNewTransmissionClientFunc
+	})
+
+	return mockRepo, mockCfgSvc
 }
 
 // Тесты
@@ -137,12 +199,10 @@ func TestGetAllTorrents_WithAutoStop(t *testing.T) {
 	mockRepo := new(MockTransmissionClient)
 	service := NewTorrentService(mockRepo)
 
-	// Устанавливаем конфигурацию с MaxUploadRatio
 	service.config = &domain.Config{
 		MaxUploadRatio: 1.5,
 	}
 
-	// Создаем торренты с разным рейтингом загрузки
 	torrents := []domain.Torrent{
 		{ID: 1, Name: "Test1", Status: domain.StatusSeeding, UploadRatio: 2.0},
 		{ID: 2, Name: "Test2", Status: domain.StatusSeeding, UploadRatio: 1.0},
@@ -159,32 +219,32 @@ func TestGetAllTorrents_WithAutoStop(t *testing.T) {
 }
 
 func TestAddTorrent_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	downloadDir := "/test/path"
 	torrentURL := "http://example.com/test.torrent"
 
-	// Настраиваем мок для валидации пути
 	mockRepo.On("ValidateDownloadPath", downloadDir).Return(nil)
 	mockRepo.On("Add", torrentURL, downloadDir).Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
 
 	err := service.AddTorrent(torrentURL, downloadDir)
 
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestAddTorrent_InvalidPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	invalidPath := "/invalid/path"
 	torrentURL := "http://example.com/test.torrent"
 
-	// Путь не проходит валидацию
 	mockRepo.On("ValidateDownloadPath", invalidPath).Return(fmt.Errorf("invalid path"))
 
 	err := service.AddTorrent(torrentURL, invalidPath)
@@ -215,12 +275,10 @@ func TestStartStopTorrents(t *testing.T) {
 
 	ids := []int64{1, 2, 3}
 
-	// Тест запуска торрентов
 	mockRepo.On("Start", ids).Return(nil)
 	err := service.StartTorrents(ids)
 	assert.NoError(t, err)
 
-	// Тест остановки торрентов
 	mockRepo.On("Stop", ids).Return(nil)
 	err = service.StopTorrents(ids)
 	assert.NoError(t, err)
@@ -238,12 +296,10 @@ func TestSetTorrentSpeedLimit(t *testing.T) {
 		SlowSpeedUnit:  "KiB/s",
 	}
 
-	// Тест включения медленного режима
 	mockRepo.On("SetTorrentSpeedLimit", ids, int64(50), int64(50)).Return(nil)
 	err := service.SetTorrentSpeedLimit(ids, true)
 	assert.NoError(t, err)
 
-	// Тест выключения медленного режима
 	mockRepo.On("SetTorrentSpeedLimit", ids, int64(0), int64(0)).Return(nil)
 	err = service.SetTorrentSpeedLimit(ids, false)
 	assert.NoError(t, err)
@@ -255,15 +311,13 @@ func TestSetTorrentSpeedLimit_WithConfig(t *testing.T) {
 	mockRepo := new(MockTransmissionClient)
 	service := NewTorrentService(mockRepo)
 
-	// Устанавливаем конфигурацию с настройками медленного режима
 	service.config = &domain.Config{
 		SlowSpeedLimit: 20,
-		SlowSpeedUnit:  "MiB/s", // Проверяем конвертацию из MiB/s в KiB/s
+		SlowSpeedUnit:  "MiB/s",
 	}
 
 	ids := []int64{1, 2}
 
-	// При использовании единиц MiB/s, 20 MiB/s конвертируется в 20*1024 = 20480 KiB/s
 	mockRepo.On("SetTorrentSpeedLimit", ids, int64(20480), int64(20480)).Return(nil)
 
 	err := service.SetTorrentSpeedLimit(ids, true)
@@ -276,10 +330,8 @@ func TestSetTorrentSpeedLimit_NoConfig(t *testing.T) {
 	mockRepo := new(MockTransmissionClient)
 	service := NewTorrentService(mockRepo)
 
-	// Не устанавливаем конфигурацию (равна nil)
 	ids := []int64{1, 2}
 
-	// Должен использоваться лимит по умолчанию (10 КБ/с)
 	mockRepo.On("SetTorrentSpeedLimit", ids, int64(10), int64(10)).Return(nil)
 
 	err := service.SetTorrentSpeedLimit(ids, true)
@@ -322,7 +374,7 @@ func TestGetTorrentFiles(t *testing.T) {
 }
 
 func TestGetDefaultDownloadDir_FromConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	expectedPath := "/default/path"
@@ -338,11 +390,11 @@ func TestGetDefaultDownloadDir_FromConfig(t *testing.T) {
 }
 
 func TestGetDefaultDownloadDir_FromRepository(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	expectedPath := "/default/path"
-	service.config = &domain.Config{} // пустая конфигурация
+	service.config = &domain.Config{}
 
 	mockRepo.On("GetDefaultDownloadDir").Return(expectedPath, nil)
 
@@ -354,23 +406,44 @@ func TestGetDefaultDownloadDir_FromRepository(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
+func TestGetDefaultDownloadDir_RepositoryError(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+	service.config = &domain.Config{}
+	repoError := errors.New("repo error")
+
+	mockRepo.On("GetDefaultDownloadDir").Return("", repoError)
+
+	path, err := service.GetDefaultDownloadDir()
+
+	assert.ErrorIs(t, err, repoError)
+	assert.Empty(t, path)
+	assert.Empty(t, service.config.DefaultDownloadPath)
+	mockRepo.AssertExpectations(t)
+}
+
 func TestSaveDownloadPath_New(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DownloadPaths: []string{"/existing/path"},
 	}
-
 	newPath := "/new/path"
+
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return len(cfg.DownloadPaths) == 2 && cfg.DownloadPaths[0] == newPath
+	})).Return(nil)
+
 	err := service.SaveDownloadPath(newPath)
 
 	assert.NoError(t, err)
 	assert.Equal(t, []string{newPath, "/existing/path"}, service.config.DownloadPaths)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestSaveDownloadPath_Duplicate(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	existingPath := "/existing/path"
@@ -382,83 +455,73 @@ func TestSaveDownloadPath_Duplicate(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, []string{existingPath}, service.config.DownloadPaths)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSaveDownloadPath_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	err := service.SaveDownloadPath("/some/path")
 
 	assert.Error(t, err)
 	assert.Equal(t, ErrConfigNotInited, err.Error())
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSaveDownloadPath_EmptyPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
-
 	service.config = &domain.Config{}
 
 	err := service.SaveDownloadPath("")
 
-	assert.NoError(t, err) // Пустой путь просто игнорируется
+	assert.NoError(t, err)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSaveDownloadPath_LimitPaths(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
-	// Создаем 10 путей
 	paths := make([]string, 10)
 	for i := 0; i < 10; i++ {
 		paths[i] = fmt.Sprintf("/existing/path%d", i)
 	}
-
-	service.config = &domain.Config{
-		DownloadPaths: paths,
-	}
-
+	service.config = &domain.Config{DownloadPaths: paths}
 	newPath := "/new/path"
+
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return len(cfg.DownloadPaths) == 10 && cfg.DownloadPaths[0] == newPath
+	})).Return(nil)
+
 	err := service.SaveDownloadPath(newPath)
 
 	assert.NoError(t, err)
-	// Проверяем, что новый путь добавлен в начало, и список ограничен 10 путями
-	assert.Equal(t, 10, len(service.config.DownloadPaths))
+	assert.Len(t, service.config.DownloadPaths, 10)
 	assert.Equal(t, newPath, service.config.DownloadPaths[0])
-	assert.NotContains(t, service.config.DownloadPaths, "/existing/path9") // Последний путь должен быть удален
+	assert.NotContains(t, service.config.DownloadPaths, "/existing/path9")
+	mockCfgSvc.AssertExpectations(t)
 }
 
-func TestAddUniquePathsFromHistory_Empty(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestSaveDownloadPath_SaveError(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
+	service.config = &domain.Config{DownloadPaths: []string{"/old"}}
+	newPath := "/new"
+	saveError := errors.New("disk full")
 
-	service.config = &domain.Config{
-		DownloadPaths: nil,
-	}
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(saveError)
 
-	result := []string{"/path1"}
-	updatedResult := service.addUniquePathsFromHistory(result)
+	err := service.SaveDownloadPath(newPath)
 
-	assert.Equal(t, result, updatedResult)
-}
-
-func TestAddUniquePathsFromHistory_WithDuplicates(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
-	service := NewTorrentService(mockRepo)
-
-	service.config = &domain.Config{
-		DownloadPaths: []string{"/path1", "/path2", "/path3"},
-	}
-
-	result := []string{"/path1"} // Дубликат в исходном списке
-	updatedResult := service.addUniquePathsFromHistory(result)
-
-	assert.Equal(t, []string{"/path1", "/path2", "/path3"}, updatedResult)
+	assert.ErrorIs(t, err, saveError)
+	assert.Equal(t, []string{newPath, "/old"}, service.config.DownloadPaths)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestGetDownloadPaths_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	expectedPaths := []string{"/path1", "/path2"}
@@ -474,7 +537,7 @@ func TestGetDownloadPaths_Success(t *testing.T) {
 }
 
 func TestGetDownloadPaths_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	paths, err := service.GetDownloadPaths()
@@ -484,28 +547,49 @@ func TestGetDownloadPaths_NoConfig(t *testing.T) {
 	assert.Equal(t, ErrConfigNotInited, err.Error())
 }
 
-func TestGetDownloadPaths_EmptyConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestGetDownloadPaths_EmptyConfigFetchClientSuccess(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DefaultDownloadPath: "",
 		DownloadPaths:       []string{},
 	}
-
-	// Моделируем ситуацию, когда fetchPathFromClient возвращает успешный результат
 	expectedPath := "/from/client"
-	mockRepo.On("GetDefaultDownloadDir").Return(expectedPath, nil)
+
+	mockRepo.On("GetDefaultDownloadDir").Return("", errors.New("not found")).Once()
+	mockRepo.On("GetDefaultDownloadDir").Return(expectedPath, nil).Once()
 
 	paths, err := service.GetDownloadPaths()
 
 	assert.NoError(t, err)
-	assert.Contains(t, paths, expectedPath)
+	assert.Equal(t, []string{expectedPath}, paths)
+	assert.Equal(t, expectedPath, service.config.DefaultDownloadPath)
 	mockRepo.AssertExpectations(t)
 }
 
-func TestGetDownloadPaths_WithDefaultPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestGetDownloadPaths_EmptyConfigFetchClientError(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	service.config = &domain.Config{
+		DefaultDownloadPath: "",
+		DownloadPaths:       []string{},
+	}
+	fetchError := errors.New("client unavailable")
+
+	mockRepo.On("GetDefaultDownloadDir").Return("", fetchError).Once()
+	mockRepo.On("GetDefaultDownloadDir").Return("", fetchError).Once()
+
+	paths, err := service.GetDownloadPaths()
+
+	assert.NoError(t, err)
+	assert.Empty(t, paths)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetDownloadPaths_WithDefaultPathOnly(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
@@ -516,51 +600,30 @@ func TestGetDownloadPaths_WithDefaultPath(t *testing.T) {
 	paths, err := service.GetDownloadPaths()
 
 	assert.NoError(t, err)
-	assert.Contains(t, paths, "/default/path")
+	assert.Equal(t, []string{"/default/path"}, paths)
 }
 
-func TestGetDownloadPaths_FromClient(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestGetDownloadPaths_WithHistoryOnly(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DefaultDownloadPath: "",
-		DownloadPaths:       []string{},
+		DownloadPaths:       []string{"/hist1", "/hist2"},
 	}
+	fetchError := errors.New("client unavailable")
 
-	expectedPath := "/default/from/client/path"
-	mockRepo.On("GetDefaultDownloadDir").Return(expectedPath, nil).Once()
-
-	service.fetchDefaultPathIfEmpty() // Вызываем отдельно для обновления config
+	mockRepo.On("GetDefaultDownloadDir").Return("", fetchError).Once()
 
 	paths, err := service.GetDownloadPaths()
 
 	assert.NoError(t, err)
-	assert.Contains(t, paths, expectedPath)
-	mockRepo.AssertExpectations(t)
-}
-
-func TestGetDownloadPaths_EmptyResult(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
-	service := NewTorrentService(mockRepo)
-
-	service.config = &domain.Config{
-		DefaultDownloadPath: "",
-		DownloadPaths:       []string{},
-	}
-
-	// Настраиваем мок на возврат ошибки для всех вызовов GetDefaultDownloadDir
-	mockRepo.On("GetDefaultDownloadDir").Return("", fmt.Errorf("not available")).Times(2)
-
-	paths, err := service.GetDownloadPaths()
-
-	assert.NoError(t, err)
-	assert.Empty(t, paths) // Результат должен быть пустым массивом
+	assert.Equal(t, []string{"/hist1", "/hist2"}, paths)
 	mockRepo.AssertExpectations(t)
 }
 
 func TestValidatePathsTransaction_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -580,7 +643,7 @@ func TestValidatePathsTransaction_Success(t *testing.T) {
 }
 
 func TestValidatePathsTransaction_InvalidPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -595,12 +658,12 @@ func TestValidatePathsTransaction_InvalidPath(t *testing.T) {
 	err := service.ValidatePathsTransaction(transaction)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid path")
+	assert.Contains(t, err.Error(), "invalid path /invalid/path")
 	mockRepo.AssertExpectations(t)
 }
 
 func TestValidatePathsTransaction_NilTransaction(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	err := service.ValidatePathsTransaction(nil)
@@ -610,7 +673,7 @@ func TestValidatePathsTransaction_NilTransaction(t *testing.T) {
 }
 
 func TestValidatePathsTransaction_InvalidDefaultPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -626,17 +689,17 @@ func TestValidatePathsTransaction_InvalidDefaultPath(t *testing.T) {
 	err := service.ValidatePathsTransaction(transaction)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid default path")
+	assert.Contains(t, err.Error(), "invalid default path /invalid/default/path")
 	mockRepo.AssertExpectations(t)
 }
 
 func TestValidatePathsTransaction_DuplicatePaths(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	transaction := &domain.PathsTransaction{
-		PathsToAdd:    []string{"/new/path", "/new/path"}, // Дубликат
+		PathsToAdd:    []string{"/new/path", "/new/path"},
 		PathsToRemove: []string{"/old/path"},
 		DefaultPath:   "/new/path",
 	}
@@ -646,18 +709,18 @@ func TestValidatePathsTransaction_DuplicatePaths(t *testing.T) {
 	err := service.ValidatePathsTransaction(transaction)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "duplicate path")
+	assert.Contains(t, err.Error(), "duplicate path in transaction: /new/path")
 	mockRepo.AssertExpectations(t)
 }
 
 func TestValidatePathsTransaction_ConflictingPaths(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	transaction := &domain.PathsTransaction{
 		PathsToAdd:    []string{"/path/to/add"},
-		PathsToRemove: []string{"/path/to/add"}, // Конфликт с путем для добавления
+		PathsToRemove: []string{"/path/to/add"},
 		DefaultPath:   "",
 	}
 
@@ -666,17 +729,19 @@ func TestValidatePathsTransaction_ConflictingPaths(t *testing.T) {
 	err := service.ValidatePathsTransaction(transaction)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "conflict: path")
+	assert.Contains(t, err.Error(), "conflict: path /path/to/add is both added and removed")
 	mockRepo.AssertExpectations(t)
 }
 
 func TestApplyPathsTransaction_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
+	originalPaths := []string{"/old/path1", "/old/path2"}
+	originalDefault := "/old/path1"
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/old/path1", "/old/path2"},
-		DefaultDownloadPath: "/old/path1",
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
 	}
 
 	transaction := &domain.PathsTransaction{
@@ -686,158 +751,562 @@ func TestApplyPathsTransaction_Success(t *testing.T) {
 	}
 
 	mockRepo.On("ValidateDownloadPath", "/new/path").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
 
 	err := service.ApplyPathsTransaction(transaction)
 
 	assert.NoError(t, err)
-	assert.Contains(t, service.config.DownloadPaths, "/new/path")
-	assert.NotContains(t, service.config.DownloadPaths, "/old/path1")
+	assert.Equal(t, []string{"/old/path2", "/new/path"}, service.config.DownloadPaths)
 	assert.Equal(t, "/new/path", service.config.DefaultDownloadPath)
+
+	require.NotNil(t, transaction.OriginalState)
+	assert.Equal(t, originalPaths, transaction.OriginalState.Paths)
+	assert.Equal(t, originalDefault, transaction.OriginalState.DefaultPath)
+
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestApplyPathsTransaction_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
-	transaction := &domain.PathsTransaction{
-		PathsToAdd:    []string{"/new/path"},
-		PathsToRemove: []string{"/old/path"},
-		DefaultPath:   "/new/path",
-	}
+	transaction := &domain.PathsTransaction{}
 
 	err := service.ApplyPathsTransaction(transaction)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), ErrConfigNotInited)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestApplyPathsTransaction_ValidationError(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
+	originalPaths := []string{"/old/path1"}
+	originalDefault := "/old/path1"
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/old/path1", "/old/path2"},
-		DefaultDownloadPath: "/old/path1",
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
 	}
 
 	transaction := &domain.PathsTransaction{
-		PathsToAdd:    []string{"/invalid/path"},
-		PathsToRemove: []string{"/old/path1"},
-		DefaultPath:   "/invalid/path",
+		PathsToAdd: []string{"/invalid/path"},
 	}
+	validationError := errors.New("validation error")
 
-	// Мокируем ошибку валидации
-	mockRepo.On("ValidateDownloadPath", "/invalid/path").Return(fmt.Errorf("validation error"))
+	mockRepo.On("ValidateDownloadPath", "/invalid/path").Return(validationError)
 
 	err := service.ApplyPathsTransaction(transaction)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "validation failed")
+	assert.ErrorContains(t, err, validationError.Error())
+	assert.ErrorContains(t, err, "validation failed")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+
+	require.NotNil(t, transaction.OriginalState)
+	assert.Equal(t, originalPaths, transaction.OriginalState.Paths)
+	assert.Equal(t, originalDefault, transaction.OriginalState.DefaultPath)
+
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
-func TestSaveSettingsWithPaths_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestApplyPathsTransaction_SaveErrorAndRollback(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalPaths := []string{"/old/path1", "/old/path2"}
+	originalDefault := "/old/path1"
+	service.config = &domain.Config{
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
+	}
+
+	transaction := &domain.PathsTransaction{
+		PathsToAdd:    []string{"/new/path"},
+		PathsToRemove: []string{"/old/path1"},
+		DefaultPath:   "/new/path",
+	}
+	saveError := errors.New("disk is full")
+
+	mockRepo.On("ValidateDownloadPath", "/new/path").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(saveError)
+
+	err := service.ApplyPathsTransaction(transaction)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, saveError)
+	assert.ErrorContains(t, err, "failed to save config")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+
+	require.NotNil(t, transaction.OriginalState)
+	assert.Equal(t, originalPaths, transaction.OriginalState.Paths)
+	assert.Equal(t, originalDefault, transaction.OriginalState.DefaultPath)
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSavePaths_Success(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/old/path1", "/old/path2"},
-		DefaultDownloadPath: "/old/path1",
-		Host:                "old-host",
-		Port:                9091,
+		DownloadPaths:       []string{"/path1", "/path2", "/path3"},
+		DefaultDownloadPath: "/path1",
 	}
 
-	newConfig := domain.ConnectionConfig{
-		Host:           "new-host",
-		Port:           9092,
-		MaxUploadRatio: 2.0,
-		SlowSpeedLimit: 50,
-		SlowSpeedUnit:  "KiB/s",
+	pathsToAdd := []string{"/new/path", "/path3"}
+	pathsToRemove := []string{"/path2"}
+	defaultPath := "/new/path"
+
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		expected := []string{"/new/path", "/path1", "/path3"}
+		// Используем ElementsMatch для сравнения без учета порядка
+		return cfg.DefaultDownloadPath == defaultPath && assert.ElementsMatch(t, expected, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	// Используем ElementsMatch, так как порядок не важен (кроме defaultPath, который проверяется отдельно)
+	assert.ElementsMatch(t, []string{"/new/path", "/path1", "/path3"}, service.config.DownloadPaths)
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSavePaths_NoConfig(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	err := service.SavePaths([]string{"/new"}, []string{}, "/new")
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrConfigNotInited, err.Error())
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
+}
+
+func TestSavePaths_SaveErrorAndRollback(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalPaths := []string{"/path1", "/path2"}
+	originalDefault := "/path1"
+	service.config = &domain.Config{
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
 	}
 
 	pathsToAdd := []string{"/new/path"}
-	pathsToRemove := []string{"/old/path1"}
+	pathsToRemove := []string{"/path2"}
 	defaultPath := "/new/path"
+	saveError := errors.New("cannot write file")
 
-	mockRepo.On("ValidateDownloadPath", "/new/path").Return(nil).Maybe()
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(saveError)
 
-	err := service.SaveSettingsWithPaths(newConfig, pathsToAdd, pathsToRemove, defaultPath)
+	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, saveError)
+	assert.ErrorContains(t, err, "failed to save config")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSavePaths_AddDefaultToHistory(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	service.config = &domain.Config{
+		DownloadPaths:       []string{"/path1"},
+		DefaultDownloadPath: "/path1",
+	}
+
+	pathsToAdd := []string{}
+	pathsToRemove := []string{}
+	defaultPath := "/new/default"
+
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		expected := []string{"/new/default", "/path1"}
+		return cfg.DefaultDownloadPath == defaultPath && assert.ObjectsAreEqual(expected, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"/new/default", "/path1"}, service.config.DownloadPaths)
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSavePaths_LimitHistoryWithDefault(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	paths := make([]string, 10)
+	for i := 0; i < 10; i++ {
+		paths[i] = fmt.Sprintf("/path%d", i)
+	}
+	service.config = &domain.Config{
+		DownloadPaths:       paths,
+		DefaultDownloadPath: "/path0",
+	}
+
+	pathsToAdd := []string{}
+	pathsToRemove := []string{}
+	defaultPath := "/new/default"
+
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return len(cfg.DownloadPaths) == 10 &&
+			cfg.DefaultDownloadPath == defaultPath &&
+			cfg.DownloadPaths[0] == defaultPath &&
+			cfg.DownloadPaths[9] == "/path8"
+	})).Return(nil)
+
+	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Len(t, service.config.DownloadPaths, 10)
+	assert.Equal(t, defaultPath, service.config.DownloadPaths[0])
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	assert.NotContains(t, service.config.DownloadPaths, "/path9")
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_SuccessNoConnectionChange(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalHost := "host1"
+	originalPort := 9091
+	originalPaths := []string{"/old"}
+	originalDefault := "/old"
+	service.config = &domain.Config{
+		Host:                originalHost,
+		Port:                originalPort,
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
+		MaxUploadRatio:      1.0,
+	}
+
+	newConnConfig := domain.ConnectionConfig{
+		Host:           originalHost,
+		Port:           originalPort,
+		MaxUploadRatio: 2.5,
+		SlowSpeedLimit: 100,
+		SlowSpeedUnit:  "KiB/s",
+	}
+	pathsToAdd := []string{"/new"}
+	pathsToRemove := []string{"/old"}
+	defaultPath := "/new"
+
+	mockRepo.On("ValidateDownloadPath", "/new").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return cfg.Host == originalHost &&
+			cfg.Port == originalPort &&
+			cfg.MaxUploadRatio == 2.5 &&
+			cfg.SlowSpeedLimit == 100 &&
+			cfg.DefaultDownloadPath == defaultPath &&
+			assert.ObjectsAreEqual([]string{"/new"}, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Equal(t, originalHost, service.config.Host)
+	assert.Equal(t, originalPort, service.config.Port)
+	assert.Equal(t, 2.5, service.config.MaxUploadRatio)
+	assert.Equal(t, 100, service.config.SlowSpeedLimit)
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	assert.Equal(t, []string{"/new"}, service.config.DownloadPaths)
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_SuccessWithConnectionChange(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	service.config = &domain.Config{
+		Host:                "old-host",
+		Port:                9091,
+		DownloadPaths:       []string{"/old"},
+		DefaultDownloadPath: "/old",
+	}
+
+	newConnConfig := domain.ConnectionConfig{
+		Host: "new-host",
+		Port: 9092,
+	}
+	pathsToAdd := []string{"/new"}
+	pathsToRemove := []string{"/old"}
+	defaultPath := "/new"
+
+	mockRepo.On("ValidateDownloadPath", "/new").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
+
+	newMockRepo := new(MockTransmissionClient)
+	newTransmissionClientFunc = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
+		assert.Equal(t, "new-host", config.Host)
+		assert.Equal(t, 9092, config.Port)
+		return newMockRepo, nil
+	}
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "new-host", service.config.Host)
 	assert.Equal(t, 9092, service.config.Port)
-	assert.Equal(t, 2.0, service.config.MaxUploadRatio)
-	assert.Contains(t, service.config.DownloadPaths, "/new/path")
-	assert.NotContains(t, service.config.DownloadPaths, "/old/path1")
-	assert.Equal(t, "/new/path", service.config.DefaultDownloadPath)
+	assert.Equal(t, "/new", service.config.DefaultDownloadPath)
+	assert.Equal(t, newMockRepo, service.repo)
+
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestSaveSettingsWithPaths_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
-	config := domain.ConnectionConfig{
-		Host: "localhost",
-		Port: 9091,
-	}
-
-	err := service.SaveSettingsWithPaths(config, []string{}, []string{}, "")
+	err := service.SaveSettingsWithPaths(domain.ConnectionConfig{}, []string{}, []string{}, "")
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), ErrConfigNotInited)
+	assert.Equal(t, ErrConfigNotInited, err.Error())
+	mockRepo.AssertNotCalled(t, "ValidateDownloadPath", mock.Anything)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
-func TestSaveSettingsWithPaths_SavePathsError(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestSaveSettingsWithPaths_InvalidPathToAdd(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
-	// Устанавливаем начальную конфигурацию
+	originalPaths := []string{"/old"}
+	originalDefault := "/old"
+	originalHost := "host1"
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/old/path"},
-		DefaultDownloadPath: "/old/path",
-		Host:                "old-host", // Запоминаем старый хост
-		Port:                9091,
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
+		Host:                originalHost,
 	}
 
-	newConfig := domain.ConnectionConfig{
-		Host: "new-host", // Новый хост, который не должен примениться
-		Port: 9091,
-	}
+	pathsToAdd := []string{"/invalid"}
+	validationError := errors.New("path validation failed")
 
-	pathsToAdd := []string{"/invalid/path"} // Невалидный путь
-	pathsToRemove := []string{}
-	defaultPath := "/old/path" // Используем старый валидный путь по умолчанию
+	mockRepo.On("ValidateDownloadPath", "/invalid").Return(validationError)
 
-	validationError := errors.New("validation failed during save")
-	// Мокируем ValidateDownloadPath для невалидного пути
-	mockRepo.On("ValidateDownloadPath", "/invalid/path").Return(validationError).Once()
+	err := service.SaveSettingsWithPaths(domain.ConnectionConfig{Host: "new-host"}, pathsToAdd, []string{}, "")
 
-	// Вызываем тестируемый метод
-	err := service.SaveSettingsWithPaths(newConfig, pathsToAdd, pathsToRemove, defaultPath)
-
-	// Проверяем, что вернулась ошибка
 	assert.Error(t, err)
-	// Проверяем, что ошибка содержит текст ошибки валидации
-	assert.ErrorContains(t, err, validationError.Error())
-	// Проверяем, что ошибка содержит указание на причину ("failed to save paths")
-	assert.ErrorContains(t, err, "failed to save paths")
-	// Проверяем, что Host НЕ изменился (остался старым)
-	assert.Equal(t, "old-host", service.config.Host)
-	// Проверяем, что Port НЕ изменился
-	assert.Equal(t, 9091, service.config.Port)
-	// Проверяем, что список путей НЕ изменился
-	assert.Equal(t, []string{"/old/path"}, service.config.DownloadPaths)
-	// Проверяем, что путь по умолчанию НЕ изменился
-	assert.Equal(t, "/old/path", service.config.DefaultDownloadPath)
+	assert.ErrorIs(t, err, validationError)
+	assert.ErrorContains(t, err, "failed to save paths: invalid path /invalid")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+	assert.Equal(t, originalHost, service.config.Host)
 
-	// Убеждаемся, что мок ValidateDownloadPath был вызван
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
+}
+
+func TestSaveSettingsWithPaths_InvalidDefaultPath(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalPaths := []string{"/old"}
+	originalDefault := "/old"
+	originalHost := "host1"
+	service.config = &domain.Config{
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
+		Host:                originalHost,
+	}
+
+	defaultPath := "/invalid-default"
+	validationError := errors.New("default path validation failed")
+
+	mockRepo.On("ValidateDownloadPath", defaultPath).Return(validationError)
+
+	err := service.SaveSettingsWithPaths(domain.ConnectionConfig{Host: "new-host"}, []string{}, []string{}, defaultPath)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, validationError)
+	assert.ErrorContains(t, err, "failed to save paths: invalid default path /invalid-default")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+	assert.Equal(t, originalHost, service.config.Host)
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
+}
+
+func TestSaveSettingsWithPaths_SaveConfigErrorAndRollback(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalPaths := []string{"/old"}
+	originalDefault := "/old"
+	originalHost := "host1"
+	originalPort := 9091
+	originalRatio := 1.0
+	originalLimit := 0
+	originalUnit := ""
+	service.config = &domain.Config{
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: originalDefault,
+		Host:                originalHost,
+		Port:                originalPort,
+		MaxUploadRatio:      originalRatio,
+		SlowSpeedLimit:      originalLimit,
+		SlowSpeedUnit:       originalUnit,
+	}
+
+	newConnConfig := domain.ConnectionConfig{
+		Host:           "new-host",
+		Port:           9092,
+		MaxUploadRatio: 2.5,
+		SlowSpeedLimit: 100,
+		SlowSpeedUnit:  "KiB/s",
+	}
+	pathsToAdd := []string{"/new"}
+	pathsToRemove := []string{"/old"}
+	defaultPath := "/new"
+	saveError := errors.New("disk full")
+
+	mockRepo.On("ValidateDownloadPath", "/new").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(saveError)
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, saveError)
+	assert.ErrorContains(t, err, "failed to save config")
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	assert.Equal(t, originalDefault, service.config.DefaultDownloadPath)
+	assert.Equal(t, originalHost, service.config.Host)
+	assert.Equal(t, originalPort, service.config.Port)
+	assert.Equal(t, originalRatio, service.config.MaxUploadRatio)
+	assert.Equal(t, originalLimit, service.config.SlowSpeedLimit)
+	assert.Equal(t, originalUnit, service.config.SlowSpeedUnit)
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_NewClientError(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalHost := "old-host"
+	service.config = &domain.Config{
+		Host:                originalHost,
+		Port:                9091,
+		DownloadPaths:       []string{"/old"},
+		DefaultDownloadPath: "/old",
+	}
+
+	newConnConfig := domain.ConnectionConfig{
+		Host: "new-host",
+		Port: 9092,
+	}
+	pathsToAdd := []string{"/new"}
+	pathsToRemove := []string{"/old"}
+	defaultPath := "/new"
+	clientError := errors.New("cannot connect to new host")
+
+	mockRepo.On("ValidateDownloadPath", "/new").Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
+
+	newTransmissionClientFunc = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
+		return nil, clientError
+	}
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, clientError)
+	assert.ErrorContains(t, err, "failed to initialize transmission client after saving config")
+	assert.Equal(t, "new-host", service.config.Host)
+	assert.Equal(t, 9092, service.config.Port)
+	assert.Equal(t, "/new", service.config.DefaultDownloadPath)
+	assert.Equal(t, mockRepo, service.repo)
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_AddDefaultToHistory(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	service.config = &domain.Config{
+		DownloadPaths:       []string{"/path1"},
+		DefaultDownloadPath: "/path1",
+		Host:                "host1",
+	}
+	newConnConfig := domain.ConnectionConfig{Host: "host1"}
+	pathsToAdd := []string{}
+	pathsToRemove := []string{}
+	defaultPath := "/new/default"
+
+	mockRepo.On("ValidateDownloadPath", defaultPath).Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		expected := []string{"/new/default", "/path1"}
+		return cfg.DefaultDownloadPath == defaultPath && assert.ObjectsAreEqual(expected, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"/new/default", "/path1"}, service.config.DownloadPaths)
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_LimitHistoryWithDefault(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	paths := make([]string, 10)
+	for i := 0; i < 10; i++ {
+		paths[i] = fmt.Sprintf("/path%d", i)
+	}
+	service.config = &domain.Config{
+		DownloadPaths:       paths,
+		DefaultDownloadPath: "/path0",
+		Host:                "host1",
+	}
+	newConnConfig := domain.ConnectionConfig{Host: "host1"}
+	pathsToAdd := []string{}
+	pathsToRemove := []string{}
+	defaultPath := "/new/default"
+
+	mockRepo.On("ValidateDownloadPath", defaultPath).Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return len(cfg.DownloadPaths) == 10 &&
+			cfg.DefaultDownloadPath == defaultPath &&
+			cfg.DownloadPaths[0] == defaultPath &&
+			cfg.DownloadPaths[9] == "/path8"
+	})).Return(nil)
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Len(t, service.config.DownloadPaths, 10)
+	assert.Equal(t, defaultPath, service.config.DownloadPaths[0])
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	assert.NotContains(t, service.config.DownloadPaths, "/path9")
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestGetTorrentDownloadDirectory_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	torrentID := int64(1)
@@ -853,66 +1322,74 @@ func TestGetTorrentDownloadDirectory_Success(t *testing.T) {
 }
 
 func TestRemoveDownloadPath_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DownloadPaths:       []string{"/path1", "/path2", "/path3"},
 		DefaultDownloadPath: "/path2",
 	}
+	pathToRemove := "/path1"
 
-	err := service.RemoveDownloadPath("/path1")
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		return assert.ObjectsAreEqual([]string{"/path2", "/path3"}, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.RemoveDownloadPath(pathToRemove)
 
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"/path2", "/path3"}, service.config.DownloadPaths)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestRemoveDownloadPath_DefaultPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
+	defaultPath := "/path1"
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/path1", "/path2"},
-		DefaultDownloadPath: "/path1",
+		DownloadPaths:       []string{defaultPath, "/path2"},
+		DefaultDownloadPath: defaultPath,
 	}
 
-	err := service.RemoveDownloadPath("/path1")
+	err := service.RemoveDownloadPath(defaultPath)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot remove default download path")
-	assert.Equal(t, []string{"/path1", "/path2"}, service.config.DownloadPaths)
+	assert.Equal(t, []string{defaultPath, "/path2"}, service.config.DownloadPaths)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestRemoveDownloadPath_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	err := service.RemoveDownloadPath("/some/path")
 
 	assert.Error(t, err)
 	assert.Equal(t, ErrConfigNotInited, err.Error())
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestRemoveDownloadPath_PathNotFound(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
+	originalPaths := []string{"/path1", "/path2"}
 	service.config = &domain.Config{
-		DownloadPaths:       []string{"/path1", "/path2"},
+		DownloadPaths:       originalPaths,
 		DefaultDownloadPath: "/path2",
 	}
 
-	// Пытаемся удалить путь, которого нет в списке
 	err := service.RemoveDownloadPath("/non/existent/path")
 
-	// Должен вернуть nil, так как удаление несуществующего пути не считается ошибкой
 	assert.NoError(t, err)
-	// Список путей не должен измениться
-	assert.Equal(t, []string{"/path1", "/path2"}, service.config.DownloadPaths)
+	assert.Equal(t, originalPaths, service.config.DownloadPaths)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSetFilesWanted_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	torrentID := int64(1)
@@ -928,13 +1405,13 @@ func TestSetFilesWanted_Success(t *testing.T) {
 }
 
 func TestGetSessionStats_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	expectedStats := &domain.SessionStats{
 		TotalDownloadSpeed:  1024,
 		TotalUploadSpeed:    512,
-		FreeSpace:           1073741824, // 1 GB
+		FreeSpace:           1073741824,
 		TransmissionVersion: "2.94",
 	}
 
@@ -948,7 +1425,7 @@ func TestGetSessionStats_Success(t *testing.T) {
 }
 
 func TestGetTorrents(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	expectedTorrents := []domain.Torrent{
@@ -966,15 +1443,16 @@ func TestGetTorrents(t *testing.T) {
 }
 
 func TestSetDefaultDownloadPath_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DownloadPaths: []string{"/existing/path"},
 	}
-
 	newPath := "/new/default/path"
+
 	mockRepo.On("ValidateDownloadPath", newPath).Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil).Twice()
 
 	err := service.SetDefaultDownloadPath(newPath)
 
@@ -982,101 +1460,119 @@ func TestSetDefaultDownloadPath_Success(t *testing.T) {
 	assert.Equal(t, newPath, service.config.DefaultDownloadPath)
 	assert.Contains(t, service.config.DownloadPaths, newPath)
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestSetDefaultDownloadPath_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	err := service.SetDefaultDownloadPath("/some/path")
 
 	assert.Error(t, err)
 	assert.Equal(t, ErrConfigNotInited, err.Error())
-	mockRepo.AssertNotCalled(t, "ValidateDownloadPath")
+	mockRepo.AssertNotCalled(t, "ValidateDownloadPath", mock.Anything)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSetDefaultDownloadPath_EmptyPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
-
 	service.config = &domain.Config{}
 
 	err := service.SetDefaultDownloadPath("")
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "path cannot be empty")
-	mockRepo.AssertNotCalled(t, "ValidateDownloadPath")
+	mockRepo.AssertNotCalled(t, "ValidateDownloadPath", mock.Anything)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestSetDefaultDownloadPath_InvalidPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
-
 	service.config = &domain.Config{}
 	invalidPath := "/invalid/path"
+	validationError := errors.New("invalid path")
 
-	mockRepo.On("ValidateDownloadPath", invalidPath).Return(fmt.Errorf("invalid path"))
+	mockRepo.On("ValidateDownloadPath", invalidPath).Return(validationError)
 
 	err := service.SetDefaultDownloadPath(invalidPath)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid path")
+	assert.ErrorIs(t, err, validationError)
+	assert.ErrorContains(t, err, "invalid download path")
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
 func TestAddTorrentFile_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	downloadDir := "/test/path"
 	filePath := "/tmp/test.torrent"
 
-	// Настраиваем моки
 	mockRepo.On("ValidateDownloadPath", downloadDir).Return(nil)
 	mockRepo.On("AddFile", filePath, downloadDir).Return(nil)
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
 
 	err := service.AddTorrentFile(filePath, downloadDir)
 
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }
 
 func TestAddTorrentFile_InvalidPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	invalidPath := "/invalid/path"
 	filePath := "/tmp/test.torrent"
+	validationError := errors.New("invalid path")
 
-	// Путь не проходит валидацию
-	mockRepo.On("ValidateDownloadPath", invalidPath).Return(fmt.Errorf("invalid path"))
+	mockRepo.On("ValidateDownloadPath", invalidPath).Return(validationError)
 
 	err := service.AddTorrentFile(filePath, invalidPath)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid download path")
+	assert.ErrorIs(t, err, validationError)
+	assert.ErrorContains(t, err, "invalid download path")
 	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
 }
 
-func TestAddTorrentFile_EmptyPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestAddTorrentFile_EmptyDownloadDir(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
 	filePath := "/tmp/test.torrent"
-	downloadDir := ""
+	downloadDir := "" // Пустой путь
+	// Ожидаемая ошибка из TorrentService.ValidateDownloadPath
+	expectedValidationErrorString := "download path cannot be empty"
 
-	// Проверяем, что мы валидируем пустой путь перед добавлением торрента
+	// Убираем ожидание вызова mockRepo.ValidateDownloadPath,
+	// так как он не должен вызываться при пустом пути.
+	// mockRepo.On("ValidateDownloadPath", downloadDir).Return(validationError)
+
 	err := service.AddTorrentFile(filePath, downloadDir)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid download path")
+	// Проверяем, что ошибка содержит текст ошибки валидации из TorrentService.ValidateDownloadPath
+	assert.ErrorContains(t, err, expectedValidationErrorString)
+	// Проверяем, что ошибка обернута правильно
+	assert.ErrorContains(t, err, "invalid download path")
+	mockRepo.AssertExpectations(t) // Теперь здесь не должно быть несработавших ожиданий
+	mockCfgSvc.AssertNotCalled(t, "SaveConfig", mock.Anything)
+	mockRepo.AssertNotCalled(t, "AddFile", mock.Anything, mock.Anything)
 }
 
 func TestFetchPathFromClient_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -1091,55 +1587,22 @@ func TestFetchPathFromClient_Success(t *testing.T) {
 }
 
 func TestFetchPathFromClient_Error(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
+	repoError := errors.New("connection error")
 
-	mockRepo.On("GetDefaultDownloadDir").Return("", fmt.Errorf("connection error"))
+	mockRepo.On("GetDefaultDownloadDir").Return("", repoError)
 
 	resultPath := service.fetchPathFromClient()
 
 	assert.Equal(t, "", resultPath)
+	assert.Equal(t, "", service.config.DefaultDownloadPath)
 	mockRepo.AssertExpectations(t)
 }
 
-func TestSavePaths_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
-	service := NewTorrentService(mockRepo)
-
-	service.config = &domain.Config{
-		DownloadPaths:       []string{"/path1", "/path2", "/path3"},
-		DefaultDownloadPath: "/path1",
-	}
-
-	pathsToAdd := []string{"/new/path"}
-	pathsToRemove := []string{"/path2"}
-	defaultPath := "/new/path"
-
-	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
-
-	assert.NoError(t, err)
-	assert.Contains(t, service.config.DownloadPaths, "/new/path")
-	assert.NotContains(t, service.config.DownloadPaths, "/path2")
-	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
-}
-
-func TestSavePaths_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
-	service := NewTorrentService(mockRepo)
-
-	pathsToAdd := []string{"/new/path"}
-	pathsToRemove := []string{"/path2"}
-	defaultPath := "/new/path"
-
-	err := service.SavePaths(pathsToAdd, pathsToRemove, defaultPath)
-
-	assert.Error(t, err)
-	assert.Equal(t, ErrConfigNotInited, err.Error())
-}
-
 func TestGetPathsState_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
@@ -1150,12 +1613,13 @@ func TestGetPathsState_Success(t *testing.T) {
 	state, err := service.GetPathsState()
 
 	assert.NoError(t, err)
+	require.NotNil(t, state)
 	assert.Equal(t, "/path1", state.DefaultPath)
 	assert.Equal(t, []string{"/path1", "/path2"}, state.Paths)
 }
 
 func TestGetPathsState_NoConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	state, err := service.GetPathsState()
@@ -1166,7 +1630,7 @@ func TestGetPathsState_NoConfig(t *testing.T) {
 }
 
 func TestFetchDefaultPathIfEmpty_NotEmpty(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
@@ -1176,17 +1640,18 @@ func TestFetchDefaultPathIfEmpty_NotEmpty(t *testing.T) {
 	resultPath := service.fetchDefaultPathIfEmpty()
 
 	assert.Equal(t, "/existing/default/path", resultPath)
+	mockRepo.AssertNotCalled(t, "GetDefaultDownloadDir")
 }
 
-func TestFetchDefaultPathIfEmpty_GetFromDefault(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestFetchDefaultPathIfEmpty_GetFromRepoSuccess(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 
 	service.config = &domain.Config{
 		DefaultDownloadPath: "",
 	}
-
 	expectedPath := "/default/from/repo"
+
 	mockRepo.On("GetDefaultDownloadDir").Return(expectedPath, nil)
 
 	resultPath := service.fetchDefaultPathIfEmpty()
@@ -1195,8 +1660,25 @@ func TestFetchDefaultPathIfEmpty_GetFromDefault(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
+func TestFetchDefaultPathIfEmpty_GetFromRepoError(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	service.config = &domain.Config{
+		DefaultDownloadPath: "",
+	}
+	repoError := errors.New("repo error")
+
+	mockRepo.On("GetDefaultDownloadDir").Return("", repoError)
+
+	resultPath := service.fetchDefaultPathIfEmpty()
+
+	assert.Equal(t, "", resultPath)
+	mockRepo.AssertExpectations(t)
+}
+
 func TestValidateDownloadPath_EmptyPath(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -1204,27 +1686,28 @@ func TestValidateDownloadPath_EmptyPath(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "download path cannot be empty")
+	mockRepo.AssertNotCalled(t, "ValidateDownloadPath", mock.Anything)
 }
 
-func TestValidateDownloadPath_InvalidFormat(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+func TestValidateDownloadPath_RepoError(t *testing.T) {
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
-	// В реальной системе это может быть путь с неправильным форматом,
-	// но для теста достаточно проверить, что метод validate вызывается
 	invalidPath := "/invalid/path"
-	mockRepo.On("ValidateDownloadPath", invalidPath).Return(fmt.Errorf("invalid path format"))
+	repoError := errors.New("permission denied")
+
+	mockRepo.On("ValidateDownloadPath", invalidPath).Return(repoError)
 
 	err := service.ValidateDownloadPath(invalidPath)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid path format")
+	assert.ErrorIs(t, err, repoError)
 	mockRepo.AssertExpectations(t)
 }
 
 func TestValidateDownloadPath_Success(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
 	service.config = &domain.Config{}
 
@@ -1238,44 +1721,77 @@ func TestValidateDownloadPath_Success(t *testing.T) {
 }
 
 func TestConvertSpeedToKBps(t *testing.T) {
-	// Тест для KiB/s (без конвертации)
-	result := convertSpeedToKBps(50, "KiB/s")
-	assert.Equal(t, int64(50), result)
-
-	// Тест для MiB/s (с конвертацией)
-	result = convertSpeedToKBps(2, "MiB/s")
-	assert.Equal(t, int64(2048), result)
-
-	// Тест для нестандартного значения (должен возвращать как есть)
-	result = convertSpeedToKBps(100, "unknown")
-	assert.Equal(t, int64(100), result)
+	assert.Equal(t, int64(50), convertSpeedToKBps(50, "KiB/s"))
+	assert.Equal(t, int64(2048), convertSpeedToKBps(2, "MiB/s"))
+	assert.Equal(t, int64(100), convertSpeedToKBps(100, "unknown"))
+	assert.Equal(t, int64(0), convertSpeedToKBps(0, "MiB/s"))
 }
 
 func TestValidateDownloadPath_NilConfig(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
-	// service.config is initially nil
 
 	err := service.ValidateDownloadPath("/some/path")
+
 	assert.Error(t, err)
 	assert.Equal(t, ErrConfigNotInited, err.Error())
-
 	mockRepo.AssertNotCalled(t, "ValidateDownloadPath", mock.Anything)
 }
 
 func TestGetAllTorrents_RepoError(t *testing.T) {
-	mockRepo := new(MockTransmissionClient)
+	mockRepo, _ := setupMocks(t)
 	service := NewTorrentService(mockRepo)
-
 	repoError := errors.New("failed to get torrents from repo")
 
-	// Настройка мока: возвращаем nil для среза торрентов и ошибку
-	mockRepo.On("GetAll").Return(nil, repoError).Once()
+	mockRepo.On("GetAll").Return(nil, repoError)
 
 	torrents, err := service.GetAllTorrents()
 
 	assert.ErrorIs(t, err, repoError)
-	assert.Nil(t, torrents) // Проверяем, что торренты действительно nil
-
+	assert.Nil(t, torrents)
 	mockRepo.AssertExpectations(t)
+}
+
+func TestAddUniquePathsFromHistory_DefaultExists(t *testing.T) {
+	service := &TorrentService{
+		config: &domain.Config{
+			DefaultDownloadPath: "/default",
+			DownloadPaths:       []string{"/hist1", "/default", "/hist2"},
+		},
+	}
+	result := []string{"/current"}
+	finalResult := service.addUniquePathsFromHistory(result)
+	// Ожидаем, что "/default" не будет добавлен снова, но порядок сохранится
+	assert.Equal(t, []string{"/current", "/hist1", "/hist2"}, finalResult)
+}
+
+func TestSaveSettingsWithPaths_RemoveNonExistentPath(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	originalPaths := []string{"/path1", "/path2"}
+	service.config = &domain.Config{
+		DownloadPaths:       append([]string{}, originalPaths...),
+		DefaultDownloadPath: "/path1",
+		Host:                "host1",
+	}
+	newConnConfig := domain.ConnectionConfig{Host: "host1"} // Без изменений соединения
+	pathsToAdd := []string{}
+	pathsToRemove := []string{"/non-existent", "/path1"} // Удаляем существующий и несуществующий
+	defaultPath := "/path2"                              // Меняем путь по умолчанию
+
+	mockRepo.On("ValidateDownloadPath", defaultPath).Return(nil) // Валидация нового defaultPath
+	mockCfgSvc.On("SaveConfig", mock.MatchedBy(func(cfg *domain.Config) bool {
+		// Ожидаем, что останется только /path2, и он станет путем по умолчанию
+		expected := []string{"/path2"}
+		return cfg.DefaultDownloadPath == defaultPath && assert.ObjectsAreEqual(expected, cfg.DownloadPaths)
+	})).Return(nil)
+
+	err := service.SaveSettingsWithPaths(newConnConfig, pathsToAdd, pathsToRemove, defaultPath)
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"/path2"}, service.config.DownloadPaths)
+	assert.Equal(t, defaultPath, service.config.DefaultDownloadPath)
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
 }

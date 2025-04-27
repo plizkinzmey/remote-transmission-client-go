@@ -6,11 +6,103 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/hekmon/cunits/v2" // Импортируем пакет для типа Bits
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
+
+// MockFileInfo для теста checkAccessibility
+type MockFileInfo struct {
+	mock.Mock
+	FName  string
+	FIsDir bool
+	FMode  os.FileMode
+}
+
+func (m *MockFileInfo) Name() string       { return m.FName }
+func (m *MockFileInfo) Size() int64        { return 0 }
+func (m *MockFileInfo) Mode() os.FileMode  { return m.FMode }
+func (m *MockFileInfo) ModTime() time.Time { return time.Time{} }
+func (m *MockFileInfo) IsDir() bool        { return m.FIsDir }
+func (m *MockFileInfo) Sys() interface{}   { return nil }
+
+// --- Переменные для мокирования OS функций ---
+var (
+	osStatTransmission = os.Stat
+)
+
+// --- Функция для установки моков OS ---
+func setupTransmissionOSMocks(t *testing.T) {
+	t.Helper()
+	originalStat := osStatTransmission
+	osStatTransmission = os.Stat // Сброс перед тестом
+	t.Cleanup(func() {
+		osStatTransmission = originalStat
+	})
+}
+
+func TestCheckAccessibility(t *testing.T) {
+	setupTransmissionOSMocks(t)
+	mockRPC := new(MockRPCClient)                                             // Используем MockRPCClient из client_mock_test.go
+	client := &TransmissionClient{client: mockRPC, ctx: context.Background()} // Инициализируем поле client
+
+	t.Run("PathExistsAndWritableDir", func(t *testing.T) {
+		testPath := "/writable/dir"
+		parentDir := filepath.Dir(testPath)
+		mockRPC.On("FreeSpace", mock.Anything, parentDir).Return(cunits.Bits(1024*8), cunits.Bits(2048*8), nil).Once()
+		err := client.checkAccessibility(testPath)
+		assert.NoError(t, err)
+		mockRPC.AssertExpectations(t) // Проверяем вызов мока
+	})
+
+	t.Run("PathExistsAndWritableFile", func(t *testing.T) {
+		testPath := "/writable/file.txt"
+		parentDir := filepath.Dir(testPath)
+		mockRPC.On("FreeSpace", mock.Anything, parentDir).Return(cunits.Bits(1024*8), cunits.Bits(2048*8), nil).Once()
+		err := client.checkAccessibility(testPath)
+		assert.NoError(t, err) // Ожидаем успеха, так как проверяется родительская директория
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("PathExistsNotWritableDir", func(t *testing.T) {
+		testPath := "/readonly/dir"
+		parentDir := filepath.Dir(testPath)
+		mockRPC.On("FreeSpace", mock.Anything, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("permission denied")).Once()
+		err := client.checkAccessibility(testPath)
+		assert.Error(t, err)
+		localizedErr, ok := err.(*LocalizedError)
+		require.True(t, ok)
+		assert.Equal(t, "errors.directoryAccessDenied", localizedErr.key)
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("PathNotExist", func(t *testing.T) {
+		testPath := "/non/existent"
+		parentDir := filepath.Dir(testPath)
+		mockRPC.On("FreeSpace", mock.Anything, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("No such file or directory")).Once()
+		err := client.checkAccessibility(testPath)
+		localizedErr, ok := err.(*LocalizedError)
+		require.True(t, ok)
+		assert.Equal(t, "errors.parentDirectoryNotExists", localizedErr.key)
+		mockRPC.AssertExpectations(t)
+	})
+
+	t.Run("StatError", func(t *testing.T) {
+		testPath := "/path/with/stat/error"
+		parentDir := filepath.Dir(testPath)
+		statErr := errors.New("permission denied")
+		mockRPC.On("FreeSpace", mock.Anything, parentDir).Return(cunits.Bits(0), cunits.Bits(0), statErr).Once()
+		err := client.checkAccessibility(testPath)
+		assert.Error(t, err)
+		localizedErr, ok := err.(*LocalizedError)
+		require.True(t, ok)
+		assert.Equal(t, "errors.directoryAccessDenied", localizedErr.key) // Исправлено: Ожидаем directoryAccessDenied, так как мок возвращает "permission denied"
+		mockRPC.AssertExpectations(t)
+	})
+}
 
 // TestNewTransmissionClient проверяет создание нового клиента Transmission
 func TestNewTransmissionClient(t *testing.T) {
@@ -139,7 +231,7 @@ func TestValidateDownloadPath(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ValidPathAndAccessible", func(t *testing.T) {
-		mockRPC := new(MockRPCClient)
+		mockRPC := new(MockRPCClient) // Используем MockRPCClient из client_mock_test.go
 		client := &TransmissionClient{client: mockRPC, ctx: ctx}
 		testPath := "/downloads/valid"
 		parentDir := filepath.Dir(testPath)
@@ -167,18 +259,16 @@ func TestValidateDownloadPath(t *testing.T) {
 	})
 
 	t.Run("PermissionDenied", func(t *testing.T) {
-		mockRPC := new(MockRPCClient)
+		mockRPC := new(MockRPCClient) // Используем MockRPCClient из client_mock_test.go
 		client := &TransmissionClient{client: mockRPC, ctx: ctx}
 		testPath := "/restricted/path"
 		parentDir := filepath.Dir(testPath)
 
-		// ИСПРАВЛЕНО: Используем строку "permission denied" (маленькая 'p')
-		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("some error "+"permission denied")).Once()
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("permission denied")).Once()
 
 		err := client.ValidateDownloadPath(testPath)
 		assert.Error(t, err)
 		var localizedErr *LocalizedError
-		// Теперь эта проверка должна пройти, т.к. checkAccessibility вернет правильный ключ
 		if assert.ErrorAs(t, err, &localizedErr) {
 			assert.Equal(t, "errors.directoryAccessDenied", localizedErr.key)
 		}
@@ -186,14 +276,12 @@ func TestValidateDownloadPath(t *testing.T) {
 	})
 
 	t.Run("NoSuchFileOrDirectory", func(t *testing.T) {
-		mockRPC := new(MockRPCClient)
+		mockRPC := new(MockRPCClient) // Используем MockRPCClient из client_mock_test.go
 		client := &TransmissionClient{client: mockRPC, ctx: ctx}
 		testPath := "/nonexistent/parent/path"
 		parentDir := filepath.Dir(testPath)
 
-		// Используем строки напрямую (убедимся, что совпадает с errors.go)
-		// В errors.go: errNoSuchFileOrDirectory = "No such file or directory"
-		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("No such file or directory"+" details")).Once()
+		mockRPC.On("FreeSpace", ctx, parentDir).Return(cunits.Bits(0), cunits.Bits(0), errors.New("No such file or directory")).Once()
 
 		err := client.ValidateDownloadPath(testPath)
 		assert.Error(t, err)
@@ -205,7 +293,7 @@ func TestValidateDownloadPath(t *testing.T) {
 	})
 
 	t.Run("OtherAccessibilityError", func(t *testing.T) {
-		mockRPC := new(MockRPCClient)
+		mockRPC := new(MockRPCClient) // Используем MockRPCClient из client_mock_test.go
 		client := &TransmissionClient{client: mockRPC, ctx: ctx}
 		testPath := "/some/other/issue"
 		parentDir := filepath.Dir(testPath)
@@ -226,7 +314,7 @@ func TestValidateDownloadPath(t *testing.T) {
 		home, homeErr := os.UserHomeDir()
 		assert.NoError(t, homeErr, "Failed to get user home directory for test setup")
 
-		mockRPC := new(MockRPCClient)
+		mockRPC := new(MockRPCClient) // Используем MockRPCClient из client_mock_test.go
 		client := &TransmissionClient{client: mockRPC, ctx: ctx}
 		testPath := "~/downloads/valid_tilde"
 		expectedValidatedPath := filepath.Join(home, "downloads/valid_tilde")

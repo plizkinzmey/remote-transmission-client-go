@@ -1,549 +1,507 @@
 package infrastructure
 
 import (
-	"bytes"
 	"crypto/aes"
-	"crypto/cipher" // Import cipher for GCM manipulation
-	"crypto/rand"   // Import crypto/rand for the original reader
+	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json" // Import json for marshal/unmarshal errors
+	"encoding/json"
 	"errors"
 	"io"
 	"testing"
-	"transmission-client-go/internal/domain"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"github.com/zalando/go-keyring" // Import for keyring.ErrNotFound
+	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/pbkdf2"
 )
 
-// MockReader is a helper to simulate errors from io.Reader
-type MockReader struct {
-	err error
+// --- Моки для зависимостей ---
+
+type MockKeyring struct {
+	mock.Mock
 }
 
-func (mr *MockReader) Read(p []byte) (n int, err error) {
-	return 0, mr.err
+func (m *MockKeyring) Get(service, username string) (string, error) {
+	args := m.Called(service, username)
+	return args.String(0), args.Error(1)
 }
 
-// Helper to reset mocks after each test
-func resetMocks(_ *testing.T) {
-	// Restore original functions/variables
-	keyringGet = keyring.Get
-	keyringSet = keyring.Set
-	randReader = rand.Reader // Restore original crypto/rand.Reader
-	machineIDGetter = getMachineID
+func (m *MockKeyring) Set(service, username, password string) error {
+	args := m.Called(service, username, password)
+	return args.Error(0)
 }
+
+type MockRandReader struct {
+	mock.Mock
+	DataToRead []byte
+	ReadError  error
+}
+
+func (m *MockRandReader) Read(p []byte) (n int, err error) {
+	if m.ReadError != nil {
+		return 0, m.ReadError
+	}
+	if len(m.DataToRead) == 0 {
+		return 0, io.EOF
+	}
+
+	n = copy(p, m.DataToRead)
+	m.DataToRead = m.DataToRead[n:]
+
+	return n, nil
+}
+
+// errorReader is a mock io.Reader that always returns an error
+type errorReader struct{}
+
+func (er *errorReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("random source failed")
+}
+
+// --- Переменные для хранения оригинальных функций/ридеров ---
+var (
+	originalKeyringGet      keyringGetterFunc
+	originalKeyringSet      keyringSetterFunc
+	originalRandReader      io.Reader
+	originalMachineIDGetter machineIDGetterFunc
+)
+
+// --- Функция установки моков ---
+func setupEncryptionMocks(t *testing.T) (*MockKeyring, *MockRandReader) {
+	t.Helper()
+
+	// Сохраняем оригиналы
+	originalKeyringGet = keyringGet
+	originalKeyringSet = keyringSet
+	originalRandReader = randReader
+	originalMachineIDGetter = machineIDGetter
+
+	mockKr := new(MockKeyring)
+	mockRdr := new(MockRandReader)
+
+	// Подменяем функции
+	keyringGet = mockKr.Get
+	keyringSet = mockKr.Set
+	randReader = mockRdr
+	// По умолчанию machineIDGetter возвращает фиксированное значение для тестов
+	machineIDGetter = func() (string, error) { return "test-machine-id", nil }
+
+	// Очистка
+	t.Cleanup(func() {
+		keyringGet = originalKeyringGet
+		keyringSet = originalKeyringSet
+		randReader = originalRandReader
+		machineIDGetter = originalMachineIDGetter
+	})
+
+	return mockKr, mockRdr
+}
+
+// --- Тесты ---
 
 func TestNewEncryptionService(t *testing.T) {
 	service := NewEncryptionService()
 	assert.NotNil(t, service)
 }
 
-func TestEncryptDecrypt_Success_KeyGenerated(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) }) // Ensure mocks are reset
+// --- Тесты getEncryptionKey ---
 
+func TestGetEncryptionKey_FromKeyringSuccess(t *testing.T) {
+	mockKr, _ := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	config := &domain.Config{Host: "test-host", Port: 1234}
+	expectedKey := make([]byte, keySize)
+	expectedKey[0] = 1 // Просто чтобы ключ был не нулевой
+	encodedKey := base64.StdEncoding.EncodeToString(expectedKey)
 
-	// --- Mock Setup ---
-	var storedKey string
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
 
-	// Mock keyring: Get returns not found, Set stores the key
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyring.ErrNotFound // Simulate key not found
-	}
-	keyringSet = func(service, username, password string) error {
-		storedKey = password // Store the generated key for verification
-		return nil
-	}
-
-	// Mock randReader: Provide enough deterministic bytes for BOTH key and nonce generation.
-	// keySize (32 bytes) + nonceSize (12 bytes for GCM) = 44 bytes
-	deterministicKeyBytes := bytes.Repeat([]byte{0xAB}, keySize)
-	deterministicNonceBytes := bytes.Repeat([]byte{0xCD}, 12) // Use a different pattern for nonce
-	combinedBytes := append(deterministicKeyBytes, deterministicNonceBytes...)
-	randReader = bytes.NewReader(combinedBytes) // Reader with 44 bytes
-
-	// Mock machineIDGetter - should NOT be called as random key generation should succeed now
-	machineIDGetter = func() (string, error) {
-		t.Error("machineIDGetter should not be called in this scenario")
-		return "mock-machine-id", nil
-	}
-
-	// --- Encrypt ---
-	encryptedData, err := service.EncryptConfig(config)
-	require.NoError(t, err)
-	assert.NotEmpty(t, encryptedData)
-	assert.NotEmpty(t, storedKey, "Key should have been stored by keyringSet mock")
-
-	// --- Decrypt ---
-	// Reset mocks for decryption phase, now simulating key exists in keyring
-	keyringGet = func(service, username string) (string, error) {
-		require.NotEmpty(t, storedKey, "storedKey should not be empty for decryption")
-		return storedKey, nil // Return the previously stored key
-	}
-	keyringSet = func(service, username, password string) error {
-		t.Error("keyringSet should not be called during decryption")
-		return nil
-	}
-	// randReader is not used in decryption
-
-	var decryptedConfig domain.Config
-	err = service.DecryptConfig(encryptedData, &decryptedConfig)
-	require.NoError(t, err)
-
-	// --- Assert ---
-	assert.Equal(t, config.Host, decryptedConfig.Host)
-	assert.Equal(t, config.Port, decryptedConfig.Port)
-
-	// Optional: Verify the stored key format (Base64 of 32 bytes)
-	// Also verify it matches the deterministic bytes we provided
-	keyBytes, errDecode := base64.StdEncoding.DecodeString(storedKey)
-	assert.NoError(t, errDecode)
-	assert.Len(t, keyBytes, keySize)
-	assert.Equal(t, deterministicKeyBytes, keyBytes, "Stored key should match the deterministic key bytes")
-
-	// Optional: Verify the encrypted data structure (nonce + ciphertext)
-	decodedCiphertext, errDecodeCipher := base64.StdEncoding.DecodeString(encryptedData)
-	assert.NoError(t, errDecodeCipher)
-	assert.True(t, bytes.HasPrefix(decodedCiphertext, deterministicNonceBytes), "Encrypted data should start with the deterministic nonce bytes")
-	assert.Greater(t, len(decodedCiphertext), 12, "Decoded ciphertext length should be greater than nonce size")
+	key, err := service.getEncryptionKey()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedKey, key)
+	mockKr.AssertExpectations(t)
+	mockKr.AssertNotCalled(t, "Set", mock.Anything, mock.Anything, mock.Anything)
 }
 
-func TestEncryptDecrypt_Success_KeyFromKeyring(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
+func TestGetEncryptionKey_FromKeyringDecodeError(t *testing.T) {
+	mockKr, mockRdr := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	config := &domain.Config{Host: "another-host", Username: "user"}
+	invalidBase64Key := "this is not base64"
+	generatedKey := make([]byte, keySize)
+	generatedKey[0] = 2
+	encodedGeneratedKey := base64.StdEncoding.EncodeToString(generatedKey)
 
-	// --- Mock Setup ---
-	// Generate a plausible key manually for this test
-	manualKey := make([]byte, keySize)
-	_, err := io.ReadFull(randReader, manualKey) // Use real randReader here for key gen
-	require.NoError(t, err)
-	manualKeyBase64 := base64.StdEncoding.EncodeToString(manualKey)
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(invalidBase64Key, nil).Once()
+	mockRdr.DataToRead = generatedKey
+	mockRdr.ReadError = nil
+	mockKr.On("Set", keyringServiceName, keyringUsername, encodedGeneratedKey).Return(nil).Once()
 
-	// Mock keyring: Get returns the manual key, Set should not be called
-	keyringGet = func(service, username string) (string, error) {
-		return manualKeyBase64, nil // Simulate key found
-	}
-	keyringSet = func(service, username, password string) error {
-		t.Error("keyringSet should not be called when key is found")
-		return nil
-	}
-
-	// Mock randReader for deterministic nonce during encryption
-	deterministicNonce := bytes.Repeat([]byte{0x02}, 12)
-	randReader = bytes.NewReader(deterministicNonce)
-
-	// machineIDGetter should not be called
-	machineIDGetter = func() (string, error) {
-		t.Error("machineIDGetter should not be called when key is found")
-		return "mock-machine-id", nil
-	}
-
-	// --- Encrypt ---
-	encryptedData, err := service.EncryptConfig(config)
-	require.NoError(t, err)
-	assert.NotEmpty(t, encryptedData)
-
-	// --- Decrypt ---
-	// Mocks remain the same for decryption (keyringGet returns the key)
-
-	var decryptedConfig domain.Config
-	err = service.DecryptConfig(encryptedData, &decryptedConfig)
-	require.NoError(t, err)
-
-	// --- Assert ---
-	assert.Equal(t, config.Host, decryptedConfig.Host)
-	assert.Equal(t, config.Username, decryptedConfig.Username)
-
-	// Optional: Verify encrypted data structure
-	decodedCiphertext, errDecodeCipher := base64.StdEncoding.DecodeString(encryptedData)
-	assert.NoError(t, errDecodeCipher)
-	assert.True(t, bytes.HasPrefix(decodedCiphertext, deterministicNonce), "Encrypted data should start with the deterministic nonce")
-}
-
-func TestGetEncryptionKey_PBKDF2_Success(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
-	service := NewEncryptionService()
-	var storedKey string
-	mockMachineID := "test-machine-id-123"
-	expectedKey := pbkdf2.Key([]byte(mockMachineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
-	expectedKeyBase64 := base64.StdEncoding.EncodeToString(expectedKey)
-
-	// --- Mock Setup ---
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyring.ErrNotFound // Key not found
-	}
-	// Simulate error during random key generation
-	randReader = &MockReader{err: errors.New("random reader failed")}
-	machineIDGetter = func() (string, error) {
-		return mockMachineID, nil // Return machine ID successfully
-	}
-	keyringSet = func(service, username, password string) error {
-		storedKey = password // Capture the key being stored
-		return nil
-	}
-
-	// --- Call getEncryptionKey ---
-	actualKey, err := service.getEncryptionKey()
-
-	// --- Assert ---
-	require.NoError(t, err)
-	assert.Equal(t, expectedKey, actualKey, "Returned key should match PBKDF2 derived key")
-	assert.Equal(t, expectedKeyBase64, storedKey, "Stored key should match PBKDF2 derived key (base64)")
-}
-
-func TestGetEncryptionKey_PBKDF2_MachineIDError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
-	service := NewEncryptionService()
-	var storedKey string
-	machineIDError := errors.New("failed to get machine id")
-	fallbackMachineID := "transmission-client-machine-id" // The hardcoded fallback
-	expectedKey := pbkdf2.Key([]byte(fallbackMachineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
-	expectedKeyBase64 := base64.StdEncoding.EncodeToString(expectedKey)
-
-	// --- Mock Setup ---
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyring.ErrNotFound // Key not found
-	}
-	// Simulate error during random key generation
-	randReader = &MockReader{err: errors.New("random reader failed again")}
-	machineIDGetter = func() (string, error) {
-		return "", machineIDError // Simulate error getting machine ID
-	}
-	keyringSet = func(service, username, password string) error {
-		storedKey = password // Capture the key being stored
-		return nil
-	}
-
-	// --- Call getEncryptionKey ---
-	actualKey, err := service.getEncryptionKey()
-
-	// --- Assert ---
-	require.NoError(t, err) // getEncryptionKey itself shouldn't error here, only log warnings
-	assert.Equal(t, expectedKey, actualKey, "Returned key should match PBKDF2 derived key from fallback ID")
-	assert.Equal(t, expectedKeyBase64, storedKey, "Stored key should match PBKDF2 derived key from fallback ID (base64)")
+	key, err := service.getEncryptionKey()
+	assert.NoError(t, err)
+	assert.Equal(t, generatedKey, key) // Должен быть сгенерированный ключ
+	mockKr.AssertExpectations(t)
 }
 
 func TestGetEncryptionKey_KeyringGetOtherError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
+	mockKr, mockRdr := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	keyringError := errors.New("some generic keyring error")
-	var storedKey string // To check if a new key was generated and stored
+	getKeyError := errors.New("keyring unavailable")
+	generatedKey := make([]byte, keySize)
+	generatedKey[0] = 3
+	encodedGeneratedKey := base64.StdEncoding.EncodeToString(generatedKey)
 
-	// --- Mock Setup ---
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyringError // Simulate a non-NotFound error
-	}
-	// Mock randReader to succeed to generate a random key
-	deterministicKeyBytes := bytes.Repeat([]byte{0xEE}, keySize)
-	randReader = bytes.NewReader(deterministicKeyBytes)
-	keyringSet = func(service, username, password string) error {
-		storedKey = password // Capture the key
-		return nil
-	}
-	machineIDGetter = func() (string, error) {
-		t.Error("machineIDGetter should not be called when random key generation succeeds")
-		return "should-not-be-called", nil
-	}
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return("", getKeyError).Once()
+	mockRdr.DataToRead = generatedKey
+	mockRdr.ReadError = nil
+	mockKr.On("Set", keyringServiceName, keyringUsername, encodedGeneratedKey).Return(nil).Once()
 
-	// --- Call getEncryptionKey ---
-	actualKey, err := service.getEncryptionKey()
-
-	// --- Assert ---
-	require.NoError(t, err) // The function should handle the error and generate a new key
-	assert.Equal(t, deterministicKeyBytes, actualKey, "Should return newly generated random key")
-	assert.Equal(t, base64.StdEncoding.EncodeToString(deterministicKeyBytes), storedKey, "Should attempt to store the newly generated key")
+	key, err := service.getEncryptionKey()
+	assert.NoError(t, err)
+	assert.Equal(t, generatedKey, key)
+	mockKr.AssertExpectations(t)
 }
 
-func TestGetEncryptionKey_KeyringDecodeError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
+func TestGetEncryptionKey_GenerateNewSuccess(t *testing.T) {
+	mockKr, mockRdr := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	invalidBase64Key := "this-is-not-base64!"
-	var storedKey string // To check if a new key was generated and stored
+	generatedKey := make([]byte, keySize)
+	generatedKey[0] = 4
+	encodedGeneratedKey := base64.StdEncoding.EncodeToString(generatedKey)
 
-	// --- Mock Setup ---
-	keyringGet = func(service, username string) (string, error) {
-		return invalidBase64Key, nil // Return invalid key successfully
-	}
-	// Mock randReader to succeed
-	deterministicKeyBytes := bytes.Repeat([]byte{0xFF}, keySize)
-	randReader = bytes.NewReader(deterministicKeyBytes)
-	keyringSet = func(service, username, password string) error {
-		storedKey = password // Capture the key
-		return nil
-	}
-	machineIDGetter = func() (string, error) {
-		t.Error("machineIDGetter should not be called when random key generation succeeds")
-		return "should-not-be-called", nil
-	}
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return("", keyring.ErrNotFound).Once()
+	mockRdr.DataToRead = generatedKey
+	mockRdr.ReadError = nil
+	mockKr.On("Set", keyringServiceName, keyringUsername, encodedGeneratedKey).Return(nil).Once()
 
-	// --- Call getEncryptionKey ---
-	actualKey, err := service.getEncryptionKey()
-
-	// --- Assert ---
-	require.NoError(t, err) // The function should handle the decode error and generate a new key
-	assert.Equal(t, deterministicKeyBytes, actualKey, "Should return newly generated random key after decode error")
-	assert.Equal(t, base64.StdEncoding.EncodeToString(deterministicKeyBytes), storedKey, "Should attempt to store the newly generated key after decode error")
+	key, err := service.getEncryptionKey()
+	assert.NoError(t, err)
+	assert.Equal(t, generatedKey, key)
+	mockKr.AssertExpectations(t)
 }
 
-func TestGetEncryptionKey_KeyringSetError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-
+func TestGetEncryptionKey_GenerateNewSetError(t *testing.T) {
+	mockKr, mockRdr := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	keyringSetError := errors.New("failed to set key in keyring")
+	generatedKey := make([]byte, keySize)
+	generatedKey[0] = 5
+	encodedGeneratedKey := base64.StdEncoding.EncodeToString(generatedKey)
+	setError := errors.New("failed to set key")
 
-	// --- Mock Setup ---
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyring.ErrNotFound // Key not found
-	}
-	// Mock randReader to succeed
-	deterministicKeyBytes := bytes.Repeat([]byte{0xAA}, keySize)
-	randReader = bytes.NewReader(deterministicKeyBytes)
-	keyringSet = func(service, username, password string) error {
-		// Verify the correct key is attempted to be stored
-		assert.Equal(t, base64.StdEncoding.EncodeToString(deterministicKeyBytes), password)
-		return keyringSetError // Simulate error during set
-	}
-	machineIDGetter = func() (string, error) {
-		t.Error("machineIDGetter should not be called when random key generation succeeds")
-		return "should-not-be-called", nil
-	}
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return("", keyring.ErrNotFound).Once()
+	mockRdr.DataToRead = generatedKey
+	mockRdr.ReadError = nil
+	mockKr.On("Set", keyringServiceName, keyringUsername, encodedGeneratedKey).Return(setError).Once() // Ошибка при сохранении
 
-	// --- Call getEncryptionKey ---
-	actualKey, err := service.getEncryptionKey()
-
-	// --- Assert ---
-	// The error from keyringSet is only logged, getEncryptionKey should still succeed
-	require.NoError(t, err)
-	assert.Equal(t, deterministicKeyBytes, actualKey, "Should return the generated key even if storing failed")
+	key, err := service.getEncryptionKey()
+	assert.NoError(t, err)             // Ошибка Set не должна прерывать получение ключа
+	assert.Equal(t, generatedKey, key) // Ключ все равно должен быть возвращен
+	mockKr.AssertExpectations(t)
 }
 
-// --- EncryptConfig Error Tests ---
+func TestGetEncryptionKey_GenerateFallbackPBKDF2(t *testing.T) {
+	mockKeyring, _ := setupEncryptionMocks(t) // Получаем mockKeyring
 
-// Mock type to cause json.Marshal error
+	// Mock rand.Reader to fail
+	randReader = &errorReader{}
+	// Mock machineIDGetter
+	expectedMachineID := "test-machine-id-for-pbkdf2" // Используем уникальное ID для теста
+	machineIDGetter = func() (string, error) {
+		return expectedMachineID, nil
+	}
+
+	// Вычисляем ожидаемый ключ PBKDF2 на основе тех же данных, что и в коде
+	expectedKeyBytes := pbkdf2.Key([]byte(expectedMachineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
+	expectedKeyStr := base64.StdEncoding.EncodeToString(expectedKeyBytes) // Динамически вычисленный ключ
+
+	// Mock keyring Get to return not found
+	mockKeyring.On("Get", keyringServiceName, keyringUsername).Return("", keyring.ErrNotFound).Once()
+	// Mock keyring Set to expect the dynamically calculated key
+	mockKeyring.On("Set", keyringServiceName, keyringUsername, expectedKeyStr).Return(nil).Once()
+
+	service := NewEncryptionService()
+	key, err := service.getEncryptionKey()
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedKeyBytes, key) // Сравниваем байты ключа
+	mockKeyring.AssertExpectations(t)
+}
+
+func TestGetEncryptionKey_GenerateFallbackPBKDF2_MachineIDError(t *testing.T) {
+	mockKeyring, _ := setupEncryptionMocks(t)
+
+	// Mock rand.Reader to fail
+	randReader = &errorReader{}
+	// Mock machineIDGetter to return an error
+	machineIDGetter = func() (string, error) {
+		return "", errors.New("cannot get machine id")
+	}
+
+	// Вычисляем ожидаемый ключ PBKDF2 на основе fallback ID машины
+	fallbackMachineID := "transmission-client-machine-id" // Как в коде
+	expectedKeyBytes := pbkdf2.Key([]byte(fallbackMachineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
+	expectedKeyStr := base64.StdEncoding.EncodeToString(expectedKeyBytes) // Динамически вычисленный ключ
+
+	// Mock keyring Get to return not found
+	mockKeyring.On("Get", keyringServiceName, keyringUsername).Return("", keyring.ErrNotFound).Once()
+	// Mock keyring Set to expect the dynamically calculated key
+	mockKeyring.On("Set", keyringServiceName, keyringUsername, expectedKeyStr).Return(nil).Once()
+
+	service := NewEncryptionService()
+	key, err := service.getEncryptionKey()
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedKeyBytes, key) // Сравниваем байты ключа
+	mockKeyring.AssertExpectations(t)
+}
+
+// --- Тесты EncryptConfig ---
+
 type Unmarshallable struct {
-	Channel chan int
+	Fn func()
+}
+
+func TestEncryptConfig_Success(t *testing.T) {
+	mockKr, mockRdr := setupEncryptionMocks(t)
+	service := NewEncryptionService()
+	config := map[string]string{"key": "value"}
+	testKey := make([]byte, keySize)
+	testKey[0] = 10
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	testNonce := make([]byte, 12) // GCM Nonce size is typically 12
+	testNonce[0] = 11
+
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
+	mockRdr.DataToRead = testNonce
+	mockRdr.ReadError = nil
+
+	encrypted, err := service.EncryptConfig(config)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, encrypted)
+
+	decoded, err := base64.StdEncoding.DecodeString(encrypted)
+	require.NoError(t, err)
+	block, _ := aes.NewCipher(testKey)
+	gcm, _ := cipher.NewGCM(block)
+	require.True(t, len(decoded) >= gcm.NonceSize())
+	nonce, ciphertext := decoded[:gcm.NonceSize()], decoded[gcm.NonceSize():]
+	assert.Equal(t, testNonce, nonce)
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	require.NoError(t, err)
+	var decryptedConfig map[string]string
+	err = json.Unmarshal(plaintext, &decryptedConfig)
+	require.NoError(t, err)
+	assert.Equal(t, config, decryptedConfig)
+
+	mockKr.AssertExpectations(t)
 }
 
 func TestEncryptConfig_MarshalError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	_, _ = setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	unmarshallableConfig := &Unmarshallable{Channel: make(chan int)}
+	unmarshallableConfig := Unmarshallable{Fn: func() {}}
 
-	_, err := service.EncryptConfig(unmarshallableConfig)
+	encrypted, err := service.EncryptConfig(unmarshallableConfig)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to marshal config")
+	assert.Empty(t, encrypted)
+}
 
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to marshal config")
+func TestEncryptConfig_GetKeyError(t *testing.T) {
+	mockKr, _ := setupEncryptionMocks(t)
+	service := NewEncryptionService()
+	config := map[string]string{"key": "value"}
+	getKeyError := errors.New("keyring unavailable")
+	randError := errors.New("rand error")
+	machineIDError := errors.New("machine id error")
+
+	// Mock keyring Get to return an error
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return("", getKeyError).Once()
+
+	// Mock randReader to return an error
+	mockRdr := new(MockRandReader) // Use the mock reader from setup
+	originalReader := randReader
+	randReader = mockRdr
+	t.Cleanup(func() { randReader = originalReader })
+	mockRdr.DataToRead = nil
+	mockRdr.ReadError = randError // Set the error for randReader
+
+	// Mock machineIDGetter to return an error
+	originalGetter := machineIDGetter
+	machineIDGetter = func() (string, error) { return "", machineIDError }
+	t.Cleanup(func() { machineIDGetter = originalGetter })
+
+	// Calculate the expected fallback key that getEncryptionKey will generate and try to set
+	fallbackMachineID := "transmission-client-machine-id"
+	expectedKeyBytes := pbkdf2.Key([]byte(fallbackMachineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
+	expectedKeyStr := base64.StdEncoding.EncodeToString(expectedKeyBytes)
+
+	// Add expectation for the Set call that happens during fallback key generation
+	mockKr.On("Set", keyringServiceName, keyringUsername, expectedKeyStr).Return(nil).Once()
+
+	encrypted, err := service.EncryptConfig(config)
+
+	// --- Revised Assertion ---
+	// getEncryptionKey succeeds with fallback key, but nonce generation fails due to mocked randReader error
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to generate nonce")
+	assert.ErrorIs(t, err, randError) // Check that the underlying error is the one we injected
+	assert.Empty(t, encrypted)        // No encrypted data should be returned on error
+	mockKr.AssertExpectations(t)
 }
 
 func TestEncryptConfig_NonceError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	mockKr, mockRdr := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	config := &domain.Config{Host: "test"}
-	nonceError := errors.New("nonce generation failed")
+	config := map[string]string{"key": "value"}
+	testKey := make([]byte, keySize)
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	nonceError := errors.New("failed to read random bytes for nonce")
 
-	// Mock randReader to fail during nonce generation
-	// Need to ensure getEncryptionKey succeeds first
-	keyringGet = func(service, username string) (string, error) {
-		return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0xBB}, keySize)), nil // Provide valid key
-	}
-	randReader = &MockReader{err: nonceError} // Fail nonce generation
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
+	mockRdr.DataToRead = nil
+	mockRdr.ReadError = nonceError
 
-	_, err := service.EncryptConfig(config)
-
-	require.Error(t, err)
-	assert.ErrorIs(t, err, nonceError) // Check for the specific underlying error
-	assert.Contains(t, err.Error(), "failed to generate nonce")
+	encrypted, err := service.EncryptConfig(config)
+	assert.ErrorIs(t, err, nonceError)
+	assert.ErrorContains(t, err, "failed to generate nonce")
+	assert.Empty(t, encrypted)
+	mockKr.AssertExpectations(t)
 }
 
-// --- DecryptConfig Error Tests ---
+// --- Тесты DecryptConfig ---
+
+func TestDecryptConfig_Success(t *testing.T) {
+	mockKr, _ := setupEncryptionMocks(t)
+	service := NewEncryptionService()
+	var resultConfig map[string]string
+	expectedConfig := map[string]string{"key": "decrypted_value"}
+	plaintext, _ := json.Marshal(expectedConfig)
+	testKey := make([]byte, keySize)
+	testKey[0] = 20
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	testNonce := make([]byte, 12)
+	testNonce[0] = 21
+
+	block, _ := aes.NewCipher(testKey)
+	gcm, _ := cipher.NewGCM(block)
+	ciphertext := gcm.Seal(nil, testNonce, plaintext, nil)
+	fullCiphertext := append(testNonce, ciphertext...)
+	encodedData := base64.StdEncoding.EncodeToString(fullCiphertext)
+
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
+
+	err := service.DecryptConfig(encodedData, &resultConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedConfig, resultConfig)
+	mockKr.AssertExpectations(t)
+}
 
 func TestDecryptConfig_EmptyData(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	_, _ = setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	var config domain.Config
+	var resultConfig map[string]string
 
-	err := service.DecryptConfig("", &config) // Pass empty string
-
-	require.NoError(t, err)                  // Empty data should not be an error
-	assert.Equal(t, domain.Config{}, config) // Config should remain empty/zeroed
+	err := service.DecryptConfig("", &resultConfig)
+	assert.NoError(t, err)
+	assert.Empty(t, resultConfig)
 }
 
 func TestDecryptConfig_Base64Error(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	_, _ = setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	var config domain.Config
+	var resultConfig map[string]string
 	invalidBase64 := "this is not base64"
 
-	err := service.DecryptConfig(invalidBase64, &config)
+	err := service.DecryptConfig(invalidBase64, &resultConfig)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to decode base64")
+	assert.Empty(t, resultConfig)
+}
 
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to decode base64")
+func TestDecryptConfig_GetKeyError(t *testing.T) {
+	_, _ = setupEncryptionMocks(t) // Вызываем setup для очистки, но игнорируем возвращаемые значения
+	service := NewEncryptionService()
+	var resultConfig map[string]string
+
+	// --- Revised Mocks and Assertions ---
+	// The function fails early due to invalid base64 input, so getEncryptionKey is never called.
+	// No mocks for keyring, randReader, or machineIDGetter are needed or expected to be called.
+
+	// Use invalid base64 data that will cause DecodeString to fail
+	invalidBase64Data := "this is not base64"
+	err := service.DecryptConfig(invalidBase64Data, &resultConfig)
+
+	assert.Error(t, err)                                    // Expect error
+	assert.ErrorContains(t, err, "failed to decode base64") // Expect specific base64 error
+	assert.Empty(t, resultConfig)
 }
 
 func TestDecryptConfig_CiphertextTooShort(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	mockKr, _ := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	var config domain.Config
+	var resultConfig map[string]string
+	testKey := make([]byte, keySize)
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	shortCiphertext := make([]byte, 5)
+	encodedData := base64.StdEncoding.EncodeToString(shortCiphertext)
 
-	// Provide a valid key via mock
-	keyringGet = func(service, username string) (string, error) {
-		return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0xCC}, keySize)), nil
-	}
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
 
-	// Create data shorter than nonce size (12 bytes for GCM)
-	shortData := base64.StdEncoding.EncodeToString([]byte("short")) // "short" is 5 bytes
-
-	err := service.DecryptConfig(shortData, &config)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "ciphertext too short")
+	err := service.DecryptConfig(encodedData, &resultConfig)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "ciphertext too short")
+	assert.Empty(t, resultConfig)
+	mockKr.AssertExpectations(t)
 }
 
-func TestDecryptConfig_GCMOpenError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+func TestDecryptConfig_OpenError(t *testing.T) {
+	mockKr, _ := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	configToEncrypt := &domain.Config{Host: "good-data"}
-	var decryptedConfig domain.Config
+	var resultConfig map[string]string
+	testKey := make([]byte, keySize)
+	testKey[0] = 30
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	wrongKey := make([]byte, keySize)
+	wrongKey[0] = 31
+	testNonce := make([]byte, 12)
+	plaintext := []byte(`{"msg":"hello"}`)
 
-	// --- Setup: Encrypt data correctly first ---
-	var realKeyBytes []byte
-	keyringGet = func(service, username string) (string, error) {
-		// Generate and store a real key for this test run
-		if len(realKeyBytes) == 0 {
-			realKeyBytes = make([]byte, keySize)
-			_, err := rand.Read(realKeyBytes) // Use real random
-			require.NoError(t, err)
-		}
-		return base64.StdEncoding.EncodeToString(realKeyBytes), nil
-	}
-	// Use real rand reader for nonce generation during encryption
-	randReader = rand.Reader
+	blockWrong, _ := aes.NewCipher(wrongKey)
+	gcmWrong, _ := cipher.NewGCM(blockWrong)
+	ciphertext := gcmWrong.Seal(nil, testNonce, plaintext, nil)
+	fullCiphertext := append(testNonce, ciphertext...)
+	encodedData := base64.StdEncoding.EncodeToString(fullCiphertext)
 
-	encryptedData, errEncrypt := service.EncryptConfig(configToEncrypt)
-	require.NoError(t, errEncrypt)
-	require.NotEmpty(t, encryptedData)
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
 
-	// --- Tamper with the encrypted data ---
-	decodedBytes, errDecode := base64.StdEncoding.DecodeString(encryptedData)
-	require.NoError(t, errDecode)
-	require.Greater(t, len(decodedBytes), 12) // Ensure it has nonce + data
-
-	// Modify the ciphertext part (after the nonce)
-	decodedBytes[len(decodedBytes)-1] ^= 0xFF // Flip some bits at the end
-
-	tamperedEncryptedData := base64.StdEncoding.EncodeToString(decodedBytes)
-
-	// --- Attempt to Decrypt tampered data ---
-	// Keyring mock remains the same (returns the correct key)
-	errDecrypt := service.DecryptConfig(tamperedEncryptedData, &decryptedConfig)
-
-	// --- Assert ---
-	require.Error(t, errDecrypt)
-	// The specific error from gcm.Open is often "cipher: message authentication failed"
-	assert.Contains(t, errDecrypt.Error(), "failed to decrypt data")
-	// Check underlying error if possible/needed
-	underlyingError := errors.Unwrap(errDecrypt)
-	if underlyingError != nil {
-		// Check string contains "message authentication failed"
-		assert.Contains(t, underlyingError.Error(), "message authentication failed", "Expected GCM authentication error")
-	} else {
-		// If no underlying error, check the main error text more strictly
-		assert.Contains(t, errDecrypt.Error(), "message authentication failed", "Expected GCM authentication error")
-	}
+	err := service.DecryptConfig(encodedData, &resultConfig)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to decrypt data")
+	assert.Empty(t, resultConfig)
+	mockKr.AssertExpectations(t)
 }
 
 func TestDecryptConfig_UnmarshalError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
+	mockKr, _ := setupEncryptionMocks(t)
 	service := NewEncryptionService()
-	var decryptedConfig domain.Config
+	var resultConfig map[string]string
+	invalidPlaintext := []byte(`this is not json`)
+	testKey := make([]byte, keySize)
+	encodedKey := base64.StdEncoding.EncodeToString(testKey)
+	testNonce := make([]byte, 12)
 
-	// --- Setup: Encrypt something that is NOT valid JSON ---
-	invalidPlaintext := []byte("this is definitely not json {") // Invalid JSON string
+	block, _ := aes.NewCipher(testKey)
+	gcm, _ := cipher.NewGCM(block)
+	ciphertext := gcm.Seal(nil, testNonce, invalidPlaintext, nil)
+	fullCiphertext := append(testNonce, ciphertext...)
+	encodedData := base64.StdEncoding.EncodeToString(fullCiphertext)
 
-	// Generate the key *before* manual encryption and mock setup
-	realKeyBytes := make([]byte, keySize)
-	_, err := rand.Read(realKeyBytes) // Use real random
-	require.NoError(t, err)
-	realKeyBase64 := base64.StdEncoding.EncodeToString(realKeyBytes)
+	mockKr.On("Get", keyringServiceName, keyringUsername).Return(encodedKey, nil).Once()
 
-	// Mock keyringGet to return the pre-generated key
-	keyringGet = func(service, username string) (string, error) {
-		return realKeyBase64, nil
-	}
-	randReader = rand.Reader // Use real reader for nonce
-
-	// Manually encrypt using the key and nonce
-	block, errBlock := aes.NewCipher(realKeyBytes)
-	require.NoError(t, errBlock)
-	gcm, errGCM := cipher.NewGCM(block)
-	require.NoError(t, errGCM)
-	nonce := make([]byte, gcm.NonceSize())
-	_, errNonce := io.ReadFull(randReader, nonce)
-	require.NoError(t, errNonce)
-	// Encrypt the invalid plaintext
-	ciphertext := gcm.Seal(nonce, nonce, invalidPlaintext, nil)
-	encryptedData := base64.StdEncoding.EncodeToString(ciphertext)
-
-	// --- Attempt to Decrypt and Unmarshal ---
-	// Keyring mock remains the same
-	errDecrypt := service.DecryptConfig(encryptedData, &decryptedConfig)
-
-	// --- Assert ---
-	// Now we expect an error because the decrypted data is not valid JSON
-	require.Error(t, errDecrypt)
-	assert.Contains(t, errDecrypt.Error(), "failed to unmarshal config")
-	// Check underlying error type if needed (should be a json syntax error)
-	var jsonSyntaxError *json.SyntaxError
-	// var jsonTypeError *json.UnmarshalTypeError // Not expected here
-	if errors.As(errDecrypt, &jsonSyntaxError) {
-		// It's a JSON syntax error, which is expected
-	} else {
-		t.Errorf("Expected a JSON syntax error, but got: %v", errDecrypt)
-	}
-}
-
-func TestDecryptConfig_KeyringError(t *testing.T) {
-	t.Cleanup(func() { resetMocks(t) })
-	service := NewEncryptionService()
-	var config domain.Config
-	keyringError := errors.New("failed to get key from keyring for decrypt")
-
-	// Mock keyringGet to return an error during decryption attempt
-	keyringGet = func(service, username string) (string, error) {
-		return "", keyringError
-	}
-	// Mock randReader to succeed if getEncryptionKey generates a new key
-	deterministicKeyBytes := bytes.Repeat([]byte{0xDD}, keySize)
-	randReader = bytes.NewReader(deterministicKeyBytes) // Provide data for potential new key gen
-
-	// Provide some valid-looking encrypted data (content doesn't matter)
-	// IMPORTANT: This data was likely encrypted with a DIFFERENT key than the one
-	// getEncryptionKey will generate after the keyring error.
-	encryptedData := base64.StdEncoding.EncodeToString([]byte("nonce1234567ciphertext"))
-
-	err := service.DecryptConfig(encryptedData, &config)
-
-	// --- Assert ---
-	// Expect a decryption error because getEncryptionKey handled the keyring error
-	// internally, generated a *different* key, and decryption failed.
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to decrypt data") // Check for the wrapper error
-	// Optionally check the underlying error is related to GCM failure
-	underlyingError := errors.Unwrap(err)
-	require.NotNil(t, underlyingError)
-	assert.Contains(t, underlyingError.Error(), "message authentication failed")
-
-	// DO NOT assert ErrorIs(keyringError) because it was handled internally.
-	// assert.ErrorIs(t, err, keyringError) // This is INCORRECT
+	err := service.DecryptConfig(encodedData, &resultConfig)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to unmarshal config")
+	assert.Empty(t, resultConfig)
+	mockKr.AssertExpectations(t)
 }

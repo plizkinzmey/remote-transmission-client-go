@@ -21,7 +21,28 @@ type ConfigFormat struct {
 // configPathGetter defines the function signature for getting the config path
 type configPathGetter func() (string, error)
 
+// IConfigService defines the interface for config operations
+type IConfigService interface {
+	LoadConfig() (*domain.Config, error)
+	SaveConfig(config *domain.Config) error
+	ConfigExists() (bool, error)
+}
+
+// Переменные для мокирования OS функций (перенесены из _test.go)
+var (
+	osUserConfigDir = os.UserConfigDir
+	osStat          = os.Stat
+	osReadFile      = os.ReadFile
+	osMkdirAll      = os.MkdirAll
+	osWriteFile     = os.WriteFile
+	// Переменная для мокирования json.MarshalIndent
+	jsonMarshalIndent = json.MarshalIndent
+)
+
 // ConfigService предоставляет методы для работы с конфигурацией
+// Убедимся, что ConfigService реализует IConfigService
+var _ IConfigService = (*ConfigService)(nil)
+
 type ConfigService struct {
 	encryptionService IEncryptionService
 	// Внедренная зависимость для получения пути
@@ -30,7 +51,8 @@ type ConfigService struct {
 
 // realGetConfigPath содержит реальную логику получения пути
 func realGetConfigPath() (string, error) {
-	configDir, err := os.UserConfigDir()
+	// Используем переменную osUserConfigDir
+	configDir, err := osUserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get user config directory: %w", err)
 	}
@@ -38,7 +60,7 @@ func realGetConfigPath() (string, error) {
 }
 
 // NewConfigService создает новый сервис конфигурации
-func NewConfigService() *ConfigService {
+func NewConfigService() *ConfigService { // Возвращаем конкретный тип, но он реализует интерфейс
 	return &ConfigService{
 		encryptionService: NewEncryptionService(),
 		// Инициализируем реальной функцией
@@ -54,13 +76,17 @@ func (s *ConfigService) LoadConfig() (*domain.Config, error) {
 		return nil, fmt.Errorf("failed to determine config path: %w", err)
 	}
 
-	// Проверяем, существует ли файл конфигурации
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, ErrConfigNotExists
+	// Проверяем, существует ли файл конфигурации, используя переменную osStat
+	if _, err := osStat(configPath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrConfigNotExists
+		}
+		// Возвращаем другую ошибку Stat как ошибку чтения
+		return nil, fmt.Errorf("failed to stat config file: %w", err)
 	}
 
-	// Читаем файл конфигурации
-	data, err := os.ReadFile(configPath)
+	// Читаем файл конфигурации, используя переменную osReadFile
+	data, err := osReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -75,12 +101,15 @@ func (s *ConfigService) LoadConfig() (*domain.Config, error) {
 	// Парсим новый формат с шифрованием
 	var configFormat ConfigFormat
 	if err := json.Unmarshal(data, &configFormat); err != nil {
+		// Если парсинг нового формата не удался, возможно, это старый формат, но с ошибкой
+		// или просто поврежденный файл. Возвращаем ошибку парсинга.
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
 	// Если нет зашифрованных данных, возвращаем nil
 	if configFormat.EncryptedData == "" {
-		return nil, nil
+		// Это может быть валидный, но пустой новый формат
+		return &domain.Config{}, nil // Возвращаем пустой конфиг, а не nil
 	}
 
 	// Расшифровываем данные
@@ -100,9 +129,9 @@ func (s *ConfigService) SaveConfig(config *domain.Config) error {
 		return fmt.Errorf("failed to determine config path: %w", err)
 	}
 
-	// Создаем директорию для конфигурации, если она не существует
+	// Создаем директорию для конфигурации, если она не существует, используя переменную osMkdirAll
 	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0700); err != nil {
+	if err := osMkdirAll(configDir, 0700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -117,14 +146,14 @@ func (s *ConfigService) SaveConfig(config *domain.Config) error {
 		EncryptedData: encryptedData,
 	}
 
-	// Сериализуем конфигурацию в JSON
-	data, err := json.MarshalIndent(configFormat, "", "  ")
+	// Сериализуем конфигурацию в JSON, используя переменную jsonMarshalIndent
+	data, err := jsonMarshalIndent(configFormat, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	// Записываем в файл
-	if err := os.WriteFile(configPath, data, 0600); err != nil {
+	// Записываем в файл, используя переменную osWriteFile
+	if err := osWriteFile(configPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
@@ -136,9 +165,19 @@ func (s *ConfigService) ConfigExists() (bool, error) {
 	// Используем внедренный pathGetter
 	configPath, err := s.pathGetter()
 	if err != nil {
+		// Ошибка получения пути - это ошибка операции
 		return false, fmt.Errorf("failed to determine config path: %w", err)
 	}
 
-	_, err = os.Stat(configPath)
-	return !os.IsNotExist(err), nil
+	// Используем переменную osStat
+	_, err = osStat(configPath)
+	if err == nil {
+		return true, nil // Файл существует
+	}
+	if os.IsNotExist(err) {
+		return false, nil // Файл не существует, это не ошибка для этой функции
+	}
+	// Любая другая ошибка Stat означает, что мы не можем достоверно сказать, существует ли файл
+	// Возвращаем false и саму ошибку Stat
+	return false, fmt.Errorf("failed to check config file status: %w", err)
 }

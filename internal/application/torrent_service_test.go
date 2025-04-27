@@ -1716,10 +1716,10 @@ func TestValidateDownloadPath_Success(t *testing.T) {
 }
 
 func TestConvertSpeedToKiBps(t *testing.T) {
-	assert.Equal(t, int64(50), convertSpeedToKiBps(50, "KiB/s"))
-	assert.Equal(t, int64(2048), convertSpeedToKiBps(2, "MiB/s"))
-	assert.Equal(t, int64(100), convertSpeedToKiBps(100, "unknown"))
-	assert.Equal(t, int64(0), convertSpeedToKiBps(0, "MiB/s"))
+	assert.Equal(t, int64(50), transmission.ConvertSpeedToKiBps(50, "KiB/s"))
+	assert.Equal(t, int64(2048), transmission.ConvertSpeedToKiBps(2, "MiB/s"))
+	assert.Equal(t, int64(100), transmission.ConvertSpeedToKiBps(100, "unknown"))
+	assert.Equal(t, int64(0), transmission.ConvertSpeedToKiBps(0, "MiB/s"))
 }
 
 func TestValidateDownloadPath_NilConfig(t *testing.T) {

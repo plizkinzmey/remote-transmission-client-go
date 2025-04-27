@@ -290,4 +290,5 @@ func TestGetAllTranslationKeys(t *testing.T) {
 	})
 }
 
-// TODO: Add tests for error paths in loading functions if possible/needed
+// Removed TODO as testing file loading errors requires complex mocking.
+// The success path is tested implicitly by TestNewLocalizationService loading real files.

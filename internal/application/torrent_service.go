@@ -323,6 +323,10 @@ func (s *TorrentService) RemoveDownloadPath(path string) error {
 
 // ValidateDownloadPath проверяет существование и доступность пути для скачивания
 func (s *TorrentService) ValidateDownloadPath(path string) error {
+	// Добавляем проверку на nil config в начало
+	if s.config == nil {
+		return errors.New(ErrConfigNotInited)
+	}
 	// Проверяем, что путь не пустой
 	if path == "" {
 		return fmt.Errorf("download path cannot be empty")
@@ -500,6 +504,23 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		return errors.New(ErrConfigNotInited)
 	}
 
+	// --- Переносим валидацию путей сюда ---
+	// Проверяем все новые пути
+	for _, path := range pathsToAdd {
+		if err := s.ValidateDownloadPath(path); err != nil {
+			// Возвращаем ошибку немедленно, не изменяя конфиг
+			return fmt.Errorf("failed to save paths: invalid path %s: %w", path, err)
+		}
+	}
+	// Проверяем путь по умолчанию, если он указан и не пуст
+	if defaultPath != "" {
+		if err := s.ValidateDownloadPath(defaultPath); err != nil {
+			// Возвращаем ошибку немедленно, не изменяя конфиг
+			return fmt.Errorf("failed to save paths: invalid default path %s: %w", defaultPath, err)
+		}
+	}
+	// --- Конец блока валидации ---
+
 	// Сохраняем оригинальный список путей и настройки для возможного отката
 	originalPaths := make([]string, len(s.config.DownloadPaths))
 	copy(originalPaths, s.config.DownloadPaths)
@@ -580,9 +601,6 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		s.config.Username != originalUsername ||
 		s.config.Password != originalPassword
 
-	// Проверяем, изменились ли настройки соединения (дублирование удалено)
-	// Переменная connectionChanged уже объявлена выше
-
 	// Сохраняем конфигурацию одной операцией
 	configService := infrastructure.NewConfigService()
 	if err := configService.SaveConfig(s.config); err != nil {
@@ -593,6 +611,7 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		s.config.Port = originalPort
 		s.config.Username = originalUsername
 		s.config.Password = originalPassword
+		// Оборачиваем ошибку сохранения для ясности
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 

@@ -493,14 +493,31 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 
 	// Обновляем конфиг
 	s.config.DownloadPaths = newPathsList
+	// Обработка пути по умолчанию
 	if defaultPath != "" {
+		// Если задан новый путь по умолчанию, используем его
 		s.config.DefaultDownloadPath = defaultPath
-	} else if len(newPathsList) > 0 {
-		// Если defaultPath не задан, но список не пуст, берем первый элемент
-		s.config.DefaultDownloadPath = newPathsList[0]
 	} else {
-		// Если список пуст, очищаем путь по умолчанию
-		s.config.DefaultDownloadPath = ""
+		// Проверяем, не был ли удален текущий путь по умолчанию
+		currentDefaultPathExists := false
+		for _, p := range newPathsList {
+			if p == s.config.DefaultDownloadPath {
+				currentDefaultPathExists = true
+				break
+			}
+		}
+
+		// Если текущий путь по умолчанию был удален или не существует
+		if !currentDefaultPathExists {
+			if len(newPathsList) > 0 {
+				// Если есть доступные пути, берем первый
+				s.config.DefaultDownloadPath = newPathsList[0]
+			} else {
+				// Если список пуст, очищаем путь по умолчанию
+				s.config.DefaultDownloadPath = ""
+			}
+		}
+		// Если текущий путь по умолчанию все еще существует, оставляем его
 	}
 
 	// Сохраняем конфиг

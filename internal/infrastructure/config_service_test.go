@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 	"transmission-client-go/internal/domain"
 
@@ -32,17 +34,6 @@ func (m *MockEncryptionService) DecryptConfig(encryptedData string, config inter
 	args := m.Called(encryptedData, config)
 	// Simulate unmarshalling into the passed config object if successful
 	if args.Error(0) == nil {
-		// We need to know what data the mock should "decrypt" into config
-		// Let's assume the mock setup provides the data via Return arguments
-		// or we can use a helper function in the mock setup.
-		// For simplicity, let's assume the test will handle filling the config object
-		// based on what DecryptConfig is expected to do.
-		// A more sophisticated mock could use Run to modify the config argument.
-		// Example using Run:
-		// mockEncrypt.On("DecryptConfig", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		//     cfgPtr := args.Get(1).(*domain.Config)
-		//     *cfgPtr = domain.Config{Host: "decrypted-host"} // Simulate decryption
-		// })
 	}
 	return args.Error(0)
 }
@@ -67,8 +58,6 @@ func TestNewConfigService(t *testing.T) {
 	assert.NotNil(t, service)
 	assert.NotNil(t, service.encryptionService, "EncryptionService should be initialized")
 	assert.NotNil(t, service.pathGetter, "pathGetter should be initialized")
-	// Проверяем, что pathGetter - это реальная функция (опционально, через reflect)
-	// assert.Equal(t, reflect.ValueOf(realGetConfigPath).Pointer(), reflect.ValueOf(service.pathGetter).Pointer())
 }
 
 func TestConfigExists(t *testing.T) {
@@ -158,7 +147,6 @@ func TestLoadConfig_PathGetterError(t *testing.T) {
 }
 
 func TestLoadConfig_ReadError(t *testing.T) {
-	// Этот тест все еще сложно реализовать без мокирования os.ReadFile
 	t.Skip("Skipping TestLoadConfig_ReadError as forcing os.ReadFile failure is complex without OS-level mocking")
 }
 
@@ -216,7 +204,6 @@ func TestLoadConfig_NewFormat_EmptyData(t *testing.T) {
 	loadedConfig, err := service.LoadConfig()
 
 	assert.NoError(t, err)
-	// Ожидаем nil, так как пустые данные не являются валидной конфигурацией
 	assert.Nil(t, loadedConfig, "Should return nil config for empty encrypted data")
 	mockEncrypt.AssertNotCalled(t, "DecryptConfig", mock.Anything, mock.Anything)
 }
@@ -313,10 +300,146 @@ func TestLoadConfig_ParseError(t *testing.T) {
 	loadedConfig, err := service.LoadConfig()
 
 	assert.Error(t, err)
-	// Ошибка должна содержать "failed to parse config file", так как обе попытки unmarshal провалятся
 	assert.ErrorContains(t, err, "failed to parse config file")
 	assert.Nil(t, loadedConfig)
 	mockEncrypt.AssertNotCalled(t, "DecryptConfig", mock.Anything, mock.Anything)
 }
 
-// TODO: Add tests for SaveConfig
+func TestSaveConfig_Success(t *testing.T) {
+	configPath, cleanup := tempConfigDirAndPath(t)
+	defer cleanup()
+
+	// Мок pathGetter
+	mockPathGetter := func() (string, error) {
+		return configPath, nil
+	}
+
+	mockEncrypt := new(MockEncryptionService)
+	service := &ConfigService{
+		encryptionService: mockEncrypt,
+		pathGetter:        mockPathGetter,
+	}
+
+	configToSave := &domain.Config{Host: "save-host", Port: 5678}
+	expectedEncryptedData := "encrypted-save-data"
+
+	// Настройка мока EncryptConfig
+	mockEncrypt.On("EncryptConfig", configToSave).Return(expectedEncryptedData, nil)
+
+	// Вызов SaveConfig
+	err := service.SaveConfig(configToSave)
+	assert.NoError(t, err)
+
+	// Проверка вызова мока
+	mockEncrypt.AssertExpectations(t)
+
+	// Проверка содержимого файла
+	savedData, readErr := os.ReadFile(configPath)
+	require.NoError(t, readErr, "Failed to read saved config file")
+
+	var savedFormat ConfigFormat
+	jsonErr := json.Unmarshal(savedData, &savedFormat)
+	require.NoError(t, jsonErr, "Failed to unmarshal saved config data")
+
+	assert.Equal(t, expectedEncryptedData, savedFormat.EncryptedData)
+}
+
+func TestSaveConfig_PathGetterError(t *testing.T) {
+	_, cleanup := tempConfigDirAndPath(t) // Нужен только cleanup
+	defer cleanup()
+
+	pathGetterErr := errors.New("path getter failed for save")
+	mockPathGetter := func() (string, error) {
+		return "", pathGetterErr
+	}
+
+	mockEncrypt := new(MockEncryptionService) // Не будет вызван
+	service := &ConfigService{
+		encryptionService: mockEncrypt,
+		pathGetter:        mockPathGetter,
+	}
+
+	configToSave := &domain.Config{Host: "save-host"}
+	err := service.SaveConfig(configToSave)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, pathGetterErr.Error())
+	mockEncrypt.AssertNotCalled(t, "EncryptConfig", mock.Anything)
+}
+
+func TestSaveConfig_EncryptError(t *testing.T) {
+	configPath, cleanup := tempConfigDirAndPath(t)
+	defer cleanup()
+
+	// Мок pathGetter
+	mockPathGetter := func() (string, error) {
+		return configPath, nil
+	}
+
+	mockEncrypt := new(MockEncryptionService)
+	service := &ConfigService{
+		encryptionService: mockEncrypt,
+		pathGetter:        mockPathGetter,
+	}
+
+	configToSave := &domain.Config{Host: "save-host"}
+	encryptErr := errors.New("encryption failed")
+
+	// Настройка мока EncryptConfig на возврат ошибки
+	mockEncrypt.On("EncryptConfig", configToSave).Return("", encryptErr)
+
+	// Вызов SaveConfig
+	err := service.SaveConfig(configToSave)
+
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, encryptErr.Error())
+	mockEncrypt.AssertExpectations(t)
+
+	// Убедимся, что файл не был создан или остался пустым (если был)
+	_, statErr := os.Stat(configPath)
+	assert.True(t, os.IsNotExist(statErr), "Config file should not exist after encryption error")
+}
+
+func TestSaveConfig_MkdirError(t *testing.T) {
+	// 1. Создаем базовую временную директорию
+	baseTempDir, err := os.MkdirTemp("", "config_base_test_")
+	require.NoError(t, err)
+	defer os.RemoveAll(baseTempDir) // Очистка в конце
+
+	// 2. Определяем путь, где должна быть директория, и создаем там файл
+	dirPathShouldBe := filepath.Join(baseTempDir, "transmission-client")
+	err = os.WriteFile(dirPathShouldBe, []byte("i am a file, not a directory"), 0600)
+	require.NoError(t, err)
+
+	// 3. Определяем полный путь к файлу конфигурации
+	configPath := filepath.Join(dirPathShouldBe, "config.json")
+
+	// 4. Мок pathGetter
+	mockPathGetter := func() (string, error) {
+		return configPath, nil
+	}
+
+	mockEncrypt := new(MockEncryptionService) // Не будет вызван
+	service := &ConfigService{
+		encryptionService: mockEncrypt,
+		pathGetter:        mockPathGetter,
+	}
+
+	configToSave := &domain.Config{Host: "save-host"}
+
+	// 5. Вызов SaveConfig
+	err = service.SaveConfig(configToSave)
+
+	// 6. Проверка ошибки от os.MkdirAll
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to create config directory")
+	underlyingError := errors.Unwrap(err)
+	require.NotNil(t, underlyingError, "Expected underlying error from MkdirAll")
+	errorString := underlyingError.Error()
+	isNotDirError := strings.Contains(errorString, "not a directory")
+	if runtime.GOOS == "windows" {
+	}
+	assert.True(t, isNotDirError, "Underlying error should indicate 'not a directory', got: %v", errorString)
+
+	mockEncrypt.AssertNotCalled(t, "EncryptConfig", mock.Anything)
+}

@@ -470,6 +470,7 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 
 	// 3. Добавляем существующие пути, исключая те, что в pathsToRemove и уже добавленные
 	for _, p := range s.config.DownloadPaths {
+		// Проверяем, находится ли путь в списке на удаление
 		shouldRemove := false
 		for _, removeP := range pathsToRemove {
 			if p == removeP {
@@ -477,11 +478,11 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 				break
 			}
 		}
-		if !shouldRemove {
-			if _, exists := newPathsMap[p]; !exists && p != "" {
-				newPathsMap[p] = true
-				newPathsList = append(newPathsList, p)
-			}
+
+		// Добавляем путь только если он не помечен для удаления и еще не добавлен
+		if !shouldRemove && !newPathsMap[p] && p != "" {
+			newPathsMap[p] = true
+			newPathsList = append(newPathsList, p)
 		}
 	}
 

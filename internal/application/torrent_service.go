@@ -522,14 +522,6 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 	return nil
 }
 
-// GetPathsState возвращает текущее состояние путей
-func (s *TorrentService) GetPathsState() (*domain.PathsState, error) {
-	if s.config == nil {
-		return nil, errors.New(ErrConfigNotInited)
-	}
-	return s.config.GetPathsState(), nil
-}
-
 // SaveSettingsWithPaths сохраняет настройки соединения и изменения путей в одной транзакции
 func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.ConnectionConfig, pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
 	if s.config == nil {
@@ -554,8 +546,7 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 	// --- Конец блока валидации ---
 
 	// Сохраняем оригинальный список путей и настройки для возможного отката
-	originalPaths := make([]string, len(s.config.DownloadPaths))
-	copy(originalPaths, s.config.DownloadPaths)
+	originalPaths := append([]string{}, s.config.DownloadPaths...)
 	originalDefaultPath := s.config.DefaultDownloadPath
 	originalHost := s.config.Host
 	originalPort := s.config.Port
@@ -675,4 +666,12 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 // GetTorrentDownloadDirectory возвращает директорию, в которой находится/скачивается торрент
 func (s *TorrentService) GetTorrentDownloadDirectory(id int64) (string, error) {
 	return s.repo.GetTorrentDownloadDirectory(id)
+}
+
+// GetPathsState возвращает текущее состояние путей загрузки
+func (s *TorrentService) GetPathsState() (*domain.PathsState, error) {
+	if s.config == nil {
+		return nil, errors.New(ErrConfigNotInited)
+	}
+	return s.config.GetPathsState(), nil
 }

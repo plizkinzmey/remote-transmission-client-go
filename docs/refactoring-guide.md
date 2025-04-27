@@ -543,7 +543,7 @@ In the component's README.md, add:
 
 - [ ] Each component has a clear responsibility
 - [ ] Business logic is isolated in hooks
-- - [ ] Subcomponents are independent and reusable
+- [ ] Subcomponents are independent and reusable
 - [ ] Tests cover both individual parts and their interaction
 - [ ] Documentation reflects the new structure
 - [ ] Public API of the component is preserved

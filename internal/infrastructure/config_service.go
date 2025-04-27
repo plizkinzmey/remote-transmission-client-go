@@ -2,11 +2,11 @@ package infrastructure
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"transmission-client-go/internal/domain"
-	"errors"
 )
 
 // ErrConfigNotExists возвращается, когда файл конфигурации не существует
@@ -18,23 +18,40 @@ type ConfigFormat struct {
 	EncryptedData string `json:"encryptedData"`
 }
 
+// configPathGetter defines the function signature for getting the config path
+type configPathGetter func() (string, error)
+
 // ConfigService предоставляет методы для работы с конфигурацией
 type ConfigService struct {
-	encryptionService *EncryptionService
+	encryptionService IEncryptionService
+	// Внедренная зависимость для получения пути
+	pathGetter configPathGetter
+}
+
+// realGetConfigPath содержит реальную логику получения пути
+func realGetConfigPath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user config directory: %w", err)
+	}
+	return filepath.Join(configDir, "transmission-client", "config.json"), nil
 }
 
 // NewConfigService создает новый сервис конфигурации
 func NewConfigService() *ConfigService {
 	return &ConfigService{
 		encryptionService: NewEncryptionService(),
+		// Инициализируем реальной функцией
+		pathGetter: realGetConfigPath,
 	}
 }
 
 // LoadConfig загружает конфигурацию из файла
 func (s *ConfigService) LoadConfig() (*domain.Config, error) {
-	configPath, err := s.getConfigPath()
+	// Используем внедренный pathGetter
+	configPath, err := s.pathGetter()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to determine config path: %w", err)
 	}
 
 	// Проверяем, существует ли файл конфигурации
@@ -77,9 +94,10 @@ func (s *ConfigService) LoadConfig() (*domain.Config, error) {
 
 // SaveConfig сохраняет конфигурацию в файл
 func (s *ConfigService) SaveConfig(config *domain.Config) error {
-	configPath, err := s.getConfigPath()
+	// Используем внедренный pathGetter
+	configPath, err := s.pathGetter()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to determine config path: %w", err)
 	}
 
 	// Создаем директорию для конфигурации, если она не существует
@@ -115,21 +133,12 @@ func (s *ConfigService) SaveConfig(config *domain.Config) error {
 
 // ConfigExists проверяет существование файла конфигурации
 func (s *ConfigService) ConfigExists() (bool, error) {
-	configPath, err := s.getConfigPath()
+	// Используем внедренный pathGetter
+	configPath, err := s.pathGetter()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to determine config path: %w", err)
 	}
-	
+
 	_, err = os.Stat(configPath)
 	return !os.IsNotExist(err), nil
-}
-
-// getConfigPath возвращает путь к файлу конфигурации
-func (s *ConfigService) getConfigPath() (string, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get user config directory: %w", err)
-	}
-
-	return filepath.Join(configDir, "transmission-client", "config.json"), nil
 }

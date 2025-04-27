@@ -27,7 +27,16 @@ const (
 	keySize = 32 // 256 бит
 )
 
+// IEncryptionService defines the interface for encryption operations
+type IEncryptionService interface {
+	EncryptConfig(config interface{}) (string, error)
+	DecryptConfig(encryptedData string, config interface{}) error
+}
+
 // EncryptionService предоставляет методы для шифрования и дешифрования данных
+// Убедимся, что EncryptionService реализует IEncryptionService
+var _ IEncryptionService = (*EncryptionService)(nil)
+
 type EncryptionService struct{}
 
 // NewEncryptionService создает новый сервис шифрования
@@ -146,7 +155,7 @@ func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
 			// Если не удалось получить Machine ID, используем fallback значение
 			machineID = "transmission-client-machine-id"
 		}
-		
+
 		// Генерируем ключ на основе Machine ID
 		key = pbkdf2.Key([]byte(machineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
 	}

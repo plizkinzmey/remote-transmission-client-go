@@ -14,7 +14,7 @@ import (
 type configServiceFactory func() infrastructure.IConfigService
 
 // Переменная для хранения фабрики ConfigService, по умолчанию используем реальную
-var newConfigServiceFunc configServiceFactory = func() infrastructure.IConfigService {
+var configServiceFactoryImpl configServiceFactory = func() infrastructure.IConfigService {
 	return infrastructure.NewConfigService()
 }
 
@@ -22,7 +22,7 @@ var newConfigServiceFunc configServiceFactory = func() infrastructure.IConfigSer
 type transmissionClientFactory func(config transmission.TransmissionConfig) (domain.TorrentRepository, error)
 
 // Переменная для хранения фабрики TransmissionClient, по умолчанию используем реальную
-var newTransmissionClientFunc transmissionClientFactory = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
+var transmissionClientFactoryImpl transmissionClientFactory = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
 	return transmission.NewTransmissionClient(config)
 }
 
@@ -115,7 +115,7 @@ func (s *TorrentService) SetDefaultDownloadPath(path string) error {
 	_ = s.SaveDownloadPath(path)
 
 	// Сохраняем конфигурацию
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	return configService.SaveConfig(s.config)
 }
 
@@ -154,7 +154,7 @@ func (s *TorrentService) SaveDownloadPath(path string) error {
 	}
 
 	// Сохраняем конфигурацию
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	return configService.SaveConfig(s.config)
 }
 
@@ -186,25 +186,25 @@ func (s *TorrentService) fetchPathFromClient() string {
 }
 
 // addUniquePathsFromHistory добавляет уникальные пути из истории, исключая текущий путь по умолчанию
-func (s *TorrentService) addUniquePathsFromHistory(result []string) []string {
+func (s *TorrentService) addUniquePathsFromHistory(mergedPaths []string) []string {
 	if s.config == nil {
-		return result
+		return mergedPaths
 	}
 
-	existingPaths := make(map[string]bool)
-	for _, p := range result {
-		existingPaths[p] = true
+	uniquePathsMap := make(map[string]bool)
+	for _, p := range mergedPaths {
+		uniquePathsMap[p] = true
 	}
 
 	// Добавляем пути из истории, если их еще нет и они не равны текущему DefaultDownloadPath
 	for _, historyPath := range s.config.DownloadPaths {
-		// Пропускаем путь, если он уже есть в result или если он равен текущему DefaultDownloadPath
-		if _, exists := existingPaths[historyPath]; !exists && historyPath != s.config.DefaultDownloadPath {
-			result = append(result, historyPath)
-			existingPaths[historyPath] = true // Добавляем в карту, чтобы избежать дубликатов из самой истории
+		// Пропускаем путь, если он уже есть в mergedPaths или если он равен текущему DefaultDownloadPath
+		if _, exists := uniquePathsMap[historyPath]; !exists && historyPath != s.config.DefaultDownloadPath {
+			mergedPaths = append(mergedPaths, historyPath)
+			uniquePathsMap[historyPath] = true // Добавляем в карту, чтобы избежать дубликатов из самой истории
 		}
 	}
-	return result
+	return mergedPaths
 }
 
 // GetDownloadPaths возвращает список сохраненных путей загрузки
@@ -341,7 +341,7 @@ func (s *TorrentService) RemoveDownloadPath(path string) error {
 	s.config.DownloadPaths = slices.Delete(s.config.DownloadPaths, idx, idx+1)
 
 	// Сохраняем конфигурацию
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	return configService.SaveConfig(s.config)
 }
 
@@ -430,7 +430,7 @@ func (s *TorrentService) ApplyPathsTransaction(transaction *domain.PathsTransact
 	s.config.ApplyPathsTransaction(transaction)
 
 	// Сохраняем конфигурацию
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	if err := configService.SaveConfig(s.config); err != nil {
 		// В случае ошибки выполняем откат
 		s.config.RollbackPathsTransaction(transaction)
@@ -521,7 +521,7 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 	}
 
 	// Сохраняем конфиг
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	if err := configService.SaveConfig(s.config); err != nil {
 		// Откатываем изменения в конфиге сервиса при ошибке сохранения
 		s.config.DownloadPaths = originalPaths
@@ -647,7 +647,7 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		s.config.Password != originalPassword
 
 	// Сохраняем конфигурацию одной операцией
-	configService := newConfigServiceFunc()
+	configService := configServiceFactoryImpl()
 	if err := configService.SaveConfig(s.config); err != nil {
 		// В случае ошибки восстанавливаем оригинальное состояние
 		s.config.DownloadPaths = originalPaths
@@ -665,7 +665,7 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 
 	// Если изменились настройки соединения, обновляем клиент Transmission
 	if connectionChanged {
-		client, err := newTransmissionClientFunc(transmission.TransmissionConfig{
+		client, err := transmissionClientFactoryImpl(transmission.TransmissionConfig{
 			Host:     s.config.Host,
 			Port:     s.config.Port,
 			Username: s.config.Username,

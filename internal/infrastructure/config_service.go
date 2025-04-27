@@ -161,6 +161,10 @@ func (s *ConfigService) SaveConfig(config *domain.Config) error {
 }
 
 // ConfigExists проверяет существование файла конфигурации
+// Возвращает три возможных состояния:
+// - true, nil: файл существует
+// - false, nil: файл не существует (ожидаемое отсутствие)
+// - false, error: произошла ошибка при проверке (неожиданная ошибка)
 func (s *ConfigService) ConfigExists() (bool, error) {
 	// Используем внедренный pathGetter
 	configPath, err := s.pathGetter()

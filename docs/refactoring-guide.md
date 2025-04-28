@@ -42,7 +42,8 @@
      - Branches: 70%
      - Statements: 70%
    - Use data-testid for key elements
-   - **Refer to `testing-guide.md` for detailed testing practices.**
+   - **Refer to `testing-guide.md` for detailed frontend testing practices.**
+   - **Refer to `go-testing-best-practices.md` for Go testing practices.**
 
 ## Component Refactoring Plan
 

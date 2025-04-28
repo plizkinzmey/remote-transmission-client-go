@@ -55,6 +55,7 @@ This guide describes the principles and practices for testing frontend component
   - [Testing Complex Component Compositions](#testing-complex-component-compositions)
   - [Testing Loading States and Error Handling](#testing-loading-states-and-error-handling)
   - [State Management in Tests](#state-management-in-tests)
+- [Go Testing Best Practices](./go-testing-best-practices.md)
 
 ## Technology Stack
 

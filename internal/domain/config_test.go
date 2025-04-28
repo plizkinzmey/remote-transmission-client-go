@@ -102,3 +102,119 @@ func TestRollbackPathsTransaction_NilOriginalState(t *testing.T) {
 	assert.NotContains(t, config.DownloadPaths, "/path/x", "Path X should remain removed")
 	assert.Equal(t, "/path/z", config.DefaultDownloadPath, "Default path should remain Z")
 }
+
+func TestGetPathsState(t *testing.T) {
+	config := &Config{
+		DownloadPaths:       []string{"/path/1", "/path/2"},
+		DefaultDownloadPath: "/path/1",
+	}
+	expectedState := &PathsState{
+		Paths:       []string{"/path/1", "/path/2"},
+		DefaultPath: "/path/1",
+	}
+
+	currentState := config.GetPathsState()
+
+	// Use ElementsMatch for slices as order might not be guaranteed by GetPathsState (though it is currently)
+	assert.ElementsMatch(t, expectedState.Paths, currentState.Paths, "Paths should match")
+	assert.Equal(t, expectedState.DefaultPath, currentState.DefaultPath, "DefaultPath should match")
+}
+
+func TestApplyPathsTransaction_EmptyTransaction(t *testing.T) {
+	initialPaths := []string{"/path/a", "/path/b"}
+	initialDefault := "/path/a"
+	config := &Config{
+		DownloadPaths:       append([]string{}, initialPaths...), // Copy slice
+		DefaultDownloadPath: initialDefault,
+	}
+
+	transaction := &PathsTransaction{
+		PathsToAdd:    []string{},
+		PathsToRemove: []string{},
+		DefaultPath:   "", // No change to default path
+	}
+
+	config.ApplyPathsTransaction(transaction)
+
+	assert.Equal(t, initialPaths, config.DownloadPaths, "DownloadPaths should remain unchanged")
+	assert.Equal(t, initialDefault, config.DefaultDownloadPath, "DefaultDownloadPath should remain unchanged")
+}
+
+func TestApplyPathsTransaction_OnlyAdd(t *testing.T) {
+	config := &Config{
+		DownloadPaths:       []string{"/path/a"},
+		DefaultDownloadPath: "/path/a",
+	}
+
+	transaction := &PathsTransaction{
+		PathsToAdd:    []string{"/path/b", "/path/c"},
+		PathsToRemove: []string{},
+		DefaultPath:   "", // No change to default path
+	}
+
+	config.ApplyPathsTransaction(transaction)
+
+	expectedPaths := []string{"/path/a", "/path/b", "/path/c"}
+	assert.ElementsMatch(t, expectedPaths, config.DownloadPaths, "Paths should be added")
+	assert.Equal(t, "/path/a", config.DefaultDownloadPath, "DefaultDownloadPath should remain unchanged")
+}
+
+func TestApplyPathsTransaction_OnlyRemove(t *testing.T) {
+	config := &Config{
+		DownloadPaths:       []string{"/path/a", "/path/b", "/path/c"},
+		DefaultDownloadPath: "/path/a",
+	}
+
+	transaction := &PathsTransaction{
+		PathsToAdd:    []string{},
+		PathsToRemove: []string{"/path/b"},
+		DefaultPath:   "", // No change to default path
+	}
+
+	config.ApplyPathsTransaction(transaction)
+
+	expectedPaths := []string{"/path/a", "/path/c"}
+	assert.ElementsMatch(t, expectedPaths, config.DownloadPaths, "Path 'b' should be removed")
+	assert.Equal(t, "/path/a", config.DefaultDownloadPath, "DefaultDownloadPath should remain unchanged")
+}
+
+func TestApplyPathsTransaction_SetDefaultNotInAdd(t *testing.T) {
+	config := &Config{
+		DownloadPaths:       []string{"/path/a"},
+		DefaultDownloadPath: "/path/a",
+	}
+
+	transaction := &PathsTransaction{
+		PathsToAdd:    []string{"/path/b"},
+		PathsToRemove: []string{},
+		DefaultPath:   "/path/c", // Set default to a path not being added or existing
+	}
+
+	config.ApplyPathsTransaction(transaction)
+
+	expectedPaths := []string{"/path/a", "/path/b"}
+	assert.ElementsMatch(t, expectedPaths, config.DownloadPaths, "Paths should be updated")
+	// The current implementation sets the default path regardless of whether it's in the list.
+	assert.Equal(t, "/path/c", config.DefaultDownloadPath, "DefaultDownloadPath should be updated even if not in paths")
+}
+
+func TestApplyPathsTransaction_RemoveDefaultNoNewDefault(t *testing.T) {
+	config := &Config{
+		DownloadPaths:       []string{"/path/a", "/path/b"},
+		DefaultDownloadPath: "/path/a",
+	}
+
+	transaction := &PathsTransaction{
+		PathsToAdd:    []string{},
+		PathsToRemove: []string{"/path/a"}, // Remove the current default
+		DefaultPath:   "",                  // Do not set a new default
+	}
+
+	config.ApplyPathsTransaction(transaction)
+
+	expectedPaths := []string{"/path/b"}
+	assert.ElementsMatch(t, expectedPaths, config.DownloadPaths, "Default path '/path/a' should be removed from the list")
+	// The current implementation keeps the old DefaultDownloadPath value if a new one isn't provided,
+	// even if the path itself was removed from DownloadPaths.
+	assert.Equal(t, "/path/a", config.DefaultDownloadPath, "DefaultDownloadPath should remain the old value as no new one was provided")
+}

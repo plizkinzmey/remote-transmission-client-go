@@ -246,7 +246,7 @@ func (c *TransmissionClient) SetTorrentSpeedLimit(ids []int64, downloadLimit int
 // SetSpeedLimitFromConfig устанавливает ограничение скорости из конфигурации
 func (c *TransmissionClient) SetSpeedLimitFromConfig(ids []int64, config domain.Config, isSlowMode bool) error {
 	if isSlowMode {
-		speedLimit := convertSpeedToKBps(config.SlowSpeedLimit, config.SlowSpeedUnit)
+		speedLimit := ConvertSpeedToKiBps(config.SlowSpeedLimit, config.SlowSpeedUnit)
 		return c.SetTorrentSpeedLimit(ids, speedLimit, speedLimit)
 	}
 	return c.SetTorrentSpeedLimit(ids, 0, 0)

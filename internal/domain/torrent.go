@@ -61,6 +61,9 @@ type TorrentRepository interface {
 	// Метод для верификации торрента
 	VerifyTorrent(id int64) error
 
+	// Метод для валидации пути скачивания
+	ValidateDownloadPath(path string) error
+
 	// Новые методы для работы с каталогами
 	GetDefaultDownloadDir() (string, error)
 	GetTorrentDownloadDirectory(id int64) (string, error) // Метод для получения директории загрузки торрента

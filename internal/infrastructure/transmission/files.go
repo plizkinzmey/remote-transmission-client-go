@@ -203,7 +203,8 @@ func (c *TransmissionClient) GetDownloadPaths(config *domain.Config) ([]string, 
 		return nil, errors.New(errConfigNotInitialized)
 	}
 
-	var result []string
+	// Инициализируем как пустой, не nil срез
+	result := []string{}
 
 	// Добавляем путь по умолчанию, если он есть
 	defaultDir, err := c.GetDefaultDownloadDir()
@@ -211,7 +212,7 @@ func (c *TransmissionClient) GetDownloadPaths(config *domain.Config) ([]string, 
 		result = append(result, defaultDir)
 	}
 
-	// Если нет путей в истории, возвращаем только путь по умолчанию
+	// Если нет путей в истории, возвращаем текущий result (может содержать defaultDir или быть пустым)
 	if config.DownloadPaths == nil {
 		return result, nil
 	}
@@ -238,7 +239,7 @@ func (c *TransmissionClient) GetTorrentDownloadDirectory(id int64) (string, erro
 	}
 
 	t := torrents[0]
-	
+
 	if t.DownloadDir == nil {
 		return "", fmt.Errorf("download directory information not available")
 	}

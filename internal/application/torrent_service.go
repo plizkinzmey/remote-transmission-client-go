@@ -434,50 +434,65 @@ func (s *TorrentService) ApplyPathsTransaction(transaction *domain.PathsTransact
 	return nil
 }
 
-// createUpdatedPathsList создает обновлённый список путей на основе существующих и новых путей
+// createUpdatedPathsList создает обновленный список путей загрузки, обрабатывая следующие случаи:
+// - Добавляет новые пути в начало списка (pathsToAdd)
+// - Удаляет указанные пути (pathsToRemove)
+// - Гарантирует присутствие defaultPath в списке
+// - Удаляет дубликаты, сохраняя порядок
+// - Ограничивает размер списка до 10 элементов
 func (s *TorrentService) createUpdatedPathsList(pathsToAdd, pathsToRemove []string, defaultPath string) []string {
-	// Создаем карту для отслеживания уникальных путей и результирующий список
-	newPathsMap := make(map[string]bool)
-	newPathsList := make([]string, 0)
+	// Инициализируем пустой результирующий слайс
+	result := make([]string, 0)
 
-	// 1. Добавляем новый путь по умолчанию в начало списка (если он указан)
-	if defaultPath != "" {
-		newPathsMap[defaultPath] = true
-		newPathsList = append(newPathsList, defaultPath)
+	// Создаем map для быстрой проверки наличия путей в списке удаления
+	removePaths := make(map[string]bool)
+	for _, path := range pathsToRemove {
+		removePaths[path] = true
 	}
 
-	// 2. Добавляем новые пути из pathsToAdd (уникальные и непустые)
+	// Создаем map для отслеживания уникальных путей
+	seenPaths := make(map[string]bool)
+
+	// Вспомогательная функция для добавления пути с проверкой дубликатов
+	addPath := func(path string) {
+		// Пропускаем пустые пути
+		if path == "" {
+			return
+		}
+		// Добавляем путь, если он еще не встречался и не помечен для удаления
+		if !seenPaths[path] && !removePaths[path] {
+			result = append(result, path)
+			seenPaths[path] = true
+		}
+	}
+
+	// 1. Добавляем новые пути
 	for _, path := range pathsToAdd {
-		if _, exists := newPathsMap[path]; !exists && path != "" {
-			newPathsMap[path] = true
-			newPathsList = append(newPathsList, path)
+		addPath(path)
+	}
+
+	// 2. Добавляем defaultPath, если он задан, независимо от того, помечен ли он для удаления
+	if defaultPath != "" {
+		// Для defaultPath игнорируем removePaths
+		if !seenPaths[defaultPath] {
+			result = append(result, defaultPath)
+			seenPaths[defaultPath] = true
 		}
 	}
 
-	// 3. Добавляем существующие пути, исключая те, что в pathsToRemove и уже добавленные
-	for _, path := range s.config.DownloadPaths {
-		// Проверяем, должен ли путь быть удален
-		shouldRemove := false
-		for _, pathToRemove := range pathsToRemove {
-			if path == pathToRemove {
-				shouldRemove = true
-				break
-			}
-		}
-
-		// Добавляем путь только если он не должен быть удален, не добавлен ранее и непустой
-		if !shouldRemove && !newPathsMap[path] && path != "" {
-			newPathsMap[path] = true
-			newPathsList = append(newPathsList, path)
+	// 3. Добавляем существующие пути
+	if s.config != nil {
+		for _, path := range s.config.DownloadPaths {
+			addPath(path)
 		}
 	}
 
-	// Ограничиваем длину списка до максимального значения
-	if len(newPathsList) > maxDownloadPaths {
-		newPathsList = newPathsList[:maxDownloadPaths]
+	// 4. Ограничиваем размер списка до 10 элементов
+	if len(result) > 10 {
+		result = result[:10]
 	}
 
-	return newPathsList
+	return result
 }
 
 // updateDefaultPath обновляет путь по умолчанию и гарантирует, что он существует в списке путей

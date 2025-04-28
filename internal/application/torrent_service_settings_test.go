@@ -112,3 +112,106 @@ func TestSaveSettingsWithPaths_ConnectionChange(t *testing.T) {
 	assert.Equal(t, newSettings.Port, service.config.Port)
 	assert.Equal(t, newSettings.MaxUploadRatio, service.config.MaxUploadRatio)
 }
+
+func TestSaveSettingsWithPaths_RollbackOnError(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	// Исходное состояние конфига
+	originalConfig := &domain.Config{
+		Host:                "oldhost",
+		Port:                9090,
+		Username:            "olduser",
+		Password:            "oldpass",
+		MaxUploadRatio:      1.5,
+		SlowSpeedLimit:      50,
+		SlowSpeedUnit:       "KiB/s",
+		DownloadPaths:       []string{"/old/path1", "/old/path2"},
+		DefaultDownloadPath: "/old/path1",
+	}
+	service.config = originalConfig
+
+	// Новые настройки
+	newSettings := domain.ConnectionConfig{
+		Host:           "newhost",
+		Port:           9091,
+		Username:       "newuser",
+		Password:       "newpass",
+		MaxUploadRatio: 2.5,
+		SlowSpeedLimit: 100,
+		SlowSpeedUnit:  "MiB/s",
+	}
+
+	// Настраиваем мок для успешной валидации пути
+	mockRepo.On("ValidateDownloadPath", "/new/path").Return(nil)
+
+	// Настраиваем мок для ошибки сохранения
+	saveError := errors.New("save failed")
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(saveError)
+
+	// Вызываем метод с новыми настройками
+	err := service.SaveSettingsWithPaths(
+		newSettings,
+		[]string{"/new/path"},
+		[]string{"/old/path2"},
+		"/new/path",
+	)
+
+	// Проверяем, что произошла ошибка
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, saveError)
+	assert.Contains(t, err.Error(), "failed to save config")
+
+	// Проверяем, что все поля конфига вернулись к исходным значениям
+	assert.Equal(t, originalConfig.Host, service.config.Host, "Host should be rolled back")
+	assert.Equal(t, originalConfig.Port, service.config.Port, "Port should be rolled back")
+	assert.Equal(t, originalConfig.Username, service.config.Username, "Username should be rolled back")
+	assert.Equal(t, originalConfig.Password, service.config.Password, "Password should be rolled back")
+	assert.Equal(t, originalConfig.MaxUploadRatio, service.config.MaxUploadRatio, "MaxUploadRatio should be rolled back")
+	assert.Equal(t, originalConfig.SlowSpeedLimit, service.config.SlowSpeedLimit, "SlowSpeedLimit should be rolled back")
+	assert.Equal(t, originalConfig.SlowSpeedUnit, service.config.SlowSpeedUnit, "SlowSpeedUnit should be rolled back")
+	assert.Equal(t, originalConfig.DownloadPaths, service.config.DownloadPaths, "DownloadPaths should be rolled back")
+	assert.Equal(t, originalConfig.DefaultDownloadPath, service.config.DefaultDownloadPath, "DefaultDownloadPath should be rolled back")
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}
+
+func TestSaveSettingsWithPaths_RollbackOnConnectionError(t *testing.T) {
+	mockRepo, mockCfgSvc := setupMocks(t)
+	service := NewTorrentService(mockRepo)
+
+	// Исходное состояние
+	service.config = &domain.Config{
+		Host:          "oldhost",
+		Port:          9090,
+		DownloadPaths: []string{"/old/path"},
+	}
+
+	// Новые настройки с изменением подключения
+	newSettings := domain.ConnectionConfig{
+		Host: "newhost",
+		Port: 9091,
+	}
+
+	// Настраиваем успешное сохранение конфига
+	mockCfgSvc.On("SaveConfig", mock.AnythingOfType("*domain.Config")).Return(nil)
+
+	// Настраиваем ошибку создания клиента
+	clientError := errors.New("connection failed")
+	transmissionClientFactoryImpl = func(config transmission.TransmissionConfig) (domain.TorrentRepository, error) {
+		return nil, clientError
+	}
+
+	err := service.SaveSettingsWithPaths(newSettings, nil, nil, "")
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, clientError)
+	assert.Contains(t, err.Error(), "failed to initialize transmission client")
+
+	// Проверяем, что репозиторий остался прежним
+	assert.Equal(t, mockRepo, service.repo, "Repository should not change on connection error")
+
+	mockRepo.AssertExpectations(t)
+	mockCfgSvc.AssertExpectations(t)
+}

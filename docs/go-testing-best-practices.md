@@ -57,9 +57,42 @@
 ## 7. Use of Mocks
 - Manually implement mocks when possible for simplicity.
 - For complex cases, use libraries like `golang/mock` or `testify/mock`.
-- **Important:** When mocking external libraries, ensure your mock interfaces **exactly** match the method signatures of the library version specified in your `go.mod`.
-  - **Verify All Types:** Тщательно проверяйте **все** типы в сигнатурах методов, включая стандартные (`int` vs `int64`), указатели (`*string`) и **пользовательские типы** (например, `cunits.Bits` vs `int64`). Неправильный тип в моке приведет к ошибкам компиляции или неверному поведению теста.
-  - **Источник Правды:** Обращайтесь к исходному коду или документации используемой версии библиотеки для получения точных сигнатур.
+- **Important:** When mocking external libraries or internal interfaces, ensure your mock interfaces and method implementations **exactly** match the method signatures of the library version specified in your `go.mod` or the interface definition.
+  - **Verify All Types:** Тщательно проверяйте **все** типы в сигнатурах методов, включая стандартные (`int` vs `int64`), указатели (`*string`), **пользовательские типы** (например, `cunits.Bits` vs `int64`), и **типы возвращаемых значений** (включая ошибки). Неправильный тип в моке приведет к ошибкам компиляции или неверному поведению теста.
+  - **Источник Правды:** Обращайтесь к исходному коду или документации используемой версии библиотеки или к определению интерфейса в вашем коде для получения точных сигнатур.
+  - **Пример (testify/mock):**
+    ```go
+    // Interface
+    type DataFetcher interface {
+        Fetch(id string) (*domain.Data, error)
+    }
+
+    // Mock
+    type MockDataFetcher struct {
+        mock.Mock
+    }
+
+    // Ensure the mock method signature EXACTLY matches the interface
+    func (m *MockDataFetcher) Fetch(id string) (*domain.Data, error) {
+        args := m.Called(id)
+        // Correctly handle potential nil pointer for the first return value
+        var data *domain.Data
+        if args.Get(0) != nil {
+            data = args.Get(0).(*domain.Data)
+        }
+        // Correctly handle the error return value
+        return data, args.Error(1)
+    }
+
+    // Usage in test
+    mockFetcher := new(MockDataFetcher)
+    expectedData := &domain.Data{Value: "test"}
+    // Ensure the types passed to Return() match the return types of the interface method
+    mockFetcher.On("Fetch", "test-id").Return(expectedData, nil) // Correct: (*domain.Data, error)
+
+    // ❌ Incorrect: mockFetcher.On("Fetch", "test-id").Return("test", nil) // Wrong type for first arg
+    // ❌ Incorrect: mockFetcher.On("Fetch", "test-id").Return(nil, "some error") // Wrong type for second arg
+    ```
 
 ## 8. Test Coverage
 - Regularly run `go test -cover ./...` to track untested code.
@@ -108,9 +141,9 @@
 
 - **Trace Data Flow:** При написании тестов с моками, четко проследите, как **тестируемый код** обрабатывает данные, возвращаемые моком.
 - **Calculate Expected Results:** Ожидаемые результаты (`expected`) в ваших утверждениях (`assert.Equal`, `if actual != expected`) должны быть вычислены **точно так же**, как их вычисляет тестируемый код на основе предоставленных моком данных (`mockInput`).
-  - **Учитывайте Преобразования:** Обращайте внимание на любые преобразования типов (например, биты в байты), расчеты, форматирование строк (`fmt.Sprintf` с определенными глаголами) и маппинг полей, которые выполняет ваш код.
-  - **Пример:** Если ваш код получает `cunits.Bits` от мока, делит на 8 для получения байт, а затем форматирует с `%.1f`, то ваш `expected` результат должен быть строкой, полученной точно таким же образом из исходного значения в битах, заданного в моке.
-- **Согласованность:** Несоответствие между логикой вычисления `expected` и логикой тестируемого кода — частая причина ложноотрицательных тестов.
+  - **Учитывайте Преобразования:** Обращайте внимание на любые преобразования типов (например, биты в байты, `int64` в `cunits.Bits`), расчеты, форматирование строк (`fmt.Sprintf` с определенными глаголами) и маппинг полей, которые выполняет ваш код.
+  - **Пример:** Если ваш код получает `cunits.Bits(1024 * 8)` от мока, делит на 8 для получения байт (1024), а затем форматирует с `fmt.Sprintf("%.1f KB", bytes / 1024.0)`, то ваш `expected` результат должен быть строкой `"1.0 KB"`, полученной точно таким же образом из исходного значения в битах, заданного в моке.
+- **Согласованность:** Несоответствие между логикой вычисления `expected` и логикой тестируемого кода — частая причина ложноотрицательных тестов. Тщательно проверяйте единицы измерения и преобразования.
 
 ## 16. Патчинг стандартных функций в тестах
 
@@ -183,5 +216,62 @@
   **Предупреждение:** Библиотеки monkey patching используют небезопасные приемы и могут вызвать проблемы на некоторых архитектурах или версиях Go.
 
 - **Предпочитайте внедрение зависимостей:** Лучшее решение — переработка кода для использования интерфейсов и внедрения зависимостей, что делает код более тестируемым изначально.
+
+---
+
+## 17. Testing Error Handling
+
+- **Check for Specific Errors:** When testing functions that are expected to return specific, predefined errors (like `ErrConfigNotInited`), use `errors.Is()` for comparison instead of checking the error message string. This makes tests more robust against changes in error messages.
+  ```go
+  // service.go
+  var ErrResourceNotFound = errors.New("resource not found")
+  func GetResource(id string) error {
+      if id == "unknown" {
+          return ErrResourceNotFound
+      }
+      // ...
+      return nil
+  }
+
+  // service_test.go
+  func TestGetResource_NotFound(t *testing.T) {
+      err := GetResource("unknown")
+      assert.Error(t, err) // Check that an error occurred
+      assert.True(t, errors.Is(err, ErrResourceNotFound), "Expected ErrResourceNotFound") // Verify it's the specific error
+
+      // ❌ Avoid: assert.Equal(t, "resource not found", err.Error())
+  }
+  ```
+- **Check for Wrapped Errors:** If your code wraps errors to add context, use `errors.Is()` to check if a specific error exists anywhere in the error chain. Use `errors.As()` if you need to access the underlying error of a specific type.
+  ```go
+  // service.go
+  var ErrUpstreamUnavailable = errors.New("upstream service unavailable")
+  type NetworkError struct { Code int }
+  func (e *NetworkError) Error() string { return fmt.Sprintf("network error: %d", e.Code) }
+
+  func DoSomething() error {
+      err := callUpstream() // Returns *NetworkError{Code: 503}
+      if err != nil {
+          // Wrap the original error
+          return fmt.Errorf("failed during DoSomething: %w", ErrUpstreamUnavailable)
+      }
+      return nil
+  }
+
+  // service_test.go
+  func TestDoSomething_UpstreamError(t *testing.T) {
+      // Assume callUpstream is mocked to return ErrUpstreamUnavailable
+      err := DoSomething()
+      assert.Error(t, err)
+      // Check if ErrUpstreamUnavailable is in the chain
+      assert.True(t, errors.Is(err, ErrUpstreamUnavailable), "Expected wrapped ErrUpstreamUnavailable")
+
+      // If you needed to check the NetworkError code (assuming it was wrapped instead)
+      // var netErr *NetworkError
+      // assert.True(t, errors.As(err, &netErr), "Expected wrapped NetworkError")
+      // assert.Equal(t, 503, netErr.Code)
+  }
+  ```
+- **Test Error Message Content (Sparingly):** Only test the exact error message string (`err.Error()`) if the specific message format is part of the function's contract (e.g., for user-facing errors). Prefer `errors.Is` for internal error checking.
 
 Adopting these best practices will keep your Go test suite clean, maintainable, and effective!

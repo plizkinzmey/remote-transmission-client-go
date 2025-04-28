@@ -27,9 +27,13 @@ var transmissionClientFactoryImpl transmissionClientFactory = func(config transm
 }
 
 const (
-	DefaultSpeedLimit  = 10 // 10 KB/s
-	ErrConfigNotInited = "config is not initialized"
-	maxDownloadPaths   = 10
+	DefaultSpeedLimit = 10 // 10 KB/s
+	maxDownloadPaths  = 10
+)
+
+// Определяем ошибки как переменные для возможности использования errors.Is
+var (
+	ErrConfigNotInited = errors.New("config is not initialized")
 )
 
 type TorrentService struct {
@@ -96,7 +100,7 @@ func (s *TorrentService) GetDefaultDownloadDir() (string, error) {
 // SetDefaultDownloadPath устанавливает указанный путь как путь по умолчанию
 func (s *TorrentService) SetDefaultDownloadPath(path string) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	if path == "" {
@@ -127,7 +131,7 @@ func (s *TorrentService) GetTorrents() ([]domain.Torrent, error) {
 // SaveDownloadPath сохраняет путь загрузки в историю
 func (s *TorrentService) SaveDownloadPath(path string) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	// Проверяем, что путь не пустой
@@ -210,7 +214,7 @@ func (s *TorrentService) addUniquePathsFromHistory(mergedPaths []string) []strin
 // GetDownloadPaths возвращает список сохраненных путей загрузки
 func (s *TorrentService) GetDownloadPaths() ([]string, error) {
 	if s.config == nil {
-		return nil, errors.New(ErrConfigNotInited)
+		return nil, ErrConfigNotInited
 	}
 
 	// Создаем результирующий список
@@ -313,7 +317,7 @@ func (s *TorrentService) SetTorrentSpeedLimit(ids []int64, isSlowMode bool) erro
 // RemoveDownloadPath удаляет путь из истории путей скачивания
 func (s *TorrentService) RemoveDownloadPath(path string) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	// Проверяем, что путь не является путем по умолчанию
@@ -339,7 +343,7 @@ func (s *TorrentService) RemoveDownloadPath(path string) error {
 func (s *TorrentService) ValidateDownloadPath(path string) error {
 	// Добавляем проверку на nil config в начало
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 	// Проверяем, что путь не пустой
 	if path == "" {
@@ -405,7 +409,7 @@ func (s *TorrentService) ValidatePathsTransaction(transaction *domain.PathsTrans
 // ApplyPathsTransaction применяет изменения путей с поддержкой отката
 func (s *TorrentService) ApplyPathsTransaction(transaction *domain.PathsTransaction) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	// Сохраняем текущее состояние для возможного отката
@@ -543,7 +547,7 @@ func (s *TorrentService) saveConfigAndHandleErrors(originalPaths []string, origi
 // SavePaths сохраняет изменения в списке путей загрузки и пути по умолчанию
 func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	// Сохраняем текущее состояние для возможного отката
@@ -566,7 +570,7 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 // SaveSettingsWithPaths сохраняет настройки соединения и изменения путей в одной транзакции
 func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.ConnectionConfig, pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
 	if s.config == nil {
-		return errors.New(ErrConfigNotInited)
+		return ErrConfigNotInited
 	}
 
 	// --- Переносим валидацию путей сюда ---
@@ -712,7 +716,7 @@ func (s *TorrentService) GetTorrentDownloadDirectory(id int64) (string, error) {
 // GetPathsState возвращает текущее состояние путей загрузки
 func (s *TorrentService) GetPathsState() (*domain.PathsState, error) {
 	if s.config == nil {
-		return nil, errors.New(ErrConfigNotInited)
+		return nil, ErrConfigNotInited
 	}
 	return s.config.GetPathsState(), nil
 }

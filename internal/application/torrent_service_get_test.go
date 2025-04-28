@@ -139,7 +139,8 @@ func TestGetDownloadPaths_NoConfig(t *testing.T) {
 	paths, err := service.GetDownloadPaths()
 	assert.Error(t, err)
 	assert.Nil(t, paths)
-	assert.EqualError(t, err, "config is not initialized") // Corrected assertion
+	// Используем errors.Is вместо проверки строкового сообщения
+	assert.True(t, errors.Is(err, ErrConfigNotInited))
 }
 
 func TestGetDownloadPaths_EmptyConfigFetchClientSuccess(t *testing.T) {

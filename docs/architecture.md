@@ -90,9 +90,17 @@ The application employs several design patterns:
 │       ├── contexts/       # React contexts for state management
 │       ├── hooks/          # Custom React hooks
 │       └── types/          # TypeScript types
-└── locales/                # Localization files
-    ├── en.json
-    └── ru.json
+├── locales/                # Localization files
+│   ├── en.json
+│   └── ru.json
+└── docs/                   # Documentation
+    ├── architecture.md
+    ├── refactoring-guide.md
+    ├── refactoring-guide.ru.md
+    ├── testing-guide.md
+    ├── testing-guide.ru.md
+    ├── go-testing-best-practices.md
+    └── go-testing-best-practices.ru.md
 ```
 
 ## Frontend Architecture

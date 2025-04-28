@@ -18,7 +18,7 @@ type LocalizedError struct {
 	key string
 }
 
-func (e *LocalizedError) Error() string {
+func (e *LocalizedError) Error() string { // Указательный приемник
 	return e.key
 }
 
@@ -27,7 +27,7 @@ type AuthenticationError struct {
 	message string
 }
 
-func (e *AuthenticationError) Error() string {
+func (e *AuthenticationError) Error() string { // Указательный приемник
 	return e.message
 }
 

@@ -45,7 +45,7 @@ func getTorrentSizes(t transmissionrpc.Torrent) (total uint64, downloaded uint64
 	if t.DownloadedEver != nil {
 		downloaded = uint64(*t.DownloadedEver)
 	} else if t.HaveValid != nil {
-		downloaded = uint64(*t.HaveValid) / 8
+		downloaded = uint64(*t.HaveValid) // HaveValid уже в байтах, не нужно делить на 8
 	}
 
 	return total, downloaded
@@ -90,8 +90,8 @@ func getSpeedInfo(t *transmissionrpc.Torrent) (downloadSpeed int64, uploadSpeed 
 	return
 }
 
-// convertSpeedToKBps конвертирует скорость из KiB/s или MiB/s в KiB/s
-func convertSpeedToKBps(speed int, unit string) int64 {
+// ConvertSpeedToKiBps конвертирует скорость из указанных единиц в КиБ/с (кибибайт в секунду, 1 KiB = 1024 байт)
+func ConvertSpeedToKiBps(speed int, unit string) int64 {
 	switch unit {
 	case "MiB/s":
 		return int64(speed) * 1024 // Конвертируем MiB/s в KiB/s

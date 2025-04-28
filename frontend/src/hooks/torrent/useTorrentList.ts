@@ -32,7 +32,7 @@ export function useTorrentList(isInitialized: boolean) {
       const response = await withTimeout(GetTorrents(), 60000, t);
       const newTorrents = response as WailsTorrent[];
 
-      // Check for completed downloads only after the first load
+      // Check for completed downloads and verifications only after the first load
       if (!isFirstLoad) {
         const currentStatuses = new Map<number, StatusType>();
         newTorrents.forEach((torrent) => {
@@ -51,6 +51,19 @@ export function useTorrentList(isInitialized: boolean) {
               "notifications.downloadCompleteMessage",
               { name: torrent.Name },
               "success"
+            );
+          }
+
+          // Check if status changed from checking to something else (verification finished)
+          if (
+            previousStatus === "checking" &&
+            currentStatus !== "checking" // Any status other than checking means verification ended
+          ) {
+            showFormatted(
+              t("notifications.verifyCompleteTitle"),
+              "notifications.verifyCompleteMessage",
+              { name: torrent.Name },
+              "success" // Assuming verification completion is a success state
             );
           }
         });

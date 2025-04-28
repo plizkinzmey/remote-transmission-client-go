@@ -299,11 +299,10 @@ describe("App - Torrent Actions Callbacks", () => {
             addTorrent: vi.fn(),
             addTorrentFile: vi.fn(),
             removeTorrent: vi.fn(),
-            startTorrents: async () => {
-                onActionStart?.(); // Вызываем колбэк старта
-                await Promise.resolve(); // Имитируем асинхронную операцию
-                onActionSuccess?.(); // Вызываем колбэк успеха
-                return true;
+            startTorrents: async (ids: number[]) => {
+                onActionStart?.();
+                await Promise.resolve();
+                onActionSuccess?.();
             },
             stopTorrents: vi.fn(),
             setSpeedLimit: vi.fn(),
@@ -314,21 +313,18 @@ describe("App - Torrent Actions Callbacks", () => {
         const torrentListProps = (window as any).mockTorrentListProps;
         await torrentListProps.onStart(1);
 
-        // Проверяем, что был вызван refreshTorrents после успешной операции
         expect(mockRefreshTorrents).toHaveBeenCalled();
     });
 
-    it("вызывает onActionStart и onActionError при ошибке выполнения действия", async () => {
+    it("вызывает onActionStart без onActionSuccess при ошибке", async () => {
         // Мокируем неуспешный вызов API
-        vi.mocked(useTorrentActions).mockImplementation(({ onActionStart, onActionError }) => ({
+        vi.mocked(useTorrentActions).mockImplementation(({ onActionStart }) => ({
             addTorrent: vi.fn(),
             addTorrentFile: vi.fn(),
             removeTorrent: vi.fn(),
-            startTorrents: async () => {
-                onActionStart?.(); // Вызываем колбэк старта
-                await Promise.resolve(); // Имитируем асинхронную операцию
-                onActionError?.("Test error"); // Вызываем колбэк ошибки
-                return false;
+            startTorrents: async (ids: number[]) => {
+                onActionStart?.();
+                throw new Error("Test error");
             },
             stopTorrents: vi.fn(),
             setSpeedLimit: vi.fn(),
@@ -337,9 +333,8 @@ describe("App - Torrent Actions Callbacks", () => {
 
         render(<App />);
         const torrentListProps = (window as any).mockTorrentListProps;
-        await torrentListProps.onStart(1);
-
-        // Проверяем, что refreshTorrents НЕ был вызван после ошибки
+        
+        await expect(torrentListProps.onStart(1)).rejects.toThrow("Test error");
         expect(mockRefreshTorrents).not.toHaveBeenCalled();
     });
 });

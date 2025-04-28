@@ -17,10 +17,10 @@ import {
   useTorrentList,
   useSessionStats,
   useTorrentSelection,
-  useTorrentActions,
+  useTorrentActions, // Keep this
   useConfigManager,
   AppConfig,
-  WailsTorrent, // Используем импорт WailsTorrent
+  WailsTorrent,
 } from "@hooks/torrent"; // Используем реэкспорт
 import { useAppErrorHandler } from "@hooks/useAppErrorHandler/useAppErrorHandler"; // Используем прямой импорт пока пути не обновлены глобально
 import "./App.css";
@@ -170,6 +170,7 @@ function App() {
   } = useTorrentActions({
     onActionStart: () => { },
     onActionSuccess: refreshTorrents,
+    torrents: rawTorrents, // Pass rawTorrents here
   });
 
   // 5. Массовые операции (зависят от выбранных торрентов и действий)
@@ -236,24 +237,25 @@ function App() {
     handleSelectAll(filteredTorrents); // передаем полные объекты торрентов
   };
 
+  // Adapters now just pass IDs, name lookup happens inside useTorrentActions
   const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {
-    setSpeedLimit([id], isSlowMode);
+    setSpeedLimit([id], isSlowMode); // Pass only ID and mode
   };
 
   const handleRemoveTorrentAdapter = (id: number, deleteData: boolean) => {
-    removeTorrent(id, deleteData);
+    removeTorrent(id, deleteData); // Pass only ID and delete flag
   };
 
   const handleStartTorrentAdapter = (id: number) => {
-    startTorrents([id]);
+    startTorrents([id]); // Pass only ID
   };
 
   const handleStopTorrentAdapter = (id: number) => {
-    stopTorrents([id]);
+    stopTorrents([id]); // Pass only ID
   };
 
   const handleVerifyTorrentAdapter = (id: number) => {
-    verifyTorrent(id);
+    verifyTorrent(id); // Pass only ID
   };
 
   const handleAddTorrentAdapter = async (url: string, downloadDir: string = "") => { // Делаем функцию асинхронной

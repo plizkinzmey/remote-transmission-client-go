@@ -1,155 +1,246 @@
 import { useCallback } from "react";
 import {
-  AddTorrent as AddTorrentAPI,
-  AddTorrentFile as AddTorrentFileAPI,
-  RemoveTorrent as RemoveTorrentAPI,
-  StartTorrents as StartTorrentsAPI,
-  StopTorrents as StopTorrentsAPI,
-  SetTorrentSpeedLimit as SetTorrentSpeedLimitAPI,
-  VerifyTorrent as VerifyTorrentAPI,
+  AddTorrent as GoAddTorrent,
+  AddTorrentFile as GoAddTorrentFile,
+  RemoveTorrent as GoRemoveTorrent, // Corrected import name
+  StartTorrents as GoStartTorrents,
+  StopTorrents as GoStopTorrents,
+  SetTorrentSpeedLimit as GoSetTorrentSpeedLimit,
+  VerifyTorrent as GoVerifyTorrent, // Corrected import name
 } from "@wailsjs/go/main/App";
+import { WailsTorrent } from "./types";
+import { useNotification } from "@/hooks/useNotification";
 import { useLocalization } from "@/contexts/LocalizationContext";
-import { useNotification } from "@/hooks/useNotification"; // Импортируем хук уведомлений
 
-interface TorrentActionsProps {
-  onActionStart?: () => void; // Колбэк перед началом действия
-  onActionSuccess?: () => void; // Колбэк после успешного действия (например, для обновления списка)
-  onActionError?: (errorKey: string) => void; // Колбэк при возникновении ошибки
+interface UseTorrentActionsProps {
+  onActionStart?: () => void;
+  onActionSuccess?: () => void;
+  torrents: WailsTorrent[];
 }
 
-/**
- * Хук для выполнения действий над торрентами (добавление, удаление, старт/стоп и т.д.).
- */
 export function useTorrentActions({
   onActionStart,
   onActionSuccess,
-  onActionError,
-}: TorrentActionsProps) {
+  torrents,
+}: UseTorrentActionsProps) {
+  const { showFormatted } = useNotification();
   const { t } = useLocalization();
-  const { showSuccess, showError } = useNotification(); // Получаем функции уведомлений
 
-  const performAction = useCallback(
-    async <T extends unknown[]>(
-      actionFn: (...args: T) => Promise<any>,
-      args: T,
-      successTitleKey: string, // Ключ для заголовка успеха
-      successMessageKey: string, // Ключ для сообщения успеха
-      errorTitleKey: string, // Ключ для заголовка ошибки
-      errorMessageKey: string // Ключ для сообщения ошибки (шаблон)
-    ): Promise<boolean> => {
+  const getTorrentName = useCallback(
+    (id: number): string => {
+      const torrent = torrents.find((t) => t.ID === id);
+      return torrent ? torrent.Name : `ID ${id}`;
+    },
+    [torrents]
+  );
+
+  const getTorrentNames = useCallback(
+    (ids: number[]): string => {
+      if (ids.length === 1) {
+        return getTorrentName(ids[0]);
+      }
+      return t("torrents.selected", {
+        0: String(ids.length), // Convert to string
+        1: String(ids.length), // Convert to string
+      });
+    },
+    [getTorrentName, t]
+  );
+
+  const addTorrent = useCallback(
+    async (url: string, downloadDir: string = ""): Promise<boolean> => {
       onActionStart?.();
       try {
-        await actionFn(...args);
-        // Показываем уведомление об успехе
-        showSuccess(t(successTitleKey), t(successMessageKey));
+        await GoAddTorrent(url, downloadDir);
+        showFormatted(
+          t("notifications.addTorrentSuccessTitle"),
+          "notifications.addTorrentSuccessMessage",
+          { name: "New" },
+          "success"
+        );
         onActionSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Action failed: ${errorMessageKey}`, error);
-        // Формируем сообщение об ошибке, используя ключ и само сообщение ошибки
-        const errorMessage = t(errorMessageKey, { error: String(error) });
-        // Показываем уведомление об ошибке
-        showError(t(errorTitleKey), errorMessage);
-        // Вызываем колбэк ошибки, если он задан
-        onActionError?.(errorMessageKey);
+        console.error("Failed to add torrent:", error);
+        showFormatted(
+          t("notifications.addTorrentErrorTitle"),
+          "notifications.addTorrentErrorMessage",
+          { error: String(error) },
+          "error"
+        );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, onActionError, t, showSuccess, showError] // Добавляем зависимость onActionError
-  );
-
-  // Определяем ключи для каждого действия
-  const addTorrent = useCallback(
-    (url: string, downloadDir: string = "") =>
-      performAction(
-        AddTorrentAPI,
-        [url, downloadDir],
-        "notifications.addTorrentSuccessTitle",
-        "notifications.addTorrentSuccessMessage",
-        "notifications.addTorrentErrorTitle",
-        "notifications.addTorrentErrorMessage"
-      ),
-    [performAction]
+    [onActionStart, onActionSuccess, showFormatted, t]
   );
 
   const addTorrentFile = useCallback(
-    (base64Content: string, downloadDir: string = "") =>
-      performAction(
-        AddTorrentFileAPI,
-        [base64Content, downloadDir],
-        "notifications.addTorrentSuccessTitle", // Используем те же ключи, что и для URL
-        "notifications.addTorrentSuccessMessage",
-        "notifications.addTorrentErrorTitle",
-        "notifications.addTorrentErrorMessage"
-      ),
-    [performAction]
+    async (
+      base64Content: string,
+      downloadDir: string = ""
+    ): Promise<boolean> => {
+      onActionStart?.();
+      try {
+        await GoAddTorrentFile(base64Content, downloadDir);
+        showFormatted(
+          t("notifications.addTorrentSuccessTitle"),
+          "notifications.addTorrentSuccessMessage",
+          { name: "New" },
+          "success"
+        );
+        onActionSuccess?.();
+        return true;
+      } catch (error) {
+        console.error("Failed to add torrent file:", error);
+        showFormatted(
+          t("notifications.addTorrentErrorTitle"),
+          "notifications.addTorrentErrorMessage",
+          { error: String(error) },
+          "error"
+        );
+        return false;
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t]
   );
 
   const removeTorrent = useCallback(
-    (id: number, deleteData: boolean) =>
-      performAction(
-        RemoveTorrentAPI,
-        [id, deleteData],
-        "notifications.removeTorrentSuccessTitle",
-        "notifications.removeTorrentSuccessMessage",
-        "notifications.removeTorrentErrorTitle",
-        "notifications.removeTorrentErrorMessage"
-      ),
-    [performAction]
+    async (id: number, deleteData: boolean) => {
+      onActionStart?.();
+      const name = getTorrentName(id);
+      try {
+        await GoRemoveTorrent(id, deleteData); // Fix: pass id as number, not array
+        showFormatted(
+          t("notifications.removeTorrentSuccessTitle"),
+          "notifications.removeTorrentSuccessMessage",
+          { name },
+          "success"
+        );
+        onActionSuccess?.();
+      } catch (error) {
+        console.error(`Failed to remove torrent ${id}:`, error);
+        showFormatted(
+          t("notifications.removeTorrentErrorTitle"),
+          "notifications.removeTorrentErrorMessage",
+          { name, error: String(error) },
+          "error"
+        );
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]
   );
 
   const startTorrents = useCallback(
-    (ids: number[]) =>
-      performAction(
-        StartTorrentsAPI,
-        [ids],
-        "notifications.startTorrentSuccessTitle",
-        "notifications.startTorrentSuccessMessage",
-        "notifications.startTorrentErrorTitle",
-        "notifications.startTorrentErrorMessage"
-      ),
-    [performAction]
+    async (ids: number[]) => {
+      if (ids.length === 0) return;
+      onActionStart?.();
+      const name = getTorrentNames(ids);
+      try {
+        await GoStartTorrents(ids);
+        showFormatted(
+          t("notifications.startTorrentSuccessTitle"),
+          "notifications.startTorrentSuccessMessage",
+          { name },
+          "success"
+        );
+        onActionSuccess?.();
+      } catch (error) {
+        console.error(`Failed to start torrents ${ids.join(", ")}:`, error);
+        showFormatted(
+          t("notifications.startTorrentErrorTitle"),
+          "notifications.startTorrentErrorMessage",
+          { name, error: String(error) },
+          "error"
+        );
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const stopTorrents = useCallback(
-    (ids: number[]) =>
-      performAction(
-        StopTorrentsAPI,
-        [ids],
-        "notifications.stopTorrentSuccessTitle",
-        "notifications.stopTorrentSuccessMessage",
-        "notifications.stopTorrentErrorTitle",
-        "notifications.stopTorrentErrorMessage"
-      ),
-    [performAction]
+    async (ids: number[]) => {
+      if (ids.length === 0) return;
+      onActionStart?.();
+      const name = getTorrentNames(ids);
+      try {
+        await GoStopTorrents(ids);
+        showFormatted(
+          t("notifications.stopTorrentSuccessTitle"),
+          "notifications.stopTorrentSuccessMessage",
+          { name },
+          "success"
+        );
+        onActionSuccess?.();
+      } catch (error) {
+        console.error(`Failed to stop torrents ${ids.join(", ")}:`, error);
+        showFormatted(
+          t("notifications.stopTorrentErrorTitle"),
+          "notifications.stopTorrentErrorMessage",
+          { name, error: String(error) },
+          "error"
+        );
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const setSpeedLimit = useCallback(
-    (ids: number[], isSlowMode: boolean) =>
-      performAction(
-        SetTorrentSpeedLimitAPI,
-        [ids, isSlowMode],
-        "notifications.setSpeedLimitSuccessTitle",
-        isSlowMode
+    async (ids: number[], isSlowMode: boolean) => {
+      if (ids.length === 0) return;
+      onActionStart?.();
+      const name = getTorrentNames(ids);
+      try {
+        await GoSetTorrentSpeedLimit(ids, isSlowMode);
+        const messageKey = isSlowMode
           ? "notifications.setSpeedLimitSlowSuccessMessage"
-          : "notifications.setSpeedLimitNormalSuccessMessage",
-        "notifications.setSpeedLimitErrorTitle",
-        "notifications.setSpeedLimitErrorMessage"
-      ),
-    [performAction]
+          : "notifications.setSpeedLimitNormalSuccessMessage";
+        showFormatted(
+          t("notifications.setSpeedLimitSuccessTitle"),
+          messageKey,
+          { name },
+          "success"
+        );
+        onActionSuccess?.();
+      } catch (error) {
+        console.error(
+          `Failed to set speed limit for ${ids.join(", ")}:`,
+          error
+        );
+        showFormatted(
+          t("notifications.setSpeedLimitErrorTitle"),
+          "notifications.setSpeedLimitErrorMessage",
+          { name, error: String(error) },
+          "error"
+        );
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const verifyTorrent = useCallback(
-    (id: number) =>
-      performAction(
-        VerifyTorrentAPI,
-        [id],
-        "notifications.verifyTorrentSuccessTitle",
-        "notifications.verifyTorrentSuccessMessage",
-        "notifications.verifyTorrentErrorTitle",
-        "notifications.verifyTorrentErrorMessage"
-      ),
-    [performAction]
+    async (id: number) => {
+      onActionStart?.();
+      const name = getTorrentName(id);
+      try {
+        await GoVerifyTorrent(id); // Fix: pass id as number, not array
+        showFormatted(
+          t("notifications.verifyTorrentSuccessTitle"),
+          "notifications.verifyTorrentSuccessMessage",
+          { name },
+          "info"
+        );
+        onActionSuccess?.();
+      } catch (error) {
+        console.error(`Failed to verify torrent ${id}:`, error);
+        showFormatted(
+          t("notifications.verifyTorrentErrorTitle"),
+          "notifications.verifyTorrentErrorMessage",
+          { name, error: String(error) },
+          "error"
+        );
+      }
+    },
+    [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]
   );
 
   return {

@@ -232,7 +232,9 @@
     "settingsSaveSuccessTitle": "Настройки сохранены",
     "settingsSaveSuccessMessage": "Настройки сохранены и соединение установлено.",
     "settingsSaveErrorTitle": "Ошибка сохранения настроек",
-    "settingsSaveErrorMessage": "Не удалось сохранить настройки: {error}"
+    "settingsSaveErrorMessage": "Не удалось сохранить настройки: {error}",
+    "downloadCompleteTitle": "Загрузка завершена",
+    "downloadCompleteMessage": "Торрент «{name}» успешно загружен."
   },
 
   "language": {

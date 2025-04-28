@@ -232,7 +232,9 @@
     "settingsSaveSuccessTitle": "Settings Saved",
     "settingsSaveSuccessMessage": "Settings saved and connection established.",
     "settingsSaveErrorTitle": "Save Settings Failed",
-    "settingsSaveErrorMessage": "Failed to save settings: {error}"
+    "settingsSaveErrorMessage": "Failed to save settings: {error}",
+    "downloadCompleteTitle": "Download Complete",
+    "downloadCompleteMessage": "Torrent \"{name}\" has finished downloading."
   },
 
   "language": {

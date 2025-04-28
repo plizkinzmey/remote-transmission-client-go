@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -12,6 +13,8 @@ import (
 	"io"
 	"log" // Добавляем стандартный пакет логирования
 	"os"
+	"os/exec"
+	"regexp"
 
 	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/pbkdf2"
@@ -214,7 +217,24 @@ func getMachineID() (string, error) {
 
 // macOSMachineID получает UUID оборудования на macOS
 func macOSMachineID() (string, error) {
-	return "", errors.New("macOS UUID not implemented yet")
+	// Выполняем команду ioreg для получения hardware UUID
+	cmd := exec.Command("ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to execute ioreg command: %w", err)
+	}
+
+	// Ищем UUID в выводе команды с помощью регулярного выражения
+	re := regexp.MustCompile(`"IOPlatformUUID"\s*=\s*"([^"]+)"`)
+	matches := re.FindStringSubmatch(out.String())
+
+	if len(matches) >= 2 {
+		return matches[1], nil
+	}
+
+	return "", errors.New("hardware UUID not found in ioreg output")
 }
 
 // getHostname возвращает имя хоста

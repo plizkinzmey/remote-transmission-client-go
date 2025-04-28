@@ -430,6 +430,116 @@ func (s *TorrentService) ApplyPathsTransaction(transaction *domain.PathsTransact
 	return nil
 }
 
+// createUpdatedPathsList создает обновлённый список путей на основе существующих и новых путей
+func (s *TorrentService) createUpdatedPathsList(pathsToAdd, pathsToRemove []string, defaultPath string) []string {
+	// Создаем карту для отслеживания уникальных путей и результирующий список
+	newPathsMap := make(map[string]bool)
+	newPathsList := make([]string, 0)
+
+	// 1. Добавляем новый путь по умолчанию в начало списка (если он указан)
+	if defaultPath != "" {
+		newPathsMap[defaultPath] = true
+		newPathsList = append(newPathsList, defaultPath)
+	}
+
+	// 2. Добавляем новые пути из pathsToAdd (уникальные и непустые)
+	for _, path := range pathsToAdd {
+		if _, exists := newPathsMap[path]; !exists && path != "" {
+			newPathsMap[path] = true
+			newPathsList = append(newPathsList, path)
+		}
+	}
+
+	// 3. Добавляем существующие пути, исключая те, что в pathsToRemove и уже добавленные
+	for _, path := range s.config.DownloadPaths {
+		// Проверяем, должен ли путь быть удален
+		shouldRemove := false
+		for _, pathToRemove := range pathsToRemove {
+			if path == pathToRemove {
+				shouldRemove = true
+				break
+			}
+		}
+
+		// Добавляем путь только если он не должен быть удален, не добавлен ранее и непустой
+		if !shouldRemove && !newPathsMap[path] && path != "" {
+			newPathsMap[path] = true
+			newPathsList = append(newPathsList, path)
+		}
+	}
+
+	// Ограничиваем длину списка до максимального значения
+	if len(newPathsList) > maxDownloadPaths {
+		newPathsList = newPathsList[:maxDownloadPaths]
+	}
+
+	return newPathsList
+}
+
+// updateDefaultPath обновляет путь по умолчанию и гарантирует, что он существует в списке путей
+func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath string) ([]string, string) {
+	updatedPathsList := pathsList
+	updatedDefaultPath := s.config.DefaultDownloadPath
+
+	if defaultPath != "" {
+		// Если указан новый путь по умолчанию, используем его
+		updatedDefaultPath = defaultPath
+
+		// Проверяем, что путь по умолчанию присутствует в списке путей
+		pathExists := false
+		for _, path := range updatedPathsList {
+			if path == defaultPath {
+				pathExists = true
+				break
+			}
+		}
+
+		// Если путь по умолчанию отсутствует в списке, добавляем его в начало
+		if !pathExists {
+			updatedPathsList = append([]string{defaultPath}, updatedPathsList...)
+
+			// Ограничиваем список максимальной длиной
+			if len(updatedPathsList) > maxDownloadPaths {
+				updatedPathsList = updatedPathsList[:maxDownloadPaths]
+			}
+		}
+	} else {
+		// Проверяем, существует ли текущий путь по умолчанию в новом списке
+		currentPathExists := false
+		for _, path := range updatedPathsList {
+			if path == updatedDefaultPath {
+				currentPathExists = true
+				break
+			}
+		}
+
+		// Если текущий путь по умолчанию отсутствует в списке, обновляем его
+		if !currentPathExists {
+			if len(updatedPathsList) > 0 {
+				// Берем первый доступный путь
+				updatedDefaultPath = updatedPathsList[0]
+			} else {
+				// Если список пуст, сбрасываем путь по умолчанию
+				updatedDefaultPath = ""
+			}
+		}
+	}
+
+	return updatedPathsList, updatedDefaultPath
+}
+
+// saveConfigAndHandleErrors сохраняет конфигурацию и обрабатывает ошибки с откатом изменений при необходимости
+func (s *TorrentService) saveConfigAndHandleErrors(originalPaths []string, originalDefaultPath string) error {
+	configService := configServiceFactoryImpl()
+	if err := configService.SaveConfig(s.config); err != nil {
+		// Откатываем изменения в конфигурации при ошибке сохранения
+		s.config.DownloadPaths = originalPaths
+		s.config.DefaultDownloadPath = originalDefaultPath
+		return fmt.Errorf("failed to save config: %w", err)
+	}
+	return nil
+}
+
 // SavePaths сохраняет изменения в списке путей загрузки и пути по умолчанию
 func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
 	if s.config == nil {
@@ -440,106 +550,17 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 	originalPaths := append([]string{}, s.config.DownloadPaths...)
 	originalDefaultPath := s.config.DefaultDownloadPath
 
-	// Создаем новый список путей
-	newPathsMap := make(map[string]bool)
-	newPathsList := make([]string, 0)
+	// Создаем обновленный список путей
+	updatedPaths := s.createUpdatedPathsList(pathsToAdd, pathsToRemove, defaultPath)
 
-	// 1. Добавляем новый путь по умолчанию (если он не пустой)
-	if defaultPath != "" {
-		newPathsMap[defaultPath] = true
-		newPathsList = append(newPathsList, defaultPath)
-	}
+	// Обновляем список путей в конфигурации
+	s.config.DownloadPaths = updatedPaths
 
-	// 2. Добавляем пути из pathsToAdd (уникальные и не равные defaultPath)
-	for _, p := range pathsToAdd {
-		if _, exists := newPathsMap[p]; !exists && p != "" {
-			newPathsMap[p] = true
-			newPathsList = append(newPathsList, p)
-		}
-	}
+	// Обновляем путь по умолчанию и обеспечиваем его наличие в списке
+	s.config.DownloadPaths, s.config.DefaultDownloadPath = s.updateDefaultPath(s.config.DownloadPaths, defaultPath)
 
-	// 3. Добавляем существующие пути, исключая те, что в pathsToRemove и уже добавленные
-	for _, p := range s.config.DownloadPaths {
-		// Проверяем, находится ли путь в списке на удаление
-		shouldRemove := false
-		for _, removeP := range pathsToRemove {
-			if p == removeP {
-				shouldRemove = true
-				break
-			}
-		}
-
-		// Добавляем путь только если он не помечен для удаления и еще не добавлен
-		if !shouldRemove && !newPathsMap[p] && p != "" {
-			newPathsMap[p] = true
-			newPathsList = append(newPathsList, p)
-		}
-	}
-
-	// 4. Обрезаем список до максимальной длины
-	if len(newPathsList) > maxDownloadPaths {
-		newPathsList = newPathsList[:maxDownloadPaths]
-	}
-
-	// Обновляем конфиг
-	s.config.DownloadPaths = newPathsList
-
-	// Обработка пути по умолчанию
-	if defaultPath != "" {
-		// Если задан новый путь по умолчанию, используем его
-		s.config.DefaultDownloadPath = defaultPath
-
-		// Проверяем, что путь по умолчанию присутствует в списке путей
-		defaultPathInList := false
-		for _, p := range newPathsList {
-			if p == defaultPath {
-				defaultPathInList = true
-				break
-			}
-		}
-
-		// Если путь по умолчанию отсутствует в списке, добавляем его
-		if !defaultPathInList && defaultPath != "" {
-			// Добавляем в начало списка
-			s.config.DownloadPaths = append([]string{defaultPath}, s.config.DownloadPaths...)
-			// Ограничиваем длину списка, если необходимо
-			if len(s.config.DownloadPaths) > maxDownloadPaths {
-				s.config.DownloadPaths = s.config.DownloadPaths[:maxDownloadPaths]
-			}
-		}
-	} else {
-		// Проверяем, существует ли текущий путь по умолчанию в новом списке
-		currentDefaultPathExists := false
-		for _, p := range newPathsList {
-			if p == s.config.DefaultDownloadPath {
-				currentDefaultPathExists = true
-				break
-			}
-		}
-
-		// Если текущий путь по умолчанию был удален или не существует
-		if !currentDefaultPathExists {
-			if len(newPathsList) > 0 {
-				// Если есть доступные пути, берем первый
-				s.config.DefaultDownloadPath = newPathsList[0]
-			} else {
-				// Если список пуст, очищаем путь по умолчанию
-				s.config.DefaultDownloadPath = ""
-			}
-		}
-		// Если текущий путь по умолчанию все еще существует, оставляем его
-	}
-
-	// Сохраняем конфиг
-	configService := configServiceFactoryImpl()
-	if err := configService.SaveConfig(s.config); err != nil {
-		// Откатываем изменения в конфиге сервиса при ошибке сохранения
-		s.config.DownloadPaths = originalPaths
-		s.config.DefaultDownloadPath = originalDefaultPath
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
-	return nil
+	// Сохраняем конфигурацию и обрабатываем возможные ошибки
+	return s.saveConfigAndHandleErrors(originalPaths, originalDefaultPath)
 }
 
 // SaveSettingsWithPaths сохраняет настройки соединения и изменения путей в одной транзакции

@@ -25,26 +25,28 @@ const renderHookWithProviders = (hook: () => any) => {
 describe("useTorrentActions", () => {
   const mockOnActionStart = vi.fn();
   const mockOnActionSuccess = vi.fn();
-  const mockTorrents = [{
-    ID: 1,
-    Name: "Test Torrent",
-    Status: "stopped",
-    Progress: 0,
-    Size: 0,
-    SizeFormatted: "0 B",
-    UploadRatio: 0,
-    SeedsConnected: 0,
-    SeedsTotal: 0,
-    PeersConnected: 0,
-    PeersTotal: 0,
-    UploadedBytes: 0,
-    UploadedFormatted: "0 B",
-    DownloadSpeed: 0,
-    UploadSpeed: 0,
-    DownloadSpeedFormatted: "0 B/s",
-    UploadSpeedFormatted: "0 B/s",
-    IsSlowMode: false
-  }];
+  const mockTorrents = [
+    {
+      ID: 1,
+      Name: "Test Torrent",
+      Status: "stopped",
+      Progress: 0,
+      Size: 0,
+      SizeFormatted: "0 B",
+      UploadRatio: 0,
+      SeedsConnected: 0,
+      SeedsTotal: 0,
+      PeersConnected: 0,
+      PeersTotal: 0,
+      UploadedBytes: 0,
+      UploadedFormatted: "0 B",
+      DownloadSpeed: 0,
+      UploadSpeed: 0,
+      DownloadSpeedFormatted: "0 B/s",
+      UploadSpeedFormatted: "0 B/s",
+      IsSlowMode: false,
+    },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks(); // Очищаем моки перед каждым тестом

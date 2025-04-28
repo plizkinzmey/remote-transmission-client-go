@@ -116,7 +116,7 @@ export const useSettingsSaver = ({
         if (success) {
           // Показываем уведомление об успешной инициализации при первом запуске
           showSuccess(
-            t("notifications.settingsSavedTitle"),
+            t("notifications.settingsSaveSuccessTitle"),
             t("notifications.connectionInitializedMessage")
           );
           onSaveSuccess();
@@ -128,15 +128,17 @@ export const useSettingsSaver = ({
         if (result.success) {
           // Показываем уведомление об успешном сохранении настроек
           showSuccess(
-            t("notifications.settingsSavedTitle"),
-            t("notifications.settingsSavedMessage")
+            t("notifications.settingsSaveSuccessTitle"),
+            t("notifications.settingsSaveSuccessMessage")
           );
           onSaveSuccess();
         } else if (result.error) {
           // Показываем уведомление об ошибке сохранения
           showError(
-            t("notifications.settingsErrorTitle"),
-            result.error.toString()
+            t("notifications.settingsSaveErrorTitle"),
+            t("notifications.settingsSaveErrorMessage", {
+              error: result.error.toString(),
+            })
           );
           onSaveError(result.error);
         }
@@ -146,7 +148,12 @@ export const useSettingsSaver = ({
         0: String(error),
       });
       // Показываем уведомление об ошибке
-      showError(t("notifications.settingsErrorTitle"), errorMessage);
+      showError(
+        t("notifications.settingsSaveErrorTitle"),
+        t("notifications.settingsSaveErrorMessage", {
+          error: errorMessage,
+        })
+      );
       onSaveError(errorMessage);
     } finally {
       setIsSaving(false);

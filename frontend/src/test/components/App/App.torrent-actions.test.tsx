@@ -333,7 +333,7 @@ describe("App - Torrent Actions Callbacks", () => {
 
         render(<App />);
         const torrentListProps = (window as any).mockTorrentListProps;
-        
+
         await expect(torrentListProps.onStart(1)).rejects.toThrow("Test error");
         expect(mockRefreshTorrents).not.toHaveBeenCalled();
     });

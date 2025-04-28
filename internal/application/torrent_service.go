@@ -548,10 +548,10 @@ func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath strin
 	updatedDefaultPath := s.config.DefaultDownloadPath
 
 	if defaultPath != "" {
-		// Если указан новый путь по умолчанию, используем его
+		// Если указан новый путь по умолчанию, используем его вместо текущего
 		updatedDefaultPath = defaultPath
 
-		// Проверяем, что путь по умолчанию присутствует в списке путей
+		// Проверяем, что новый путь по умолчанию присутствует в списке путей
 		pathExists := false
 		for _, path := range updatedPathsList {
 			if path == defaultPath {
@@ -560,18 +560,21 @@ func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath strin
 			}
 		}
 
-		// Если путь по умолчанию отсутствует в списке, добавляем его в начало
+		// Если новый путь по умолчанию отсутствует в списке, добавляем его в начало
+		// чтобы обеспечить его доступность при выборе путей
 		if !pathExists {
 			updatedPathsList = append([]string{defaultPath}, updatedPathsList...)
 
-			// Ограничиваем список максимальной длиной
+			// Ограничиваем список максимальной длиной, чтобы не превысить лимит
 			if len(updatedPathsList) > maxDownloadPaths {
 				updatedPathsList = updatedPathsList[:maxDownloadPaths]
 			}
 		}
 	} else {
-		// Поведение при пустом defaultPath: проверяем актуальность текущего значения
-		// и при необходимости обновляем его на основе доступных путей
+		// Если новый путь не указан (defaultPath пустой), проверяем, актуален ли текущий путь
+		// по умолчанию в конфигурации
+
+		// Проверяем наличие текущего пути по умолчанию в обновленном списке
 		currentPathExists := false
 		for _, path := range updatedPathsList {
 			if path == updatedDefaultPath {
@@ -580,16 +583,19 @@ func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath strin
 			}
 		}
 
-		// Если текущий путь по умолчанию отсутствует в списке, обновляем его
+		// Если текущий путь по умолчанию отсутствует в списке, применяем логику выбора альтернативы:
 		if !currentPathExists {
 			if len(updatedPathsList) > 0 {
-				// Берем первый доступный путь как новый путь по умолчанию
+				// 1. Если есть доступные пути, берем первый путь как новый путь по умолчанию,
+				// так как текущий путь недоступен
 				updatedDefaultPath = updatedPathsList[0]
 			} else {
-				// Если список пуст, сбрасываем путь по умолчанию
+				// 2. Если список путей пуст, сбрасываем путь по умолчанию на пустую строку,
+				// поскольку нет доступных альтернатив
 				updatedDefaultPath = ""
 			}
 		}
+		// Если текущий путь по умолчанию присутствует в списке, оставляем его без изменений
 	}
 
 	return updatedPathsList, updatedDefaultPath

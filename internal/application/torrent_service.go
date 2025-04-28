@@ -434,68 +434,93 @@ func (s *TorrentService) ApplyPathsTransaction(transaction *domain.PathsTransact
 	return nil
 }
 
+// pathsToPathMap преобразует список путей в карту для быстрого поиска
+func pathsToPathMap(paths []string) map[string]bool {
+	result := make(map[string]bool)
+	for _, path := range paths {
+		if path != "" {
+			result[path] = true
+		}
+	}
+	return result
+}
+
+// addNewPaths добавляет новые пути в список результатов с проверкой дубликатов
+func (s *TorrentService) addNewPaths(result []string, pathsToAdd []string, skipPaths map[string]bool, seenPaths map[string]bool) []string {
+	for _, path := range pathsToAdd {
+		if path != "" && !seenPaths[path] && !skipPaths[path] {
+			result = append(result, path)
+			seenPaths[path] = true
+		}
+	}
+	return result
+}
+
+// ensureDefaultPathExists добавляет путь по умолчанию в список, если он задан и отсутствует в списке
+func (s *TorrentService) ensureDefaultPathExists(result []string, defaultPath string, seenPaths map[string]bool) []string {
+	if defaultPath != "" && !seenPaths[defaultPath] {
+		result = append(result, defaultPath)
+		seenPaths[defaultPath] = true
+	}
+	return result
+}
+
+// addExistingPaths добавляет существующие пути из конфигурации с проверкой дубликатов
+func (s *TorrentService) addExistingPaths(result []string, skipPaths map[string]bool, seenPaths map[string]bool) []string {
+	if s.config == nil || s.config.DownloadPaths == nil {
+		return result
+	}
+
+	for _, path := range s.config.DownloadPaths {
+		if path != "" && !seenPaths[path] && !skipPaths[path] {
+			result = append(result, path)
+			seenPaths[path] = true
+		}
+	}
+	return result
+}
+
+// limitPathsListSize ограничивает размер списка путей максимальным значением
+func (s *TorrentService) limitPathsListSize(paths []string, maxSize int) []string {
+	if len(paths) > maxSize {
+		return paths[:maxSize]
+	}
+	return paths
+}
+
 // createUpdatedPathsList создает обновленный список путей загрузки, обрабатывая следующие случаи:
 // - Добавляет новые пути в начало списка (pathsToAdd)
 // - Удаляет указанные пути (pathsToRemove)
 // - Гарантирует присутствие defaultPath в списке
 // - Удаляет дубликаты, сохраняя порядок
-// - Ограничивает размер списка до 10 элементов
+// - Ограничивает размер списка до maxDownloadPaths элементов
 func (s *TorrentService) createUpdatedPathsList(pathsToAdd, pathsToRemove []string, defaultPath string) []string {
 	// Инициализируем пустой результирующий слайс
 	result := make([]string, 0)
 
-	// Создаем map для быстрой проверки наличия путей в списке удаления
-	removePaths := make(map[string]bool)
-	for _, path := range pathsToRemove {
-		removePaths[path] = true
-	}
-
-	// Создаем map для отслеживания уникальных путей
+	// Создаем карты для отслеживания путей
+	removePaths := pathsToPathMap(pathsToRemove)
 	seenPaths := make(map[string]bool)
 
-	// Вспомогательная функция для добавления пути с проверкой дубликатов
-	addPath := func(path string) {
-		// Пропускаем пустые пути
-		if path == "" {
-			return
-		}
-		// Добавляем путь, если он еще не встречался и не помечен для удаления
-		if !seenPaths[path] && !removePaths[path] {
-			result = append(result, path)
-			seenPaths[path] = true
-		}
-	}
-
-	// 1. Добавляем новые пути
-	for _, path := range pathsToAdd {
-		addPath(path)
-	}
-
-	// 2. Добавляем defaultPath, если он задан, независимо от того, помечен ли он для удаления
-	if defaultPath != "" {
-		// Для defaultPath игнорируем removePaths
-		if !seenPaths[defaultPath] {
-			result = append(result, defaultPath)
-			seenPaths[defaultPath] = true
-		}
-	}
-
-	// 3. Добавляем существующие пути
-	if s.config != nil {
-		for _, path := range s.config.DownloadPaths {
-			addPath(path)
-		}
-	}
-
-	// 4. Ограничиваем размер списка до 10 элементов
-	if len(result) > 10 {
-		result = result[:10]
-	}
+	// Добавляем пути в определенном порядке
+	result = s.addNewPaths(result, pathsToAdd, removePaths, seenPaths)
+	result = s.ensureDefaultPathExists(result, defaultPath, seenPaths)
+	result = s.addExistingPaths(result, removePaths, seenPaths)
+	result = s.limitPathsListSize(result, maxDownloadPaths)
 
 	return result
 }
 
 // updateDefaultPath обновляет путь по умолчанию и гарантирует, что он существует в списке путей
+//
+// Поведение функции:
+//  1. Если defaultPath не пустой - использует его как новый путь по умолчанию
+//     и гарантирует наличие этого пути в списке
+//  2. Если defaultPath пустой - проверяет наличие текущего пути по умолчанию:
+//     - Если текущий путь есть в списке - оставляет его без изменений
+//     - Если текущего пути нет в списке - берет первый путь из списка или устанавливает пустую строку, если список пуст
+//
+// Возвращает обновленный список путей и путь по умолчанию
 func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath string) ([]string, string) {
 	updatedPathsList := pathsList
 	updatedDefaultPath := s.config.DefaultDownloadPath
@@ -523,7 +548,8 @@ func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath strin
 			}
 		}
 	} else {
-		// Проверяем, существует ли текущий путь по умолчанию в новом списке
+		// Поведение при пустом defaultPath: проверяем актуальность текущего значения
+		// и при необходимости обновляем его на основе доступных путей
 		currentPathExists := false
 		for _, path := range updatedPathsList {
 			if path == updatedDefaultPath {
@@ -535,7 +561,7 @@ func (s *TorrentService) updateDefaultPath(pathsList []string, defaultPath strin
 		// Если текущий путь по умолчанию отсутствует в списке, обновляем его
 		if !currentPathExists {
 			if len(updatedPathsList) > 0 {
-				// Берем первый доступный путь
+				// Берем первый доступный путь как новый путь по умолчанию
 				updatedDefaultPath = updatedPathsList[0]
 			} else {
 				// Если список пуст, сбрасываем путь по умолчанию
@@ -582,28 +608,35 @@ func (s *TorrentService) SavePaths(pathsToAdd []string, pathsToRemove []string, 
 	return s.saveConfigAndHandleErrors(originalPaths, originalDefaultPath)
 }
 
+// validatePaths проверяет корректность путей перед применением изменений
+func (s *TorrentService) validatePaths(pathsToAdd []string, defaultPath string) error {
+	// Проверяем все новые пути
+	for _, path := range pathsToAdd {
+		if err := s.ValidateDownloadPath(path); err != nil {
+			return fmt.Errorf("failed to save paths: invalid path %s: %w", path, err)
+		}
+	}
+
+	// Проверяем путь по умолчанию, если он указан и не пуст
+	if defaultPath != "" {
+		if err := s.ValidateDownloadPath(defaultPath); err != nil {
+			return fmt.Errorf("failed to save paths: invalid default path %s: %w", defaultPath, err)
+		}
+	}
+
+	return nil
+}
+
 // SaveSettingsWithPaths сохраняет настройки соединения и изменения путей в одной транзакции
 func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.ConnectionConfig, pathsToAdd []string, pathsToRemove []string, defaultPath string) error {
 	if s.config == nil {
 		return ErrConfigNotInited
 	}
 
-	// --- Переносим валидацию путей сюда ---
-	// Проверяем все новые пути
-	for _, path := range pathsToAdd {
-		if err := s.ValidateDownloadPath(path); err != nil {
-			// Возвращаем ошибку немедленно, не изменяя конфиг
-			return fmt.Errorf("failed to save paths: invalid path %s: %w", path, err)
-		}
+	// Валидация путей перед продолжением
+	if err := s.validatePaths(pathsToAdd, defaultPath); err != nil {
+		return err
 	}
-	// Проверяем путь по умолчанию, если он указан и не пуст
-	if defaultPath != "" {
-		if err := s.ValidateDownloadPath(defaultPath); err != nil {
-			// Возвращаем ошибку немедленно, не изменяя конфиг
-			return fmt.Errorf("failed to save paths: invalid default path %s: %w", defaultPath, err)
-		}
-	}
-	// --- Конец блока валидации ---
 
 	// Сохраняем оригинальный список путей и настройки для возможного отката
 	originalPaths := append([]string{}, s.config.DownloadPaths...)

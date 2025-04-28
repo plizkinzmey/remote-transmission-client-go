@@ -9,11 +9,12 @@ import {
   VerifyTorrent as VerifyTorrentAPI,
 } from "@wailsjs/go/main/App";
 import { useLocalization } from "@/contexts/LocalizationContext";
+import { useNotification } from "@/hooks/useNotification"; // Импортируем хук уведомлений
 
 interface TorrentActionsProps {
   onActionStart?: () => void; // Колбэк перед началом действия
   onActionSuccess?: () => void; // Колбэк после успешного действия (например, для обновления списка)
-  onActionError?: (error: string) => void; // Колбэк при ошибке действия
+  onActionError?: (errorKey: string) => void; // Колбэк при возникновении ошибки
 }
 
 /**
@@ -25,34 +26,48 @@ export function useTorrentActions({
   onActionError,
 }: TorrentActionsProps) {
   const { t } = useLocalization();
+  const { showSuccess, showError } = useNotification(); // Получаем функции уведомлений
 
   const performAction = useCallback(
     async <T extends unknown[]>(
       actionFn: (...args: T) => Promise<any>,
       args: T,
-      errorKey: string
+      successTitleKey: string, // Ключ для заголовка успеха
+      successMessageKey: string, // Ключ для сообщения успеха
+      errorTitleKey: string, // Ключ для заголовка ошибки
+      errorMessageKey: string // Ключ для сообщения ошибки (шаблон)
     ): Promise<boolean> => {
       onActionStart?.();
       try {
         await actionFn(...args);
+        // Показываем уведомление об успехе
+        showSuccess(t(successTitleKey), t(successMessageKey));
         onActionSuccess?.();
         return true;
       } catch (error) {
-        console.error(`Action failed: ${errorKey}`, error);
-        const errorMessage = t(errorKey, String(error));
-        onActionError?.(errorMessage);
+        console.error(`Action failed: ${errorMessageKey}`, error);
+        // Формируем сообщение об ошибке, используя ключ и само сообщение ошибки
+        const errorMessage = t(errorMessageKey, { error: String(error) });
+        // Показываем уведомление об ошибке
+        showError(t(errorTitleKey), errorMessage);
+        // Вызываем колбэк ошибки, если он задан
+        onActionError?.(errorMessageKey);
         return false;
       }
     },
-    [onActionStart, onActionSuccess, onActionError, t]
+    [onActionStart, onActionSuccess, onActionError, t, showSuccess, showError] // Добавляем зависимость onActionError
   );
 
+  // Определяем ключи для каждого действия
   const addTorrent = useCallback(
     (url: string, downloadDir: string = "") =>
       performAction(
         AddTorrentAPI,
         [url, downloadDir],
-        "errors.failedToAddTorrent"
+        "notifications.addTorrentSuccessTitle",
+        "notifications.addTorrentSuccessMessage",
+        "notifications.addTorrentErrorTitle",
+        "notifications.addTorrentErrorMessage"
       ),
     [performAction]
   );
@@ -62,7 +77,10 @@ export function useTorrentActions({
       performAction(
         AddTorrentFileAPI,
         [base64Content, downloadDir],
-        "errors.failedToAddTorrent"
+        "notifications.addTorrentSuccessTitle", // Используем те же ключи, что и для URL
+        "notifications.addTorrentSuccessMessage",
+        "notifications.addTorrentErrorTitle",
+        "notifications.addTorrentErrorMessage"
       ),
     [performAction]
   );
@@ -72,20 +90,37 @@ export function useTorrentActions({
       performAction(
         RemoveTorrentAPI,
         [id, deleteData],
-        "errors.failedToRemoveTorrent"
+        "notifications.removeTorrentSuccessTitle",
+        "notifications.removeTorrentSuccessMessage",
+        "notifications.removeTorrentErrorTitle",
+        "notifications.removeTorrentErrorMessage"
       ),
     [performAction]
   );
 
   const startTorrents = useCallback(
     (ids: number[]) =>
-      performAction(StartTorrentsAPI, [ids], "errors.failedToStartTorrent"),
+      performAction(
+        StartTorrentsAPI,
+        [ids],
+        "notifications.startTorrentSuccessTitle",
+        "notifications.startTorrentSuccessMessage",
+        "notifications.startTorrentErrorTitle",
+        "notifications.startTorrentErrorMessage"
+      ),
     [performAction]
   );
 
   const stopTorrents = useCallback(
     (ids: number[]) =>
-      performAction(StopTorrentsAPI, [ids], "errors.failedToStopTorrent"),
+      performAction(
+        StopTorrentsAPI,
+        [ids],
+        "notifications.stopTorrentSuccessTitle",
+        "notifications.stopTorrentSuccessMessage",
+        "notifications.stopTorrentErrorTitle",
+        "notifications.stopTorrentErrorMessage"
+      ),
     [performAction]
   );
 
@@ -94,14 +129,26 @@ export function useTorrentActions({
       performAction(
         SetTorrentSpeedLimitAPI,
         [ids, isSlowMode],
-        "errors.failedToSetSpeedLimit"
+        "notifications.setSpeedLimitSuccessTitle",
+        isSlowMode
+          ? "notifications.setSpeedLimitSlowSuccessMessage"
+          : "notifications.setSpeedLimitNormalSuccessMessage",
+        "notifications.setSpeedLimitErrorTitle",
+        "notifications.setSpeedLimitErrorMessage"
       ),
     [performAction]
   );
 
   const verifyTorrent = useCallback(
     (id: number) =>
-      performAction(VerifyTorrentAPI, [id], "errors.failedToVerifyTorrent"),
+      performAction(
+        VerifyTorrentAPI,
+        [id],
+        "notifications.verifyTorrentSuccessTitle",
+        "notifications.verifyTorrentSuccessMessage",
+        "notifications.verifyTorrentErrorTitle",
+        "notifications.verifyTorrentErrorMessage"
+      ),
     [performAction]
   );
 

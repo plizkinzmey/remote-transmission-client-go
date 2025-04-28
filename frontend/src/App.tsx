@@ -9,7 +9,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { useModals } from "@hooks/useModals";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { DragDropProvider } from "./components/DragDropProvider";
-import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
 import { mapBackendStatusToFrontend } from "@utils/torrentStatus"; // Импортируем функцию маппинга
 import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
@@ -171,7 +170,6 @@ function App() {
   } = useTorrentActions({
     onActionStart: () => { },
     onActionSuccess: refreshTorrents,
-    onActionError: () => { }, // Удаляем setAppError
   });
 
   // 5. Массовые операции (зависят от выбранных торрентов и действий)
@@ -302,8 +300,6 @@ function App() {
           isReconnecting={isReconnecting}
           isFirstStart={isFirstStart}
         />
-
-        {(isReconnecting || appError) && <ConnectionStatus isReconnecting={isReconnecting} error={appError} />}
 
         <div className={styles.content}>
           <div className={styles.scrollableContent}>

@@ -4,6 +4,7 @@ import { useLocalization } from "@contexts/LocalizationContext"; // Use alias
 import { ConnectionConfig } from "@app/App";
 import { PathChanges } from "@app/types/settings"; // Исправлен импорт с @types/settings на @app/types/settings
 import { PathsTabRef } from "@components/Settings/PathsTab"; // Use path alias
+import { useNotification } from "@/hooks/useNotification"; // Добавлен импорт хука уведомлений
 
 // Добавим типы для улучшения читаемости и безопасности
 type SaveResult = {
@@ -44,6 +45,7 @@ export const useSettingsSaver = ({
 }: UseSettingsSaverProps): UseSettingsSaverResult => {
   const { t } = useLocalization();
   const [isSaving, setIsSaving] = useState(false);
+  const { showSuccess, showError } = useNotification(); // Используем хук уведомлений
 
   // Выносим логику сохранения в отдельную функцию
   const executeSave = async (pathChanges: PathChanges): Promise<SaveResult> => {
@@ -112,6 +114,11 @@ export const useSettingsSaver = ({
       if (isFirstStart) {
         const success = await onConnectionInitNeeded();
         if (success) {
+          // Показываем уведомление об успешной инициализации при первом запуске
+          showSuccess(
+            t("notifications.settingsSavedTitle"),
+            t("notifications.connectionInitializedMessage")
+          );
           onSaveSuccess();
         }
       } else {
@@ -119,13 +126,28 @@ export const useSettingsSaver = ({
         const result = await executeSave(pathChanges);
 
         if (result.success) {
+          // Показываем уведомление об успешном сохранении настроек
+          showSuccess(
+            t("notifications.settingsSavedTitle"),
+            t("notifications.settingsSavedMessage")
+          );
           onSaveSuccess();
         } else if (result.error) {
+          // Показываем уведомление об ошибке сохранения
+          showError(
+            t("notifications.settingsErrorTitle"),
+            result.error.toString()
+          );
           onSaveError(result.error);
         }
       }
     } catch (error) {
-      onSaveError(t("errors.failedToUpdateSettings", { 0: String(error) }));
+      const errorMessage = t("errors.failedToUpdateSettings", {
+        0: String(error),
+      });
+      // Показываем уведомление об ошибке
+      showError(t("notifications.settingsErrorTitle"), errorMessage);
+      onSaveError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -140,6 +162,8 @@ export const useSettingsSaver = ({
     currentLanguage,
     initialLanguage,
     getPathChanges,
+    showSuccess,
+    showError,
   ]);
 
   const resetChanges = useCallback(() => {

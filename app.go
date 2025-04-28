@@ -16,6 +16,7 @@ import (
 	"encoding/base64" // добавлено
 	"os"              // добавлено
 
+	"github.com/gen2brain/beeep"               // Добавлено для уведомлений
 	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
 )
 
@@ -453,4 +454,42 @@ func (a *App) GetTorrentDownloadDirectory(id int64) (string, error) {
 		return "", transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetTorrentDownloadDirectory(id)
+}
+
+// ShowNotification displays a native OS notification.
+func (a *App) ShowNotification(title string, message string, level string) error {
+	// Логируем вызов уведомления
+	log.Printf("Showing notification: Level=%s, Title=%s, Message=%s", level, title, message)
+
+	// Получаем путь к иконке (если нужно)
+	iconPath := a.getNotificationIconPath(level)
+
+	// Отправляем уведомление
+	err := beeep.Notify(title, message, iconPath)
+	if err != nil {
+		// Логируем ошибку отправки
+		log.Printf("Failed to send notification: %v", err)
+		return fmt.Errorf("failed to send notification: %w", err) // Возвращаем ошибку
+	}
+	return nil
+}
+
+// getNotificationIconPath возвращает путь к иконке в зависимости от уровня уведомления.
+// Пока возвращает пустую строку (без иконки).
+// TODO: Реализовать логику выбора иконки, если это необходимо.
+// Иконки должны быть включены в сборку приложения.
+func (a *App) getNotificationIconPath(level string) string {
+	// Примерная логика для выбора иконки в зависимости от level
+	switch level {
+	case "success":
+		return "" // В будущем: "assets/icons/success.png" - путь к иконке успеха
+	case "error":
+		return "" // В будущем: "assets/icons/error.png" - путь к иконке ошибки
+	case "warning":
+		return "" // В будущем: "assets/icons/warning.png" - путь к иконке предупреждения
+	case "info":
+		return "" // В будущем: "assets/icons/info.png" - путь к иконке информации
+	default:
+		return "" // Иконка по умолчанию или без иконки
+	}
 }

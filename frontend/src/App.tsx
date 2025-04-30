@@ -5,6 +5,7 @@ import { TorrentList } from "./components/TorrentList";
 import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
+import { ConnectionStatus } from "./components/ConnectionStatus"; // Добавляем импорт ConnectionStatus
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useModals } from "@hooks/useModals";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
@@ -302,6 +303,11 @@ function App() {
           isReconnecting={isReconnecting}
           isFirstStart={isFirstStart}
         />
+
+        {/* Добавляем ConnectionStatus компонент */}
+        {(isReconnecting || appError) && (
+          <ConnectionStatus isReconnecting={isReconnecting} error={appError} />
+        )}
 
         <div className={styles.content}>
           <div className={styles.scrollableContent}>

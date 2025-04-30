@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useNotification } from "../useNotification";
 import * as AppAPI from "@wailsjs/go/main/App";
@@ -16,6 +16,10 @@ vi.mock("@wailsjs/runtime", () => ({
   LogError: vi.fn(),
 }));
 
+// Мокируем console.error
+const originalConsoleError = console.error;
+console.error = vi.fn();
+
 const mockShowNotification = vi.mocked(AppAPI.ShowNotification);
 const mockLogError = vi.mocked(LogError);
 
@@ -23,6 +27,11 @@ describe("useNotification", () => {
   // Сбрасываем моки перед каждым тестом
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // Восстанавливаем console.error после всех тестов
+  afterAll(() => {
+    console.error = originalConsoleError;
   });
 
   // Создаем функцию-обертку без использования JSX
@@ -125,11 +134,9 @@ describe("useNotification", () => {
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
-    // Проверяем, что функция не выбрасывает ошибку наружу (silent fail)
+    // Вызываем функцию без проверки промиса, так как функция не возвращает промис
     await act(async () => {
-      await expect(
-        result.current.showSuccess("Тест", "Сообщение с ошибкой")
-      ).resolves.toBeUndefined();
+      result.current.showSuccess("Тест", "Сообщение с ошибкой");
     });
 
     // Проверяем, что ошибка была залогирована

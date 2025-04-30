@@ -299,10 +299,11 @@ describe("App - Действия с торрентами (колбэки)", () =
             addTorrent: vi.fn(),
             addTorrentFile: vi.fn(),
             removeTorrent: vi.fn(),
-            startTorrents: async (ids: number[]) => {
+            startTorrents: async (ids: number[]): Promise<boolean> => {
                 onActionStart?.();
                 await Promise.resolve();
                 onActionSuccess?.();
+                return true;
             },
             stopTorrents: vi.fn(),
             setSpeedLimit: vi.fn(),
@@ -322,12 +323,12 @@ describe("App - Действия с торрентами (колбэки)", () =
             addTorrent: vi.fn(),
             addTorrentFile: vi.fn(),
             removeTorrent: vi.fn(),
-            startTorrents: (ids: number[]) => {
+            startTorrents: (ids: number[]): Promise<boolean> => {
                 // Вызываем только onActionStart, но не onActionSuccess
                 // и не выбрасываем ошибку, чтобы избежать unhandled rejection
                 onActionStart?.();
                 // Возвращаем resolved Promise для типовой совместимости
-                return Promise.resolve();
+                return Promise.resolve(false);
             },
             stopTorrents: vi.fn(),
             setSpeedLimit: vi.fn(),

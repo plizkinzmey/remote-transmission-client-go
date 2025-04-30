@@ -105,11 +105,11 @@ export function useTorrentActions({
   );
 
   const removeTorrent = useCallback(
-    async (id: number, deleteData: boolean) => {
+    async (id: number, deleteData: boolean): Promise<boolean> => {
       onActionStart?.();
       const name = getTorrentName(id);
       try {
-        await GoRemoveTorrent(id, deleteData); // Fix: pass id as number, not array
+        await GoRemoveTorrent(id, deleteData);
         showFormatted(
           t("notifications.removeTorrentSuccessTitle"),
           "notifications.removeTorrentSuccessMessage",
@@ -117,6 +117,7 @@ export function useTorrentActions({
           "success"
         );
         onActionSuccess?.();
+        return true;
       } catch (error) {
         console.error(`Failed to remove torrent ${id}:`, error);
         showFormatted(
@@ -125,14 +126,15 @@ export function useTorrentActions({
           { name, error: String(error) },
           "error"
         );
+        return false;
       }
     },
     [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]
   );
 
   const startTorrents = useCallback(
-    async (ids: number[]) => {
-      if (ids.length === 0) return;
+    async (ids: number[]): Promise<boolean> => {
+      if (ids.length === 0) return true;
       onActionStart?.();
       const name = getTorrentNames(ids);
       try {
@@ -144,6 +146,7 @@ export function useTorrentActions({
           "success"
         );
         onActionSuccess?.();
+        return true;
       } catch (error) {
         console.error(`Failed to start torrents ${ids.join(", ")}:`, error);
         showFormatted(
@@ -152,14 +155,15 @@ export function useTorrentActions({
           { name, error: String(error) },
           "error"
         );
+        return false;
       }
     },
     [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const stopTorrents = useCallback(
-    async (ids: number[]) => {
-      if (ids.length === 0) return;
+    async (ids: number[]): Promise<boolean> => {
+      if (ids.length === 0) return true;
       onActionStart?.();
       const name = getTorrentNames(ids);
       try {
@@ -171,6 +175,7 @@ export function useTorrentActions({
           "success"
         );
         onActionSuccess?.();
+        return true;
       } catch (error) {
         console.error(`Failed to stop torrents ${ids.join(", ")}:`, error);
         showFormatted(
@@ -179,14 +184,15 @@ export function useTorrentActions({
           { name, error: String(error) },
           "error"
         );
+        return false;
       }
     },
     [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const setSpeedLimit = useCallback(
-    async (ids: number[], isSlowMode: boolean) => {
-      if (ids.length === 0) return;
+    async (ids: number[], isSlowMode: boolean): Promise<boolean> => {
+      if (ids.length === 0) return true;
       onActionStart?.();
       const name = getTorrentNames(ids);
       try {
@@ -201,6 +207,7 @@ export function useTorrentActions({
           "success"
         );
         onActionSuccess?.();
+        return true;
       } catch (error) {
         console.error(
           `Failed to set speed limit for ${ids.join(", ")}:`,
@@ -212,17 +219,18 @@ export function useTorrentActions({
           { name, error: String(error) },
           "error"
         );
+        return false;
       }
     },
     [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
   );
 
   const verifyTorrent = useCallback(
-    async (id: number) => {
+    async (id: number): Promise<boolean> => {
       onActionStart?.();
       const name = getTorrentName(id);
       try {
-        await GoVerifyTorrent(id); // Fix: pass id as number, not array
+        await GoVerifyTorrent(id);
         showFormatted(
           t("notifications.verifyTorrentSuccessTitle"),
           "notifications.verifyTorrentSuccessMessage",
@@ -230,6 +238,7 @@ export function useTorrentActions({
           "info"
         );
         onActionSuccess?.();
+        return true;
       } catch (error) {
         console.error(`Failed to verify torrent ${id}:`, error);
         showFormatted(
@@ -238,6 +247,7 @@ export function useTorrentActions({
           { name, error: String(error) },
           "error"
         );
+        return false;
       }
     },
     [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]

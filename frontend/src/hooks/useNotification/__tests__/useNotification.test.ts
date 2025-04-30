@@ -125,8 +125,11 @@ describe("useNotification", () => {
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
+    // Проверяем, что функция не выбрасывает ошибку наружу (silent fail)
     await act(async () => {
-      await result.current.showSuccess("Тест", "Сообщение с ошибкой");
+      await expect(
+        result.current.showSuccess("Тест", "Сообщение с ошибкой")
+      ).resolves.toBeUndefined();
     });
 
     // Проверяем, что ошибка была залогирована

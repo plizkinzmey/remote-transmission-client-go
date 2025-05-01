@@ -43,7 +43,7 @@ const mockPathChanges: PathChanges = {
   defaultPath: "/default/path",
 };
 
-describe("useSettingsSaver Hook", () => {
+describe("Хук useSettingsSaver", () => {
   let mockValidateSettings: Mock;
   let mockOnSaveSuccess: Mock;
   let mockOnSaveError: Mock;
@@ -84,12 +84,12 @@ describe("useSettingsSaver Hook", () => {
     ...overrides,
   });
 
-  it("initializes with isSaving=false", () => {
+  it("инициализируется с isSaving=false", () => {
     const { result } = renderHook(() => useSettingsSaver(getHookProps()));
     expect(result.current.isSaving).toBe(false);
   });
 
-  it("does not save if validation fails", async () => {
+  it("не сохраняет, если валидация не прошла", async () => {
     mockValidateSettings.mockReturnValue(false);
     const { result } = renderHook(() => useSettingsSaver(getHookProps()));
 
@@ -103,7 +103,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it("saves successfully in normal mode without path changes", async () => {
+  it("успешно сохраняет в обычном режиме без изменений путей", async () => {
     const { result } = renderHook(() =>
       useSettingsSaver(getHookProps({ hasPendingPathsChanges: false }))
     );
@@ -127,7 +127,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnConnectionInitNeeded).not.toHaveBeenCalled();
   });
 
-  it("saves successfully in normal mode with path changes", async () => {
+  it("успешно сохраняет в обычном режиме с изменениями путей", async () => {
     const { result } = renderHook(() =>
       useSettingsSaver(getHookProps({ hasPendingPathsChanges: true }))
     );
@@ -150,7 +150,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it("handles SaveAllSettings error in normal mode", async () => {
+  it("обрабатывает ошибку SaveAllSettings в обычном режиме", async () => {
     const saveError = new Error("Save failed");
     (SaveAllSettings as Mock).mockRejectedValue(saveError);
     const { result } = renderHook(() => useSettingsSaver(getHookProps()));
@@ -166,7 +166,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnConnectionInitNeeded).not.toHaveBeenCalled();
   });
 
-  it('handles "service not initialized" error, retries after successful init', async () => {
+  it('обрабатывает ошибку "service not initialized", повторяет попытку после успешной инициализации', async () => {
     const initError = new Error("service not initialized");
     (SaveAllSettings as Mock).mockRejectedValueOnce(initError); // Fail first time
     const { result } = renderHook(() => useSettingsSaver(getHookProps()));
@@ -185,7 +185,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it('handles "service not initialized" error, calls error callback if init fails', async () => {
+  it('обрабатывает ошибку "service not initialized", вызывает колбэк ошибки, если инициализация не удалась', async () => {
     const initError = new Error("service not initialized");
     const connectionInitFailError = new Error("Init failed");
     (SaveAllSettings as Mock).mockRejectedValueOnce(initError);
@@ -205,7 +205,7 @@ describe("useSettingsSaver Hook", () => {
     );
   });
 
-  it("calls onConnectionInitNeeded directly on first start with language change", async () => {
+  it("вызывает onConnectionInitNeeded напрямую при первом запуске с изменением языка", async () => {
     const { result } = renderHook(() =>
       useSettingsSaver(
         getHookProps({
@@ -231,7 +231,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it("calls SaveAllSettings on first start without language change", async () => {
+  it("вызывает onConnectionInitNeeded при первом запуске без изменения языка", async () => {
     const { result } = renderHook(() =>
       useSettingsSaver(
         getHookProps({
@@ -258,7 +258,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it("handles service not initialized error with successful retry", async () => {
+  it("обрабатывает ошибку 'service not initialized' с успешной повторной попыткой", async () => {
     const serviceError = new Error("service not initialized");
     (SaveAllSettings as Mock)
       .mockRejectedValueOnce(serviceError) // First call fails
@@ -276,7 +276,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveError).not.toHaveBeenCalled();
   });
 
-  it("handles connection init failure during service not initialized retry", async () => {
+  it("обрабатывает ошибку инициализации соединения во время повторной попытки после 'service not initialized'", async () => {
     const serviceError = new Error("service not initialized");
     const initError = new Error("Connection failed");
     (SaveAllSettings as Mock).mockRejectedValueOnce(serviceError);
@@ -294,7 +294,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveSuccess).not.toHaveBeenCalled();
   });
 
-  it("handles generic save error", async () => {
+  it("обрабатывает общую ошибку сохранения", async () => {
     const saveError = new Error("Unknown error");
     (SaveAllSettings as Mock).mockRejectedValue(saveError);
 
@@ -310,7 +310,7 @@ describe("useSettingsSaver Hook", () => {
     expect(mockOnSaveSuccess).not.toHaveBeenCalled();
   });
 
-  it("handles failed connection initialization (returns false)", async () => {
+  it("обрабатывает неудачную инициализацию соединения (возвращает false)", async () => {
     mockOnConnectionInitNeeded.mockResolvedValue(false);
     (SaveAllSettings as Mock).mockRejectedValueOnce(
       new Error("service not initialized")
@@ -329,7 +329,7 @@ describe("useSettingsSaver Hook", () => {
     );
   });
 
-  it("handles error in first start mode", async () => {
+  it("обрабатывает ошибку в режиме первого запуска", async () => {
     const firstStartError = new Error("First start error");
     mockOnConnectionInitNeeded.mockRejectedValue(firstStartError);
 
@@ -343,13 +343,14 @@ describe("useSettingsSaver Hook", () => {
 
     expect(mockOnConnectionInitNeeded).toHaveBeenCalledTimes(1);
     expect(mockOnSaveSuccess).not.toHaveBeenCalled();
+    // Проверяем, что ошибка передается в onSaveError в правильном формате
     expect(mockOnSaveError).toHaveBeenCalledWith(
       `Update failed: ${firstStartError}`
     );
     expect(result.current.isSaving).toBe(false);
   });
 
-  it("resets saving state via resetChanges", async () => {
+  it("сбрасывает состояние сохранения через resetChanges", async () => {
     const { result } = renderHook(() => useSettingsSaver(getHookProps()));
 
     await act(async () => {
@@ -363,7 +364,7 @@ describe("useSettingsSaver Hook", () => {
     expect(result.current.isSaving).toBe(false);
   });
 
-  it("handles undefined values in path changes", async () => {
+  it("обрабатывает неопределенные значения в изменениях путей", async () => {
     // Create a new ref with mock that returns undefined values
     mockPathsTabRef = {
       current: {

@@ -32,6 +32,7 @@ describe("useAppErrorHandler", () => {
       showInfo: vi.fn(),
       showWarning: vi.fn(),
       showFormatted: vi.fn(),
+      showDirect: vi.fn(), // Добавляем новый метод из обновленного API
     });
     mockSetConnectionError = vi.fn();
     mockSetIsReconnectingState = vi.fn();

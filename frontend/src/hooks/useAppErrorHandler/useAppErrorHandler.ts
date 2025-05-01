@@ -61,7 +61,13 @@ export function useAppErrorHandler(
 
     // Показываем уведомление только если оно еще не было показано другим хуком
     if (currentAppError && shouldShowNotification) {
-      showError(t("notifications.genericErrorTitle"), t(currentAppError)); // Используем t() для перевода ключа ошибки
+      // Обновляем использование API: вместо передачи текущего ключа ошибки как сообщения,
+      // используем фиксированный ключ для сообщения и передаем текст ошибки как параметр
+      showError(
+        "notifications.genericErrorTitle",
+        "notifications.genericErrorMessage",
+        { error: t(currentAppError) }
+      );
     }
 
     // Сбрасываем состояние переподключения, если ошибок соединения больше нет

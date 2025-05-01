@@ -115,9 +115,10 @@ export const useSettingsSaver = ({
         const success = await onConnectionInitNeeded();
         if (success) {
           // Показываем уведомление об успешной инициализации при первом запуске
+          // Используем прямые ключи локализации вместо функции t()
           showSuccess(
-            t("notifications.settingsSaveSuccessTitle"),
-            t("notifications.connectionInitializedMessage")
+            "notifications.settingsSaveSuccessTitle",
+            "notifications.connectionInitializedMessage"
           );
           onSaveSuccess();
         }
@@ -127,34 +128,38 @@ export const useSettingsSaver = ({
 
         if (result.success) {
           // Показываем уведомление об успешном сохранении настроек
+          // Используем прямые ключи локализации вместо функции t()
           showSuccess(
-            t("notifications.settingsSaveSuccessTitle"),
-            t("notifications.settingsSaveSuccessMessage")
+            "notifications.settingsSaveSuccessTitle",
+            "notifications.settingsSaveSuccessMessage"
           );
           onSaveSuccess();
         } else if (result.error) {
           // Показываем уведомление об ошибке сохранения
+          // Передаем объект с параметрами для форматирования сообщения
           showError(
-            t("notifications.settingsSaveErrorTitle"),
-            t("notifications.settingsSaveErrorMessage", {
-              error: result.error.toString(),
-            })
+            "notifications.settingsSaveErrorTitle",
+            "notifications.settingsSaveErrorMessage",
+            { error: result.error.toString() }
           );
           onSaveError(result.error);
         }
       }
     } catch (error) {
-      const errorMessage = t("errors.failedToUpdateSettings", {
-        0: String(error),
-      });
+      const errorMessage = String(error);
       // Показываем уведомление об ошибке
       showError(
-        t("notifications.settingsSaveErrorTitle"),
-        t("notifications.settingsSaveErrorMessage", {
-          error: errorMessage,
-        })
+        "notifications.settingsSaveErrorTitle",
+        "notifications.settingsSaveErrorMessage",
+        { error: errorMessage }
       );
-      onSaveError(errorMessage);
+
+      // Для согласованности форматирования с другими ошибками
+      // в режиме первого запуска или обычном режиме
+      const formattedError = t("errors.failedToUpdateSettings", {
+        0: errorMessage,
+      });
+      onSaveError(formattedError);
     } finally {
       setIsSaving(false);
     }
@@ -171,6 +176,7 @@ export const useSettingsSaver = ({
     getPathChanges,
     showSuccess,
     showError,
+    executeSave,
   ]);
 
   const resetChanges = useCallback(() => {

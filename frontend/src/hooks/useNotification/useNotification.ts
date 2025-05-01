@@ -18,43 +18,77 @@ export type NotificationLevel = "info" | "success" | "warning" | "error";
 export interface UseNotificationResult {
   /**
    * Показывает успешное уведомление (зеленое)
-   * @param title Заголовок уведомления
-   * @param message Сообщение уведомления
+   * @param titleKey Ключ заголовка уведомления в файле локализации
+   * @param messageKey Ключ сообщения уведомления в файле локализации
+   * @param formatValues Опциональный объект со значениями для подстановки в сообщение
    */
-  showSuccess: (title: string, message: string) => void;
+  showSuccess: (
+    titleKey: string,
+    messageKey: string,
+    formatValues?: Record<string, string | number>
+  ) => void;
 
   /**
    * Показывает уведомление об ошибке (красное)
-   * @param title Заголовок уведомления
-   * @param message Сообщение уведомления
+   * @param titleKey Ключ заголовка уведомления в файле локализации
+   * @param messageKey Ключ сообщения уведомления в файле локализации
+   * @param formatValues Опциональный объект со значениями для подстановки в сообщение
    */
-  showError: (title: string, message: string) => void;
+  showError: (
+    titleKey: string,
+    messageKey: string,
+    formatValues?: Record<string, string | number>
+  ) => void;
 
   /**
    * Показывает информационное уведомление (синее)
-   * @param title Заголовок уведомления
-   * @param message Сообщение уведомления
+   * @param titleKey Ключ заголовка уведомления в файле локализации
+   * @param messageKey Ключ сообщения уведомления в файле локализации
+   * @param formatValues Опциональный объект со значениями для подстановки в сообщение
    */
-  showInfo: (title: string, message: string) => void;
+  showInfo: (
+    titleKey: string,
+    messageKey: string,
+    formatValues?: Record<string, string | number>
+  ) => void;
 
   /**
    * Показывает предупреждающее уведомление (оранжевое)
-   * @param title Заголовок уведомления
-   * @param message Сообщение уведомления
+   * @param titleKey Ключ заголовка уведомления в файле локализации
+   * @param messageKey Ключ сообщения уведомления в файле локализации
+   * @param formatValues Опциональный объект со значениями для подстановки в сообщение
    */
-  showWarning: (title: string, message: string) => void;
+  showWarning: (
+    titleKey: string,
+    messageKey: string,
+    formatValues?: Record<string, string | number>
+  ) => void;
 
   /**
    * Показывает уведомление с локализованным сообщением и возможностью подстановки значений
-   * @param title Заголовок уведомления
+   * @param titleKey Ключ заголовка в файле локализации
    * @param messageKey Ключ сообщения в файле локализации
    * @param formatValues Объект со значениями для подстановки в сообщение
    * @param level Уровень важности уведомления
    */
   showFormatted: (
-    title: string,
+    titleKey: string,
     messageKey: string,
     formatValues: Record<string, string | number>,
+    level: NotificationLevel
+  ) => void;
+
+  /**
+   * Показывает уведомление с прямыми строками (без локализации)
+   * Этот метод следует использовать только в исключительных случаях,
+   * когда строки уже локализованы или не требуют локализации
+   * @param title Заголовок уведомления
+   * @param message Сообщение уведомления
+   * @param level Уровень важности уведомления
+   */
+  showDirect: (
+    title: string,
+    message: string,
     level: NotificationLevel
   ) => void;
 }
@@ -67,10 +101,10 @@ export interface UseNotificationResult {
  * const { showSuccess, showError } = useNotification();
  *
  * // Показать успешное уведомление
- * showSuccess("Успех", "Операция выполнена успешно");
+ * showSuccess("notifications.successTitle", "notifications.operationSuccess", { name: "file.txt" });
  *
  * // Показать уведомление об ошибке
- * showError("Ошибка", "Не удалось выполнить операцию");
+ * showError("notifications.errorTitle", "notifications.operationFailed");
  */
 export function useNotification(): UseNotificationResult {
   const { t } = useLocalization();
@@ -93,62 +127,108 @@ export function useNotification(): UseNotificationResult {
   );
 
   /**
+   * Локализует строку с возможностью форматирования
+   */
+  const localize = useCallback(
+    (key: string, formatValues?: Record<string, string | number>) => {
+      if (!formatValues) {
+        return t(key);
+      }
+      return t(key, formatValues as Record<string, string>);
+    },
+    [t]
+  );
+
+  /**
    * Показывает успешное уведомление (зеленое)
    */
   const showSuccess = useCallback(
-    (title: string, message: string) => {
-      showNotification(title, message, "success");
+    (
+      titleKey: string,
+      messageKey: string,
+      formatValues?: Record<string, string | number>
+    ) => {
+      const localizedTitle = localize(titleKey, formatValues);
+      const localizedMessage = localize(messageKey, formatValues);
+      showNotification(localizedTitle, localizedMessage, "success");
     },
-    [showNotification]
+    [showNotification, localize]
   );
 
   /**
    * Показывает уведомление об ошибке (красное)
    */
   const showError = useCallback(
-    (title: string, message: string) => {
-      showNotification(title, message, "error");
+    (
+      titleKey: string,
+      messageKey: string,
+      formatValues?: Record<string, string | number>
+    ) => {
+      const localizedTitle = localize(titleKey, formatValues);
+      const localizedMessage = localize(messageKey, formatValues);
+      showNotification(localizedTitle, localizedMessage, "error");
     },
-    [showNotification]
+    [showNotification, localize]
   );
 
   /**
    * Показывает информационное уведомление (синее)
    */
   const showInfo = useCallback(
-    (title: string, message: string) => {
-      showNotification(title, message, "info");
+    (
+      titleKey: string,
+      messageKey: string,
+      formatValues?: Record<string, string | number>
+    ) => {
+      const localizedTitle = localize(titleKey, formatValues);
+      const localizedMessage = localize(messageKey, formatValues);
+      showNotification(localizedTitle, localizedMessage, "info");
     },
-    [showNotification]
+    [showNotification, localize]
   );
 
   /**
    * Показывает предупреждающее уведомление (оранжевое)
    */
   const showWarning = useCallback(
-    (title: string, message: string) => {
-      showNotification(title, message, "warning");
+    (
+      titleKey: string,
+      messageKey: string,
+      formatValues?: Record<string, string | number>
+    ) => {
+      const localizedTitle = localize(titleKey, formatValues);
+      const localizedMessage = localize(messageKey, formatValues);
+      showNotification(localizedTitle, localizedMessage, "warning");
     },
-    [showNotification]
+    [showNotification, localize]
   );
 
   /**
    * Показывает уведомление с локализованным сообщением и возможностью подстановки значений
+   * (Оставлено для обратной совместимости)
    */
   const showFormatted = useCallback(
     (
-      title: string,
+      titleKey: string,
       messageKey: string,
       formatValues: Record<string, string | number>,
       level: NotificationLevel
     ) => {
-      const localizedMessage = t(
-        messageKey,
-        formatValues as Record<string, string>
-      );
-      showNotification(title, localizedMessage, level);
+      const localizedTitle = localize(titleKey, formatValues);
+      const localizedMessage = localize(messageKey, formatValues);
+      showNotification(localizedTitle, localizedMessage, level);
     },
-    [t, showNotification]
+    [localize, showNotification]
+  );
+
+  /**
+   * Показывает уведомление с прямыми строками (без локализации)
+   */
+  const showDirect = useCallback(
+    (title: string, message: string, level: NotificationLevel) => {
+      showNotification(title, message, level);
+    },
+    [showNotification]
   );
 
   return {
@@ -157,5 +237,6 @@ export function useNotification(): UseNotificationResult {
     showInfo,
     showWarning,
     showFormatted,
+    showDirect,
   };
 }

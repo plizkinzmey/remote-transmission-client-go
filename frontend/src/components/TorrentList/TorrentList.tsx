@@ -64,6 +64,7 @@ export const TorrentList: React.FC<TorrentListProps> = ({
                     downloadSpeedFormatted={torrent.DownloadSpeedFormatted}
                     uploadSpeedFormatted={torrent.UploadSpeedFormatted}
                     selected={selectedTorrents.has(torrent.ID)}
+                    isSelected={selectedTorrents.has(torrent.ID)}
                     onSelect={onSelect}
                     onRemove={onRemove}
                     onStart={onStart}

@@ -256,4 +256,29 @@ describe('TorrentItemActions', () => {
         expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
         // No need to call mockRestore here, it's handled in beforeEach
     });
+
+    // --- Selected State Tests ---
+    it('disables all buttons when isSelected is true', () => {
+        render(<TorrentItemActions {...defaultProps} isSelected={true} />);
+        expect(screen.getByTestId('torrent-actions-view-content')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
+    });
+
+    it('does not disable buttons when isSelected is false', () => {
+        render(<TorrentItemActions {...defaultProps} isSelected={false} />);
+        expect(screen.getByTestId('torrent-actions-view-content')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-action-start')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-remove')).not.toBeDisabled();
+    });
+
+    it('disables buttons when isSelected is true even if other conditions would allow', () => {
+        render(<TorrentItemActions {...defaultProps} isSelected={true} isLoading={false} status="stopped" />);
+        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).toBeDisabled();
+    });
 });

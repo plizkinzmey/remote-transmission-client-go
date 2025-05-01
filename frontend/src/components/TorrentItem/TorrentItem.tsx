@@ -43,6 +43,8 @@ export interface TorrentItemProps {
   uploadedFormatted: string;
   /** @description Выбран ли торрент. */
   selected: boolean;
+  /** @description Выбран ли торрент для массовых операций (блокирует кнопки управления). */
+  isSelected?: boolean;
   /** @description Обработчик выбора/снятия выбора торрента. */
   onSelect: (id: number) => void;
   /** @description Обработчик удаления торрента. */
@@ -82,6 +84,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   peersTotal,
   uploadedFormatted,
   selected,
+  isSelected = false,
   onSelect,
   onRemove,
   onStart,
@@ -195,6 +198,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 isLoading={isLoading}
                 lastAction={lastAction}
                 isSlowMode={isSlowMode}
+                isSelected={isSelected}
                 onViewContent={handleViewContent}
                 onStart={() => handleAction("start")}
                 onStop={() => handleAction("stop")}

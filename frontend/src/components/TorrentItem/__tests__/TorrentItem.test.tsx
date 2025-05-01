@@ -102,15 +102,19 @@ vi.mock("../TorrentItemActions", () => ({
         lastAction,
         isSlowMode,
         status,
+        isSelected,
     }: any) => (
-        <div data-testid="torrent-item-actions-mock">
+        <div
+            data-testid="torrent-item-actions-mock"
+            data-is-selected={isSelected ? "true" : "false"}
+        >
             <button onClick={onViewContent} data-testid="action-view">View</button>
             <button onClick={onStart} data-testid="action-start" disabled={isLoading && lastAction === 'start'}>Start</button>
             <button onClick={onStop} data-testid="action-stop" disabled={isLoading && lastAction === 'stop'}>Stop</button>
             <button onClick={onRemove} data-testid="action-remove">Remove</button>
             {onVerify && <button onClick={onVerify} data-testid="action-verify" disabled={isLoading && lastAction === 'verify'}>Verify</button>}
             {onSetSpeedLimit && <button onClick={() => onSetSpeedLimit(1, !isSlowMode)} data-testid="action-speed-limit">Speed Limit</button>}
-            <span>{`Loading: ${isLoading}, Last: ${lastAction}, Slow: ${isSlowMode}, Status: ${status}`}</span>
+            <span>{`Loading: ${isLoading}, Last: ${lastAction}, Slow: ${isSlowMode}, Status: ${status}, Selected: ${isSelected}`}</span>
         </div>
     ),
 }));
@@ -448,5 +452,16 @@ describe("TorrentItem", () => {
         await waitFor(() => {
             expect(screen.queryByTestId("torrent-content-dialog")).not.toBeInTheDocument();
         });
+    });
+
+    // --- isSelected Tests ---
+    it("passes isSelected to TorrentItemActions", () => {
+        renderComponent({ isSelected: true });
+        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-selected", "true");
+    });
+
+    it("defaults to false when isSelected not provided", () => {
+        renderComponent(); // isSelected не передан
+        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-selected", "false");
     });
 });

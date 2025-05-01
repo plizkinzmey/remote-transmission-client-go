@@ -47,15 +47,16 @@ export const useSettingsSaver = ({
   const [isSaving, setIsSaving] = useState(false);
   const { showSuccess, showError } = useNotification(); // Используем хук уведомлений
 
+  // Вспомогательная функция для создания объекта настроек с текущим языком
+  const createSettingsWithLanguage = useCallback(() => {
+    return { ...settings, language: currentLanguage };
+  }, [settings, currentLanguage]);
+
   // Выносим логику сохранения в отдельную функцию
   const executeSave = async (pathChanges: PathChanges): Promise<SaveResult> => {
     try {
-      // Добавляем текущий язык в сохраняемые настройки, тема устанавливается на Go-стороне
-      const settingsWithLanguage = {
-        ...settings,
-        language: currentLanguage, // Добавляем текущий язык
-        // Не используем theme, так как его нет в типе ConnectionConfig
-      };
+      // Используем вспомогательную функцию для получения настроек с текущим языком
+      const settingsWithLanguage = createSettingsWithLanguage();
 
       await SaveAllSettings(settingsWithLanguage, pathChanges);
       return { success: true };
@@ -74,11 +75,8 @@ export const useSettingsSaver = ({
             };
           }
           // Повторная попытка сохранения после успешной инициализации
-          const settingsWithLanguage = {
-            ...settings,
-            language: currentLanguage, // Добавляем текущий язык
-            // Не используем theme, так как его нет в типе ConnectionConfig
-          };
+          // Используем вспомогательную функцию для получения настроек с текущим языком
+          const settingsWithLanguage = createSettingsWithLanguage();
           await SaveAllSettings(settingsWithLanguage, pathChanges);
           return { success: true };
         } catch (initError) {

@@ -120,6 +120,19 @@ export const Header: React.FC<HeaderProps> = ({
     [setSearchTerm]
   );
 
+  // Вспомогательная функция для определения заголовка кнопки ограничения скорости
+  const getSpeedLimitButtonTitle = useCallback(() => {
+    if (isReconnecting) {
+      return t("errors.needConnection");
+    }
+
+    if (!hasRunningSelectedTorrents && hasSelectedTorrents) {
+      return t("torrents.noRunningSelectedForSpeedLimit");
+    }
+
+    return t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed");
+  }, [t, isReconnecting, hasRunningSelectedTorrents, hasSelectedTorrents, isSlowModeEnabled]);
+
   return (
     <Box className={styles.container} data-testid="header-main">
       <Flex className={styles.controlsContainer} justify="between" align="center" data-testid="header-control-panel">
@@ -190,13 +203,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
             disabled={!hasSelectedTorrents || isReconnecting || !hasRunningSelectedTorrents}
             aria-label={t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")}
-            title={
-              isReconnecting
-                ? t("errors.needConnection")
-                : !hasRunningSelectedTorrents && hasSelectedTorrents
-                  ? t("torrents.noRunningSelectedForSpeedLimit")
-                  : t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")
-            }
+            title={getSpeedLimitButtonTitle()}
           >
             <SnailIcon style={{ width: 18, height: 18 }} />
           </IconButton>

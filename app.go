@@ -88,9 +88,45 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
-	// Если нет обязательных полей, возвращаем ошибку
-	if config.Host == "" {
+	// Проверяем, содержит ли конфигурация только настройки языка и/или темы
+	isOnlyLanguageOrTheme := config.Host == "" &&
+		(config.Language != "" || config.Theme != "")
+
+	// Если это не только язык/тема, проверяем обязательные поля для подключения
+	if !isOnlyLanguageOrTheme && config.Host == "" {
 		return fmt.Errorf("host is required")
+	}
+
+	// Загружаем текущую конфигурацию, чтобы сохранить другие настройки
+	currentConfig, _ := a.configService.LoadConfig()
+	if currentConfig != nil {
+		// Если у нас только настройки языка/темы, сохраняем их в текущую конфигурацию
+		if isOnlyLanguageOrTheme {
+			// Сохраняем настройки языка
+			if config.Language != "" {
+				currentConfig.Language = config.Language
+			}
+			// Сохраняем настройки темы
+			if config.Theme != "" {
+				currentConfig.Theme = config.Theme
+			}
+
+			// Сохраняем обновленную конфигурацию
+			if err := a.configService.SaveConfig(currentConfig); err != nil {
+				return fmt.Errorf("failed to save language/theme settings: %w", err)
+			}
+			return nil // Для настроек языка/темы инициализация клиента не требуется
+		} else {
+			// Для полной конфигурации сохраняем все параметры
+			config.Language = currentConfig.Language // Сохраняем текущий язык
+			config.Theme = currentConfig.Theme       // Сохраняем текущую тему
+			if config.DownloadPaths == nil || len(config.DownloadPaths) == 0 {
+				config.DownloadPaths = currentConfig.DownloadPaths // Сохраняем пути загрузки
+			}
+			if config.DefaultDownloadPath == "" {
+				config.DefaultDownloadPath = currentConfig.DefaultDownloadPath // Сохраняем путь по умолчанию
+			}
+		}
 	}
 
 	// If language is not set in the config, detect system language
@@ -116,7 +152,12 @@ func (a *App) Initialize(configJson string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Create client with config
+	// Если это только настройки языка/темы, не инициализируем клиент
+	if isOnlyLanguageOrTheme {
+		return nil
+	}
+
+	// Create client with config for full configuration
 	client, err := transmission.NewTransmissionClient(transmission.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
@@ -506,4 +547,27 @@ func (a *App) getNotificationIconPath(level string) string {
 	default:
 		return "" // Иконка по умолчанию или без иконки
 	}
+}
+
+// SaveLanguage сохраняет выбранный пользователем язык
+func (a *App) SaveLanguage(language string) error {
+	// Загружаем текущую конфигурацию
+	config, err := a.configService.LoadConfig()
+	if err != nil {
+		// Если конфигурация отсутствует, создаем новую
+		config = &domain.Config{
+			Language: language,
+			Theme:    "light", // Значение по умолчанию
+		}
+	} else {
+		// Обновляем язык
+		config.Language = language
+	}
+
+	// Сохраняем обновленную конфигурацию
+	if err := a.configService.SaveConfig(config); err != nil {
+		return fmt.Errorf("failed to save language setting: %w", err)
+	}
+
+	return nil
 }

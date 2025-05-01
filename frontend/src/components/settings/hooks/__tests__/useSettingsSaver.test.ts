@@ -2,9 +2,14 @@ import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useSettingsSaver } from "../useSettingsSaver";
 import { SaveAllSettings } from "@wailsjs/go/main/App";
-import { ConnectionConfig } from "@app/App";
+import { ConnectionConfig as BaseConnectionConfig } from "@app/App";
 import type { PathChanges } from "@app/types/settings";
 import type { PathsTabRef } from "@components/Settings/PathsTab";
+
+// Расширяем тип ConnectionConfig для тестов, добавляя поле language
+interface ConnectionConfig extends BaseConnectionConfig {
+  language?: string;
+}
 
 // Mock SaveAllSettings (relying on global mock from setup-tests.tsx)
 
@@ -35,6 +40,7 @@ const defaultSettings: ConnectionConfig = {
   maxUploadRatio: 1,
   slowSpeedLimit: 50,
   slowSpeedUnit: "KiB/s",
+  language: "en", // Добавляем поле language, чтобы соответствовать обновленной логике
 };
 
 const mockPathChanges: PathChanges = {

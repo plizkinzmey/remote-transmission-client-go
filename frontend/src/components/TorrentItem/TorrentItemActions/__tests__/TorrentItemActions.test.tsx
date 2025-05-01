@@ -258,8 +258,8 @@ describe('TorrentItemActions', () => {
     });
 
     // --- Selected State Tests ---
-    it('disables all buttons when isSelected is true', () => {
-        render(<TorrentItemActions {...defaultProps} isSelected={true} />);
+    it('disables all buttons when isBulkSelected is true', () => {
+        render(<TorrentItemActions {...defaultProps} isBulkSelected={true} />);
         expect(screen.getByTestId('torrent-actions-view-content')).toBeDisabled();
         expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
         expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
@@ -267,8 +267,8 @@ describe('TorrentItemActions', () => {
         expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
     });
 
-    it('does not disable buttons when isSelected is false', () => {
-        render(<TorrentItemActions {...defaultProps} isSelected={false} />);
+    it('does not disable buttons when isBulkSelected is false', () => {
+        render(<TorrentItemActions {...defaultProps} isBulkSelected={false} />);
         expect(screen.getByTestId('torrent-actions-view-content')).not.toBeDisabled();
         expect(screen.getByTestId('torrent-actions-action-start')).not.toBeDisabled();
         expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled();
@@ -276,8 +276,8 @@ describe('TorrentItemActions', () => {
         expect(screen.getByTestId('torrent-actions-remove')).not.toBeDisabled();
     });
 
-    it('disables buttons when isSelected is true even if other conditions would allow', () => {
-        render(<TorrentItemActions {...defaultProps} isSelected={true} isLoading={false} status="stopped" />);
+    it('disables buttons when isBulkSelected is true even if other conditions would allow', () => {
+        render(<TorrentItemActions {...defaultProps} isBulkSelected={true} isLoading={false} status="stopped" />);
         expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
         expect(screen.getByTestId('torrent-actions-verify')).toBeDisabled();
     });

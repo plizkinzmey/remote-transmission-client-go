@@ -15,7 +15,12 @@ vi.mock('../../TorrentItem', () => ({
     // Keep the mock implementation simple for prop checking,
     // but be aware it might not render as expected in filtering tests if the mock isn't fully applied.
     TorrentItem: vi.fn(({ 'data-testid': dataTestId, ...props }) => (
-        <div data-testid={dataTestId} {...props}>
+        <div
+            data-testid={dataTestId}
+            data-is-checked={props.isChecked.toString()}
+            data-is-bulk-selected={props.isBulkSelected.toString()}
+            {...props}
+        >
             Mocked TorrentItem: {props.name}
         </div>
     )),
@@ -255,8 +260,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[0].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[0].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[0].UploadSpeedFormatted,
-                selected: false, // Explicitly check false
-                isSelected: false, // Check that isSelected is false
+                isChecked: false, // Переименовано с selected на isChecked
+                isBulkSelected: false, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -284,8 +289,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[1].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[1].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[1].UploadSpeedFormatted,
-                selected: true, // Explicitly check true
-                isSelected: true, // Check that isSelected is true
+                isChecked: true, // Переименовано с selected на isChecked
+                isBulkSelected: true, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -314,8 +319,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[2].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[2].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[2].UploadSpeedFormatted,
-                selected: false, // Explicitly check false
-                isSelected: false, // Check that isSelected is false
+                isChecked: false, // Переименовано с selected на isChecked
+                isBulkSelected: false, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -328,8 +333,8 @@ describe('TorrentList', () => {
         );
     });
 
-    // Отдельный тест для проверки isSelected при выборе торрентов
-    it('sets isSelected correctly when torrents are selected', () => {
+    // Отдельный тест для проверки isBulkSelected при выборе торрентов
+    it('sets isChecked and isBulkSelected correctly when torrents are selected', () => {
         const selectedTorrents = new Set([mockTorrents[0].ID, mockTorrents[2].ID]); // Выбираем два торрента
         render(<TorrentList {...defaultProps} selectedTorrents={selectedTorrents} />);
 
@@ -337,8 +342,8 @@ describe('TorrentList', () => {
         expect(torrentItemMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: mockTorrents[0].ID,
-                selected: true,
-                isSelected: true,
+                isChecked: true,
+                isBulkSelected: true,
             }),
             expect.anything()
         );
@@ -347,8 +352,8 @@ describe('TorrentList', () => {
         expect(torrentItemMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: mockTorrents[1].ID,
-                selected: false,
-                isSelected: false,
+                isChecked: false,
+                isBulkSelected: false,
             }),
             expect.anything()
         );
@@ -357,8 +362,8 @@ describe('TorrentList', () => {
         expect(torrentItemMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: mockTorrents[2].ID,
-                selected: true,
-                isSelected: true,
+                isChecked: true,
+                isBulkSelected: true,
             }),
             expect.anything()
         );

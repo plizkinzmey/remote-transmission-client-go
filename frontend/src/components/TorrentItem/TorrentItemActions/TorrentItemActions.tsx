@@ -25,7 +25,7 @@ export interface TorrentItemActionsProps {
   isLoading: boolean;
   lastAction: "start" | "stop" | "verify" | null;
   isSlowMode: boolean;
-  isSelected?: boolean; // Новое свойство
+  isBulkSelected?: boolean; // Переименовано с isSelected для большей ясности
   onViewContent: () => void;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
@@ -43,7 +43,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
   isLoading,
   lastAction,
   isSlowMode,
-  isSelected = false, // Значение по умолчанию
+  isBulkSelected = false, // Переименовано с isSelected для большей ясности
   onViewContent,
   onStart,
   onStop,
@@ -73,7 +73,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
           color="amber"
           onClick={() => onStop(id)}
           title={t("torrent.stop")}
-          disabled={isCurrentlyBlocked || isSelected}
+          disabled={isCurrentlyBlocked || isBulkSelected}
           data-testid="torrent-actions-action-pause"
         >
           <PauseIcon width={16} height={16} />
@@ -88,7 +88,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color="grass"
         onClick={() => onStart(id)}
         title={t("torrent.start")}
-        disabled={isCurrentlyBlocked || isSelected}
+        disabled={isCurrentlyBlocked || isBulkSelected}
         data-testid="torrent-actions-action-start"
       >
         <PlayIcon width={16} height={16} />
@@ -126,7 +126,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color="orange"
         onClick={() => onVerify(id)}
         title={t("torrent.verify")}
-        disabled={isLoading || isCurrentlyBlocked || isSelected}
+        disabled={isLoading || isCurrentlyBlocked || isBulkSelected}
         data-testid="torrent-actions-verify"
       >
         <CheckCircleIcon width={16} height={16} />
@@ -145,7 +145,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-        disabled={isChecking(status) || status === "queuedCheck" || isSelected}
+        disabled={isChecking(status) || status === "queuedCheck" || isBulkSelected}
         data-testid="torrent-actions-speed-limit"
       >
         <SnailIcon style={{ width: 16, height: 16 }} />
@@ -161,7 +161,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color="indigo"
         onClick={onViewContent}
         title={t("torrent.viewContent")}
-        disabled={isCurrentlyBlocked || isSelected}
+        disabled={isCurrentlyBlocked || isBulkSelected}
         data-testid="torrent-actions-view-content"
       >
         <FolderIcon width={16} height={16} />
@@ -177,7 +177,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color="red"
         onClick={() => onRemove(id)}
         title={t("torrent.remove")}
-        disabled={isCurrentlyBlocked || isSelected}
+        disabled={isCurrentlyBlocked || isBulkSelected}
         data-testid="torrent-actions-remove"
       >
         <TrashIcon width={16} height={16} />

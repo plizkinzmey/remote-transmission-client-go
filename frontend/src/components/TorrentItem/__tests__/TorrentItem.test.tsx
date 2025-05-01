@@ -102,11 +102,11 @@ vi.mock("../TorrentItemActions", () => ({
         lastAction,
         isSlowMode,
         status,
-        isSelected,
+        isBulkSelected,
     }: any) => (
         <div
             data-testid="torrent-item-actions-mock"
-            data-is-selected={isSelected ? "true" : "false"}
+            data-is-bulk-selected={isBulkSelected ? "true" : "false"}
         >
             <button onClick={onViewContent} data-testid="action-view">View</button>
             <button onClick={onStart} data-testid="action-start" disabled={isLoading && lastAction === 'start'}>Start</button>
@@ -114,7 +114,7 @@ vi.mock("../TorrentItemActions", () => ({
             <button onClick={onRemove} data-testid="action-remove">Remove</button>
             {onVerify && <button onClick={onVerify} data-testid="action-verify" disabled={isLoading && lastAction === 'verify'}>Verify</button>}
             {onSetSpeedLimit && <button onClick={() => onSetSpeedLimit(1, !isSlowMode)} data-testid="action-speed-limit">Speed Limit</button>}
-            <span>{`Loading: ${isLoading}, Last: ${lastAction}, Slow: ${isSlowMode}, Status: ${status}, Selected: ${isSelected}`}</span>
+            <span>{`Loading: ${isLoading}, Last: ${lastAction}, Slow: ${isSlowMode}, Status: ${status}, BulkSelected: ${isBulkSelected}`}</span>
         </div>
     ),
 }));
@@ -145,7 +145,7 @@ describe("TorrentItem", () => {
         peersConnected: 5,
         peersTotal: 10,
         uploadedFormatted: "50 MB",
-        selected: false,
+        isChecked: false,
         onSelect: mockOnSelect,
         onRemove: mockOnRemove,
         onStart: mockOnStart,
@@ -197,8 +197,8 @@ describe("TorrentItem", () => {
         expect(TorrentStatusUtils.getCardClassName).toHaveBeenCalledWith("downloading", "card", expect.any(Object));
     });
 
-    it("renders checkbox as checked when selected is true", () => {
-        renderComponent({ selected: true });
+    it("renders checkbox as checked when isChecked is true", () => {
+        renderComponent({ isChecked: true });
         expect(screen.getByRole("checkbox")).toBeChecked();
     });
 
@@ -454,14 +454,14 @@ describe("TorrentItem", () => {
         });
     });
 
-    // --- isSelected Tests ---
-    it("passes isSelected to TorrentItemActions", () => {
-        renderComponent({ isSelected: true });
-        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-selected", "true");
+    // --- isBulkSelected Tests ---
+    it("passes isBulkSelected to TorrentItemActions", () => {
+        renderComponent({ isBulkSelected: true });
+        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-bulk-selected", "true");
     });
 
-    it("defaults to false when isSelected not provided", () => {
-        renderComponent(); // isSelected не передан
-        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-selected", "false");
+    it("defaults to false when isBulkSelected not provided", () => {
+        renderComponent(); // isBulkSelected не передан
+        expect(screen.getByTestId("torrent-item-actions-mock")).toHaveAttribute("data-is-bulk-selected", "false");
     });
 });

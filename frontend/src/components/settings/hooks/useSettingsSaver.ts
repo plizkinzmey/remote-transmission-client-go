@@ -127,7 +127,6 @@ export const useSettingsSaver = ({
         const success = await onConnectionInitNeeded();
         if (success) {
           // Показываем уведомление об успешной инициализации при первом запуске
-          // Используем прямые ключи локализации вместо функции t()
           showSuccess(
             "notifications.settingsSaveSuccessTitle",
             "notifications.connectionInitializedMessage"
@@ -140,7 +139,6 @@ export const useSettingsSaver = ({
 
         if (result.success) {
           // Показываем уведомление об успешном сохранении настроек
-          // Используем прямые ключи локализации вместо функции t()
           showSuccess(
             "notifications.settingsSaveSuccessTitle",
             "notifications.settingsSaveSuccessMessage"
@@ -148,7 +146,6 @@ export const useSettingsSaver = ({
           onSaveSuccess();
         } else if (result.error) {
           // Показываем уведомление об ошибке сохранения
-          // Передаем объект с параметрами для форматирования сообщения
           showError(
             "notifications.settingsSaveErrorTitle",
             "notifications.settingsSaveErrorMessage",
@@ -159,18 +156,19 @@ export const useSettingsSaver = ({
       }
     } catch (error) {
       const errorMessage = String(error);
-      // Показываем уведомление об ошибке
-      showError(
-        "notifications.settingsSaveErrorTitle",
-        "notifications.settingsSaveErrorMessage",
-        { error: errorMessage }
-      );
 
       // Для согласованности форматирования с другими ошибками
       // в режиме первого запуска или обычном режиме
       const formattedError = t("errors.failedToUpdateSettings", {
         0: errorMessage,
       });
+
+      // Показываем уведомление об ошибке и вызываем onSaveError только один раз
+      showError(
+        "notifications.settingsSaveErrorTitle",
+        "notifications.settingsSaveErrorMessage",
+        { error: errorMessage }
+      );
       onSaveError(formattedError);
     } finally {
       setIsSaving(false);

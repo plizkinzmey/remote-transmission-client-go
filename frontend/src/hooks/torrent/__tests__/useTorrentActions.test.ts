@@ -206,6 +206,21 @@ describe("Действия с торрентами", () => {
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
   });
 
+  it("startTorrents должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.startTorrents(emptyIds);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.StartTorrents).not.toHaveBeenCalled();
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
+  });
+
   // Тесты для stopTorrents
   it("stopTorrents должен вызывать StopTorrentsAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.StopTorrents).mockResolvedValue(undefined);
@@ -237,6 +252,21 @@ describe("Действия с торрентами", () => {
     expect(success).toBe(false);
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.StopTorrents).toHaveBeenCalledWith(ids);
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
+  });
+
+  it("stopTorrents должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.stopTorrents(emptyIds);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.StopTorrents).not.toHaveBeenCalled();
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
   });
 
@@ -274,6 +304,55 @@ describe("Действия с торрентами", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
+  });
+
+  it("setSpeedLimit должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(emptyIds, true);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.SetTorrentSpeedLimit).not.toHaveBeenCalled();
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
+  });
+
+  it("setSpeedLimit должен использовать правильное сообщение при установке медленного режима", async () => {
+    vi.mocked(AppAPI.SetTorrentSpeedLimit).mockResolvedValue(undefined);
+    const { result } = setupHook();
+    const ids = [1];
+    const isSlowMode = true;
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(ids, isSlowMode);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).toHaveBeenCalledOnce();
+    expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
+    expect(mockOnActionSuccess).toHaveBeenCalledOnce();
+  });
+
+  it("setSpeedLimit должен использовать правильное сообщение при отключении медленного режима", async () => {
+    vi.mocked(AppAPI.SetTorrentSpeedLimit).mockResolvedValue(undefined);
+    const { result } = setupHook();
+    const ids = [1];
+    const isSlowMode = false;
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(ids, isSlowMode);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).toHaveBeenCalledOnce();
+    expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
+    expect(mockOnActionSuccess).toHaveBeenCalledOnce();
   });
 
   // Тесты для verifyTorrent

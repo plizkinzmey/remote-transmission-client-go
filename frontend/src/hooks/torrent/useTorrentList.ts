@@ -35,13 +35,16 @@ export function useTorrentList(isInitialized: boolean) {
       // Check for completed downloads and verifications only after the first load
       if (!isFirstLoad) {
         const currentStatuses = new Map<number, StatusType>();
+
+        // Проходим по всем торрентам из нового запроса
         newTorrents.forEach((torrent) => {
           const currentStatus = mapBackendStatusToFrontend(torrent.Status);
           currentStatuses.set(torrent.ID, currentStatus);
 
+          // Получаем предыдущий статус из ref
           const previousStatus = previousTorrentsRef.current.get(torrent.ID);
 
-          // Check if status changed from downloading to completed or seeding
+          // Проверка на изменение статуса с downloading на completed/seeding
           if (
             previousStatus === "downloading" &&
             (currentStatus === "completed" || currentStatus === "seeding")
@@ -54,23 +57,21 @@ export function useTorrentList(isInitialized: boolean) {
             );
           }
 
-          // Check if status changed from checking to something else (verification finished)
-          if (
-            previousStatus === "checking" &&
-            currentStatus !== "checking" // Any status other than checking means verification ended
-          ) {
+          // Проверка на изменение статуса с checking на любой другой
+          if (previousStatus === "checking" && currentStatus !== "checking") {
             showFormatted(
               t("notifications.verifyCompleteTitle"),
               "notifications.verifyCompleteMessage",
               { name: torrent.Name },
-              "success" // Assuming verification completion is a success state
+              "success"
             );
           }
         });
-        // Update previous state for the next check
+
+        // Обновляем ссылку на предыдущие статусы для следующей проверки
         previousTorrentsRef.current = currentStatuses;
       } else {
-        // On first load, just populate the previous state without checking
+        // При первой загрузке просто заполняем начальные статусы без проверок изменений
         const initialStatuses = new Map<number, StatusType>();
         newTorrents.forEach((torrent) => {
           initialStatuses.set(

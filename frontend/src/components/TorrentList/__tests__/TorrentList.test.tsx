@@ -15,7 +15,12 @@ vi.mock('../../TorrentItem', () => ({
     // Keep the mock implementation simple for prop checking,
     // but be aware it might not render as expected in filtering tests if the mock isn't fully applied.
     TorrentItem: vi.fn(({ 'data-testid': dataTestId, ...props }) => (
-        <div data-testid={dataTestId} {...props}>
+        <div
+            data-testid={dataTestId}
+            data-is-checked={props.isChecked.toString()}
+            data-is-bulk-selected={props.isBulkSelected.toString()}
+            {...props}
+        >
             Mocked TorrentItem: {props.name}
         </div>
     )),
@@ -255,7 +260,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[0].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[0].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[0].UploadSpeedFormatted,
-                selected: false, // Explicitly check false
+                isChecked: false, // Переименовано с selected на isChecked
+                isBulkSelected: false, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -283,7 +289,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[1].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[1].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[1].UploadSpeedFormatted,
-                selected: true, // Explicitly check true
+                isChecked: true, // Переименовано с selected на isChecked
+                isBulkSelected: true, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -312,7 +319,8 @@ describe('TorrentList', () => {
                 uploadedFormatted: mockTorrents[2].UploadedFormatted,
                 downloadSpeedFormatted: mockTorrents[2].DownloadSpeedFormatted,
                 uploadSpeedFormatted: mockTorrents[2].UploadSpeedFormatted,
-                selected: false, // Explicitly check false
+                isChecked: false, // Переименовано с selected на isChecked
+                isBulkSelected: false, // Переименовано с isSelected на isBulkSelected
                 onSelect: defaultProps.onSelect,
                 onRemove: defaultProps.onRemove,
                 onStart: defaultProps.onStart,
@@ -322,6 +330,42 @@ describe('TorrentList', () => {
                 isSlowMode: mockTorrents[2].IsSlowMode,
             }),
             {} // Second argument for context
+        );
+    });
+
+    // Отдельный тест для проверки isBulkSelected при выборе торрентов
+    it('sets isChecked and isBulkSelected correctly when torrents are selected', () => {
+        const selectedTorrents = new Set([mockTorrents[0].ID, mockTorrents[2].ID]); // Выбираем два торрента
+        render(<TorrentList {...defaultProps} selectedTorrents={selectedTorrents} />);
+
+        // Проверяем первый торрент (выбран)
+        expect(torrentItemMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: mockTorrents[0].ID,
+                isChecked: true,
+                isBulkSelected: true,
+            }),
+            expect.anything()
+        );
+
+        // Проверяем второй торрент (не выбран)
+        expect(torrentItemMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: mockTorrents[1].ID,
+                isChecked: false,
+                isBulkSelected: false,
+            }),
+            expect.anything()
+        );
+
+        // Проверяем третий торрент (выбран)
+        expect(torrentItemMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: mockTorrents[2].ID,
+                isChecked: true,
+                isBulkSelected: true,
+            }),
+            expect.anything()
         );
     });
 });

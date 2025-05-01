@@ -41,8 +41,10 @@ export interface TorrentItemProps {
   peersTotal: number;
   /** @description Отформатированный объем отданного (например, '50 MB'). */
   uploadedFormatted: string;
-  /** @description Выбран ли торрент. */
-  selected: boolean;
+  /** @description Отмечен ли чекбокс торрента (состояние чекбокса). */
+  isChecked: boolean;
+  /** @description Выбран ли торрент для массовых операций (блокирует кнопки управления). */
+  isBulkSelected?: boolean;
   /** @description Обработчик выбора/снятия выбора торрента. */
   onSelect: (id: number) => void;
   /** @description Обработчик удаления торрента. */
@@ -81,7 +83,8 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
   peersConnected,
   peersTotal,
   uploadedFormatted,
-  selected,
+  isChecked,
+  isBulkSelected = false,
   onSelect,
   onRemove,
   onStart,
@@ -159,7 +162,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
           <Box pt="1">
             <Checkbox
               size="1"
-              checked={selected}
+              checked={isChecked}
               onCheckedChange={() => {
                 onSelect(id);
               }}
@@ -195,6 +198,7 @@ export const TorrentItem: React.FC<TorrentItemProps> = ({
                 isLoading={isLoading}
                 lastAction={lastAction}
                 isSlowMode={isSlowMode}
+                isBulkSelected={isBulkSelected}
                 onViewContent={handleViewContent}
                 onStart={() => handleAction("start")}
                 onStop={() => handleAction("stop")}

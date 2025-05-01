@@ -145,7 +145,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
-        disabled={isChecking(status) || status === "queuedCheck" || isBulkSelected}
+        disabled={!isRunning(status) || isChecking(status) || status === "queuedCheck" || isBulkSelected}
         data-testid="torrent-actions-speed-limit"
       >
         <SnailIcon style={{ width: 16, height: 16 }} />

@@ -45,6 +45,8 @@ export interface HeaderProps {
   onRemoveSelected: (deleteData: boolean) => void;
   /** Whether any torrents are currently selected */
   hasSelectedTorrents: boolean;
+  /** Whether any selected torrents are currently running (downloading or seeding) */
+  hasRunningSelectedTorrents?: boolean;
   /** Loading state for start operation */
   startLoading: boolean;
   /** Loading state for stop operation */
@@ -88,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
   onStopSelected,
   onRemoveSelected,
   hasSelectedTorrents,
+  hasRunningSelectedTorrents = false,
   startLoading,
   stopLoading,
   removeLoading,
@@ -185,12 +188,14 @@ export const Header: React.FC<HeaderProps> = ({
             variant={isSlowModeEnabled ? "solid" : "soft"}
             color={isSlowModeEnabled ? "orange" : "blue"}
             onClick={() => onSetSpeedLimit(!isSlowModeEnabled)}
-            disabled={!hasSelectedTorrents || isReconnecting}
+            disabled={!hasSelectedTorrents || isReconnecting || !hasRunningSelectedTorrents}
             aria-label={t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")}
             title={
               isReconnecting
                 ? t("errors.needConnection")
-                : t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")
+                : !hasRunningSelectedTorrents && hasSelectedTorrents
+                  ? t("torrents.noRunningSelectedForSpeedLimit")
+                  : t(isSlowModeEnabled ? "header.normalSpeed" : "header.slowSpeed")
             }
           >
             <SnailIcon style={{ width: 18, height: 18 }} />

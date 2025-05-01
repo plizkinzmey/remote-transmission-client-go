@@ -120,11 +120,11 @@ func (a *App) Initialize(configJson string) error {
 			// Для полной конфигурации сохраняем все параметры
 			config.Language = currentConfig.Language // Сохраняем текущий язык
 			config.Theme = currentConfig.Theme       // Сохраняем текущую тему
-			if config.DownloadPaths == nil || len(config.DownloadPaths) == 0 {
+			if len(config.DownloadPaths) == 0 {
 				config.DownloadPaths = currentConfig.DownloadPaths // Сохраняем пути загрузки
-			}
-			if config.DefaultDownloadPath == "" {
-				config.DefaultDownloadPath = currentConfig.DefaultDownloadPath // Сохраняем путь по умолчанию
+				if config.DefaultDownloadPath == "" {
+					config.DefaultDownloadPath = currentConfig.DefaultDownloadPath // Сохраняем путь по умолчанию
+				}
 			}
 		}
 	}

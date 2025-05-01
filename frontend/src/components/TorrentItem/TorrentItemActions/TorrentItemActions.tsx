@@ -145,6 +145,7 @@ export const TorrentItemActions: React.FC<TorrentItemActionsProps> = ({
         color={isSlowMode ? "orange" : "blue"}
         onClick={() => onSetSpeedLimit(id, !isSlowMode)}
         title={t(isSlowMode ? "torrent.normalSpeed" : "torrent.slowSpeed")}
+        // Disable the button if the torrent is not running, is in a checking state, is queued for checking, or is part of a bulk selection.
         disabled={!isRunning(status) || isChecking(status) || status === "queuedCheck" || isBulkSelected}
         data-testid="torrent-actions-speed-limit"
       >

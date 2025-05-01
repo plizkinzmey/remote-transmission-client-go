@@ -676,6 +676,8 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 	originalMaxUploadRatio := s.config.MaxUploadRatio
 	originalSlowSpeedLimit := s.config.SlowSpeedLimit
 	originalSlowSpeedUnit := s.config.SlowSpeedUnit
+	originalLanguage := s.config.Language // Сохраняем оригинальный язык
+	originalTheme := s.config.Theme       // Сохраняем оригинальную тему
 
 	// Обновляем настройки соединения
 	s.config.Host = connectionConfig.Host
@@ -685,6 +687,14 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 	s.config.MaxUploadRatio = connectionConfig.MaxUploadRatio
 	s.config.SlowSpeedLimit = connectionConfig.SlowSpeedLimit
 	s.config.SlowSpeedUnit = connectionConfig.SlowSpeedUnit
+
+	// Обновляем язык и тему, если они предоставлены
+	if connectionConfig.Language != "" {
+		s.config.Language = connectionConfig.Language
+	}
+	if connectionConfig.Theme != "" {
+		s.config.Theme = connectionConfig.Theme
+	}
 
 	// Применяем изменения путей
 
@@ -761,6 +771,8 @@ func (s *TorrentService) SaveSettingsWithPaths(connectionConfig domain.Connectio
 		s.config.MaxUploadRatio = originalMaxUploadRatio
 		s.config.SlowSpeedLimit = originalSlowSpeedLimit
 		s.config.SlowSpeedUnit = originalSlowSpeedUnit
+		s.config.Language = originalLanguage // Восстанавливаем язык при ошибке
+		s.config.Theme = originalTheme       // Восстанавливаем тему при ошибке
 		// Оборачиваем ошибку сохранения для ясности
 		return fmt.Errorf("failed to save config: %w", err)
 	}

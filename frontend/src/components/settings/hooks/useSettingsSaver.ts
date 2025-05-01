@@ -50,7 +50,14 @@ export const useSettingsSaver = ({
   // Выносим логику сохранения в отдельную функцию
   const executeSave = async (pathChanges: PathChanges): Promise<SaveResult> => {
     try {
-      await SaveAllSettings(settings, pathChanges);
+      // Добавляем текущий язык в сохраняемые настройки, тема устанавливается на Go-стороне
+      const settingsWithLanguage = {
+        ...settings,
+        language: currentLanguage, // Добавляем текущий язык
+        // Не используем theme, так как его нет в типе ConnectionConfig
+      };
+
+      await SaveAllSettings(settingsWithLanguage, pathChanges);
       return { success: true };
     } catch (error) {
       const errorStr = String(error);
@@ -67,7 +74,12 @@ export const useSettingsSaver = ({
             };
           }
           // Повторная попытка сохранения после успешной инициализации
-          await SaveAllSettings(settings, pathChanges);
+          const settingsWithLanguage = {
+            ...settings,
+            language: currentLanguage, // Добавляем текущий язык
+            // Не используем theme, так как его нет в типе ConnectionConfig
+          };
+          await SaveAllSettings(settingsWithLanguage, pathChanges);
           return { success: true };
         } catch (initError) {
           return {

@@ -413,6 +413,12 @@ func (a *App) SaveAllSettings(connectionSettings map[string]interface{}, pathCha
 	if unit, ok := connectionSettings["slowSpeedUnit"].(string); ok {
 		config.SlowSpeedUnit = unit
 	}
+	if language, ok := connectionSettings["language"].(string); ok {
+		config.Language = language
+	}
+	if theme, ok := connectionSettings["theme"].(string); ok {
+		config.Theme = theme
+	}
 
 	// Извлекаем изменения путей
 	var pathsToAdd, pathsToRemove []string

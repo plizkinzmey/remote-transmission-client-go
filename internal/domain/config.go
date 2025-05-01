@@ -24,6 +24,8 @@ type ConnectionConfig struct {
 	MaxUploadRatio float64 `json:"maxUploadRatio"`
 	SlowSpeedLimit int     `json:"slowSpeedLimit"`
 	SlowSpeedUnit  string  `json:"slowSpeedUnit"`
+	Language       string  `json:"language"` // Добавляем поддержку языка
+	Theme          string  `json:"theme"`    // Добавляем поддержку темы
 }
 
 // PathsState представляет состояние путей

@@ -321,9 +321,11 @@ describe("useTorrentList", () => {
     // Используем два разных торрента - первый с downloading, второй с completed
     const initialTorrent = { ...mockTorrentsData[0], Status: "downloading" };
     const updatedTorrent = { ...mockTorrentsData[0], Status: "completed" };
-    
+
     // Мок mapBackendStatusToFrontend для правильного возврата статусов
-    const mockMapStatus = vi.mocked(torrentStatusModule.mapBackendStatusToFrontend);
+    const mockMapStatus = vi.mocked(
+      torrentStatusModule.mapBackendStatusToFrontend
+    );
     mockMapStatus.mockImplementation((status) => {
       if (status === "downloading") return "downloading";
       if (status === "completed") return "completed";
@@ -335,8 +337,8 @@ describe("useTorrentList", () => {
     // Очищаем все предыдущие вызовы мока
     mockGetTorrents.mockReset();
     mockGetTorrents
-      .mockResolvedValueOnce([initialTorrent])  // Первый вызов - downloading
-      .mockResolvedValueOnce([initialTorrent])  // React StrictMode дублирует первый вызов
+      .mockResolvedValueOnce([initialTorrent]) // Первый вызов - downloading
+      .mockResolvedValueOnce([initialTorrent]) // React StrictMode дублирует первый вызов
       .mockResolvedValueOnce([updatedTorrent]); // Второй вызов (интервал) - completed
 
     // Рендерим хук
@@ -349,13 +351,13 @@ describe("useTorrentList", () => {
     await act(async () => {
       await Promise.resolve(); // Ждем промисы
     });
-    
+
     // В StrictMode GetTorrents вызывается дважды при первой загрузке
     expect(mockGetTorrents).toHaveBeenCalledTimes(2);
-    
+
     // Очищаем историю вызовов уведомлений перед вторым запросом
     mockShowFormatted.mockClear();
-    
+
     // Выполняем второй запрос через интервал
     await act(async () => {
       vi.advanceTimersByTime(3000); // Вызываем интервал для refreshTorrents
@@ -364,7 +366,7 @@ describe("useTorrentList", () => {
 
     // После интервала GetTorrents должен быть вызван третий раз
     expect(mockGetTorrents).toHaveBeenCalledTimes(3);
-    
+
     // Проверяем, что уведомление было показано с правильными параметрами
     expect(mockShowFormatted).toHaveBeenCalledWith(
       expect.any(String),
@@ -381,9 +383,11 @@ describe("useTorrentList", () => {
     // Используем два разных торрента - первый с checking, второй с seeding
     const initialTorrent = { ...mockTorrentsData[0], Status: "checking" };
     const updatedTorrent = { ...mockTorrentsData[0], Status: "seeding" };
-    
+
     // Мок mapBackendStatusToFrontend для правильного возврата статусов
-    const mockMapStatus = vi.mocked(torrentStatusModule.mapBackendStatusToFrontend);
+    const mockMapStatus = vi.mocked(
+      torrentStatusModule.mapBackendStatusToFrontend
+    );
     mockMapStatus.mockImplementation((status) => {
       if (status === "checking") return "checking";
       if (status === "seeding") return "seeding";
@@ -395,8 +399,8 @@ describe("useTorrentList", () => {
     // Очищаем все предыдущие вызовы мока
     mockGetTorrents.mockReset();
     mockGetTorrents
-      .mockResolvedValueOnce([initialTorrent])  // Первый вызов - checking
-      .mockResolvedValueOnce([initialTorrent])  // React StrictMode дублирует первый вызов
+      .mockResolvedValueOnce([initialTorrent]) // Первый вызов - checking
+      .mockResolvedValueOnce([initialTorrent]) // React StrictMode дублирует первый вызов
       .mockResolvedValueOnce([updatedTorrent]); // Второй вызов (интервал) - seeding
 
     // Рендерим хук
@@ -409,13 +413,13 @@ describe("useTorrentList", () => {
     await act(async () => {
       await Promise.resolve(); // Ждем промисы
     });
-    
+
     // В StrictMode GetTorrents вызывается дважды при первой загрузке
     expect(mockGetTorrents).toHaveBeenCalledTimes(2);
-    
+
     // Очищаем историю вызовов уведомлений перед вторым запросом
     mockShowFormatted.mockClear();
-    
+
     // Выполняем второй запрос через интервал
     await act(async () => {
       vi.advanceTimersByTime(3000); // Вызываем интервал для refreshTorrents
@@ -424,7 +428,7 @@ describe("useTorrentList", () => {
 
     // После интервала GetTorrents должен быть вызван третий раз
     expect(mockGetTorrents).toHaveBeenCalledTimes(3);
-    
+
     // Проверяем, что уведомление было показано с правильными параметрами
     expect(mockShowFormatted).toHaveBeenCalledWith(
       expect.any(String),

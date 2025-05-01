@@ -5,11 +5,11 @@ import { TorrentList } from "./components/TorrentList";
 import { Settings } from "./components/Settings/Settings";
 import { AddTorrent } from "./components/AddTorrent";
 import { Footer } from "./components/Footer";
+import { ConnectionStatus } from "./components/ConnectionStatus"; // Добавляем импорт ConnectionStatus
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useModals } from "@hooks/useModals";
 import { useBulkOperations } from "@/hooks/useBulkOperations";
 import { DragDropProvider } from "./components/DragDropProvider";
-import { ConnectionStatus } from "./components/ConnectionStatus";
 import { useFilteredTorrents } from "./components/TorrentList/hooks/useFilteredTorrents";
 import { mapBackendStatusToFrontend } from "@utils/torrentStatus"; // Импортируем функцию маппинга
 import { StatusType } from "@utils/torrentStatus"; // Импортируем StatusType
@@ -18,10 +18,10 @@ import {
   useTorrentList,
   useSessionStats,
   useTorrentSelection,
-  useTorrentActions,
+  useTorrentActions, // Keep this
   useConfigManager,
   AppConfig,
-  WailsTorrent, // Используем импорт WailsTorrent
+  WailsTorrent,
 } from "@hooks/torrent"; // Используем реэкспорт
 import { useAppErrorHandler } from "@hooks/useAppErrorHandler/useAppErrorHandler"; // Используем прямой импорт пока пути не обновлены глобально
 import "./App.css";
@@ -171,7 +171,7 @@ function App() {
   } = useTorrentActions({
     onActionStart: () => { },
     onActionSuccess: refreshTorrents,
-    onActionError: () => { }, // Удаляем setAppError
+    torrents: rawTorrents, // Pass rawTorrents here
   });
 
   // 5. Массовые операции (зависят от выбранных торрентов и действий)
@@ -238,24 +238,25 @@ function App() {
     handleSelectAll(filteredTorrents); // передаем полные объекты торрентов
   };
 
+  // Adapters now just pass IDs, name lookup happens inside useTorrentActions
   const handleTorrentSpeedLimitAdapter = (id: number, isSlowMode: boolean) => {
-    setSpeedLimit([id], isSlowMode);
+    setSpeedLimit([id], isSlowMode); // Pass only ID and mode
   };
 
   const handleRemoveTorrentAdapter = (id: number, deleteData: boolean) => {
-    removeTorrent(id, deleteData);
+    removeTorrent(id, deleteData); // Pass only ID and delete flag
   };
 
   const handleStartTorrentAdapter = (id: number) => {
-    startTorrents([id]);
+    startTorrents([id]); // Pass only ID
   };
 
   const handleStopTorrentAdapter = (id: number) => {
-    stopTorrents([id]);
+    stopTorrents([id]); // Pass only ID
   };
 
   const handleVerifyTorrentAdapter = (id: number) => {
-    verifyTorrent(id);
+    verifyTorrent(id); // Pass only ID
   };
 
   const handleAddTorrentAdapter = async (url: string, downloadDir: string = "") => { // Делаем функцию асинхронной
@@ -303,7 +304,10 @@ function App() {
           isFirstStart={isFirstStart}
         />
 
-        {(isReconnecting || appError) && <ConnectionStatus isReconnecting={isReconnecting} error={appError} />}
+        {/* Добавляем ConnectionStatus компонент */}
+        {(isReconnecting || appError) && (
+          <ConnectionStatus isReconnecting={isReconnecting} error={appError} />
+        )}
 
         <div className={styles.content}>
           <div className={styles.scrollableContent}>

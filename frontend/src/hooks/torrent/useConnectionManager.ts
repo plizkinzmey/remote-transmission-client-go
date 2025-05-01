@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { Initialize, LoadConfig } from "@wailsjs/go/main/App";
 import { AppConfig } from "./types";
 import { useLocalization } from "@/contexts/LocalizationContext";
+import { useNotification } from "@/hooks/useNotification"; // Импортируем хук уведомлений
 
 /**
  * Хук для управления соединением с Transmission, инициализации и состояния переподключения.
  */
 export function useConnectionManager() {
   const { t } = useLocalization();
+  const { showSuccess, showError, showInfo } = useNotification(); // Получаем функции уведомлений
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Начальная загрузка конфига и первая попытка подключения
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -22,29 +24,46 @@ export function useConnectionManager() {
       try {
         await Initialize(JSON.stringify(configToUse));
         setIsInitialized(true);
+        // Показываем уведомление об успешном подключении
+        showSuccess(
+          t("notifications.connectionSuccessTitle"),
+          t("notifications.connectionSuccessMessage", {
+            host: configToUse.host,
+          })
+        );
         return true; // Успешное подключение
       } catch (initError) {
         console.error("Connection failed:", initError);
-        setError(t("errors.connectionFailed")); // Общая ошибка подключения
+        const errorMessage = t("errors.connectionFailed"); // Общая ошибка подключения
+        setError(errorMessage);
+        // Показываем уведомление об ошибке подключения
+        showError(t("notifications.connectionErrorTitle"), errorMessage);
         setIsInitialized(false);
         setIsReconnecting(true); // Устанавливаем флаг переподключения при ошибке
         return false; // Ошибка подключения
       }
     },
-    [t]
+    [t, showSuccess, showError] // Добавляем зависимости
   );
 
   // Функция для попытки переподключения с последним известным конфигом
   const reconnect = useCallback(async () => {
     if (!initialConfig) {
       console.error("Cannot reconnect without initial config.");
-      setError(t("errors.noConfigForReconnect"));
+      const errorMsg = t("errors.noConfigForReconnect");
+      setError(errorMsg);
+      showError(t("notifications.connectionErrorTitle"), errorMsg); // Уведомление об ошибке
       return false;
     }
     setIsReconnecting(true); // Явно устанавливаем флаг перед попыткой
+    // Показываем информационное уведомление о попытке переподключения
+    showInfo(
+      t("notifications.reconnectingTitle"),
+      t("notifications.reconnectingMessage", { host: initialConfig.host })
+    );
     console.log("Attempting to reconnect...");
     return await connect(initialConfig);
-  }, [initialConfig, connect, t]);
+  }, [initialConfig, connect, t, showInfo, showError]); // Добавляем зависимости
 
   // Первоначальная загрузка конфигурации и попытка подключения
   useEffect(() => {
@@ -65,7 +84,8 @@ export function useConnectionManager() {
             language: savedConfig.language || "en", // Добавляем язык по умолчанию
           };
           setInitialConfig(config); // Сохраняем для возможных переподключений
-          await connect(config); // Пытаемся подключиться
+          // Попытка подключения вызовет уведомление внутри connect()
+          await connect(config);
         } else {
           // Конфигурации нет - это нормальное состояние при первом запуске
           console.log("No configuration found. Waiting for settings.");
@@ -73,7 +93,9 @@ export function useConnectionManager() {
         }
       } catch (error) {
         console.error("Failed to load initial config:", error);
-        setError(t("errors.failedToLoadConfig"));
+        const errorMsg = t("errors.failedToLoadConfig");
+        setError(errorMsg);
+        showError(t("notifications.configErrorTitle"), errorMsg); // Уведомление об ошибке загрузки конфига
         setIsInitialized(false);
       } finally {
         setIsLoading(false); // Завершаем начальную загрузку в любом случае
@@ -82,7 +104,7 @@ export function useConnectionManager() {
 
     initializeApp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]); // Зависимость connect не нужна, т.к. она используется внутри initializeApp
+  }, [t, showError]); // Добавляем showError в зависимости useEffect
 
   return {
     isInitialized,

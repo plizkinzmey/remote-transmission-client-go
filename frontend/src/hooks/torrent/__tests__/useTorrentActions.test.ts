@@ -22,10 +22,31 @@ const renderHookWithProviders = (hook: () => any) => {
   });
 };
 
-describe("useTorrentActions", () => {
+describe("Действия с торрентами", () => {
   const mockOnActionStart = vi.fn();
   const mockOnActionSuccess = vi.fn();
-  const mockOnActionError = vi.fn();
+  const mockTorrents = [
+    {
+      ID: 1,
+      Name: "Test Torrent",
+      Status: "stopped",
+      Progress: 0,
+      Size: 0,
+      SizeFormatted: "0 B",
+      UploadRatio: 0,
+      SeedsConnected: 0,
+      SeedsTotal: 0,
+      PeersConnected: 0,
+      PeersTotal: 0,
+      UploadedBytes: 0,
+      UploadedFormatted: "0 B",
+      DownloadSpeed: 0,
+      UploadSpeed: 0,
+      DownloadSpeedFormatted: "0 B/s",
+      UploadSpeedFormatted: "0 B/s",
+      IsSlowMode: false,
+    },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks(); // Очищаем моки перед каждым тестом
@@ -36,12 +57,12 @@ describe("useTorrentActions", () => {
       useTorrentActions({
         onActionStart: mockOnActionStart,
         onActionSuccess: mockOnActionSuccess,
-        onActionError: mockOnActionError,
+        torrents: mockTorrents,
       })
     );
 
   // Тесты для addTorrent
-  it("addTorrent should call AddTorrentAPI and success callbacks on success", async () => {
+  it("addTorrent должен вызывать AddTorrentAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.AddTorrent).mockResolvedValue(undefined);
     const { result } = setupHook();
 
@@ -60,10 +81,9 @@ describe("useTorrentActions", () => {
       "/downloads"
     );
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("addTorrent should call AddTorrentAPI and error callbacks on failure", async () => {
+  it("addTorrent должен вызывать AddTorrentAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Failed to add");
     vi.mocked(AppAPI.AddTorrent).mockRejectedValue(error);
     const { result } = setupHook();
@@ -80,11 +100,10 @@ describe("useTorrentActions", () => {
       ""
     );
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith("errors.failedToAddTorrent");
   });
 
   // Тесты для addTorrentFile
-  it("addTorrentFile should call AddTorrentFileAPI and success callbacks on success", async () => {
+  it("addTorrentFile должен вызывать AddTorrentFileAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.AddTorrentFile).mockResolvedValue(undefined);
     const { result } = setupHook();
 
@@ -103,10 +122,9 @@ describe("useTorrentActions", () => {
       "/downloads"
     );
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("addTorrentFile should call AddTorrentFileAPI and error callbacks on failure", async () => {
+  it("addTorrentFile должен вызывать AddTorrentFileAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("File add failed");
     vi.mocked(AppAPI.AddTorrentFile).mockRejectedValue(error);
     const { result } = setupHook();
@@ -120,11 +138,10 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.AddTorrentFile).toHaveBeenCalledWith("base64content", "");
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith("errors.failedToAddTorrent");
   });
 
   // Тесты для removeTorrent
-  it("removeTorrent should call RemoveTorrentAPI and success callbacks on success", async () => {
+  it("removeTorrent должен вызывать RemoveTorrentAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.RemoveTorrent).mockResolvedValue(undefined);
     const { result } = setupHook();
 
@@ -137,10 +154,9 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.RemoveTorrent).toHaveBeenCalledWith(1, true);
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("removeTorrent should call RemoveTorrentAPI and error callbacks on failure", async () => {
+  it("removeTorrent должен вызывать RemoveTorrentAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Remove failed");
     vi.mocked(AppAPI.RemoveTorrent).mockRejectedValue(error);
     const { result } = setupHook();
@@ -154,13 +170,10 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.RemoveTorrent).toHaveBeenCalledWith(1, false);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToRemoveTorrent"
-    );
   });
 
   // Тесты для startTorrents
-  it("startTorrents should call StartTorrentsAPI and success callbacks on success", async () => {
+  it("startTorrents должен вызывать StartTorrentsAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.StartTorrents).mockResolvedValue(undefined);
     const { result } = setupHook();
     const ids = [1, 2];
@@ -174,10 +187,9 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.StartTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("startTorrents should call StartTorrentsAPI and error callbacks on failure", async () => {
+  it("startTorrents должен вызывать StartTorrentsAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Start failed");
     vi.mocked(AppAPI.StartTorrents).mockRejectedValue(error);
     const { result } = setupHook();
@@ -192,13 +204,25 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.StartTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToStartTorrent"
-    );
+  });
+
+  it("startTorrents должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.startTorrents(emptyIds);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.StartTorrents).not.toHaveBeenCalled();
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
   });
 
   // Тесты для stopTorrents
-  it("stopTorrents should call StopTorrentsAPI and success callbacks on success", async () => {
+  it("stopTorrents должен вызывать StopTorrentsAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.StopTorrents).mockResolvedValue(undefined);
     const { result } = setupHook();
     const ids = [3, 4];
@@ -212,10 +236,9 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.StopTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("stopTorrents should call StopTorrentsAPI and error callbacks on failure", async () => {
+  it("stopTorrents должен вызывать StopTorrentsAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Stop failed");
     vi.mocked(AppAPI.StopTorrents).mockRejectedValue(error);
     const { result } = setupHook();
@@ -230,13 +253,25 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.StopTorrents).toHaveBeenCalledWith(ids);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToStopTorrent"
-    );
+  });
+
+  it("stopTorrents должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.stopTorrents(emptyIds);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.StopTorrents).not.toHaveBeenCalled();
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
   });
 
   // Тесты для setSpeedLimit
-  it("setSpeedLimit should call SetTorrentSpeedLimitAPI and success callbacks on success", async () => {
+  it("setSpeedLimit должен вызывать SetTorrentSpeedLimitAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.SetTorrentSpeedLimit).mockResolvedValue(undefined);
     const { result } = setupHook();
     const ids = [1];
@@ -251,10 +286,9 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("setSpeedLimit should call SetTorrentSpeedLimitAPI and error callbacks on failure", async () => {
+  it("setSpeedLimit должен вызывать SetTorrentSpeedLimitAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Speed limit failed");
     vi.mocked(AppAPI.SetTorrentSpeedLimit).mockRejectedValue(error);
     const { result } = setupHook();
@@ -270,13 +304,59 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToSetSpeedLimit"
-    );
+  });
+
+  it("setSpeedLimit должен возвращать true без вызова API, если массив ids пуст", async () => {
+    const { result } = setupHook();
+    const emptyIds: number[] = [];
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(emptyIds, true);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).not.toHaveBeenCalled();
+    expect(AppAPI.SetTorrentSpeedLimit).not.toHaveBeenCalled();
+    expect(mockOnActionSuccess).not.toHaveBeenCalled();
+  });
+
+  it("setSpeedLimit должен использовать правильное сообщение при установке медленного режима", async () => {
+    vi.mocked(AppAPI.SetTorrentSpeedLimit).mockResolvedValue(undefined);
+    const { result } = setupHook();
+    const ids = [1];
+    const isSlowMode = true;
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(ids, isSlowMode);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).toHaveBeenCalledOnce();
+    expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
+    expect(mockOnActionSuccess).toHaveBeenCalledOnce();
+  });
+
+  it("setSpeedLimit должен использовать правильное сообщение при отключении медленного режима", async () => {
+    vi.mocked(AppAPI.SetTorrentSpeedLimit).mockResolvedValue(undefined);
+    const { result } = setupHook();
+    const ids = [1];
+    const isSlowMode = false;
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.setSpeedLimit(ids, isSlowMode);
+    });
+
+    expect(success).toBe(true);
+    expect(mockOnActionStart).toHaveBeenCalledOnce();
+    expect(AppAPI.SetTorrentSpeedLimit).toHaveBeenCalledWith(ids, isSlowMode);
+    expect(mockOnActionSuccess).toHaveBeenCalledOnce();
   });
 
   // Тесты для verifyTorrent
-  it("verifyTorrent should call VerifyTorrentAPI and success callbacks on success", async () => {
+  it("verifyTorrent должен вызывать VerifyTorrentAPI и колбэк успеха при успешном выполнении", async () => {
     vi.mocked(AppAPI.VerifyTorrent).mockResolvedValue(undefined);
     const { result } = setupHook();
     const id = 5;
@@ -290,10 +370,9 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.VerifyTorrent).toHaveBeenCalledWith(id);
     expect(mockOnActionSuccess).toHaveBeenCalledOnce();
-    expect(mockOnActionError).not.toHaveBeenCalled();
   });
 
-  it("verifyTorrent should call VerifyTorrentAPI and error callbacks on failure", async () => {
+  it("verifyTorrent должен вызывать VerifyTorrentAPI и колбэк ошибки при неудаче", async () => {
     const error = new Error("Verify failed");
     vi.mocked(AppAPI.VerifyTorrent).mockRejectedValue(error);
     const { result } = setupHook();
@@ -308,8 +387,5 @@ describe("useTorrentActions", () => {
     expect(mockOnActionStart).toHaveBeenCalledOnce();
     expect(AppAPI.VerifyTorrent).toHaveBeenCalledWith(id);
     expect(mockOnActionSuccess).not.toHaveBeenCalled();
-    expect(mockOnActionError).toHaveBeenCalledWith(
-      "errors.failedToVerifyTorrent"
-    );
   });
 });

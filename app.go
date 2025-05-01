@@ -16,7 +16,11 @@ import (
 	"encoding/base64" // добавлено
 	"os"              // добавлено
 
-	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
+	// для запуска Swift-хелпера
+	goruntime "runtime" // стандартный runtime с псевдонимом
+
+	"github.com/gen2brain/beeep"                            // Добавлено для уведомлений
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
 )
 
 // App struct
@@ -57,7 +61,7 @@ func (a *App) startup(ctx context.Context) {
 	go func() {
 		time.Sleep(1 * time.Second) // задержка 1 секунда
 		if a.pendingTorrentFile != "" {
-			runtime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
 			a.pendingTorrentFile = ""
 		}
 	}()
@@ -357,7 +361,7 @@ func (a *App) handleFileOpen(filePath string) {
 		a.pendingTorrentFile = filePath
 		// Генерируем событие torrent-opened, если приложение уже запущено
 		if a.ctx != nil {
-			runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", filePath)
 		}
 	}
 }
@@ -453,4 +457,47 @@ func (a *App) GetTorrentDownloadDirectory(id int64) (string, error) {
 		return "", transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetTorrentDownloadDirectory(id)
+}
+
+// ShowNotification displays a native OS notification.
+func (a *App) ShowNotification(title string, message string, level string) error {
+	log.Printf("Showing notification: Level=%s, Title=%s, Message=%s", level, title, message)
+
+	iconPath := a.getNotificationIconPath(level)
+
+	// Для UserNotifications нужен минимум macOS 10.14
+
+	// Используем нативный bridge только на macOS
+	if goruntime.GOOS == "darwin" {
+		showNativeNotification(title, message, iconPath)
+		return nil
+	}
+
+	// Для других ОС используем beeep
+	err := beeep.Notify(title, message, iconPath)
+	if err != nil {
+		log.Printf("Failed to send notification: %v", err)
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	return nil
+}
+
+// getNotificationIconPath возвращает путь к иконке в зависимости от уровня уведомления.
+// Пока возвращает пустую строку (без иконки).
+// TODO: Реализовать логику выбора иконки, если это необходимо.
+// Иконки должны быть включены в сборку приложения.
+func (a *App) getNotificationIconPath(level string) string {
+	// Примерная логика для выбора иконки в зависимости от level
+	switch level {
+	case "success":
+		return "" // В будущем: "assets/icons/success.png" - путь к иконке успеха
+	case "error":
+		return "" // В будущем: "assets/icons/error.png" - путь к иконке ошибки
+	case "warning":
+		return "" // В будущем: "assets/icons/warning.png" - путь к иконке предупреждения
+	case "info":
+		return "" // В будущем: "assets/icons/info.png" - путь к иконке информации
+	default:
+		return "" // Иконка по умолчанию или без иконки
+	}
 }

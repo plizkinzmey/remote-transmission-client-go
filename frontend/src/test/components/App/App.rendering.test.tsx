@@ -71,7 +71,7 @@ vi.mock("../../../components/Footer", () => ({
 
 vi.mock("../../../components/ConnectionStatus", () => ({
   ConnectionStatus: () => (
-    <div data-testid="connection-status-component">ConnectionStatus Mocked</div>
+    <div data-testid="connection-status-container">ConnectionStatus Mocked</div>
   ),
 }));
 
@@ -220,7 +220,7 @@ describe("App - Рендеринг компонента", () => {
     expect(screen.getByTestId("drag-drop-provider")).toBeInTheDocument();
     expect(screen.getByTestId("header-component")).toBeInTheDocument();
     // ConnectionStatus рендерится условно, проверяем его отсутствие по умолчанию
-    expect(screen.queryByTestId("connection-status-component")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("connection-status-container")).not.toBeInTheDocument();
     expect(screen.getByTestId("torrent-list-component")).toBeInTheDocument();
     expect(screen.getByTestId("footer-component")).toBeInTheDocument();
   });
@@ -243,7 +243,7 @@ describe("App - Рендеринг компонента", () => {
       isReconnecting: true,
     });
     render(<App />);
-    expect(screen.getByTestId("connection-status-component")).toBeInTheDocument();
+    expect(screen.getByTestId("connection-status-container")).toBeInTheDocument();
   });
 
   it("отображает ConnectionStatus при appError", () => {
@@ -256,7 +256,7 @@ describe("App - Рендеринг компонента", () => {
     });
     render(<App />);
     // Ожидаем, что ConnectionStatus будет отрендерен из-за ошибки
-    expect(screen.getByTestId("connection-status-component")).toBeInTheDocument();
+    expect(screen.getByTestId("connection-status-container")).toBeInTheDocument();
   });
 
   it("не отображает модальные окна при начальной загрузке", () => {

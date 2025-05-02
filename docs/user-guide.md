@@ -78,6 +78,20 @@ To manage your download locations:
 2. You can select from previously used directories or enter a new one
 3. To enter a custom path, click "Enter Custom Path"
 4. To remove a saved path, click the trash icon next to it in the dropdown
+5. To copy a path to the clipboard, click the clipboard icon next to the path in settings
+
+### Managing Download Paths in Settings
+
+To manage download paths directly in the application settings:
+
+1. Click the settings icon in the header
+2. Select the "Download Paths" tab
+3. You will see a list of all saved download directories
+4. To set a directory as default, click the star icon next to it
+5. To remove a directory, click the trash icon next to it
+6. To copy a directory path to your clipboard, click the clipboard icon next to the path
+   - The icon will briefly change to a checkmark when copied successfully
+   - If there's an error during copying, the icon will show an error indicator
 
 ## Torrent Operations
 

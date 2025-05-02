@@ -26,6 +26,9 @@ vi.mock("@radix-ui/themes", async (importOriginal) => {
 vi.mock("@heroicons/react/24/outline", () => ({
     TrashIcon: () => <svg data-testid="trash-icon" />,
     StarIcon: () => <svg data-testid="star-icon" />,
+    ClipboardIcon: () => <svg data-testid="clipboard-icon" />,
+    ClipboardDocumentCheckIcon: () => <svg data-testid="clipboard-check-icon" />,
+    ExclamationCircleIcon: () => <svg data-testid="exclamation-circle-icon" />,
 }));
 
 describe("PathsTab Component", () => {
@@ -346,5 +349,159 @@ describe("PathsTab Component", () => {
         // Проверяем, что обычный путь не имеет класса defaultPathItem
         const nonDefaultPathItem = screen.getByTestId("path-item-/path/two");
         expect(nonDefaultPathItem.className).not.toContain("defaultPathItem");
+    });
+
+    // Добавляем тесты для функциональности копирования путей
+    describe("Copy path functionality", () => {
+        // Мок для API буфера обмена
+        let originalClipboard: any;
+        let mockClipboardWriteText: Mock;
+
+        beforeEach(() => {
+            // Сохраняем оригинальный объект navigator.clipboard
+            originalClipboard = navigator.clipboard;
+
+            // Создаем мок для метода writeText
+            mockClipboardWriteText = vi.fn();
+
+            // Переопределяем navigator.clipboard
+            Object.defineProperty(navigator, 'clipboard', {
+                value: { writeText: mockClipboardWriteText },
+                writable: true
+            });
+
+            // Сбрасываем успешное выполнение метода writeText по умолчанию
+            mockClipboardWriteText.mockResolvedValue(undefined);
+        });
+
+        afterEach(() => {
+            // Восстанавливаем оригинальный объект navigator.clipboard
+            Object.defineProperty(navigator, 'clipboard', {
+                value: originalClipboard,
+                writable: true
+            });
+        });
+
+        it("should render copy button for each path", () => {
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            // Проверяем наличие кнопок копирования для каждого пути
+            const copyButton1 = screen.getByTestId("copy-button-/path/one");
+            const copyButton2 = screen.getByTestId("copy-button-/path/two");
+
+            expect(copyButton1).toBeInTheDocument();
+            expect(copyButton2).toBeInTheDocument();
+
+            // Проверяем, что у кнопок есть правильные иконки
+            expect(copyButton1.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
+            expect(copyButton2.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
+        });
+
+        it("should copy path to clipboard on copy button click", async () => {
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            // Находим кнопку копирования
+            const copyButton = screen.getByTestId("copy-button-/path/two");
+
+            // Нажимаем на кнопку копирования
+            fireEvent.click(copyButton);
+
+            // Проверяем, что метод writeText был вызван с правильным путем
+            expect(mockClipboardWriteText).toHaveBeenCalledWith("/path/two");
+        });
+
+        it("should change button appearance after successful copy", async () => {
+            // Используем vi.useFakeTimers для управления таймерами
+            vi.useFakeTimers();
+
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            // Находим кнопку копирования
+            const copyButton = screen.getByTestId("copy-button-/path/two");
+
+            // Нажимаем на кнопку копирования
+            await act(async () => {
+                fireEvent.click(copyButton);
+                // Ждем обработки Promise
+                await Promise.resolve();
+            });
+
+            // Проверяем, что иконка изменилась на иконку успешного копирования
+            expect(copyButton.querySelector("[data-testid='clipboard-check-icon']")).toBeInTheDocument();
+
+            // Проверяем, что цвет кнопки изменился на зеленый
+            // В моке Radix цвет проверяем через data-атрибут
+            expect(copyButton).toHaveAttribute("data-accent-color", "green");
+
+            // Проверяем возврат к исходному состоянию после таймера
+            act(() => {
+                vi.advanceTimersByTime(1600); // Больше чем 1.5 сек
+            });
+
+            // После таймера кнопка должна вернуться в исходное состояние
+            expect(copyButton.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
+            expect(copyButton).toHaveAttribute("data-accent-color", "gray");
+
+            // Восстанавливаем нормальные таймеры
+            vi.useRealTimers();
+        });
+
+        it("should handle clipboard error correctly", async () => {
+            // Моделируем ошибку при копировании
+            mockClipboardWriteText.mockRejectedValue(new Error("Clipboard error"));
+
+            // Используем vi.useFakeTimers для управления таймерами
+            vi.useFakeTimers();
+
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            // Находим кнопку копирования
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+
+            // Проверяем состояние до нажатия
+            expect(copyButton).toHaveAttribute("data-accent-color", "gray");
+
+            // Симулируем клик с ошибкой копирования
+            await act(async () => {
+                fireEvent.click(copyButton);
+                // Ждем обработки Promise
+                try {
+                    await Promise.resolve();
+                } catch (e) {
+                    // Ожидаем ошибку
+                }
+            });
+
+            // Проверяем, что иконка изменилась на иконку ошибки
+            expect(copyButton.querySelector("[data-testid='exclamation-circle-icon']")).toBeInTheDocument();
+
+            // Проверяем, что цвет кнопки изменился на красный
+            expect(copyButton).toHaveAttribute("data-accent-color", "red");
+
+            // Проверяем возврат к исходному состоянию после таймера
+            act(() => {
+                vi.advanceTimersByTime(1600); // Больше чем 1.5 сек
+            });
+
+            // После таймера кнопка должна вернуться в исходное состояние
+            expect(copyButton.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
+            expect(copyButton).toHaveAttribute("data-accent-color", "gray");
+
+            // Восстанавливаем нормальные таймеры
+            vi.useRealTimers();
+        });
+
+        it("should have appropriate aria-label for accessibility", () => {
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            // Находим кнопку копирования
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+
+            // Проверяем наличие aria-label с правильным текстом локализации
+            expect(copyButton).toHaveAttribute("aria-label", "settings.copyPath");
+
+            // Проверяем, что функция локализации была вызвана с правильным ключом
+            expect(mockT).toHaveBeenCalledWith("settings.copyPath");
+        });
     });
 });

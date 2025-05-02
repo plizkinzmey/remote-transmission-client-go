@@ -1,6 +1,9 @@
 import {
   forwardRef,
   useImperativeHandle,
+  useState, // Добавляем импорт useState для отслеживания скопированного пути
+  useCallback, // Добавляем импорт useCallback для оптимизации функций
+  useEffect, // Добавляем импорт useEffect для управления таймером анимации
 } from "react";
 import {
   TextField,
@@ -13,7 +16,13 @@ import {
   Tooltip,
 } from "@radix-ui/themes";
 import { useLocalization } from "@contexts/LocalizationContext";
-import { TrashIcon, StarIcon } from "@heroicons/react/24/outline";
+import {
+  TrashIcon,
+  StarIcon,
+  ClipboardIcon, // Импортируем иконку копирования
+  ClipboardDocumentCheckIcon, // Иконка успешного копирования
+  ExclamationCircleIcon, // Иконка ошибки копирования
+} from "@heroicons/react/24/outline";
 import { usePathsManagement } from "./hooks/usePathsManagement";
 import styles from "./PathsTab.module.css"; // Импортируем CSS модуль
 
@@ -73,6 +82,35 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
       resetChanges,
       getPathChanges,
     } = usePathsManagement({ onPathsChanged });
+
+    // Новое состояние для управления копированием путей
+    const [copiedPath, setCopiedPath] = useState<string | null>(null);
+    const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+    // Очистка статуса копирования через заданное время
+    useEffect(() => {
+      if (copiedPath) {
+        const timer = setTimeout(() => {
+          setCopiedPath(null);
+          setCopyStatus('idle');
+        }, 1500); // Сброс статуса через 1.5 секунды
+
+        return () => clearTimeout(timer);
+      }
+    }, [copiedPath, copyStatus]);
+
+    // Функция для копирования пути в буфер обмена
+    const handleCopyPath = useCallback(async (path: string) => {
+      try {
+        await navigator.clipboard.writeText(path);
+        setCopiedPath(path);
+        setCopyStatus('success');
+      } catch (error) {
+        console.error('Failed to copy path:', error);
+        setCopiedPath(path);
+        setCopyStatus('error');
+      }
+    }, []);
 
     // Expose methods and state via ref
     useImperativeHandle(
@@ -158,6 +196,26 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
                             </Text>
                           </Tooltip>
                           <Flex gap="2">
+                            {/* Кнопка копирования пути - добавляем её первой в ряду кнопок */}
+                            <IconButton
+                              size="1"
+                              variant="soft"
+                              color={copiedPath === path ? (copyStatus === 'success' ? 'green' : 'red') : 'gray'}
+                              onClick={() => handleCopyPath(path)}
+                              data-testid={`copy-button-${path}`}
+                              aria-label={t("settings.copyPath")}
+                            >
+                              {copiedPath === path ? (
+                                copyStatus === 'success' ? (
+                                  <ClipboardDocumentCheckIcon width={16} height={16} />
+                                ) : (
+                                  <ExclamationCircleIcon width={16} height={16} />
+                                )
+                              ) : (
+                                <ClipboardIcon width={16} height={16} />
+                              )}
+                            </IconButton>
+
                             {path === defaultPath ? (
                               <Tooltip content={t("settings.isDefaultPath")}>
                                 <IconButton

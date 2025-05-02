@@ -401,7 +401,7 @@ func (a *App) ValidateDownloadPath(path string) error {
 
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
-	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
+	if a.isTorrentFile(filePath) {
 		log.Print("Получен торрент файл: ", filePath)
 
 		// Сохраняем путь к файлу или сразу отправляем событие

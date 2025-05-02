@@ -30,6 +30,7 @@ type App struct {
 	configService       *infrastructure.ConfigService
 	localizationService *infrastructure.LocalizationService
 	pendingTorrentFile  string
+	logger              *log.Logger // добавлено для логирования
 }
 
 // Error constants
@@ -50,6 +51,7 @@ func NewApp() *App {
 	return &App{
 		configService:       infrastructure.NewConfigService(),
 		localizationService: locService,
+		logger:              log.Default(), // добавлено для логирования
 	}
 }
 
@@ -211,7 +213,7 @@ func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
-		return nil, transmission.NewServiceNotInitializedError()
+		return []domain.Torrent{}, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetAllTorrents()
 }
@@ -405,6 +407,29 @@ func (a *App) handleFileOpen(filePath string) {
 			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", filePath)
 		}
 	}
+}
+
+// HandleFilesOpen обрабатывает открытие файлов через систему
+func (a *App) HandleFilesOpen(files []string) {
+	if len(files) == 0 {
+		return
+	}
+
+	a.logger.Printf("Handling files open request, count: %d\n", len(files))
+
+	for _, file := range files {
+		if a.isTorrentFile(file) {
+			a.logger.Printf("Processing torrent file: %s\n", file)
+			// Эмитируем событие с явным указанием контекста
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", file)
+			a.logger.Printf("Emitted torrent-opened event: %s\n", file)
+		}
+	}
+}
+
+// isTorrentFile проверяет, является ли файл торрент-файлом
+func (a *App) isTorrentFile(path string) bool {
+	return strings.HasSuffix(strings.ToLower(path), ".torrent")
 }
 
 // ReadFile читает содержимое файла и возвращает его в формате Base64

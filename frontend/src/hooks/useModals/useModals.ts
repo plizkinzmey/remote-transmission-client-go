@@ -1,5 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import { EventsOn } from "@wailsjs/runtime"; // Correct alias
+import {
+  EventsOn,
+  WindowUnminimise, // Исправлена опечатка: WindowUnminimize -> WindowUnminimise
+  WindowShow,
+  BrowserOpenURL, // Используем вместо WindowSetForeground, которого нет в API
+  WindowSetAlwaysOnTop,
+} from "@wailsjs/runtime";
 import { LoadConfig } from "@wailsjs/go/main/App"; // Correct alias
 
 /**
@@ -120,15 +126,36 @@ export const useModals = (): UseModalsReturn => {
   // Слушаем событие открытия торрент-файла
   useEffect(() => {
     // EventsOn returns a function to unsubscribe
-    const unsubscribe = EventsOn("torrent-opened", (torrentPath: string) => {
-      if (typeof torrentPath === "string" && torrentPath) {
-        console.log("Received torrent file path via event:", torrentPath);
-        setTorrentFilePath(torrentPath);
-        setShowAddTorrent(true);
-      } else {
-        console.warn("Received invalid torrent path via event:", torrentPath);
+    const unsubscribe = EventsOn(
+      "torrent-opened",
+      async (torrentPath: string) => {
+        if (typeof torrentPath === "string" && torrentPath) {
+          console.log("Received torrent file path via event:", torrentPath);
+
+          // Активация окна
+          try {
+            await WindowUnminimise(); // Исправлено: используем правильное имя функции
+            await WindowShow(); // Показываем окно, если оно скрыто
+
+            // WindowSetForeground не существует, используем другие методы
+            // для активации окна
+
+            // Кратковременно делаем окно "поверх всех", чтобы гарантировать видимость
+            await WindowSetAlwaysOnTop(true);
+            setTimeout(async () => {
+              await WindowSetAlwaysOnTop(false);
+            }, 1000);
+          } catch (error) {
+            console.error("Failed to activate window:", error);
+          }
+
+          setTorrentFilePath(torrentPath);
+          setShowAddTorrent(true);
+        } else {
+          console.warn("Received invalid torrent path via event:", torrentPath);
+        }
       }
-    });
+    );
 
     // Cleanup function to unsubscribe when the component unmounts
     return () => {

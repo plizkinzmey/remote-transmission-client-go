@@ -3,7 +3,6 @@ import {
   EventsOn,
   WindowUnminimise,
   WindowShow,
-  BrowserOpenURL, // Импортируем вместо WindowSetForeground
   WindowSetAlwaysOnTop,
 } from "@wailsjs/runtime";
 import { LoadConfig } from "@wailsjs/go/main/App"; // Correct alias

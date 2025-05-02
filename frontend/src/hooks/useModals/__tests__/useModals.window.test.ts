@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useModals } from "../useModals";
+import { useModals, WINDOW_RESET_DELAY_MS } from "../useModals";
 import {
   EventsOn,
   WindowUnminimise,
@@ -8,18 +8,12 @@ import {
   WindowSetAlwaysOnTop,
 } from "@wailsjs/runtime";
 
-// Убираем импорт константы, которая не экспортируется
-// import { WINDOW_RESET_DELAY_MS } from "../useModals";
-
-// Определяем значение константы явно в тесте
-const EXPECTED_RESET_DELAY_MS = 1000;
-
 // Мокаем Wails API
 vi.mock("@wailsjs/runtime", () => ({
   EventsOn: vi.fn(),
-  WindowUnminimise: vi.fn(),
-  WindowShow: vi.fn(),
-  WindowSetAlwaysOnTop: vi.fn(),
+  WindowUnminimise: vi.fn().mockResolvedValue(undefined),
+  WindowShow: vi.fn().mockResolvedValue(undefined),
+  WindowSetAlwaysOnTop: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("Хук useModals - активация окна", () => {
@@ -54,6 +48,9 @@ describe("Хук useModals - активация окна", () => {
   });
 
   it("должен активировать окно при получении события torrent-opened", async () => {
+    // Проверяем, что константа задержки имеет ожидаемое значение
+    expect(WINDOW_RESET_DELAY_MS).toBe(1000);
+
     // Рендерим хук
     const { unmount } = renderHook(() => useModals());
 
@@ -297,7 +294,7 @@ describe("Хук useModals - активация окна", () => {
 
   it("должен очищать предыдущий таймер при повторном вызове", async () => {
     // Ожидаем, что таймер использует определенную задержку
-    expect(EXPECTED_RESET_DELAY_MS).toBe(1000);
+    expect(WINDOW_RESET_DELAY_MS).toBe(1000);
 
     // useRef сохраняет значение между рендерами, поэтому тест остается действительным
     // даже после переименования с timeoutIdRef на resetAlwaysOnTopTimeoutRef

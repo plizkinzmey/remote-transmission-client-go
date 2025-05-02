@@ -76,11 +76,18 @@ func TestHandleFilesOpen_ContextNotInitialized(t *testing.T) {
 		"path/to/file.txt", // Не торрент-файл, должен быть проигнорирован
 	})
 
-	// Проверяем, что все ожидаемые файлы были обработаны
+	// Проверяем, что pendingTorrentFiles содержит правильные файлы
 	expectedFiles := []string{"path/to/file1.torrent", "path/to/file2.torrent"}
-	for _, expectedFile := range expectedFiles {
-		if !strings.HasSuffix(strings.ToLower(expectedFile), ".torrent") {
-			t.Errorf("Expected file '%s' to be a torrent file", expectedFile)
+	if len(app.pendingTorrentFiles) != len(expectedFiles) {
+		t.Errorf("Expected pendingTorrentFiles to have %d items, got %d",
+			len(expectedFiles), len(app.pendingTorrentFiles))
+	}
+
+	// Проверяем наличие каждого ожидаемого файла в pendingTorrentFiles
+	for i, expectedFile := range expectedFiles {
+		if i >= len(app.pendingTorrentFiles) || app.pendingTorrentFiles[i] != expectedFile {
+			t.Errorf("Expected pendingTorrentFiles[%d] to be '%s', got '%s'",
+				i, expectedFile, app.pendingTorrentFiles[i])
 		}
 	}
 }

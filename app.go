@@ -68,7 +68,7 @@ func (a *App) startup(ctx context.Context) {
 			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", file)
 		}
 		// Очищаем массив после обработки
-		a.pendingTorrentFiles = nil
+		a.pendingTorrentFiles = []string{}
 	}()
 
 	// Try to initialize with saved settings
@@ -216,7 +216,7 @@ func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
-		return nil, transmission.NewServiceNotInitializedError()
+		return []domain.Torrent{}, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetAllTorrents()
 }

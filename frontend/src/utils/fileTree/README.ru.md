@@ -1,54 +1,91 @@
-# Утилиты для дерева файлов
+# Утилиты для работы с деревом файлов
 
-Этот модуль предоставляет набор вспомогательных функций для построения, манипулирования и анализа древовидной структуры файлов торрентов во фронтенде Transmission Client.
+Этот модуль предоставляет набор служебных функций для построения, манипуляции и анализа структуры дерева файлов торрентов в пользовательском интерфейсе клиента Transmission.
 
 ## Обзор
 
-Основная функциональность заключается в преобразовании плоского списка файлов, полученного от бэкенда, в иерархическую древовидную структуру (`FileNode[]`), подходящую для отображения и взаимодействия в пользовательском интерфейсе (например, в компоненте `TorrentContent`).
+Основная функциональность модуля сосредоточена на преобразовании плоского списка файлов, полученных от бэкенда, в иерархическую древовидную структуру (`FileNode[]`), подходящую для отображения и взаимодействия в UI (например, в компоненте `TorrentContent`).
 
 ## Ключевые функции
 
--   **`buildFileTree(files: TorrentFile[]): FileNode[]`**:
-    Основная функция для построения дерева файлов. Принимает массив объектов `TorrentFile`, сортирует их по пути, создает экземпляры `FileNode` для директорий и файлов, устанавливает связи родитель-потомок и вычисляет начальную статистику для директорий. Использует `createNodeForPath`, `addNodeToParent` и `calculateDirStats`.
+- **`buildFileTree(files: TorrentFile[]): FileNode[]`**:
+    Основная функция для построения дерева файлов. Она принимает массив объектов `TorrentFile`, сортирует их по пути, создаёт экземпляры `FileNode` для директорий и файлов, устанавливает связи родитель-потомок и рассчитывает начальную статистику директорий. Использует функции `createNodeForPath`, `addNodeToParent` и `calculateDirStats`.
 
--   **`calculateDirStats(node: FileNode): DirStats`**:
-    Рекурсивно вычисляет агрегированную статистику (общий размер, средний прогресс, общее количество файлов и статус `Wanted`/`indeterminate`) для узла директории на основе его дочерних элементов. Обновляет свойства `Size`, `Progress`, `Wanted` и `indeterminate` узла директории.
+- **`calculateDirStats(node: FileNode): DirStats`**:
+    Рекурсивно вычисляет агрегированную статистику (общий размер, средний прогресс, общее количество файлов и статусы `Wanted`/`indeterminate`) для узла директории на основе его потомков. Обновляет свойства директории `Size`, `Progress`, `Wanted` и `indeterminate`.
 
--   **`updateNodesWanted(nodes: FileNode[], targetNode: FileNode, wanted: boolean, fileIds: number[]): FileNode[]`**:
-    Рекурсивно обновляет статус `Wanted` целевого узла и всех его потомков (если это директория) или конкретных узлов файлов на основе предоставленных ID. Возвращает *новый* массив узлов с обновленными статусами. Также пересчитывает статус `Wanted` и `indeterminate` для родительских директорий, затронутых изменением.
-
--   **`collectFileIds(node: FileNode): number[]`**:
-    Рекурсивно собирает идентификаторы (ID) всех *файлов* внутри данного узла (и его дочерних элементов, если это директория).
-
--   **`formatFileSize(size: number | undefined): string`**:
-    Форматирует размер файла (в байтах) в человекочитаемую строку с использованием двоичных префиксов (B, KiB, MiB, GiB, TiB) с двумя знаками после запятой. Корректно обрабатывает `undefined` или неположительные значения.
-
--   **`createNodeForPath(file: TorrentFile, partName: string, fullPath: string, isFile: boolean): FileNode`**:
-    Вспомогательная функция, используемая `buildFileTree` для создания одного экземпляра `FileNode`, инициализируя его свойства в зависимости от того, представляет ли он файл или директорию.
-
--   **`addNodeToParent(root: { [path: string]: FileNode }, node: FileNode, parentPath: string): void`**:
-    Вспомогательная функция, используемая `buildFileTree` для добавления вновь созданного узла в массив `children` его родительского узла внутри объекта поиска `root`.
+- **`updateNodesWanted(nodes: FileNode[], targetNode: FileNode, wanted: boolean, fileIds: number[]): FileNode[]`**:
+    Обновляет статус `Wanted` для целевого узла и его потомков, рекурсивно обновляя родительские узлы для поддержания согласованности состояния. Собирает и возвращает массив ID файлов, которые требуют обновления на бэкенде.
 
 ## Использование
 
-Эти утилиты в основном используются компонентами, отвечающими за отображение содержимого торрента, такими как `TorrentContent`, для построения дерева файлов и обработки взаимодействий пользователя, таких как выбор/отмена выбора файлов для загрузки.
+```typescript
+// Импорт необходимых функций
+import { buildFileTree, updateNodesWanted } from '../utils/fileTree';
+
+// Пример использования для построения дерева файлов торрента
+const torrentFiles = await GetTorrentFiles(torrentId);
+const fileTree = buildFileTree(torrentFiles);
+
+// Обновление статуса выбранных файлов
+const handleToggleWanted = (node: FileNode, wanted: boolean) => {
+  // Создание глубокой копии для сохранения иммутабельности
+  const updatedTree = [...fileTree];
+  // Получение идентификаторов файлов, требующих обновления
+  const fileIds = [];
+  // Обновление узлов и получение идентификаторов затронутых файлов
+  updateNodesWanted(updatedTree, node, wanted, fileIds);
+  
+  // Обновление статусов файлов на бэкенде
+  if (fileIds.length > 0) {
+    await SetFilesWanted(torrentId, fileIds, wanted);
+  }
+  
+  // Обновление состояния дерева файлов в компоненте
+  setFileTree(updatedTree);
+};
+```
+
+## Структура данных
+
+### TorrentFile (входные данные из бэкенда)
 
 ```typescript
-import { buildFileTree, updateNodesWanted, collectFileIds, TorrentFile, FileNode } from './index'; // Предполагая импорт из index этого каталога
+interface TorrentFile {
+  Id: number;            // Уникальный ID файла
+  Path: string;          // Полный путь файла включая имя
+  Name: string;          // Имя файла
+  Size: number;          // Размер файла в байтах
+  Progress: number;      // Прогресс загрузки (0-1)
+  Wanted: boolean;       // Выбран ли файл для загрузки
+}
+```
 
-// Пример: Построение дерева
-const filesFromBackend: TorrentFile[] = [/* ... массив объектов TorrentFile ... */];
-let fileTree: FileNode[] = buildFileTree(filesFromBackend);
+### FileNode (внутренняя структура представления дерева)
 
-// Пример: Обработка переключения статуса 'Wanted' узла пользователем
-const handleToggleWanted = (nodeToToggle: FileNode) => {
-  const newWantedStatus = !nodeToToggle.Wanted;
-  const idsToUpdate = collectFileIds(nodeToToggle); // Получаем ID затронутых файлов
+```typescript
+interface FileNode {
+  Id?: number;           // ID файла (только для файлов, не для директорий)
+  Path: string;          // Полный путь узла
+  Name: string;          // Имя файла или директории
+  Size?: number;         // Размер файла или суммарный размер директории
+  Progress?: number;     // Прогресс загрузки файла или средний прогресс директории
+  Wanted: boolean;       // Статус выбора для загрузки
+  indeterminate?: boolean; // Промежуточное состояние (для директорий)
+  isDirectory: boolean;  // Является ли узел директорией
+  children?: FileNode[]; // Дочерние узлы для директорий
+  parent?: FileNode;     // Ссылка на родительский узел
+}
+```
 
-  // Обновляем состояние дерева (предполагая, что 'fileTree' управляется состоянием React)
-  const updatedTree = updateNodesWanted(fileTree, nodeToToggle, newWantedStatus, idsToUpdate);
-  // setFileTree(updatedTree); // Обновляем состояние React
+### DirStats (внутренняя структура для агрегированных данных директорий)
 
-  // Отправляем обновленные ID файлов и их статус 'wanted' на бэкенд...
-};
+```typescript
+interface DirStats {
+  size: number;          // Общий размер
+  progressSum: number;   // Взвешенная сумма прогресса
+  count: number;         // Количество файлов
+  allWanted: boolean;    // Выбраны ли все файлы
+  anyWanted: boolean;    // Выбран ли хотя бы один файл
+}
 ```

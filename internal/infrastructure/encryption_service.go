@@ -1,14 +1,20 @@
 package infrastructure
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log" // Добавляем стандартный пакет логирования
+	"os"
+	"os/exec"
+	"regexp"
 
 	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/pbkdf2"
@@ -27,7 +33,29 @@ const (
 	keySize = 32 // 256 бит
 )
 
+// Определяем типы функций для мокирования
+type keyringGetterFunc func(service, username string) (string, error)
+type keyringSetterFunc func(service, username, password string) error
+type machineIDGetterFunc func() (string, error)
+
+// Переменные для хранения реальных или мок-функций
+var (
+	keyringGet      keyringGetterFunc   = keyring.Get
+	keyringSet      keyringSetterFunc   = keyring.Set
+	randReader      io.Reader           = rand.Reader
+	machineIDGetter machineIDGetterFunc = getMachineID
+)
+
+// IEncryptionService defines the interface for encryption operations
+type IEncryptionService interface {
+	EncryptConfig(config interface{}) (string, error)
+	DecryptConfig(encryptedData string, config interface{}) error
+}
+
 // EncryptionService предоставляет методы для шифрования и дешифрования данных
+// Убедимся, что EncryptionService реализует IEncryptionService
+var _ IEncryptionService = (*EncryptionService)(nil)
+
 type EncryptionService struct{}
 
 // NewEncryptionService создает новый сервис шифрования
@@ -63,7 +91,7 @@ func (s *EncryptionService) EncryptConfig(config interface{}) (string, error) {
 
 	// Генерируем случайный nonce (number used once)
 	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	if _, err := io.ReadFull(randReader, nonce); err != nil {
 		return "", fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
@@ -129,24 +157,36 @@ func (s *EncryptionService) DecryptConfig(encryptedData string, config interface
 
 // getEncryptionKey получает ключ шифрования из Keychain или создает новый
 func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
-	// Проверяем наличие ключа в Keychain
-	keyStr, err := keyring.Get(keyringServiceName, keyringUsername)
+	// Проверяем наличие ключа в Keychain, используя переменную keyringGet
+	keyStr, err := keyringGet(keyringServiceName, keyringUsername)
 	if err == nil && keyStr != "" {
 		// Декодируем ключ из base64
-		return base64.StdEncoding.DecodeString(keyStr)
+		keyBytes, decodeErr := base64.StdEncoding.DecodeString(keyStr)
+		if decodeErr != nil {
+			// Если ключ в keyring поврежден, генерируем новый
+			log.Printf("Warning: Failed to decode key from keyring: %v. Generating new key.", decodeErr)
+		} else {
+			return keyBytes, nil
+		}
+	}
+	// Игнорируем ошибку keyring.ErrNotFound, но логируем другие ошибки
+	if err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		log.Printf("Warning: Failed to get key from keyring: %v. Generating new key.", err)
 	}
 
 	// Если ключ не найден или произошла ошибка, создаем новый
-	// Генерируем случайный ключ
+	// Генерируем случайный ключ, используя переменную randReader
 	key := make([]byte, keySize)
-	if _, err := io.ReadFull(rand.Reader, key); err != nil {
+	if _, errGen := io.ReadFull(randReader, key); errGen != nil {
+		log.Printf("Warning: Failed to generate random key: %v. Using fallback PBKDF2 key.", errGen)
 		// Если не удалось сгенерировать случайный ключ, используем PBKDF2
-		machineID, err := getMachineID()
-		if err != nil {
-			// Если не удалось получить Machine ID, используем fallback значение
+		// Используем переменную machineIDGetter
+		machineID, errID := machineIDGetter()
+		if errID != nil {
+			log.Printf("Warning: Failed to get machine ID: %v. Using fallback machine ID.", errID)
 			machineID = "transmission-client-machine-id"
 		}
-		
+
 		// Генерируем ключ на основе Machine ID
 		key = pbkdf2.Key([]byte(machineID), []byte(fallbackSalt), iterations, keySize, sha256.New)
 	}
@@ -154,10 +194,9 @@ func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
 	// Кодируем ключ в base64 для хранения в Keychain
 	keyStr = base64.StdEncoding.EncodeToString(key)
 
-	// Сохраняем ключ в Keychain
-	if err := keyring.Set(keyringServiceName, keyringUsername, keyStr); err != nil {
-		fmt.Printf("Warning: Failed to store encryption key in keyring: %v\n", err)
-		// Даже если не удалось сохранить ключ, продолжаем работу с временным ключом
+	// Сохраняем ключ в Keychain, используя переменную keyringSet
+	if errSet := keyringSet(keyringServiceName, keyringUsername, keyStr); errSet != nil {
+		log.Printf("Warning: Failed to store encryption key in keyring: %v", errSet)
 	}
 
 	return key, nil
@@ -165,27 +204,44 @@ func (s *EncryptionService) getEncryptionKey() ([]byte, error) {
 
 // getMachineID возвращает уникальный ID машины для генерации ключа
 func getMachineID() (string, error) {
-	// На macOS можно использовать UUID оборудования
-	// На других платформах можно использовать другие методы
 	id, err := macOSMachineID()
 	if err != nil {
-		return "", err
+		hostname, hostErr := getHostname()
+		if hostErr != nil {
+			return "", fmt.Errorf("failed to get macOS machine ID (%w) and hostname (%w)", err, hostErr)
+		}
+		return hostname, nil
 	}
 	return id, nil
 }
 
 // macOSMachineID получает UUID оборудования на macOS
 func macOSMachineID() (string, error) {
-	// Простой вариант - использовать hostname
-	hostname, err := getHostname()
-	if err != nil {
-		return "", err
+	// Выполняем команду ioreg для получения hardware UUID
+	cmd := exec.Command("ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to execute ioreg command: %w", err)
 	}
-	return hostname, nil
+
+	// Ищем UUID в выводе команды с помощью регулярного выражения
+	re := regexp.MustCompile(`"IOPlatformUUID"\s*=\s*"([^"]+)"`)
+	matches := re.FindStringSubmatch(out.String())
+
+	if len(matches) >= 2 {
+		return matches[1], nil
+	}
+
+	return "", errors.New("hardware UUID not found in ioreg output")
 }
 
 // getHostname возвращает имя хоста
 func getHostname() (string, error) {
-	// Этот метод будет работать на всех платформах
-	return "transmission-client-go-instance", nil
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", fmt.Errorf("failed to get hostname: %w", err)
+	}
+	return "tx-client-" + hostname, nil
 }

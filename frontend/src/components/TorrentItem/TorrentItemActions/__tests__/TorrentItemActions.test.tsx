@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
 // Import from index file
 import { TorrentItemActions, TorrentItemActionsProps } from '..';
@@ -57,16 +57,14 @@ const defaultProps: TorrentItemActionsProps = {
 };
 
 describe('TorrentItemActions', () => {
-    // Type the spy variable using MockInstance with the function signature as a single type argument
-    let isBlockedSpy: MockInstance<(status: string) => boolean>;
+    // Переносим объявление переменной, но оставляем её undefined, чтобы инициализировать в beforeEach
+    let isBlockedSpy: MockInstance<(status: string) => boolean> | undefined;
 
     beforeEach(() => {
         vi.clearAllMocks();
         mockUseLocalization.mockReturnValue({ t: mockT });
-        // Restore the spy if it was created in a previous test
-        if (isBlockedSpy) {
-            isBlockedSpy.mockRestore();
-        }
+        // Инициализируем шпиона здесь, перед использованием
+        isBlockedSpy = vi.spyOn(StatusUtils, "isBlocked");
     });
 
     it('renders correctly with default props', () => {
@@ -196,13 +194,15 @@ describe('TorrentItemActions', () => {
     });
 
     it('calls onSetSpeedLimit with correct arguments when clicked (turning on)', () => {
-        render(<TorrentItemActions {...defaultProps} isSlowMode={false} />);
+        // Используем статус "downloading", чтобы кнопка не была заблокирована
+        render(<TorrentItemActions {...defaultProps} status="downloading" isSlowMode={false} />);
         fireEvent.click(screen.getByTestId('torrent-actions-speed-limit'));
         expect(defaultProps.onSetSpeedLimit).toHaveBeenCalledWith(defaultProps.id, true);
     });
 
     it('calls onSetSpeedLimit with correct arguments when clicked (turning off)', () => {
-        render(<TorrentItemActions {...defaultProps} isSlowMode={true} />);
+        // Используем статус "seeding", чтобы кнопка не была заблокирована
+        render(<TorrentItemActions {...defaultProps} status="seeding" isSlowMode={true} />);
         fireEvent.click(screen.getByTestId('torrent-actions-speed-limit'));
         expect(defaultProps.onSetSpeedLimit).toHaveBeenCalledWith(defaultProps.id, false);
     });
@@ -217,43 +217,111 @@ describe('TorrentItemActions', () => {
         expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
     });
 
-    // --- Other Button Tests ---
-    it('calls onViewContent when view content button is clicked', () => {
-        render(<TorrentItemActions {...defaultProps} />);
-        fireEvent.click(screen.getByTestId('torrent-actions-view-content'));
-        expect(defaultProps.onViewContent).toHaveBeenCalledTimes(1);
+    // --- Speed Limit Button Availability Tests ---
+    it('enables speed limit button when downloading', () => {
+        render(<TorrentItemActions {...defaultProps} status="downloading" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled();
     });
 
-    it('calls onRemove when remove button is clicked', () => {
+    it('enables speed limit button when seeding', () => {
+        render(<TorrentItemActions {...defaultProps} status="seeding" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled();
+    });
+
+    it('disables speed limit button for non-running statuses', () => {
+        // Проверяем для "stopped"
+        render(<TorrentItemActions {...defaultProps} status="stopped" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+
+        // Перерендериваем для "completed"
+        cleanup();
+        render(<TorrentItemActions {...defaultProps} status="completed" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+
+        // Перерендериваем для "error"
+        cleanup();
+        render(<TorrentItemActions {...defaultProps} status="error" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+
+        // Перерендериваем для "queuedDownload"
+        cleanup();
+        render(<TorrentItemActions {...defaultProps} status="queuedDownload" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+
+        // Перерендериваем для "queued"
+        cleanup();
+        render(<TorrentItemActions {...defaultProps} status="queued" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+    });
+
+    // --- Selected State Tests ---
+    it('disables all buttons when isBulkSelected is true', () => {
+        render(<TorrentItemActions {...defaultProps} isBulkSelected={true} />);
+        expect(screen.getByTestId('torrent-actions-view-content')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
+    });
+
+    it('does not disable buttons when isBulkSelected is false', () => {
+        // Используем статус "seeding", чтобы кнопка замедления была активна
+        render(<TorrentItemActions {...defaultProps} status="seeding" isBulkSelected={false} />);
+        expect(screen.getByTestId('torrent-actions-view-content')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-action-pause')).not.toBeDisabled(); // Теперь это пауза, а не старт
+        expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).not.toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-remove')).not.toBeDisabled();
+    });
+
+    it('disables buttons when isBulkSelected is true even if other conditions would allow', () => {
+        render(<TorrentItemActions {...defaultProps} isBulkSelected={true} isLoading={false} status="stopped" />);
+        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
+        expect(screen.getByTestId('torrent-actions-verify')).toBeDisabled();
+    });
+
+    // --- Additional Button Tests ---
+    // Тест на случай, когда isLoading=true, но lastAction="verify"
+    it('renders action button normally when isLoading=true but lastAction is "verify"', () => {
+        render(<TorrentItemActions {...defaultProps} status="stopped" isLoading={true} lastAction="verify" />);
+        // Проверяем, что отображается нормальная кнопка action-start, а не loading
+        expect(screen.getByTestId('torrent-actions-action-start')).toBeInTheDocument();
+        expect(screen.queryByTestId('torrent-actions-action-loading')).not.toBeInTheDocument();
+    });
+
+    // Тест на случай, когда isChecking(status) в renderVerifyButton
+    it('displays verify loading with correct title when isChecking=true', () => {
+        render(<TorrentItemActions {...defaultProps} status="checking" />);
+        const verifyButton = screen.getByTestId('torrent-actions-verify-loading');
+        // Проверяем, что заголовок соответствует checking
+        expect(verifyButton).toHaveAttribute('title', 'torrent.verifying');
+    });
+
+    // Тест на случай, когда status=queuedCheck для кнопки замедления
+    it('disables speed limit button when status is queuedCheck', () => {
+        render(<TorrentItemActions {...defaultProps} status="queuedCheck" />);
+        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
+    });
+
+    // Тест проверки отображения кнопки торрента с queuedCheck для renderVerifyButton
+    it('displays verify loading with correct title when status is queuedCheck', () => {
+        render(<TorrentItemActions {...defaultProps} status="queuedCheck" />);
+        const verifyButton = screen.getByTestId('torrent-actions-verify-loading');
+        // Проверяем, что заголовок соответствует queuedCheck
+        expect(verifyButton).toHaveAttribute('title', 'torrent.status.queuedCheck');
+    });
+
+    // Тест для деструкции с onViewContent
+    it('calls onViewContent when the view content button is clicked', () => {
+        render(<TorrentItemActions {...defaultProps} />);
+        fireEvent.click(screen.getByTestId('torrent-actions-view-content'));
+        expect(defaultProps.onViewContent).toHaveBeenCalled();
+    });
+
+    // Тест для деструкции с onRemove
+    it('calls onRemove with correct id when the remove button is clicked', () => {
         render(<TorrentItemActions {...defaultProps} />);
         fireEvent.click(screen.getByTestId('torrent-actions-remove'));
         expect(defaultProps.onRemove).toHaveBeenCalledWith(defaultProps.id);
-    });
-
-    // --- Disabled State Tests ---
-    it('disables all buttons except loading spinners when checking', () => {
-        // Assign the spy result
-        isBlockedSpy = vi.spyOn(StatusUtils, 'isBlocked').mockReturnValue(true);
-        render(<TorrentItemActions {...defaultProps} status="checking" />);
-        expect(screen.getByTestId('torrent-actions-view-content')).toBeDisabled();
-        // Action button becomes loading or disabled based on isRunning, but isBlocked takes precedence
-        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
-        expect(screen.getByTestId('torrent-actions-speed-limit')).toBeDisabled();
-        // Verify button becomes loading
-        expect(screen.getByTestId('torrent-actions-verify-loading')).toBeInTheDocument();
-        expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
-        // No need to call mockRestore here, it's handled in beforeEach
-    });
-
-    it('disables all buttons except loading spinners when queued', () => {
-        // Assign the spy result
-        isBlockedSpy = vi.spyOn(StatusUtils, 'isBlocked').mockReturnValue(true);
-        render(<TorrentItemActions {...defaultProps} status="queuedDownload" />);
-        expect(screen.getByTestId('torrent-actions-view-content')).toBeDisabled();
-        expect(screen.getByTestId('torrent-actions-action-start')).toBeDisabled();
-        expect(screen.getByTestId('torrent-actions-speed-limit')).not.toBeDisabled(); // Speed limit not disabled for queuedDownload
-        expect(screen.getByTestId('torrent-actions-verify-loading')).toBeInTheDocument();
-        expect(screen.getByTestId('torrent-actions-remove')).toBeDisabled();
-        // No need to call mockRestore here, it's handled in beforeEach
     });
 });

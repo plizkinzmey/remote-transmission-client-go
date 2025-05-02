@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocalization } from "@contexts/LocalizationContext";
+import { useNotification } from "@/hooks/useNotification"; // Импортируем хук уведомлений
 
 interface ErrorSources {
   connectionError: string | null;
@@ -24,40 +25,66 @@ export function useAppErrorHandler(
   actions: ConnectionActions
 ): string | null {
   const { t } = useLocalization();
+  const { showError } = useNotification(); // Получаем функцию showError
   const [appError, setAppError] = useState<string | null>(null);
   const { connectionError, configError, torrentListError, sessionStatsError } =
     errors;
   const { setConnectionError, setIsReconnectingState } = actions;
 
   useEffect(() => {
+    let currentAppError: string | null = null;
+    let shouldShowNotification = true; // Флаг, чтобы не показывать дублирующиеся уведомления
+
     // Приоритет ошибок: Connection > Config > TorrentList > SessionStats
     if (connectionError) {
-      setAppError(connectionError);
+      currentAppError = connectionError;
+      // Уведомление об ошибке соединения уже показывается в useConnectionManager
+      shouldShowNotification = false;
     } else if (configError) {
-      setAppError(configError);
+      currentAppError = configError;
+      // Уведомление об ошибке конфига уже показывается в useConnectionManager (при загрузке)
+      // или в useConfigManager (при сохранении)
+      shouldShowNotification = false;
     } else if (torrentListError) {
-      // Особая обработка ошибки списка торрентов - инициируем переподключение
-      setAppError(torrentListError);
-      setIsReconnectingState(true);
+      // Больше не устанавливаем isReconnecting, просто показываем ошибку
+      currentAppError = torrentListError;
       // Устанавливаем общую ошибку соединения, так как список не загрузился
-      setConnectionError(t("errors.connectionFailed"));
+      // setConnectionError(t("errors.connectionFailed")); // Это может вызвать зацикливание, убираем
     } else if (sessionStatsError) {
-      setAppError(sessionStatsError);
+      currentAppError = sessionStatsError;
     } else {
-      // Если ни одной ошибки нет, сбрасываем ошибку приложения
-      setAppError(null);
+      currentAppError = null;
+      shouldShowNotification = false; // Нет ошибки - нет уведомления
     }
-    // Зависимости включают все источники ошибок и действия,
-    // чтобы корректно реагировать на их изменения.
+
+    setAppError(currentAppError);
+
+    // Показываем уведомление только если оно еще не было показано другим хуком
+    if (currentAppError && shouldShowNotification) {
+      // Обновляем использование API: вместо передачи текущего ключа ошибки как сообщения,
+      // используем фиксированный ключ для сообщения и передаем текст ошибки как параметр
+      showError(
+        "notifications.genericErrorTitle",
+        "notifications.genericErrorMessage",
+        { error: t(currentAppError) }
+      );
+    }
+
+    // Сбрасываем состояние переподключения, если ошибок соединения больше нет
+    // (кроме случая, когда ошибка была torrentListError, т.к. она больше не вызывает isReconnecting)
+    if (!connectionError && !configError && !torrentListError) {
+      setIsReconnectingState(false);
+    }
   }, [
     connectionError,
     configError,
     torrentListError,
     sessionStatsError,
-    setConnectionError,
+    setConnectionError, // Оставляем, т.к. используется в логике (хотя и закомментировано)
     setIsReconnectingState,
     t,
+    showError, // Добавляем showError в зависимости
   ]);
 
-  return appError;
+  return appError; // Возвращаем ключ ошибки для возможного использования в UI (хотя ConnectionStatus удаляется)
 }

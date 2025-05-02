@@ -16,7 +16,11 @@ import (
 	"encoding/base64" // добавлено
 	"os"              // добавлено
 
-	"github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
+	// для запуска Swift-хелпера
+	goruntime "runtime" // стандартный runtime с псевдонимом
+
+	"github.com/gen2brain/beeep"                            // Добавлено для уведомлений
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime" // добавлено
 )
 
 // App struct
@@ -57,7 +61,7 @@ func (a *App) startup(ctx context.Context) {
 	go func() {
 		time.Sleep(1 * time.Second) // задержка 1 секунда
 		if a.pendingTorrentFile != "" {
-			runtime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
 			a.pendingTorrentFile = ""
 		}
 	}()
@@ -84,9 +88,45 @@ func (a *App) Initialize(configJson string) error {
 		return err
 	}
 
-	// Если нет обязательных полей, возвращаем ошибку
-	if config.Host == "" {
+	// Проверяем, содержит ли конфигурация только настройки языка и/или темы
+	isOnlyLanguageOrTheme := config.Host == "" &&
+		(config.Language != "" || config.Theme != "")
+
+	// Если это не только язык/тема, проверяем обязательные поля для подключения
+	if !isOnlyLanguageOrTheme && config.Host == "" {
 		return fmt.Errorf("host is required")
+	}
+
+	// Загружаем текущую конфигурацию, чтобы сохранить другие настройки
+	currentConfig, _ := a.configService.LoadConfig()
+	if currentConfig != nil {
+		// Если у нас только настройки языка/темы, сохраняем их в текущую конфигурацию
+		if isOnlyLanguageOrTheme {
+			// Сохраняем настройки языка
+			if config.Language != "" {
+				currentConfig.Language = config.Language
+			}
+			// Сохраняем настройки темы
+			if config.Theme != "" {
+				currentConfig.Theme = config.Theme
+			}
+
+			// Сохраняем обновленную конфигурацию
+			if err := a.configService.SaveConfig(currentConfig); err != nil {
+				return fmt.Errorf("failed to save language/theme settings: %w", err)
+			}
+			return nil // Для настроек языка/темы инициализация клиента не требуется
+		} else {
+			// Для полной конфигурации сохраняем все параметры
+			config.Language = currentConfig.Language // Сохраняем текущий язык
+			config.Theme = currentConfig.Theme       // Сохраняем текущую тему
+			if len(config.DownloadPaths) == 0 {
+				config.DownloadPaths = currentConfig.DownloadPaths // Сохраняем пути загрузки
+				if config.DefaultDownloadPath == "" {
+					config.DefaultDownloadPath = currentConfig.DefaultDownloadPath // Сохраняем путь по умолчанию
+				}
+			}
+		}
 	}
 
 	// If language is not set in the config, detect system language
@@ -112,7 +152,12 @@ func (a *App) Initialize(configJson string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Create client with config
+	// Если это только настройки языка/темы, не инициализируем клиент
+	if isOnlyLanguageOrTheme {
+		return nil
+	}
+
+	// Create client with config for full configuration
 	client, err := transmission.NewTransmissionClient(transmission.TransmissionConfig{
 		Host:     config.Host,
 		Port:     config.Port,
@@ -357,7 +402,7 @@ func (a *App) handleFileOpen(filePath string) {
 		a.pendingTorrentFile = filePath
 		// Генерируем событие torrent-opened, если приложение уже запущено
 		if a.ctx != nil {
-			runtime.EventsEmit(a.ctx, "torrent-opened", filePath)
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", filePath)
 		}
 	}
 }
@@ -409,6 +454,12 @@ func (a *App) SaveAllSettings(connectionSettings map[string]interface{}, pathCha
 	if unit, ok := connectionSettings["slowSpeedUnit"].(string); ok {
 		config.SlowSpeedUnit = unit
 	}
+	if language, ok := connectionSettings["language"].(string); ok {
+		config.Language = language
+	}
+	if theme, ok := connectionSettings["theme"].(string); ok {
+		config.Theme = theme
+	}
 
 	// Извлекаем изменения путей
 	var pathsToAdd, pathsToRemove []string
@@ -453,4 +504,70 @@ func (a *App) GetTorrentDownloadDirectory(id int64) (string, error) {
 		return "", transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetTorrentDownloadDirectory(id)
+}
+
+// ShowNotification displays a native OS notification.
+func (a *App) ShowNotification(title string, message string, level string) error {
+	log.Printf("Showing notification: Level=%s, Title=%s, Message=%s", level, title, message)
+
+	iconPath := a.getNotificationIconPath(level)
+
+	// Для UserNotifications нужен минимум macOS 10.14
+
+	// Используем нативный bridge только на macOS
+	if goruntime.GOOS == "darwin" {
+		showNativeNotification(title, message, iconPath)
+		return nil
+	}
+
+	// Для других ОС используем beeep
+	err := beeep.Notify(title, message, iconPath)
+	if err != nil {
+		log.Printf("Failed to send notification: %v", err)
+		return fmt.Errorf("failed to send notification: %w", err)
+	}
+	return nil
+}
+
+// getNotificationIconPath возвращает путь к иконке в зависимости от уровня уведомления.
+// Пока возвращает пустую строку (без иконки).
+// TODO: Реализовать логику выбора иконки, если это необходимо.
+// Иконки должны быть включены в сборку приложения.
+func (a *App) getNotificationIconPath(level string) string {
+	// Примерная логика для выбора иконки в зависимости от level
+	switch level {
+	case "success":
+		return "" // В будущем: "assets/icons/success.png" - путь к иконке успеха
+	case "error":
+		return "" // В будущем: "assets/icons/error.png" - путь к иконке ошибки
+	case "warning":
+		return "" // В будущем: "assets/icons/warning.png" - путь к иконке предупреждения
+	case "info":
+		return "" // В будущем: "assets/icons/info.png" - путь к иконке информации
+	default:
+		return "" // Иконка по умолчанию или без иконки
+	}
+}
+
+// SaveLanguage сохраняет выбранный пользователем язык
+func (a *App) SaveLanguage(language string) error {
+	// Загружаем текущую конфигурацию
+	config, err := a.configService.LoadConfig()
+	if err != nil {
+		// Если конфигурация отсутствует, создаем новую
+		config = &domain.Config{
+			Language: language,
+			Theme:    "light", // Значение по умолчанию
+		}
+	} else {
+		// Обновляем язык
+		config.Language = language
+	}
+
+	// Сохраняем обновленную конфигурацию
+	if err := a.configService.SaveConfig(config); err != nil {
+		return fmt.Errorf("failed to save language setting: %w", err)
+	}
+
+	return nil
 }

@@ -12,7 +12,7 @@
   },
   "info": {
     "productName": "Remote Transmission Desktop Client",
-    "productVersion": "0.0.6",
+    "productVersion": "0.0.7",
     "fileAssociations": [
       {
         "ext": "torrent",
@@ -37,6 +37,12 @@
     "minWidth": 800,
     "minHeight": 600,
     "frameless": false,
-    "icon": "build/iconfile.icns"
+    "icon": "build/iconfile.icns",
+    "environment": {
+      "MACOSX_DEPLOYMENT_TARGET": "10.14"
+    },
+    "ldflags": [
+      "-mmacosx-version-min=10.14"
+    ]
   }
 }

@@ -61,8 +61,12 @@
     "addPath": "Добавить путь",
     "setDefault": "Сделать по умолчанию",
     "clearDefault": "Отменить по умолчанию",
+    "isDefaultPath": "Путь загрузки по умолчанию",
     "confirmDeletePath": "Вы уверены, что хотите удалить этот путь?",
-    "pathAlreadyExists": "Данный путь уже существует в списке"
+    "pathAlreadyExists": "Данный путь уже существует в списке",
+    "copyPath": "Копировать путь",
+    "pathCopied": "Путь скопирован в буфер обмена",
+    "copyPathError": "Не удалось скопировать путь"
   },
 
   "torrents": {
@@ -194,6 +198,49 @@
     "connectionAuthRequired": "Требуется аутентификация. Пожалуйста, введите правильные имя пользователя и пароль.",
     "connectionRefused": "Не удалось подключиться к серверу. Проверьте, запущен ли Transmission и правильно ли указаны хост и порт.",
     "connectionTimeout": "Превышено время ожидания ответа от сервера. Проверьте сетевое соединение."
+  },
+
+  "notifications": {
+    "genericErrorTitle": "Ошибка",
+    "connectionSuccessTitle": "Соединение установлено",
+    "connectionSuccessMessage": "Успешное подключение к {host}",
+    "connectionErrorTitle": "Ошибка подключения",
+    "configErrorTitle": "Ошибка конфигурации",
+    "reconnectingTitle": "Переподключение",
+    "reconnectingMessage": "Попытка переподключения к {host}...",
+    "addTorrentSuccessTitle": "Торрент добавлен",
+    "addTorrentSuccessMessage": "Торрент «{name}» успешно добавлен.",
+    "addTorrentErrorTitle": "Ошибка добавления торрента",
+    "addTorrentErrorMessage": "Не удалось добавить торрент: {error}",
+    "removeTorrentSuccessTitle": "Торрент удален",
+    "removeTorrentSuccessMessage": "Торрент «{name}» успешно удален.",
+    "removeTorrentErrorTitle": "Ошибка удаления торрента",
+    "removeTorrentErrorMessage": "Не удалось удалить торрент «{name}»: {error}",
+    "startTorrentSuccessTitle": "Торрент запущен",
+    "startTorrentSuccessMessage": "Торрент «{name}» успешно запущен.",
+    "startTorrentErrorTitle": "Ошибка запуска торрента",
+    "startTorrentErrorMessage": "Не удалось запустить торрент «{name}»: {error}",
+    "stopTorrentSuccessTitle": "Торрент остановлен",
+    "stopTorrentSuccessMessage": "Торрент «{name}» успешно остановлен.",
+    "stopTorrentErrorTitle": "Ошибка остановки торрента",
+    "stopTorrentErrorMessage": "Не удалось остановить торрент «{name}»: {error}",
+    "setSpeedLimitSuccessTitle": "Лимит скорости установлен",
+    "setSpeedLimitSlowSuccessMessage": "Применен медленный лимит скорости для «{name}».",
+    "setSpeedLimitNormalSuccessMessage": "Применен обычный лимит скорости для «{name}».",
+    "setSpeedLimitErrorTitle": "Ошибка установки лимита скорости",
+    "setSpeedLimitErrorMessage": "Не удалось установить лимит скорости для «{name}»: {error}",
+    "verifyTorrentSuccessTitle": "Проверка запущена",
+    "verifyTorrentSuccessMessage": "Запущена проверка торрента «{name}».",
+    "verifyTorrentErrorTitle": "Ошибка проверки торрента",
+    "verifyTorrentErrorMessage": "Не удалось запустить проверку торрента «{name}»: {error}",
+    "settingsSaveSuccessTitle": "Настройки сохранены",
+    "settingsSaveSuccessMessage": "Настройки сохранены и соединение установлено.",
+    "settingsSaveErrorTitle": "Ошибка сохранения настроек",
+    "settingsSaveErrorMessage": "Не удалось сохранить настройки: {error}",
+    "downloadCompleteTitle": "Загрузка завершена",
+    "downloadCompleteMessage": "Торрент «{name}» успешно загружен.",
+    "verifyCompleteTitle": "Проверка завершена",
+    "verifyCompleteMessage": "Торрент «{name}» успешно проверен."
   },
 
   "language": {

@@ -28,7 +28,7 @@ describe("TorrentItem index", () => {
             peersConnected: 0,
             peersTotal: 0,
             uploadedFormatted: "0 B",
-            selected: false,
+            isChecked: false,  // Изменено с selected на isChecked
             onSelect: () => { },
             onRemove: () => { },
             onStart: () => { },

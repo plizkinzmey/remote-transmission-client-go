@@ -29,7 +29,8 @@ type App struct {
 	service             *application.TorrentService
 	configService       *infrastructure.ConfigService
 	localizationService *infrastructure.LocalizationService
-	pendingTorrentFile  string
+	pendingTorrentFiles []string // Массив для хранения путей к торрент-файлам
+	logger              *log.Logger
 }
 
 // Error constants
@@ -50,6 +51,7 @@ func NewApp() *App {
 	return &App{
 		configService:       infrastructure.NewConfigService(),
 		localizationService: locService,
+		logger:              log.Default(), // добавлено для логирования
 	}
 }
 
@@ -57,13 +59,16 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	// Независимо от состояния сервиса, через 1 сек решил отправить событие, если pendingTorrentFile установлен.
+	// Отправляем события для всех отложенных торрент-файлов
 	go func() {
 		time.Sleep(1 * time.Second) // задержка 1 секунда
-		if a.pendingTorrentFile != "" {
-			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
-			a.pendingTorrentFile = ""
+
+		// Обрабатываем массив путей к торрент-файлам
+		for _, file := range a.pendingTorrentFiles {
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", file)
 		}
+		// Очищаем массив после обработки
+		a.pendingTorrentFiles = []string{}
 	}()
 
 	// Try to initialize with saved settings
@@ -211,7 +216,7 @@ func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
-		return nil, transmission.NewServiceNotInitializedError()
+		return []domain.Torrent{}, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetAllTorrents()
 }
@@ -396,15 +401,52 @@ func (a *App) ValidateDownloadPath(path string) error {
 
 // handleFileOpen обрабатывает открытие файла через систему
 func (a *App) handleFileOpen(filePath string) {
-	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
+	if a.isTorrentFile(filePath) {
 		log.Print("Получен торрент файл: ", filePath)
-		// Устанавливаем pendingTorrentFile для обработки при запуске
-		a.pendingTorrentFile = filePath
-		// Генерируем событие torrent-opened, если приложение уже запущено
+
+		// Сохраняем путь к файлу или сразу отправляем событие
 		if a.ctx != nil {
 			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", filePath)
+		} else {
+			a.pendingTorrentFiles = append(a.pendingTorrentFiles, filePath)
 		}
 	}
+}
+
+// HandleFilesOpen обрабатывает открытие файлов через систему
+func (a *App) HandleFilesOpen(files []string) {
+	if len(files) == 0 {
+		return
+	}
+
+	a.logger.Printf("Handling files open request, count: %d\n", len(files))
+
+	// Проверка на инициализированность контекста
+	if a.ctx == nil {
+		a.logger.Printf("Context is not initialized, caching file paths for later processing\n")
+		// Сохраняем пути к файлам для последующей обработки
+		for _, file := range files {
+			if a.isTorrentFile(file) {
+				a.pendingTorrentFiles = append(a.pendingTorrentFiles, file)
+				a.logger.Printf("Cached torrent file path: %s\n", file)
+			}
+		}
+		return
+	}
+
+	for _, file := range files {
+		if a.isTorrentFile(file) {
+			a.logger.Printf("Processing torrent file: %s\n", file)
+			// Эмитируем событие с явным указанием контекста
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", file)
+			a.logger.Printf("Emitted torrent-opened event: %s\n", file)
+		}
+	}
+}
+
+// isTorrentFile проверяет, является ли файл торрент-файлом
+func (a *App) isTorrentFile(path string) bool {
+	return strings.HasSuffix(strings.ToLower(path), ".torrent")
 }
 
 // ReadFile читает содержимое файла и возвращает его в формате Base64

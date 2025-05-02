@@ -1,6 +1,14 @@
-import { useState, useCallback, useEffect } from "react";
-import { EventsOn } from "@wailsjs/runtime"; // Correct alias
+import { useState, useCallback, useEffect, useRef } from "react";
+import {
+  EventsOn,
+  WindowUnminimise,
+  WindowShow,
+  WindowSetAlwaysOnTop,
+} from "@wailsjs/runtime";
 import { LoadConfig } from "@wailsjs/go/main/App"; // Correct alias
+
+// Константа для задержки сброса always-on-top состояния (в миллисекундах)
+export const WINDOW_RESET_DELAY_MS = 1000;
 
 /**
  * Represents the data of a torrent file.
@@ -55,6 +63,41 @@ export const useModals = (): UseModalsReturn => {
   const [isFirstStart, setIsFirstStart] = useState(false);
   const [torrentFileData, setTorrentFileData] =
     useState<TorrentFileData | null>(null);
+
+  // Создаем useRef для хранения ID таймера сброса always-on-top состояния
+  const resetAlwaysOnTopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  /**
+   * Активирует окно и временно устанавливает его поверх других окон
+   * для привлечения внимания пользователя.
+   */
+  const activateWindowWithAlwaysOnTop = async (): Promise<void> => {
+    try {
+      // Активация окна
+      await WindowUnminimise(); // Разворачиваем окно, если оно свёрнуто
+      await WindowShow(); // Показываем окно, если оно скрыто
+
+      // Кратковременно делаем окно "поверх всех", чтобы гарантировать видимость
+      await WindowSetAlwaysOnTop(true);
+
+      // Очищаем предыдущий таймер, если он существует
+      if (resetAlwaysOnTopTimeoutRef.current !== null) {
+        clearTimeout(resetAlwaysOnTopTimeoutRef.current);
+      }
+
+      // Устанавливаем новый таймер для сброса always-on-top состояния
+      resetAlwaysOnTopTimeoutRef.current = setTimeout(async () => {
+        try {
+          await WindowSetAlwaysOnTop(false);
+        } catch (error) {
+          console.error("Failed to reset always-on-top state:", error);
+        }
+      }, WINDOW_RESET_DELAY_MS);
+    } catch (error) {
+      console.error("Failed to activate window:", error);
+      throw error; // Пробрасываем ошибку дальше для обработки вызывающей стороной
+    }
+  };
 
   // Проверяем, является ли запуск первым
   const checkFirstStart = useCallback(async (isReconnecting: boolean) => {
@@ -120,18 +163,35 @@ export const useModals = (): UseModalsReturn => {
   // Слушаем событие открытия торрент-файла
   useEffect(() => {
     // EventsOn returns a function to unsubscribe
-    const unsubscribe = EventsOn("torrent-opened", (torrentPath: string) => {
-      if (typeof torrentPath === "string" && torrentPath) {
-        console.log("Received torrent file path via event:", torrentPath);
-        setTorrentFilePath(torrentPath);
-        setShowAddTorrent(true);
-      } else {
-        console.warn("Received invalid torrent path via event:", torrentPath);
+    const unsubscribe = EventsOn(
+      "torrent-opened",
+      async (torrentPath: string) => {
+        if (typeof torrentPath === "string" && torrentPath) {
+          console.log("Received torrent file path via event:", torrentPath);
+
+          // Активация окна
+          try {
+            await activateWindowWithAlwaysOnTop();
+          } catch (error) {
+            console.error("Failed to activate window:", error);
+          }
+
+          setTorrentFilePath(torrentPath);
+          setShowAddTorrent(true);
+        } else {
+          console.warn("Received invalid torrent path via event:", torrentPath);
+        }
       }
-    });
+    );
 
     // Cleanup function to unsubscribe when the component unmounts
     return () => {
+      // Очищаем таймер при размонтировании
+      if (resetAlwaysOnTopTimeoutRef.current !== null) {
+        clearTimeout(resetAlwaysOnTopTimeoutRef.current);
+      }
+
+      // Отписываемся от события
       if (typeof unsubscribe === "function") {
         unsubscribe();
       }

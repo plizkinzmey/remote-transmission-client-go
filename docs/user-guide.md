@@ -1,3 +1,11 @@
+# Руководство пользователя
+
+## Содержание
+- [Установка](#установка)
+- [Настройка](#настройка)
+- [Работа с приложением](#работа-с-приложением)
+- [Открытие торрент-файлов через систему](#открытие-торрент-файлов-через-систему)
+
 # User Guide
 
 This guide provides detailed instructions on how to use the Remote Transmission Desktop Client application.
@@ -184,3 +192,13 @@ The footer of the application displays session statistics:
 - **Upload Speed**: Current aggregate upload speed
 - **Free Space**: Available disk space in the download directory
 - **Transmission Version**: Version of the connected Transmission server
+
+## Открытие торрент-файлов через систему
+
+Приложение автоматически обрабатывает открытие торрент-файлов через систему (например, двойным щелчком на файл в Finder). При этом:
+
+1. Если приложение уже запущено, но свёрнуто, оно будет автоматически развёрнуто и выведено на передний план
+2. Окно добавления торрента откроется автоматически с выбранным файлом
+3. Вы можете сразу выбрать папку назначения и добавить торрент
+
+Это позволяет использовать приложение в качестве стандартного обработчика файлов .torrent в вашей системе.

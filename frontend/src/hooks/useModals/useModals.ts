@@ -7,6 +7,9 @@ import {
 } from "@wailsjs/runtime";
 import { LoadConfig } from "@wailsjs/go/main/App"; // Correct alias
 
+// Константа для задержки сброса always-on-top состояния (в миллисекундах)
+export const WINDOW_RESET_DELAY_MS = 1000;
+
 /**
  * Represents the data of a torrent file.
  */
@@ -61,8 +64,8 @@ export const useModals = (): UseModalsReturn => {
   const [torrentFileData, setTorrentFileData] =
     useState<TorrentFileData | null>(null);
 
-  // Создаем useRef на верхнем уровне компонента
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  // Создаем useRef для хранения ID таймера сброса always-on-top состояния
+  const resetAlwaysOnTopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Проверяем, является ли запуск первым
   const checkFirstStart = useCallback(async (isReconnecting: boolean) => {
@@ -144,18 +147,18 @@ export const useModals = (): UseModalsReturn => {
             await WindowSetAlwaysOnTop(true);
 
             // Очищаем предыдущий таймер, если он существует
-            if (timeoutIdRef.current !== null) {
-              clearTimeout(timeoutIdRef.current);
+            if (resetAlwaysOnTopTimeoutRef.current !== null) {
+              clearTimeout(resetAlwaysOnTopTimeoutRef.current);
             }
 
             // Устанавливаем новый таймер и сохраняем его ID
-            timeoutIdRef.current = setTimeout(async () => {
+            resetAlwaysOnTopTimeoutRef.current = setTimeout(async () => {
               try {
                 await WindowSetAlwaysOnTop(false);
               } catch (error) {
                 console.error("Failed to reset always-on-top state:", error);
               }
-            }, 1000);
+            }, WINDOW_RESET_DELAY_MS);
           } catch (error) {
             console.error("Failed to activate window:", error);
           }
@@ -171,8 +174,8 @@ export const useModals = (): UseModalsReturn => {
     // Cleanup function to unsubscribe when the component unmounts
     return () => {
       // Очищаем таймер при размонтировании
-      if (timeoutIdRef.current !== null) {
-        clearTimeout(timeoutIdRef.current);
+      if (resetAlwaysOnTopTimeoutRef.current !== null) {
+        clearTimeout(resetAlwaysOnTopTimeoutRef.current);
       }
 
       // Отписываемся от события

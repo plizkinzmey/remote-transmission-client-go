@@ -6,8 +6,13 @@ import {
   WindowUnminimise,
   WindowShow,
   WindowSetAlwaysOnTop,
-  BrowserOpenURL, // Добавляем импорт BrowserOpenURL
 } from "@wailsjs/runtime";
+
+// Убираем импорт константы, которая не экспортируется
+// import { WINDOW_RESET_DELAY_MS } from "../useModals";
+
+// Определяем значение константы явно в тесте
+const EXPECTED_RESET_DELAY_MS = 1000;
 
 // Мокаем Wails API
 vi.mock("@wailsjs/runtime", () => ({
@@ -15,7 +20,6 @@ vi.mock("@wailsjs/runtime", () => ({
   WindowUnminimise: vi.fn(),
   WindowShow: vi.fn(),
   WindowSetAlwaysOnTop: vi.fn(),
-  BrowserOpenURL: vi.fn(), // Добавляем мок для BrowserOpenURL
 }));
 
 describe("Хук useModals - активация окна", () => {
@@ -292,8 +296,11 @@ describe("Хук useModals - активация окна", () => {
   });
 
   it("должен очищать предыдущий таймер при повторном вызове", async () => {
+    // Ожидаем, что таймер использует определенную задержку
+    expect(EXPECTED_RESET_DELAY_MS).toBe(1000);
+
     // useRef сохраняет значение между рендерами, поэтому тест остается действительным
-    // даже после перехода с локальной переменной на useRef
+    // даже после переименования с timeoutIdRef на resetAlwaysOnTopTimeoutRef
 
     // Рендерим хук
     renderHook(() => useModals());

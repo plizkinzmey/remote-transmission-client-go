@@ -31,7 +31,7 @@ vi.mock("@heroicons/react/24/outline", () => ({
     ExclamationCircleIcon: () => <svg data-testid="exclamation-circle-icon" />,
 }));
 
-describe("PathsTab Component", () => {
+describe("Компонент PathsTab", () => {
     let mockUsePathsManagement: Mock;
     let mockT: Mock;
     const mockOnPathsChanged = vi.fn();
@@ -69,18 +69,18 @@ describe("PathsTab Component", () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Reset hook state before each test
+        // Сброс состояния хука перед каждым тестом
         mockUsePathsManagement = vi.mocked(usePathsManagement);
         mockUsePathsManagement.mockReturnValue(defaultHookState);
 
-        mockT = vi.fn((key) => key); // Simple mock for translation
+        mockT = vi.fn((key) => key); // Простой мок для перевода
         vi.mocked(useLocalization).mockReturnValue({
             t: mockT,
             currentLanguage: "en",
             setLanguage: vi.fn(),
             availableLanguages: [
-                { code: "en", name: "English" }, // Corrected mock value
-                { code: "ru", name: "Русский" }, // Corrected mock value
+                { code: "en", name: "English" },
+                { code: "ru", name: "Русский" },
             ],
             isLoading: false,
         });
@@ -92,21 +92,21 @@ describe("PathsTab Component", () => {
         mockGetPathChanges.mockReturnValue({ pathsToAdd: [], pathsToRemove: [], defaultPath: null });
     });
 
-    it("should render loading state", () => {
+    it("должен отображать состояние загрузки", () => {
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, isLoading: true });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
         expect(mockT).toHaveBeenCalledWith("loading");
     });
 
-    it("should render paths list correctly", () => {
+    it("должен корректно отображать список путей", () => {
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
         expect(screen.getByTestId("paths-list-container")).toBeInTheDocument();
         expect(screen.getByTestId("path-item-/path/one")).toBeInTheDocument();
         expect(screen.getByTestId("path-item-/path/two")).toBeInTheDocument();
 
-        // Check default path indicator (StarIcon should be present and colored)
+        // Проверяем индикатор пути по умолчанию (StarIcon должен быть и иметь цвет)
         const defaultPathItem = screen.getByTestId("path-item-/path/one");
         const defaultIndicatorButton = defaultPathItem.querySelector(
             "[data-testid='is-default-indicator-/path/one']"
@@ -114,58 +114,54 @@ describe("PathsTab Component", () => {
         expect(defaultIndicatorButton).toBeInTheDocument();
         expect(defaultIndicatorButton?.querySelector("[data-testid='star-icon']")).toBeInTheDocument();
 
-        // Check tooltip for default path indicator
+        // Проверяем тултип для индикатора пути по умолчанию
         const defaultTooltipWrapper = defaultIndicatorButton?.closest('[data-testid="mock-tooltip"]');
         expect(defaultTooltipWrapper).toBeInTheDocument();
         expect(defaultTooltipWrapper).toHaveAttribute("data-tooltip-content", "settings.isDefaultPath");
 
-        // Check non-default path actions
+        // Проверяем действия для не дефолтного пути
         const nonDefaultPathItem = screen.getByTestId("path-item-/path/two");
         expect(nonDefaultPathItem.querySelector("[data-testid='set-default-button-/path/two']")).toBeInTheDocument();
         expect(nonDefaultPathItem.querySelector("[data-testid='delete-button-/path/two']")).toBeInTheDocument();
     });
 
-    it("should render empty state when no paths are available", () => {
+    it("должен отображать пустое состояние, если нет путей", () => {
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, paths: [] });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         expect(screen.queryByTestId("paths-list-container")).not.toBeInTheDocument();
-        expect(screen.getByTestId("new-path-input")).toBeInTheDocument(); // Add section should still be there
+        expect(screen.getByTestId("new-path-input")).toBeInTheDocument(); // Секция добавления должна быть
     });
 
-    it("should handle new path input change", () => {
+    it("должен обрабатывать изменение значения поля нового пути", () => {
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const input = screen.getByTestId("new-path-input");
         fireEvent.change(input, { target: { value: "/new/path" } });
         expect(mockSetNewPathValue).toHaveBeenCalledWith("/new/path");
     });
 
-    it("should display validation error", () => {
+    it("должен отображать ошибку валидации", () => {
         const errorMsg = "Invalid path";
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, pathError: errorMsg });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const errorElement = screen.getByTestId("new-path-error");
         expect(errorElement).toBeInTheDocument();
         expect(errorElement).toHaveTextContent(errorMsg);
-        // Check input color (assuming Radix applies color prop as class or style)
-        // This might need adjustment based on actual Radix implementation
-        // expect(screen.getByTestId("new-path-input")).toHaveStyle({ color: 'red' });
     });
 
-    it("should display duplicate path tooltip", () => {
+    it("должен отображать тултип о дубликате пути", () => {
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, isDuplicatePath: true, showDuplicateTooltip: true });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Find the add button first
+        // Находим кнопку добавления
         const addButton = screen.getByTestId("add-path-button");
-        // Find the mock tooltip wrapper around the button
+        // Находим мок тултип вокруг кнопки
         const tooltipWrapper = addButton.closest('[data-testid="mock-tooltip"]');
 
         expect(tooltipWrapper).toBeInTheDocument();
         expect(tooltipWrapper).toHaveAttribute("data-tooltip-content", "settings.pathAlreadyExists");
-        // Optionally check button color/state if needed and possible with the mock
     });
 
-    it("should call handleAddPath on add button click", () => {
+    it("должен вызывать handleAddPath при клике по кнопке добавления", () => {
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "/some/path" });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const addButton = screen.getByTestId("add-path-button");
@@ -173,36 +169,35 @@ describe("PathsTab Component", () => {
         expect(mockHandleAddPath).toHaveBeenCalledTimes(1);
     });
 
-    it("should disable add button if newPath is empty or loading", () => {
-        // Test empty path
-        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "  ", isLoading: false }); // Ensure not loading
+    it("должен дизейблить кнопку добавления, если newPath пустой или идет загрузка", () => {
+        // Пустой путь
+        mockUsePathsManagement.mockReturnValue({ ...defaultHookState, newPath: "  ", isLoading: false });
         const { rerender } = render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         expect(screen.getByTestId("add-path-button")).toBeDisabled();
 
-        // Test loading state
+        // Состояние загрузки
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, isLoading: true });
         rerender(<PathsTab onPathsChanged={mockOnPathsChanged} />);
-        // Button should not be present in loading state
         expect(screen.queryByTestId("add-path-button")).not.toBeInTheDocument();
         expect(screen.queryByTestId("new-path-input")).not.toBeInTheDocument();
-        expect(screen.getByTestId("loading-indicator")).toBeInTheDocument(); // Verify loading indicator is shown
+        expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     });
 
-    it("should call handleSetDefaultPath on set default button click", () => {
+    it("должен вызывать handleSetDefaultPath при клике по кнопке установки по умолчанию", () => {
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const setDefaultButton = screen.getByTestId("set-default-button-/path/two");
         fireEvent.click(setDefaultButton);
         expect(mockHandleSetDefaultPath).toHaveBeenCalledWith("/path/two");
     });
 
-    it("should call handleDeletePathRequest on delete button click", () => {
+    it("должен вызывать handleDeletePathRequest при клике по кнопке удаления", () => {
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const deleteButton = screen.getByTestId("delete-button-/path/two");
         fireEvent.click(deleteButton);
         expect(mockHandleDeletePathRequest).toHaveBeenCalledWith("/path/two");
     });
 
-    it("should render delete confirmation view", () => {
+    it("должен отображать подтверждение удаления", () => {
         const pathToDelete = "/path/two";
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, pathWithConfirmDelete: pathToDelete });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
@@ -212,12 +207,12 @@ describe("PathsTab Component", () => {
         expect(pathItem.querySelector(`[data-testid='cancel-delete-button-${pathToDelete}']`)).toBeInTheDocument();
         expect(mockT).toHaveBeenCalledWith("settings.confirmDeletePath");
 
-        // Check that normal buttons are hidden
+        // Проверяем, что обычные кнопки скрыты
         expect(pathItem.querySelector(`[data-testid='set-default-button-${pathToDelete}']`)).not.toBeInTheDocument();
         expect(pathItem.querySelector(`[data-testid='delete-button-${pathToDelete}']`)).not.toBeInTheDocument();
     });
 
-    it("should call handleConfirmInlineDelete on confirm delete click", () => {
+    it("должен вызывать handleConfirmInlineDelete при подтверждении удаления", () => {
         const pathToDelete = "/path/two";
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, pathWithConfirmDelete: pathToDelete });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
@@ -226,7 +221,7 @@ describe("PathsTab Component", () => {
         expect(mockHandleConfirmInlineDelete).toHaveBeenCalledWith(pathToDelete);
     });
 
-    it("should call cancelDelete on cancel delete click", () => {
+    it("должен вызывать cancelDelete при отмене удаления", () => {
         const pathToDelete = "/path/two";
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, pathWithConfirmDelete: pathToDelete });
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
@@ -235,17 +230,15 @@ describe("PathsTab Component", () => {
         expect(mockCancelDelete).toHaveBeenCalledTimes(1);
     });
 
-    it("should pass onPathsChanged to usePathsManagement hook", () => {
-        // Свежий мок для каждого теста
+    it("должен передавать onPathsChanged в хук usePathsManagement", () => {
         const localMockOnPathsChanged = vi.fn();
 
         render(<PathsTab onPathsChanged={localMockOnPathsChanged} />);
 
-        // Проверяем, что хук вызывается с правильным аргументом
         expect(usePathsManagement).toHaveBeenCalledWith({ onPathsChanged: localMockOnPathsChanged });
     });
 
-    it("should expose saveChanges, resetChanges, getPathChanges, and hasChanges via ref", async () => {
+    it("должен предоставлять saveChanges, resetChanges, getPathChanges и hasChanges через ref", async () => {
         const ref = createRef<PathsTabRef>();
         mockUsePathsManagement.mockReturnValue({ ...defaultHookState, hasChanges: true });
         render(<PathsTab ref={ref} onPathsChanged={mockOnPathsChanged} />);
@@ -253,25 +246,21 @@ describe("PathsTab Component", () => {
         expect(ref.current).toBeDefined();
         expect(ref.current?.hasChanges).toBe(true);
 
-        // Test saveChanges
         await act(async () => {
             await ref.current?.saveChanges();
         });
         expect(mockSaveChanges).toHaveBeenCalledTimes(1);
 
-        // Test resetChanges
         act(() => {
             ref.current?.resetChanges();
         });
         expect(mockResetChanges).toHaveBeenCalledTimes(1);
 
-        // Test getPathChanges
         ref.current?.getPathChanges();
         expect(mockGetPathChanges).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle path sorting correctly", () => {
-        // Тест для проверки сортировки путей с разными путями по умолчанию
+    it("должен корректно обрабатывать сортировку путей", () => {
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             paths: ["/path/three", "/path/one", "/path/two"],
@@ -280,11 +269,9 @@ describe("PathsTab Component", () => {
 
         const { rerender } = render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Проверяем, что defaultPath находится первым в списке
         const pathItems = screen.getAllByTestId(/^path-item-/);
         expect(pathItems[0]).toHaveAttribute("data-testid", "path-item-/path/two");
 
-        // Изменяем defaultPath и проверяем изменение порядка
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             paths: ["/path/three", "/path/one", "/path/two"],
@@ -296,7 +283,7 @@ describe("PathsTab Component", () => {
         expect(updatedPathItems[0]).toHaveAttribute("data-testid", "path-item-/path/three");
     });
 
-    it("should apply correct styling when pathError exists without isDuplicatePath", () => {
+    it("должен применять правильные стили при наличии pathError без isDuplicatePath", () => {
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             pathError: "Invalid path error",
@@ -305,12 +292,11 @@ describe("PathsTab Component", () => {
 
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Проверяем, что TextField получил верный цвет с ошибкой
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).toHaveAttribute("data-accent-color", "red");
     });
 
-    it("should apply correct styling when isDuplicatePath is true without pathError", () => {
+    it("должен применять правильные стили при isDuplicatePath без pathError", () => {
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             pathError: "",
@@ -319,12 +305,11 @@ describe("PathsTab Component", () => {
 
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Проверяем, что TextField получил верный цвет при дубликате
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).toHaveAttribute("data-accent-color", "red");
     });
 
-    it("should apply neutral styling when no error or duplicate", () => {
+    it("должен применять нейтральные стили при отсутствии ошибок или дубликатов", () => {
         mockUsePathsManagement.mockReturnValue({
             ...defaultHookState,
             pathError: "",
@@ -333,175 +318,211 @@ describe("PathsTab Component", () => {
 
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Проверяем, что TextField не имеет красного цвета
         const textField = screen.getByTestId("new-path-input").closest(".rt-TextFieldRoot");
         expect(textField).not.toHaveAttribute("data-accent-color", "red");
     });
 
-    it("should apply correct CSS classes to path items", () => {
+    it("должен применять правильные CSS классы к элементам пути", () => {
         mockUsePathsManagement.mockReturnValue(defaultHookState);
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-        // Проверяем, что у элемента с defaultPath есть дополнительный класс
         const defaultPathItem = screen.getByTestId("path-item-/path/one");
         expect(defaultPathItem.className).toContain("defaultPathItem");
 
-        // Проверяем, что обычный путь не имеет класса defaultPathItem
         const nonDefaultPathItem = screen.getByTestId("path-item-/path/two");
         expect(nonDefaultPathItem.className).not.toContain("defaultPathItem");
     });
 
-    // Добавляем тесты для функциональности копирования путей
-    describe("Copy path functionality", () => {
-        // Мок для API буфера обмена
+    describe("Функциональность копирования путей", () => {
         let originalClipboard: any;
         let mockClipboardWriteText: Mock;
 
         beforeEach(() => {
-            // Сохраняем оригинальный объект navigator.clipboard
             originalClipboard = navigator.clipboard;
 
-            // Создаем мок для метода writeText
             mockClipboardWriteText = vi.fn();
 
-            // Переопределяем navigator.clipboard
             Object.defineProperty(navigator, 'clipboard', {
                 value: { writeText: mockClipboardWriteText },
                 writable: true
             });
 
-            // Сбрасываем успешное выполнение метода writeText по умолчанию
             mockClipboardWriteText.mockResolvedValue(undefined);
         });
 
         afterEach(() => {
-            // Восстанавливаем оригинальный объект navigator.clipboard
             Object.defineProperty(navigator, 'clipboard', {
                 value: originalClipboard,
                 writable: true
             });
         });
 
-        it("should render copy button for each path", () => {
+        it("должна отображать кнопку копирования для каждого пути", () => {
             render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-            // Проверяем наличие кнопок копирования для каждого пути
             const copyButton1 = screen.getByTestId("copy-button-/path/one");
             const copyButton2 = screen.getByTestId("copy-button-/path/two");
 
             expect(copyButton1).toBeInTheDocument();
             expect(copyButton2).toBeInTheDocument();
 
-            // Проверяем, что у кнопок есть правильные иконки
             expect(copyButton1.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
             expect(copyButton2.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
         });
 
-        it("should copy path to clipboard on copy button click", async () => {
+        it("должна копировать путь в буфер обмена при нажатии на кнопку", async () => {
             render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-            // Находим кнопку копирования
             const copyButton = screen.getByTestId("copy-button-/path/two");
 
-            // Нажимаем на кнопку копирования
             fireEvent.click(copyButton);
 
-            // Проверяем, что метод writeText был вызван с правильным путем
             expect(mockClipboardWriteText).toHaveBeenCalledWith("/path/two");
         });
 
-        it("should change button appearance after successful copy", async () => {
-            // Используем vi.useFakeTimers для управления таймерами
+        it("должна изменять внешний вид кнопки после успешного копирования", async () => {
             vi.useFakeTimers();
 
             render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-            // Находим кнопку копирования
             const copyButton = screen.getByTestId("copy-button-/path/two");
 
-            // Нажимаем на кнопку копирования
             await act(async () => {
                 fireEvent.click(copyButton);
-                // Ждем обработки Promise
                 await Promise.resolve();
             });
 
-            // Проверяем, что иконка изменилась на иконку успешного копирования
             expect(copyButton.querySelector("[data-testid='clipboard-check-icon']")).toBeInTheDocument();
 
-            // Проверяем, что цвет кнопки изменился на зеленый
-            // В моке Radix цвет проверяем через data-атрибут
             expect(copyButton).toHaveAttribute("data-accent-color", "green");
 
-            // Проверяем возврат к исходному состоянию после таймера
             act(() => {
-                vi.advanceTimersByTime(1600); // Больше чем 1.5 сек
+                vi.advanceTimersByTime(1600);
             });
 
-            // После таймера кнопка должна вернуться в исходное состояние
             expect(copyButton.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
             expect(copyButton).toHaveAttribute("data-accent-color", "gray");
 
-            // Восстанавливаем нормальные таймеры
             vi.useRealTimers();
         });
 
-        it("should handle clipboard error correctly", async () => {
-            // Моделируем ошибку при копировании
+        it("должна корректно обрабатывать ошибки буфера обмена", async () => {
             mockClipboardWriteText.mockRejectedValue(new Error("Clipboard error"));
 
-            // Используем vi.useFakeTimers для управления таймерами
             vi.useFakeTimers();
 
             render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-            // Находим кнопку копирования
             const copyButton = screen.getByTestId("copy-button-/path/one");
 
-            // Проверяем состояние до нажатия
             expect(copyButton).toHaveAttribute("data-accent-color", "gray");
 
-            // Симулируем клик с ошибкой копирования
             await act(async () => {
                 fireEvent.click(copyButton);
-                // Ждем обработки Promise
                 try {
                     await Promise.resolve();
                 } catch (e) {
-                    // Ожидаем ошибку
                 }
             });
 
-            // Проверяем, что иконка изменилась на иконку ошибки
             expect(copyButton.querySelector("[data-testid='exclamation-circle-icon']")).toBeInTheDocument();
-
-            // Проверяем, что цвет кнопки изменился на красный
             expect(copyButton).toHaveAttribute("data-accent-color", "red");
 
-            // Проверяем возврат к исходному состоянию после таймера
             act(() => {
-                vi.advanceTimersByTime(1600); // Больше чем 1.5 сек
+                vi.advanceTimersByTime(1600);
             });
 
-            // После таймера кнопка должна вернуться в исходное состояние
             expect(copyButton.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
             expect(copyButton).toHaveAttribute("data-accent-color", "gray");
 
-            // Восстанавливаем нормальные таймеры
             vi.useRealTimers();
         });
 
-        it("should have appropriate aria-label for accessibility", () => {
+        it("должна иметь соответствующий aria-label для доступности", () => {
             render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
 
-            // Находим кнопку копирования
             const copyButton = screen.getByTestId("copy-button-/path/one");
 
-            // Проверяем наличие aria-label с правильным текстом локализации
             expect(copyButton).toHaveAttribute("aria-label", "settings.copyPath");
-
-            // Проверяем, что функция локализации была вызвана с правильным ключом
             expect(mockT).toHaveBeenCalledWith("settings.copyPath");
+        });
+
+        it("должна отображать правильный текст в тултипе кнопки копирования", () => {
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+            const tooltipWrapper = copyButton.closest('[data-testid="mock-tooltip"]');
+
+            expect(tooltipWrapper).toBeInTheDocument();
+            expect(tooltipWrapper).toHaveAttribute("data-tooltip-content", "settings.copyPath");
+            expect(mockT).toHaveBeenCalledWith("settings.copyPath");
+        });
+
+        it("должна показывать тултип 'скопировано' после успешного копирования", async () => {
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+
+            await act(async () => {
+                fireEvent.click(copyButton);
+                await Promise.resolve();
+            });
+
+            const tooltipWrapperAfterCopy = screen.getByTestId("copy-button-/path/one")
+                .closest('[data-testid="mock-tooltip"]');
+
+            expect(tooltipWrapperAfterCopy).toBeInTheDocument();
+            expect(tooltipWrapperAfterCopy).toHaveAttribute("data-tooltip-content", "settings.pathCopied");
+            expect(mockT).toHaveBeenCalledWith("settings.pathCopied");
+        });
+
+        it("должна показывать тултип с ошибкой при неудачном копировании", async () => {
+            mockClipboardWriteText.mockRejectedValue(new Error("Clipboard error"));
+
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+
+            await act(async () => {
+                fireEvent.click(copyButton);
+                try {
+                    await Promise.resolve();
+                } catch (e) {
+                }
+            });
+
+            const tooltipWrapperAfterError = screen.getByTestId("copy-button-/path/one")
+                .closest('[data-testid="mock-tooltip"]');
+
+            expect(tooltipWrapperAfterError).toBeInTheDocument();
+            expect(tooltipWrapperAfterError).toHaveAttribute("data-tooltip-content", "settings.copyPathError");
+            expect(mockT).toHaveBeenCalledWith("settings.copyPathError");
+        });
+
+        it("должна сбрасывать тултип в исходное состояние после таймаута", async () => {
+            vi.useFakeTimers();
+
+            render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+
+            const copyButton = screen.getByTestId("copy-button-/path/one");
+
+            await act(async () => {
+                fireEvent.click(copyButton);
+                await Promise.resolve();
+            });
+
+            const tooltipWrapperAfterCopy = copyButton.closest('[data-testid="mock-tooltip"]');
+            expect(tooltipWrapperAfterCopy).toHaveAttribute("data-tooltip-content", "settings.pathCopied");
+
+            act(() => {
+                vi.advanceTimersByTime(1600);
+            });
+
+            const tooltipWrapperAfterTimeout = screen.getByTestId("copy-button-/path/one")
+                .closest('[data-testid="mock-tooltip"]');
+            expect(tooltipWrapperAfterTimeout).toHaveAttribute("data-tooltip-content", "settings.copyPath");
+
+            vi.useRealTimers();
         });
     });
 });

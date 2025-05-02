@@ -86,18 +86,23 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
     // Новое состояние для управления копированием путей
     const [copiedPath, setCopiedPath] = useState<string | null>(null);
     const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    // Состояние для принудительного открытия тултипа после копирования
+    const [forceOpenTooltipPath, setForceOpenTooltipPath] = useState<string | null>(null);
 
-    // Очистка статуса копирования через заданное время
+    // Очистка статуса копирования и принудительного открытия тултипа через заданное время
     useEffect(() => {
-      if (copiedPath) {
-        const timer = setTimeout(() => {
-          setCopiedPath(null);
-          setCopyStatus('idle');
+      let timer: NodeJS.Timeout | undefined;
+      // Запускаем таймер только если тултип нужно принудительно открыть
+      if (forceOpenTooltipPath) {
+        timer = setTimeout(() => {
+          setCopiedPath(null); // Сбрасываем путь, который был скопирован
+          setCopyStatus('idle'); // Сбрасываем статус копирования
+          setForceOpenTooltipPath(null); // Сбрасываем принудительное открытие
         }, 1500); // Сброс статуса через 1.5 секунды
-
-        return () => clearTimeout(timer);
       }
-    }, [copiedPath, copyStatus]);
+      // Функция очистки таймера при размонтировании или изменении зависимости
+      return () => clearTimeout(timer);
+    }, [forceOpenTooltipPath]); // Зависимость только от forceOpenTooltipPath
 
     // Функция для копирования пути в буфер обмена
     const handleCopyPath = useCallback(async (path: string) => {
@@ -105,12 +110,26 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
         await navigator.clipboard.writeText(path);
         setCopiedPath(path);
         setCopyStatus('success');
+        setForceOpenTooltipPath(path); // Принудительно открываем тултип для этого пути
       } catch (error) {
         console.error('Failed to copy path:', error);
-        setCopiedPath(path);
+        setCopiedPath(path); // Устанавливаем путь, чтобы показать иконку ошибки
         setCopyStatus('error');
+        setForceOpenTooltipPath(path); // Принудительно открываем тултип для этого пути
       }
-    }, []);
+    }, []); // Пустой массив зависимостей, т.к. функция не зависит от внешних переменных, изменяющихся со временем
+
+    // Получение текста тултипа для кнопки копирования в зависимости от состояния
+    const getCopyButtonTooltip = useCallback((path: string) => {
+      // Показываем статус копирования, если этот путь только что был скопирован (принудительно открыт)
+      if (forceOpenTooltipPath === path) {
+        if (copyStatus === 'success') return t("settings.pathCopied");
+        if (copyStatus === 'error') return t("settings.copyPathError");
+      }
+      // В обычном состоянии (при наведении, когда тултип не открыт принудительно)
+      // всегда показываем стандартный текст "Копировать путь"
+      return t("settings.copyPath");
+    }, [copyStatus, forceOpenTooltipPath, t]); // Зависимости: статус, принудительное открытие, функция перевода
 
     // Expose methods and state via ref
     useImperativeHandle(
@@ -196,25 +215,32 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
                             </Text>
                           </Tooltip>
                           <Flex gap="2">
-                            {/* Кнопка копирования пути - добавляем её первой в ряду кнопок */}
-                            <IconButton
-                              size="1"
-                              variant="soft"
-                              color={copiedPath === path ? (copyStatus === 'success' ? 'green' : 'red') : 'gray'}
-                              onClick={() => handleCopyPath(path)}
-                              data-testid={`copy-button-${path}`}
-                              aria-label={t("settings.copyPath")}
+                            {/* Кнопка копирования пути с тултипом */}
+                            <Tooltip
+                              content={getCopyButtonTooltip(path)}
+                              {...(forceOpenTooltipPath === path ? { open: true } : {})}
                             >
-                              {copiedPath === path ? (
-                                copyStatus === 'success' ? (
-                                  <ClipboardDocumentCheckIcon width={16} height={16} />
+                              <IconButton
+                                size="1"
+                                variant="soft"
+                                // Цвет кнопки зависит от статуса копирования ТОЛЬКО если это скопированный путь
+                                color={copiedPath === path ? (copyStatus === 'success' ? 'green' : 'red') : 'gray'}
+                                onClick={() => handleCopyPath(path)}
+                                data-testid={`copy-button-${path}`}
+                                aria-label={t("settings.copyPath")}
+                              >
+                                {/* Иконка кнопки зависит от статуса копирования ТОЛЬКО если это скопированный путь */}
+                                {copiedPath === path ? (
+                                  copyStatus === 'success' ? (
+                                    <ClipboardDocumentCheckIcon width={16} height={16} />
+                                  ) : (
+                                    <ExclamationCircleIcon width={16} height={16} />
+                                  )
                                 ) : (
-                                  <ExclamationCircleIcon width={16} height={16} />
-                                )
-                              ) : (
-                                <ClipboardIcon width={16} height={16} />
-                              )}
-                            </IconButton>
+                                  <ClipboardIcon width={16} height={16} />
+                                )}
+                              </IconButton>
+                            </Tooltip>
 
                             {path === defaultPath ? (
                               <Tooltip content={t("settings.isDefaultPath")}>

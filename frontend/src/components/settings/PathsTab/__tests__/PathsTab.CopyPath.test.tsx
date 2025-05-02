@@ -99,6 +99,23 @@ describe("PathsTab - Функциональность копирования п�
         expect(copyButton1.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
     });
 
+    // Добавим тест для проверки функции getCopyButtonIcon
+    it("должна использовать правильную функцию для выбора иконки", async () => {
+        render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+        const copyButton = screen.getByTestId("copy-button-/path/one");
+
+        // По умолчанию должна отображаться иконка ClipboardIcon
+        expect(copyButton.querySelector("[data-testid='clipboard-icon']")).toBeInTheDocument();
+
+        // После успешного копирования должна отображаться иконка ClipboardDocumentCheckIcon
+        await act(async () => {
+            fireEvent.click(copyButton);
+            await Promise.resolve();
+        });
+
+        expect(copyButton.querySelector("[data-testid='clipboard-check-icon']")).toBeInTheDocument();
+    });
+
     it("должна копировать путь в буфер обмена при нажатии на кнопку", async () => {
         render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
         const copyButton = screen.getByTestId("copy-button-/path/two");

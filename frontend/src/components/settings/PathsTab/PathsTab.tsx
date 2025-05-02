@@ -91,7 +91,7 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
 
     // Очистка статуса копирования и принудительного открытия тултипа через заданное время
     useEffect(() => {
-      let timer: NodeJS.Timeout | undefined;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       // Запускаем таймер только если тултип нужно принудительно открыть
       if (forceOpenTooltipPath) {
         timer = setTimeout(() => {
@@ -125,7 +125,7 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
         setCopyStatus('error');
         setForceOpenTooltipPath(path); // Принудительно открываем тултип для этого пути
       }
-    }, []); // Пустой массив зависимостей, т.к. функция не зависит от внешних переменных, изменяющихся со временем
+    }, [setCopiedPath, setCopyStatus, setForceOpenTooltipPath]); // Добавляем state setter функции в зависимости
 
     // Получение текста тултипа для кнопки копирования в зависимости от состояния
     const getCopyButtonTooltip = useCallback((path: string) => {

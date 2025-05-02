@@ -21,6 +21,11 @@ type MockRuntime struct {
 
 // Реализуем метод EventsEmit для мока
 func (m *MockRuntime) EventsEmit(ctx context.Context, eventName string, data ...interface{}) {
+	if len(data) == 0 {
+		log.Printf("Warning: EventsEmit called with no data for event '%s'\n", eventName)
+		m.Called(ctx, eventName)
+		return
+	}
 	m.Called(ctx, eventName, data[0])
 }
 

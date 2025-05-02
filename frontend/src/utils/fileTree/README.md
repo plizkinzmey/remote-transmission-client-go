@@ -8,47 +8,84 @@ The core functionality revolves around transforming the flat list of files recei
 
 ## Key Functions
 
--   **`buildFileTree(files: TorrentFile[]): FileNode[]`**:
+- **`buildFileTree(files: TorrentFile[]): FileNode[]`**:
     The main function to construct the file tree. It takes an array of `TorrentFile` objects, sorts them by path, creates `FileNode` instances for directories and files, establishes parent-child relationships, and calculates initial directory statistics. It utilizes `createNodeForPath`, `addNodeToParent`, and `calculateDirStats`.
 
--   **`calculateDirStats(node: FileNode): DirStats`**:
+- **`calculateDirStats(node: FileNode): DirStats`**:
     Recursively calculates aggregated statistics (total size, average progress, total file count, and `Wanted`/`indeterminate` status) for a directory node based on its children. Updates the directory node's `Size`, `Progress`, `Wanted`, and `indeterminate` properties.
 
--   **`updateNodesWanted(nodes: FileNode[], targetNode: FileNode, wanted: boolean, fileIds: number[]): FileNode[]`**:
-    Recursively updates the `Wanted` status of a target node and its descendants (if it's a directory) or specific file nodes based on provided IDs. Returns a *new* array of nodes with updated statuses. It also recalculates the `Wanted` and `indeterminate` status for parent directories affected by the change.
-
--   **`collectFileIds(node: FileNode): number[]`**:
-    Recursively collects the IDs of all *files* within a given node (and its children if it's a directory).
-
--   **`formatFileSize(size: number | undefined): string`**:
-    Formats a file size (in bytes) into a human-readable string using binary prefixes (B, KiB, MiB, GiB, TiB) with two decimal places. Handles `undefined` or non-positive inputs gracefully.
-
--   **`createNodeForPath(file: TorrentFile, partName: string, fullPath: string, isFile: boolean): FileNode`**:
-    A helper function used by `buildFileTree` to create a single `FileNode` instance, initializing its properties based on whether it represents a file or a directory.
-
--   **`addNodeToParent(root: { [path: string]: FileNode }, node: FileNode, parentPath: string): void`**:
-    A helper function used by `buildFileTree` to add a newly created node to the `children` array of its parent node within the `root` lookup object.
+- **`updateNodesWanted(nodes: FileNode[], targetNode: FileNode, wanted: boolean, fileIds: number[]): FileNode[]`**:
+    Updates the `Wanted` status for the target node and its children, recursively updating parent nodes to maintain state consistency. Collects and returns an array of file IDs that need updating on the backend.
 
 ## Usage
 
-These utilities are primarily used by components responsible for displaying torrent contents, such as `TorrentContent`, to build the file tree and handle user interactions like selecting/deselecting files for download.
+```typescript
+// Import the necessary functions
+import { buildFileTree, updateNodesWanted } from '../utils/fileTree';
+
+// Example usage for building a torrent's file tree
+const torrentFiles = await GetTorrentFiles(torrentId);
+const fileTree = buildFileTree(torrentFiles);
+
+// Updating selected files status
+const handleToggleWanted = (node: FileNode, wanted: boolean) => {
+  // Create a deep copy to maintain immutability
+  const updatedTree = [...fileTree];
+  // Array to collect file IDs that need updating
+  const fileIds = [];
+  // Update nodes and collect affected file IDs
+  updateNodesWanted(updatedTree, node, wanted, fileIds);
+  
+  // Update file statuses on the backend
+  if (fileIds.length > 0) {
+    await SetFilesWanted(torrentId, fileIds, wanted);
+  }
+  
+  // Update the file tree state in the component
+  setFileTree(updatedTree);
+};
+```
+
+## Data Structures
+
+### TorrentFile (input from backend)
 
 ```typescript
-import { buildFileTree, updateNodesWanted, collectFileIds, TorrentFile, FileNode } from './index'; // Assuming import from this directory's index
+interface TorrentFile {
+  Id: number;            // Unique file ID
+  Path: string;          // Full file path including name
+  Name: string;          // File name
+  Size: number;          // File size in bytes
+  Progress: number;      // Download progress (0-1)
+  Wanted: boolean;       // Whether the file is selected for download
+}
+```
 
-// Example: Building the tree
-const filesFromBackend: TorrentFile[] = [/* ... array of TorrentFile objects ... */];
-let fileTree: FileNode[] = buildFileTree(filesFromBackend);
+### FileNode (internal tree representation)
 
-// Example: Handling a user toggling a node's 'Wanted' status
-const handleToggleWanted = (nodeToToggle: FileNode) => {
-  const newWantedStatus = !nodeToToggle.Wanted;
-  const idsToUpdate = collectFileIds(nodeToToggle); // Get IDs of files affected
+```typescript
+interface FileNode {
+  Id?: number;           // File ID (only for files, not directories)
+  Path: string;          // Full path of the node
+  Name: string;          // File or directory name
+  Size?: number;         // File size or directory total size
+  Progress?: number;     // File download progress or directory average progress
+  Wanted: boolean;       // Download selection status
+  indeterminate?: boolean; // Intermediate state (for directories)
+  isDirectory: boolean;  // Whether the node is a directory
+  children?: FileNode[]; // Child nodes for directories
+  parent?: FileNode;     // Reference to parent node
+}
+```
 
-  // Update the tree state (assuming 'fileTree' is managed by React state)
-  const updatedTree = updateNodesWanted(fileTree, nodeToToggle, newWantedStatus, idsToUpdate);
-  // setFileTree(updatedTree); // Update React state
+### DirStats (internal directory aggregation structure)
 
-  // Send updated file IDs and their 'wanted' status to the backend...
-};
+```typescript
+interface DirStats {
+  size: number;          // Total size
+  progressSum: number;   // Weighted progress sum
+  count: number;         // File count
+  allWanted: boolean;    // Whether all files are wanted
+  anyWanted: boolean;    // Whether any files are wanted
+}
 ```

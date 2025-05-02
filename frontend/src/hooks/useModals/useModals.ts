@@ -150,7 +150,11 @@ export const useModals = (): UseModalsReturn => {
 
             // Устанавливаем новый таймер и сохраняем его ID
             timeoutIdRef.current = setTimeout(async () => {
-              await WindowSetAlwaysOnTop(false);
+              try {
+                await WindowSetAlwaysOnTop(false);
+              } catch (error) {
+                console.error("Failed to reset always-on-top state:", error);
+              }
             }, 1000);
           } catch (error) {
             console.error("Failed to activate window:", error);

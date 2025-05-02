@@ -19,17 +19,22 @@ vi.mock("@wailsjs/runtime", () => ({
 }));
 
 describe("Хук useModals - активация окна", () => {
-  let eventCallback: ((path: string) => void) | null = null;
+  // Используем объект для хранения колбэка, чтобы избежать утечек состояния между тестами
+  const callbackRegistry = {
+    current: null as ((path: string) => void) | null,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers(); // Включаем поддельные таймеры для тестирования setTimeout
-    eventCallback = null;
+
+    // Сбрасываем callbackRegistry для каждого теста
+    callbackRegistry.current = null;
 
     // Настраиваем мок для EventsOn
     vi.mocked(EventsOn).mockImplementation((eventName, callback) => {
       if (eventName === "torrent-opened") {
-        eventCallback = callback;
+        callbackRegistry.current = callback;
       }
       return vi.fn(); // Возвращаем мок для функции отписки
     });
@@ -49,12 +54,12 @@ describe("Хук useModals - активация окна", () => {
     const { unmount } = renderHook(() => useModals());
 
     // Убеждаемся, что колбэк зарегистрирован
-    expect(eventCallback).not.toBeNull();
+    expect(callbackRegistry.current).not.toBeNull();
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -96,8 +101,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -128,8 +133,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -164,8 +169,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -194,8 +199,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с невалидным путем
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("");
       }
     });
 
@@ -234,8 +239,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -271,8 +276,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Симулируем вызов колбэка с путем к торрент-файлу
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
       }
     });
 
@@ -295,8 +300,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Первый вызов
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test1.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test1.torrent");
       }
     });
 
@@ -305,8 +310,8 @@ describe("Хук useModals - активация окна", () => {
 
     // Второй вызов без ожидания завершения таймера
     await act(async () => {
-      if (eventCallback) {
-        await eventCallback("/path/to/test2.torrent");
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test2.torrent");
       }
     });
 
@@ -324,5 +329,47 @@ describe("Хук useModals - активация окна", () => {
     // локальной переменной или useRef
     expect(vi.mocked(WindowSetAlwaysOnTop)).toHaveBeenCalledTimes(1);
     expect(vi.mocked(WindowSetAlwaysOnTop)).toHaveBeenCalledWith(false);
+  });
+
+  it("должен обрабатывать ошибки при сбросе always-on-top состояния", async () => {
+    // Первый вызов WindowSetAlwaysOnTop(true) должен пройти успешно
+    vi.mocked(WindowSetAlwaysOnTop).mockImplementation((value) => {
+      if (value === true) {
+        return Promise.resolve(undefined);
+      } else {
+        return Promise.reject(
+          new Error("Не удалось сбросить always-on-top состояние")
+        );
+      }
+    });
+
+    // Шпионим за console.error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    // Рендерим хук
+    renderHook(() => useModals());
+
+    // Симулируем вызов колбэка с путем к торрент-файлу
+    await act(async () => {
+      if (callbackRegistry.current) {
+        await callbackRegistry.current("/path/to/test.torrent");
+      }
+    });
+
+    // Запускаем таймер
+    await act(async () => {
+      vi.runAllTimers();
+    });
+
+    // Проверяем, что ошибка в setTimeout была обработана и залогирована
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Failed to reset always-on-top state:",
+      expect.any(Error)
+    );
+
+    // Восстанавливаем console.error
+    consoleErrorSpy.mockRestore();
   });
 });

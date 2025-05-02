@@ -24,20 +24,22 @@ export function useConnectionManager() {
       try {
         await Initialize(JSON.stringify(configToUse));
         setIsInitialized(true);
-        // Показываем уведомление об успешном подключении
+        // Показываем уведомление об успешном подключении с использованием нового API
         showSuccess(
-          t("notifications.connectionSuccessTitle"),
-          t("notifications.connectionSuccessMessage", {
-            host: configToUse.host,
-          })
+          "notifications.connectionSuccessTitle",
+          "notifications.connectionSuccessMessage",
+          { host: configToUse.host }
         );
         return true; // Успешное подключение
       } catch (initError) {
         console.error("Connection failed:", initError);
         const errorMessage = t("errors.connectionFailed"); // Общая ошибка подключения
         setError(errorMessage);
-        // Показываем уведомление об ошибке подключения
-        showError(t("notifications.connectionErrorTitle"), errorMessage);
+        // Показываем уведомление об ошибке подключения с использованием нового API
+        showError(
+          "notifications.connectionErrorTitle",
+          "errors.connectionFailed"
+        );
         setIsInitialized(false);
         setIsReconnecting(true); // Устанавливаем флаг переподключения при ошибке
         return false; // Ошибка подключения
@@ -52,14 +54,19 @@ export function useConnectionManager() {
       console.error("Cannot reconnect without initial config.");
       const errorMsg = t("errors.noConfigForReconnect");
       setError(errorMsg);
-      showError(t("notifications.connectionErrorTitle"), errorMsg); // Уведомление об ошибке
+      // Используем ключ локализации вместо t() для уведомления
+      showError(
+        "notifications.connectionErrorTitle",
+        "errors.noConfigForReconnect"
+      );
       return false;
     }
     setIsReconnecting(true); // Явно устанавливаем флаг перед попыткой
     // Показываем информационное уведомление о попытке переподключения
     showInfo(
-      t("notifications.reconnectingTitle"),
-      t("notifications.reconnectingMessage", { host: initialConfig.host })
+      "notifications.reconnectingTitle",
+      "notifications.reconnectingMessage",
+      { host: initialConfig.host }
     );
     console.log("Attempting to reconnect...");
     return await connect(initialConfig);
@@ -95,7 +102,11 @@ export function useConnectionManager() {
         console.error("Failed to load initial config:", error);
         const errorMsg = t("errors.failedToLoadConfig");
         setError(errorMsg);
-        showError(t("notifications.configErrorTitle"), errorMsg); // Уведомление об ошибке загрузки конфига
+        // Используем ключ локализации вместо t() для уведомления
+        showError(
+          "notifications.configErrorTitle",
+          "errors.failedToLoadConfig"
+        );
         setIsInitialized(false);
       } finally {
         setIsLoading(false); // Завершаем начальную загрузку в любом случае

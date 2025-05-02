@@ -111,6 +111,7 @@ describe("useTorrentList", () => {
       showError: mockShowError,
       showInfo: mockShowInfo,
       showWarning: mockShowWarning,
+      showDirect: vi.fn(), // Добавляем обязательный метод showDirect
     });
   });
 
@@ -356,7 +357,7 @@ describe("useTorrentList", () => {
     expect(mockGetTorrents).toHaveBeenCalledTimes(2);
 
     // Очищаем историю вызовов уведомлений перед вторым запросом
-    mockShowFormatted.mockClear();
+    mockShowSuccess.mockClear();
 
     // Выполняем второй запрос через интервал
     await act(async () => {
@@ -368,11 +369,10 @@ describe("useTorrentList", () => {
     expect(mockGetTorrents).toHaveBeenCalledTimes(3);
 
     // Проверяем, что уведомление было показано с правильными параметрами
-    expect(mockShowFormatted).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(mockShowSuccess).toHaveBeenCalledWith(
+      "notifications.downloadCompleteTitle",
       "notifications.downloadCompleteMessage",
-      { name: "Torrent 1" },
-      "success"
+      { name: "Torrent 1" }
     );
   });
 
@@ -418,7 +418,7 @@ describe("useTorrentList", () => {
     expect(mockGetTorrents).toHaveBeenCalledTimes(2);
 
     // Очищаем историю вызовов уведомлений перед вторым запросом
-    mockShowFormatted.mockClear();
+    mockShowSuccess.mockClear();
 
     // Выполняем второй запрос через интервал
     await act(async () => {
@@ -430,11 +430,10 @@ describe("useTorrentList", () => {
     expect(mockGetTorrents).toHaveBeenCalledTimes(3);
 
     // Проверяем, что уведомление было показано с правильными параметрами
-    expect(mockShowFormatted).toHaveBeenCalledWith(
-      expect.any(String),
+    expect(mockShowSuccess).toHaveBeenCalledWith(
+      "notifications.verifyCompleteTitle",
       "notifications.verifyCompleteMessage",
-      { name: "Torrent 1" },
-      "success"
+      { name: "Torrent 1" }
     );
   });
 
@@ -464,6 +463,7 @@ describe("useTorrentList", () => {
     });
 
     // При первой загрузке уведомления не должны показываться
+    expect(mockShowSuccess).not.toHaveBeenCalled();
     expect(mockShowFormatted).not.toHaveBeenCalled();
   });
 

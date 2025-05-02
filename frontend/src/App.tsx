@@ -234,6 +234,17 @@ function App() {
     rawTorrents.find((t: WailsTorrent) => t.ID === id)?.IsSlowMode
   );
 
+  // Проверяем, есть ли среди выбранных торрентов хотя бы один активный (скачивается или раздается)
+  const hasRunningSelectedTorrents = useMemo(() => {
+    return Array.from(selectedTorrents).some((id) => {
+      const torrent = rawTorrents.find((t: WailsTorrent) => t.ID === id);
+      return torrent && (
+        mapBackendStatusToFrontend(torrent.Status) === "downloading" ||
+        mapBackendStatusToFrontend(torrent.Status) === "seeding"
+      );
+    });
+  }, [selectedTorrents, rawTorrents]);
+
   const handleSelectAllAdapter = () => {
     handleSelectAll(filteredTorrents); // передаем полные объекты торрентов
   };
@@ -287,6 +298,7 @@ function App() {
           onStopSelected={handleStopSelected}
           onRemoveSelected={handleRemoveSelected}
           hasSelectedTorrents={hasSelectedTorrents}
+          hasRunningSelectedTorrents={hasRunningSelectedTorrents}
           startLoading={bulkOperations.start}
           stopLoading={bulkOperations.stop}
           removeLoading={bulkOperations.remove}

@@ -47,10 +47,18 @@ export const useSettingsSaver = ({
   const [isSaving, setIsSaving] = useState(false);
   const { showSuccess, showError } = useNotification(); // Используем хук уведомлений
 
+  // Вспомогательная функция для создания объекта настроек с текущим языком
+  const createSettingsWithLanguage = useCallback(() => {
+    return { ...settings, language: currentLanguage };
+  }, [settings, currentLanguage]);
+
   // Выносим логику сохранения в отдельную функцию
   const executeSave = async (pathChanges: PathChanges): Promise<SaveResult> => {
     try {
-      await SaveAllSettings(settings, pathChanges);
+      // Используем вспомогательную функцию для получения настроек с текущим языком
+      const settingsWithLanguage = createSettingsWithLanguage();
+
+      await SaveAllSettings(settingsWithLanguage, pathChanges);
       return { success: true };
     } catch (error) {
       const errorStr = String(error);
@@ -67,7 +75,9 @@ export const useSettingsSaver = ({
             };
           }
           // Повторная попытка сохранения после успешной инициализации
-          await SaveAllSettings(settings, pathChanges);
+          // Используем вспомогательную функцию для получения настроек с текущим языком
+          const settingsWithLanguage = createSettingsWithLanguage();
+          await SaveAllSettings(settingsWithLanguage, pathChanges);
           return { success: true };
         } catch (initError) {
           return {
@@ -116,8 +126,8 @@ export const useSettingsSaver = ({
         if (success) {
           // Показываем уведомление об успешной инициализации при первом запуске
           showSuccess(
-            t("notifications.settingsSaveSuccessTitle"),
-            t("notifications.connectionInitializedMessage")
+            "notifications.settingsSaveSuccessTitle",
+            "notifications.connectionInitializedMessage"
           );
           onSaveSuccess();
         }
@@ -128,33 +138,36 @@ export const useSettingsSaver = ({
         if (result.success) {
           // Показываем уведомление об успешном сохранении настроек
           showSuccess(
-            t("notifications.settingsSaveSuccessTitle"),
-            t("notifications.settingsSaveSuccessMessage")
+            "notifications.settingsSaveSuccessTitle",
+            "notifications.settingsSaveSuccessMessage"
           );
           onSaveSuccess();
         } else if (result.error) {
           // Показываем уведомление об ошибке сохранения
           showError(
-            t("notifications.settingsSaveErrorTitle"),
-            t("notifications.settingsSaveErrorMessage", {
-              error: result.error.toString(),
-            })
+            "notifications.settingsSaveErrorTitle",
+            "notifications.settingsSaveErrorMessage",
+            { error: result.error.toString() }
           );
           onSaveError(result.error);
         }
       }
     } catch (error) {
-      const errorMessage = t("errors.failedToUpdateSettings", {
-        0: String(error),
+      const errorMessage = String(error);
+
+      // Для согласованности форматирования с другими ошибками
+      // в режиме первого запуска или обычном режиме
+      const formattedError = t("errors.failedToUpdateSettings", {
+        0: errorMessage,
       });
-      // Показываем уведомление об ошибке
+
+      // Показываем уведомление об ошибке и вызываем onSaveError только один раз
       showError(
-        t("notifications.settingsSaveErrorTitle"),
-        t("notifications.settingsSaveErrorMessage", {
-          error: errorMessage,
-        })
+        "notifications.settingsSaveErrorTitle",
+        "notifications.settingsSaveErrorMessage",
+        { error: errorMessage }
       );
-      onSaveError(errorMessage);
+      onSaveError(formattedError);
     } finally {
       setIsSaving(false);
     }
@@ -171,6 +184,7 @@ export const useSettingsSaver = ({
     getPathChanges,
     showSuccess,
     showError,
+    executeSave,
   ]);
 
   const resetChanges = useCallback(() => {

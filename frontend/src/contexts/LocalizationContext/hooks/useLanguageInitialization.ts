@@ -72,7 +72,11 @@ export const useLanguageInitialization = () => {
 
   const setLanguage = useCallback(async (lang: string) => {
     try {
+      // Устанавливаем язык в локальном состоянии React
       setCurrentLanguage(lang);
+
+      // Используем модифицированный метод Initialize для сохранения языка
+      // Теперь этот метод умеет сохранять только язык без требования host
       await Initialize(JSON.stringify({ language: lang }));
     } catch (error) {
       console.error("Error setting language:", error);

@@ -1,112 +1,74 @@
-# Хук `useNotification`
+# Хук useNotification
 
-## Описание
+Этот пользовательский хук предоставляет стандартизированный способ отображения уведомлений в приложении, обёртывая нативный API уведомлений, предоставляемый бэкендом на Go.
 
-Хук `useNotification` предоставляет удобный интерфейс для отображения нативных уведомлений операционной системы из React-компонентов с поддержкой локализации. Он служит оберткой вокруг Go-функции `ShowNotification`, которая использует нативные уведомления macOS.
+## Возможности
 
-## API
-
-### Возвращаемый результат
-
-```typescript
-interface UseNotificationResult {
-  showSuccess: (titleKey: string, messageKey: string, formatValues?: Record<string, string | number>) => void;
-  showError: (titleKey: string, messageKey: string, formatValues?: Record<string, string | number>) => void;
-  showInfo: (titleKey: string, messageKey: string, formatValues?: Record<string, string | number>) => void;
-  showWarning: (titleKey: string, messageKey: string, formatValues?: Record<string, string | number>) => void;
-  showFormatted: (titleKey: string, messageKey: string, formatValues: Record<string, string | number>, level: NotificationLevel) => void;
-  showDirect: (title: string, message: string, level: NotificationLevel) => void;
-}
-```
-
-### Методы
-
-| Метод | Описание |
-|-------|----------|
-| `showSuccess` | Показывает успешное уведомление (зеленое) с локализованным заголовком и сообщением |
-| `showError` | Показывает уведомление об ошибке (красное) с локализованным заголовком и сообщением |
-| `showInfo` | Показывает информационное уведомление (синее) с локализованным заголовком и сообщением |
-| `showWarning` | Показывает предупреждающее уведомление (оранжевое) с локализованным заголовком и сообщением |
-| `showFormatted` | Показывает уведомление с локализованным заголовком и сообщением с возможностью форматирования |
-| `showDirect` | Показывает уведомление с прямыми строками без локализации (для специальных случаев) |
+- Отображение уведомлений с разными уровнями важности (успех, ошибка, предупреждение, информация)
+- Локализованные сообщения уведомлений
+- Интеграция с системой уведомлений приложения
+- Автоматическая обработка ошибок
 
 ## Использование
 
-```typescript
-import React from 'react';
-import { useNotification } from '@/hooks/useNotification';
+```tsx
+import { useNotification } from './useNotification';
 
-const MyComponent: React.FC = () => {
-  const { showSuccess, showError, showInfo, showWarning, showFormatted, showDirect } = useNotification();
-
-  const handleSuccessAction = () => {
-    // Показать успешное уведомление с локализованным заголовком и сообщением
-    showSuccess("notifications.successTitle", "notifications.operationSuccess");
-  };
-
-  const handleErrorAction = () => {
-    // Показать уведомление об ошибке с локализованным заголовком и сообщением
-    showError("notifications.errorTitle", "notifications.operationFailed");
+const YourComponent = () => {
+  const { showNotification } = useNotification();
+  
+  const handleSuccess = () => {
+    showNotification({
+      title: 'Операция успешна',
+      message: 'Ваше действие было успешно выполнено',
+      level: 'success'
+    });
   };
   
-  const handleInfoAction = () => {
-    // Показать информационное уведомление с локализованным заголовком и сообщением
-    showInfo("notifications.infoTitle", "notifications.syncStarted");
+  const handleError = (error) => {
+    showNotification({
+      title: 'Ошибка',
+      message: error.message || 'Произошла неизвестная ошибка',
+      level: 'error'
+    });
   };
   
-  const handleWarningAction = () => {
-    // Показать предупреждающее уведомление с локализованным заголовком и сообщением
-    showWarning("notifications.warningTitle", "notifications.possibleDelay");
-  };
-  
-  const handleFormattedMessage = () => {
-    // Показать форматированное уведомление с использованием локализации и параметров
-    showSuccess(
-      "notifications.downloadCompleteTitle", 
-      "notifications.downloadCompleteMessage", 
-      { name: "Ubuntu.iso", speed: "10 MB/s" }
-    );
-  };
-  
-  const handleDirectMessage = () => {
-    // Показать уведомление с прямыми строками без локализации (для специальных случаев)
-    showDirect(
-      "Прямой заголовок", 
-      "Прямое сообщение без локализации",
-      "info"
-    );
-  };
-
   return (
-    <div>
-      <button onClick={handleSuccessAction}>Показать успешное уведомление</button>
-      <button onClick={handleErrorAction}>Показать уведомление об ошибке</button>
-      <button onClick={handleInfoAction}>Показать информационное уведомление</button>
-      <button onClick={handleWarningAction}>Показать предупреждающее уведомление</button>
-      <button onClick={handleFormattedMessage}>Показать форматированное уведомление</button>
-      <button onClick={handleDirectMessage}>Показать прямое уведомление</button>
-    </div>
+    <button onClick={handleSuccess}>Показать уведомление</button>
   );
 };
-
-export default MyComponent;
 ```
+
+## API
+
+### NotificationOptions
+
+```tsx
+interface NotificationOptions {
+  title: string;         // Заголовок уведомления
+  message: string;       // Текст сообщения уведомления
+  level: 'success' | 'error' | 'warning' | 'info'; // Уровень важности
+}
+```
+
+### Возвращаемое значение
+
+```tsx
+interface UseNotificationReturn {
+  showNotification: (options: NotificationOptions) => Promise<void>;
+}
+```
+
+## Детали реализации
+
+Хук использует привязку Wails к функции `ShowNotification` бэкенда на Go, которая отображает нативные уведомления операционной системы. Он корректно обрабатывает любые ошибки, которые могут возникнуть во время отображения уведомления.
 
 ## Обработка ошибок
 
-Хук автоматически обрабатывает ошибки, которые могут возникнуть при отправке уведомлений. При возникновении ошибки:
-1. Ошибка логируется через `LogError` из Wails Runtime
-2. Дополнительно выводится в консоль разработчика с префиксом `[Notification Error]`
+Если система уведомлений столкнется с ошибкой при попытке показать уведомление, она:
 
-## Зависимости
+1. Запишет ошибку в консоль
+2. Не позволит ошибке распространиться до вызывающего компонента
+3. Вернет разрешенный промис для сохранения контракта API
 
-- React (useCallback)
-- `@contexts/LocalizationContext` (для локализации и форматирования сообщений)
-- Wails:
-  - `@wailsjs/go/main/App` (для функции ShowNotification)
-  - `@wailsjs/runtime` (для LogError)
-
-## Примечания
-
-1. Отображение нативных уведомлений зависит от доступности и разрешений операционной системы. В случае проблем с отображением, проверьте настройки уведомлений в системе.
-2. Для всех методов, кроме `showDirect`, необходимо передавать ключи локализации, а не готовые строки. Это обеспечивает правильную локализацию уведомлений в соответствии с выбранным языком интерфейса.
+Это гарантирует, что сбои уведомлений не нарушат функциональность приложения.

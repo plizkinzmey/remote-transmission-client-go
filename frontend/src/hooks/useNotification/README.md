@@ -1,131 +1,74 @@
 # useNotification Hook
 
-## Purpose
+This custom hook provides a standardized way to display notifications in the application by wrapping the native notification API provided by the Go backend.
 
-The `useNotification` hook provides a way to show native operating system notifications from within the application with full localization support. This hook acts as a wrapper around the Go backend function that triggers native notifications, providing a convenient API for localized notifications with error handling.
+## Features
+
+- Display notifications with different severity levels (success, error, warning, info)
+- Localized notification messages
+- Integration with the application's notification system
+- Automatic error handling
+
+## Usage
+
+```tsx
+import { useNotification } from './useNotification';
+
+const YourComponent = () => {
+  const { showNotification } = useNotification();
+  
+  const handleSuccess = () => {
+    showNotification({
+      title: 'Operation Successful',
+      message: 'Your action was completed successfully',
+      level: 'success'
+    });
+  };
+  
+  const handleError = (error) => {
+    showNotification({
+      title: 'Error',
+      message: error.message || 'An unknown error occurred',
+      level: 'error'
+    });
+  };
+  
+  return (
+    <button onClick={handleSuccess}>Trigger Notification</button>
+  );
+};
+```
 
 ## API
 
-```typescript
-const { 
-  showSuccess, 
-  showError, 
-  showInfo, 
-  showWarning, 
-  showFormatted,
-  showDirect
-} = useNotification();
-```
-
-### Functions
-
-- `showSuccess(titleKey: string, messageKey: string, formatValues?: Record<string, string | number>)`: Shows a success notification (green) with localized title and message
-- `showError(titleKey: string, messageKey: string, formatValues?: Record<string, string | number>)`: Shows an error notification (red) with localized title and message
-- `showInfo(titleKey: string, messageKey: string, formatValues?: Record<string, string | number>)`: Shows an informational notification (blue) with localized title and message
-- `showWarning(titleKey: string, messageKey: string, formatValues?: Record<string, string | number>)`: Shows a warning notification (orange) with localized title and message
-- `showFormatted(titleKey: string, messageKey: string, formatValues: Record<string, string | number>, level: NotificationLevel)`: Shows a notification with localized title and message with format value substitution
-- `showDirect(title: string, message: string, level: NotificationLevel)`: Shows a notification with direct strings without localization (for special cases)
-
-### Types
-
-- `NotificationLevel`: Union type of string literals: `"info" | "success" | "warning" | "error"`
-- `UseNotificationResult`: Interface containing all functions returned by the hook
-
-## Usage Examples
-
-### Basic Usage
+### NotificationOptions
 
 ```tsx
-import React from 'react';
-import { useNotification } from '@/hooks/useNotification';
-
-const MyComponent: React.FC = () => {
-  const { showSuccess, showError } = useNotification();
-  
-  const handleSave = async () => {
-    try {
-      await saveData();
-      showSuccess("notifications.successTitle", "notifications.dataSaved");
-    } catch (error) {
-      showError("notifications.errorTitle", "notifications.saveFailed");
-    }
-  };
-  
-  return (
-    <button onClick={handleSave}>Save</button>
-  );
-};
+interface NotificationOptions {
+  title: string;         // Notification title
+  message: string;       // Notification message body
+  level: 'success' | 'error' | 'warning' | 'info'; // Severity level
+}
 ```
 
-### Using Format Values
+### Return Value
 
 ```tsx
-import React from 'react';
-import { useNotification } from '@/hooks/useNotification';
-
-const TorrentList: React.FC = () => {
-  const { showSuccess } = useNotification();
-  
-  const handleDownloadComplete = (torrentName: string) => {
-    showSuccess(
-      "notifications.downloadCompleteTitle",
-      "notifications.downloadCompleteMessage", 
-      { name: torrentName }
-    );
-  };
-  
-  return (
-    // Component content
-  );
-};
-```
-
-### Using Direct Notification (Without Localization)
-
-```tsx
-import React from 'react';
-import { useNotification } from '@/hooks/useNotification';
-
-const DebugComponent: React.FC = () => {
-  const { showDirect } = useNotification();
-  
-  const showDebugInfo = (info: string) => {
-    showDirect(
-      "Debug Info",
-      info,
-      "info"
-    );
-  };
-  
-  return (
-    <button onClick={() => showDebugInfo("Some technical information")}>Show Debug Info</button>
-  );
-};
+interface UseNotificationReturn {
+  showNotification: (options: NotificationOptions) => Promise<void>;
+}
 ```
 
 ## Implementation Details
 
-- Uses the Go backend function `ShowNotification` from the Wails API
-- Provides error handling for failed notifications
-- Fully integrates with the application's localization system
-- Returns memoized functions to prevent unnecessary re-renders
-- Logs errors to both the Wails runtime log and the console
+The hook utilizes the Wails binding to the Go backend's `ShowNotification` function, which displays native OS notifications. It gracefully handles any errors that might occur during notification display.
 
 ## Error Handling
 
-If the notification system fails (e.g., the OS notification system is unavailable), the error is:
+If the notification system encounters an error when attempting to show a notification, it will:
 
-1. Logged via Wails `LogError`
-2. Logged to the console
-3. Silently handled (no exceptions thrown to the caller)
+1. Log the error to the console
+2. Prevent the error from propagating to the calling component
+3. Return a resolved promise to maintain the API contract
 
-## Dependencies
-
-- `@wailsjs/go/main/App` - For calling the Go backend notification function
-- `@wailsjs/runtime` - For access to logging functions
-- `@/contexts/LocalizationContext` - For localization of messages
-
-## Notes
-
-1. For all methods except `showDirect`, you should provide localization keys, not direct strings.
-2. The display of native notifications depends on the operating system availability and permissions. If you encounter issues with notifications, check your system notification settings.
+This ensures that notification failures don't disrupt the application's functionality.

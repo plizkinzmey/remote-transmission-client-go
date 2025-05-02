@@ -106,6 +106,14 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
 
     // Функция для копирования пути в буфер обмена
     const handleCopyPath = useCallback(async (path: string) => {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        console.error('Clipboard API is not supported in this environment.');
+        setCopiedPath(path); // Устанавливаем путь, чтобы показать иконку ошибки
+        setCopyStatus('error');
+        setForceOpenTooltipPath(path); // Принудительно открываем тултип для этого пути
+        return;
+      }
+
       try {
         await navigator.clipboard.writeText(path);
         setCopiedPath(path);

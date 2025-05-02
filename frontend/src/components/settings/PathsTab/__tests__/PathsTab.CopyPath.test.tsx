@@ -222,4 +222,42 @@ describe("PathsTab - Функциональность копирования п�
 
         vi.useRealTimers();
     });
+
+    it("должна корректно обрабатывать отсутствие Clipboard API", async () => {
+        // Сохраняем оригинальный объект clipboard
+        const originalClipboard = navigator.clipboard;
+
+        // Делаем Clipboard API недоступным
+        Object.defineProperty(navigator, 'clipboard', {
+            value: undefined,
+            writable: true
+        });
+
+        render(<PathsTab onPathsChanged={mockOnPathsChanged} />);
+        const copyButton = screen.getByTestId("copy-button-/path/one");
+
+        // Кнопка копирования должна быть доступна, даже если Clipboard API недоступен
+        expect(copyButton).toBeInTheDocument();
+
+        await act(async () => {
+            fireEvent.click(copyButton);
+            try {
+                await Promise.resolve();
+            } catch (e) { }
+        });
+
+        // Должна отображаться иконка ошибки, так как Clipboard API недоступен
+        expect(copyButton.querySelector("[data-testid='exclamation-circle-icon']")).toBeInTheDocument();
+        expect(copyButton).toHaveAttribute("data-accent-color", "red");
+
+        // Тултип должен показывать сообщение об ошибке
+        const tooltipAfterError = copyButton.closest('[data-testid="mock-tooltip"]');
+        expect(tooltipAfterError).toHaveAttribute("data-tooltip-content", "settings.copyPathError");
+
+        // Восстанавливаем оригинальный объект clipboard
+        Object.defineProperty(navigator, 'clipboard', {
+            value: originalClipboard,
+            writable: true
+        });
+    });
 });

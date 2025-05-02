@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   EventsOn,
-  WindowUnminimise, // Исправлена опечатка: WindowUnminimize -> WindowUnminimise
+  WindowUnminimise,
   WindowShow,
-  BrowserOpenURL, // Используем вместо WindowSetForeground, которого нет в API
+  BrowserOpenURL, // Импортируем вместо WindowSetForeground
   WindowSetAlwaysOnTop,
 } from "@wailsjs/runtime";
 import { LoadConfig } from "@wailsjs/go/main/App"; // Correct alias
@@ -125,6 +125,9 @@ export const useModals = (): UseModalsReturn => {
 
   // Слушаем событие открытия торрент-файла
   useEffect(() => {
+    // Переменная для хранения ID таймера
+    let timeoutId: NodeJS.Timeout | null = null;
+
     // EventsOn returns a function to unsubscribe
     const unsubscribe = EventsOn(
       "torrent-opened",
@@ -134,15 +137,20 @@ export const useModals = (): UseModalsReturn => {
 
           // Активация окна
           try {
-            await WindowUnminimise(); // Исправлено: используем правильное имя функции
+            await WindowUnminimise(); // Разворачиваем окно, если оно свёрнуто
             await WindowShow(); // Показываем окно, если оно скрыто
-
-            // WindowSetForeground не существует, используем другие методы
-            // для активации окна
+            // Вместо WindowSetForeground можно использовать другие методы активации окна
 
             // Кратковременно делаем окно "поверх всех", чтобы гарантировать видимость
             await WindowSetAlwaysOnTop(true);
-            setTimeout(async () => {
+
+            // Очищаем предыдущий таймер, если он существует
+            if (timeoutId !== null) {
+              clearTimeout(timeoutId);
+            }
+
+            // Устанавливаем новый таймер и сохраняем его ID
+            timeoutId = setTimeout(async () => {
               await WindowSetAlwaysOnTop(false);
             }, 1000);
           } catch (error) {
@@ -159,6 +167,12 @@ export const useModals = (): UseModalsReturn => {
 
     // Cleanup function to unsubscribe when the component unmounts
     return () => {
+      // Очищаем таймер при размонтировании
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+
+      // Отписываемся от события
       if (typeof unsubscribe === "function") {
         unsubscribe();
       }

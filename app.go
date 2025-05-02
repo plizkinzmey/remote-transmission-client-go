@@ -213,7 +213,7 @@ func (a *App) GetSessionStats() (*domain.SessionStats, error) {
 // GetTorrents returns all torrents
 func (a *App) GetTorrents() ([]domain.Torrent, error) {
 	if a.service == nil {
-		return []domain.Torrent{}, transmission.NewServiceNotInitializedError()
+		return nil, transmission.NewServiceNotInitializedError()
 	}
 	return a.service.GetAllTorrents()
 }

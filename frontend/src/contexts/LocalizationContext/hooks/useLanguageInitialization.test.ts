@@ -6,6 +6,8 @@ import {
   LoadConfig,
   GetSystemLanguage,
   GetTranslation,
+  Initialize,
+  SaveAllSettings,
 } from "@wailsjs/go/main/App";
 
 vi.mock("@wailsjs/go/main/App", () => ({
@@ -13,6 +15,8 @@ vi.mock("@wailsjs/go/main/App", () => ({
   LoadConfig: vi.fn(),
   GetSystemLanguage: vi.fn(),
   GetTranslation: vi.fn(),
+  Initialize: vi.fn(),
+  SaveAllSettings: vi.fn(),
 }));
 
 describe("useLanguageInitialization", () => {
@@ -21,6 +25,8 @@ describe("useLanguageInitialization", () => {
     (GetTranslation as any).mockImplementation((key: string, lang: string) =>
       Promise.resolve(`${key}-${lang}`)
     );
+    (Initialize as any).mockResolvedValue(undefined);
+    (SaveAllSettings as any).mockResolvedValue(undefined);
   });
 
   it("loads languages and config language", async () => {
@@ -207,5 +213,78 @@ describe("useLanguageInitialization", () => {
     // Список доступных языков должен быть пуст
     expect(result.current.availableLanguages).toEqual([]);
     errorSpy.mockRestore();
+  });
+
+  it("handles error when saving language settings", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    (GetAvailableLanguages as any).mockResolvedValue(["en", "ru"]);
+    (LoadConfig as any).mockResolvedValue({
+      language: "en",
+      host: "test-host",
+      port: 9091,
+      theme: "dark",
+    });
+    // Имитируем ошибку при вызове Initialize
+    (Initialize as any).mockRejectedValue(
+      new Error("Ошибка инициализации языка")
+    );
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Пытаемся изменить язык, что вызовет ошибку при инициализации
+    await act(async () => {
+      await result.current.setLanguage("ru");
+    });
+
+    // Проверяем, что ошибка обработана и залогирована
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Error setting language:",
+      expect.any(Error)
+    );
+
+    // Убеждаемся, что язык все равно изменился в UI (в локальном состоянии)
+    expect(result.current.currentLanguage).toBe("ru");
+
+    // Проверяем, что Initialize был вызван с правильными параметрами
+    expect(Initialize).toHaveBeenCalledWith(JSON.stringify({ language: "ru" }));
+
+    consoleSpy.mockRestore();
+  });
+
+  it("handles initialization error when setting language", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    (GetAvailableLanguages as any).mockResolvedValue(["en", "ru"]);
+    (LoadConfig as any).mockResolvedValue({ language: "en" });
+    (Initialize as any).mockRejectedValue(new Error("Failed to initialize"));
+
+    const { result } = renderHook(() => useLanguageInitialization());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Пытаемся изменить язык, что вызовет ошибку при инициализации
+    await act(async () => {
+      await result.current.setLanguage("ru");
+    });
+
+    // Проверяем, что основная ошибка обработана и залогирована
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Error setting language:",
+      expect.any(Error)
+    );
+
+    // Убеждаемся, что язык все равно изменился в локальном состоянии
+    expect(result.current.currentLanguage).toBe("ru");
+
+    // Initialize должен быть вызван, но SaveAllSettings - нет
+    expect(Initialize).toHaveBeenCalledWith(JSON.stringify({ language: "ru" }));
+    expect(SaveAllSettings).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
   });
 });

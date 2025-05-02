@@ -13,7 +13,7 @@ import { StatusType } from "@/utils/torrentStatus"; // Import StatusType
  */
 export function useTorrentList(isInitialized: boolean) {
   const { t } = useLocalization();
-  const { showFormatted } = useNotification(); // Get notification function
+  const { showSuccess } = useNotification(); // Используем showSuccess вместо showFormatted
   const [torrents, setTorrents] = useState<WailsTorrent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -49,21 +49,21 @@ export function useTorrentList(isInitialized: boolean) {
             previousStatus === "downloading" &&
             (currentStatus === "completed" || currentStatus === "seeding")
           ) {
-            showFormatted(
-              t("notifications.downloadCompleteTitle"),
+            // Используем новый API с ключами локализации и параметрами
+            showSuccess(
+              "notifications.downloadCompleteTitle",
               "notifications.downloadCompleteMessage",
-              { name: torrent.Name },
-              "success"
+              { name: torrent.Name }
             );
           }
 
           // Проверка на изменение статуса с checking на любой другой
           if (previousStatus === "checking" && currentStatus !== "checking") {
-            showFormatted(
-              t("notifications.verifyCompleteTitle"),
+            // Используем новый API с ключами локализации и параметрами
+            showSuccess(
+              "notifications.verifyCompleteTitle",
               "notifications.verifyCompleteMessage",
-              { name: torrent.Name },
-              "success"
+              { name: torrent.Name }
             );
           }
         });
@@ -95,7 +95,7 @@ export function useTorrentList(isInitialized: boolean) {
         setIsLoading(false);
       }
     }
-  }, [isInitialized, isFirstLoad, t, showFormatted]); // Add showFormatted to dependencies
+  }, [isInitialized, isFirstLoad, t, showSuccess]); // Обновляем зависимость на showSuccess
 
   // Эффект для периодического обновления списка торрентов
   useEffect(() => {

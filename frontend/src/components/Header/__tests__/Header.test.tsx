@@ -135,6 +135,7 @@ describe('Компонент Header', () => {
     renderHeader({
       onSetSpeedLimit,
       hasSelectedTorrents: true,
+      hasRunningSelectedTorrents: true, // Добавляем это условие, так как теперь кнопка активна только при наличии активных торрентов
       isSlowModeEnabled: false,
     });
 
@@ -236,12 +237,43 @@ describe('Компонент Header', () => {
   it('отображает корректное состояние при включенном режиме медленной скорости', () => {
     renderHeader({
       isSlowModeEnabled: true,
-      hasSelectedTorrents: true
+      hasSelectedTorrents: true,
+      hasRunningSelectedTorrents: true
     });
 
     const speedButton = screen.getByTitle('header.normalSpeed');
     // Проверяем класс кнопки вместо data-атрибутов
     expect(speedButton).toHaveClass('rt-variant-solid');
     expect(speedButton).toHaveAttribute('data-accent-color', 'orange');
+  });
+
+  it('активирует кнопку замедления когда есть выбранные активные торренты', () => {
+    renderHeader({
+      hasSelectedTorrents: true,
+      hasRunningSelectedTorrents: true
+    });
+
+    const speedButton = screen.getByTitle('header.slowSpeed');
+    expect(speedButton).not.toBeDisabled();
+  });
+
+  it('деактивирует кнопку замедления когда нет выбранных активных торрентов', () => {
+    renderHeader({
+      hasSelectedTorrents: true,
+      hasRunningSelectedTorrents: false
+    });
+
+    const speedButton = screen.getByTitle('torrents.noRunningSelectedForSpeedLimit');
+    expect(speedButton).toBeDisabled();
+  });
+
+  it('показывает подсказку об отсутствии активных торрентов для кнопки замедления', () => {
+    renderHeader({
+      hasSelectedTorrents: true,
+      hasRunningSelectedTorrents: false
+    });
+
+    const speedButton = screen.getByTitle('torrents.noRunningSelectedForSpeedLimit');
+    expect(speedButton).toBeInTheDocument();
   });
 });

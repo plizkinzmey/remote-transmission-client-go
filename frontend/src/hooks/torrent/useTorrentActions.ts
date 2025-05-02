@@ -23,7 +23,7 @@ export function useTorrentActions({
   onActionSuccess,
   torrents,
 }: UseTorrentActionsProps) {
-  const { showFormatted } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotification();
   const { t } = useLocalization();
 
   const getTorrentName = useCallback(
@@ -52,26 +52,24 @@ export function useTorrentActions({
       onActionStart?.();
       try {
         await GoAddTorrent(url, downloadDir);
-        showFormatted(
-          t("notifications.addTorrentSuccessTitle"),
+        showSuccess(
+          "notifications.addTorrentSuccessTitle",
           "notifications.addTorrentSuccessMessage",
-          { name: "New" },
-          "success"
+          { name: "New" }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error("Failed to add torrent:", error);
-        showFormatted(
-          t("notifications.addTorrentErrorTitle"),
+        showError(
+          "notifications.addTorrentErrorTitle",
           "notifications.addTorrentErrorMessage",
-          { error: String(error) },
-          "error"
+          { error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t]
+    [onActionStart, onActionSuccess, showSuccess, showError]
   );
 
   const addTorrentFile = useCallback(
@@ -82,26 +80,24 @@ export function useTorrentActions({
       onActionStart?.();
       try {
         await GoAddTorrentFile(base64Content, downloadDir);
-        showFormatted(
-          t("notifications.addTorrentSuccessTitle"),
+        showSuccess(
+          "notifications.addTorrentSuccessTitle",
           "notifications.addTorrentSuccessMessage",
-          { name: "New" },
-          "success"
+          { name: "New" }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error("Failed to add torrent file:", error);
-        showFormatted(
-          t("notifications.addTorrentErrorTitle"),
+        showError(
+          "notifications.addTorrentErrorTitle",
           "notifications.addTorrentErrorMessage",
-          { error: String(error) },
-          "error"
+          { error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t]
+    [onActionStart, onActionSuccess, showSuccess, showError]
   );
 
   const removeTorrent = useCallback(
@@ -110,26 +106,24 @@ export function useTorrentActions({
       const name = getTorrentName(id);
       try {
         await GoRemoveTorrent(id, deleteData);
-        showFormatted(
-          t("notifications.removeTorrentSuccessTitle"),
+        showSuccess(
+          "notifications.removeTorrentSuccessTitle",
           "notifications.removeTorrentSuccessMessage",
-          { name },
-          "success"
+          { name }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error(`Failed to remove torrent ${id}:`, error);
-        showFormatted(
-          t("notifications.removeTorrentErrorTitle"),
+        showError(
+          "notifications.removeTorrentErrorTitle",
           "notifications.removeTorrentErrorMessage",
-          { name, error: String(error) },
-          "error"
+          { name, error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]
+    [onActionStart, onActionSuccess, showSuccess, showError, getTorrentName]
   );
 
   const startTorrents = useCallback(
@@ -139,26 +133,24 @@ export function useTorrentActions({
       const name = getTorrentNames(ids);
       try {
         await GoStartTorrents(ids);
-        showFormatted(
-          t("notifications.startTorrentSuccessTitle"),
+        showSuccess(
+          "notifications.startTorrentSuccessTitle",
           "notifications.startTorrentSuccessMessage",
-          { name },
-          "success"
+          { name }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error(`Failed to start torrents ${ids.join(", ")}:`, error);
-        showFormatted(
-          t("notifications.startTorrentErrorTitle"),
+        showError(
+          "notifications.startTorrentErrorTitle",
           "notifications.startTorrentErrorMessage",
-          { name, error: String(error) },
-          "error"
+          { name, error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
+    [onActionStart, onActionSuccess, showSuccess, showError, getTorrentNames]
   );
 
   const stopTorrents = useCallback(
@@ -168,26 +160,24 @@ export function useTorrentActions({
       const name = getTorrentNames(ids);
       try {
         await GoStopTorrents(ids);
-        showFormatted(
-          t("notifications.stopTorrentSuccessTitle"),
+        showSuccess(
+          "notifications.stopTorrentSuccessTitle",
           "notifications.stopTorrentSuccessMessage",
-          { name },
-          "success"
+          { name }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error(`Failed to stop torrents ${ids.join(", ")}:`, error);
-        showFormatted(
-          t("notifications.stopTorrentErrorTitle"),
+        showError(
+          "notifications.stopTorrentErrorTitle",
           "notifications.stopTorrentErrorMessage",
-          { name, error: String(error) },
-          "error"
+          { name, error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
+    [onActionStart, onActionSuccess, showSuccess, showError, getTorrentNames]
   );
 
   const setSpeedLimit = useCallback(
@@ -200,12 +190,9 @@ export function useTorrentActions({
         const messageKey = isSlowMode
           ? "notifications.setSpeedLimitSlowSuccessMessage"
           : "notifications.setSpeedLimitNormalSuccessMessage";
-        showFormatted(
-          t("notifications.setSpeedLimitSuccessTitle"),
-          messageKey,
-          { name },
-          "success"
-        );
+        showSuccess("notifications.setSpeedLimitSuccessTitle", messageKey, {
+          name,
+        });
         onActionSuccess?.();
         return true;
       } catch (error) {
@@ -213,16 +200,15 @@ export function useTorrentActions({
           `Failed to set speed limit for ${ids.join(", ")}:`,
           error
         );
-        showFormatted(
-          t("notifications.setSpeedLimitErrorTitle"),
+        showError(
+          "notifications.setSpeedLimitErrorTitle",
           "notifications.setSpeedLimitErrorMessage",
-          { name, error: String(error) },
-          "error"
+          { name, error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t, getTorrentNames]
+    [onActionStart, onActionSuccess, showSuccess, showError, getTorrentNames]
   );
 
   const verifyTorrent = useCallback(
@@ -231,26 +217,24 @@ export function useTorrentActions({
       const name = getTorrentName(id);
       try {
         await GoVerifyTorrent(id);
-        showFormatted(
-          t("notifications.verifyTorrentSuccessTitle"),
+        showInfo(
+          "notifications.verifyTorrentSuccessTitle",
           "notifications.verifyTorrentSuccessMessage",
-          { name },
-          "info"
+          { name }
         );
         onActionSuccess?.();
         return true;
       } catch (error) {
         console.error(`Failed to verify torrent ${id}:`, error);
-        showFormatted(
-          t("notifications.verifyTorrentErrorTitle"),
+        showError(
+          "notifications.verifyTorrentErrorTitle",
           "notifications.verifyTorrentErrorMessage",
-          { name, error: String(error) },
-          "error"
+          { name, error: String(error) }
         );
         return false;
       }
     },
-    [onActionStart, onActionSuccess, showFormatted, t, getTorrentName]
+    [onActionStart, onActionSuccess, showInfo, showError, getTorrentName]
   );
 
   return {

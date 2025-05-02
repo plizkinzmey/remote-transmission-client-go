@@ -39,82 +39,113 @@ describe("useNotification", () => {
     return React.createElement(MockLocalizationProvider, { children });
   };
 
-  it("showSuccess вызывает ShowNotification с уровнем success", async () => {
+  it("showSuccess вызывает ShowNotification с уровнем success и локализованными строками", async () => {
     mockShowNotification.mockResolvedValue();
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
     await act(async () => {
-      await result.current.showSuccess("Успех", "Тестовое сообщение");
+      await result.current.showSuccess(
+        "notifications.success.title",
+        "notifications.success.message"
+      );
     });
 
+    // MockLocalizationProvider просто возвращает ключи, поэтому проверяем, что они были переданы
     expect(mockShowNotification).toHaveBeenCalledWith(
-      "Успех",
-      "Тестовое сообщение",
+      "notifications.success.title", // В реальном приложении будет локализовано
+      "notifications.success.message", // В реальном приложении будет локализовано
       "success"
     );
   });
 
-  it("showError вызывает ShowNotification с уровнем error", async () => {
+  it("showError вызывает ShowNotification с уровнем error и локализованными строками", async () => {
     mockShowNotification.mockResolvedValue();
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
     await act(async () => {
-      await result.current.showError("Ошибка", "Тестовое сообщение об ошибке");
+      await result.current.showError(
+        "notifications.error.title",
+        "notifications.error.message"
+      );
     });
 
     expect(mockShowNotification).toHaveBeenCalledWith(
-      "Ошибка",
-      "Тестовое сообщение об ошибке",
+      "notifications.error.title",
+      "notifications.error.message",
       "error"
     );
   });
 
-  it("showInfo вызывает ShowNotification с уровнем info", async () => {
+  it("showInfo вызывает ShowNotification с уровнем info и локализованными строками", async () => {
     mockShowNotification.mockResolvedValue();
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
     await act(async () => {
-      await result.current.showInfo("Информация", "Информационное сообщение");
+      await result.current.showInfo(
+        "notifications.info.title",
+        "notifications.info.message"
+      );
     });
 
     expect(mockShowNotification).toHaveBeenCalledWith(
-      "Информация",
-      "Информационное сообщение",
+      "notifications.info.title",
+      "notifications.info.message",
       "info"
     );
   });
 
-  it("showWarning вызывает ShowNotification с уровнем warning", async () => {
+  it("showWarning вызывает ShowNotification с уровнем warning и локализованными строками", async () => {
     mockShowNotification.mockResolvedValue();
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
     await act(async () => {
       await result.current.showWarning(
-        "Предупреждение",
-        "Предупреждающее сообщение"
+        "notifications.warning.title",
+        "notifications.warning.message"
       );
     });
 
     expect(mockShowNotification).toHaveBeenCalledWith(
-      "Предупреждение",
-      "Предупреждающее сообщение",
+      "notifications.warning.title",
+      "notifications.warning.message",
       "warning"
     );
   });
 
-  it("showFormatted использует локализацию для форматирования сообщения", async () => {
+  it("showSuccess корректно обрабатывает форматирование параметров", async () => {
+    mockShowNotification.mockResolvedValue();
+
+    const { result } = renderHook(() => useNotification(), { wrapper });
+
+    await act(async () => {
+      await result.current.showSuccess(
+        "notifications.success.title",
+        "notifications.success.message",
+        { name: "test.iso" }
+      );
+    });
+
+    // MockLocalizationProvider просто возвращает ключи
+    expect(mockShowNotification).toHaveBeenCalledWith(
+      "notifications.success.title",
+      "notifications.success.message",
+      "success"
+    );
+  });
+
+  it("showFormatted использует локализацию для заголовка и форматирования сообщения", async () => {
     mockShowNotification.mockResolvedValue();
 
     const { result } = renderHook(() => useNotification(), { wrapper });
 
     await act(async () => {
       await result.current.showFormatted(
-        "Заголовок",
-        "torrent.downloaded",
+        "notifications.download.title",
+        "notifications.download.message",
         { name: "test.iso" },
         "success"
       );
@@ -122,9 +153,29 @@ describe("useNotification", () => {
 
     // Локализованная строка в мокированном провайдере будет просто ключом
     expect(mockShowNotification).toHaveBeenCalledWith(
-      "Заголовок",
-      "torrent.downloaded", // Мок возвращает ключ без обработки форматирования
+      "notifications.download.title",
+      "notifications.download.message",
       "success"
+    );
+  });
+
+  it("showDirect напрямую передает строки без локализации", async () => {
+    mockShowNotification.mockResolvedValue();
+
+    const { result } = renderHook(() => useNotification(), { wrapper });
+
+    const directTitle = "Прямой заголовок";
+    const directMessage = "Прямое сообщение без локализации";
+
+    await act(async () => {
+      await result.current.showDirect(directTitle, directMessage, "info");
+    });
+
+    // Проверяем, что строки были переданы без изменений
+    expect(mockShowNotification).toHaveBeenCalledWith(
+      directTitle,
+      directMessage,
+      "info"
     );
   });
 
@@ -136,7 +187,10 @@ describe("useNotification", () => {
 
     // Вызываем функцию без проверки промиса, так как функция не возвращает промис
     await act(async () => {
-      result.current.showSuccess("Тест", "Сообщение с ошибкой");
+      result.current.showSuccess(
+        "notifications.title",
+        "notifications.message"
+      );
     });
 
     // Проверяем, что ошибка была залогирована

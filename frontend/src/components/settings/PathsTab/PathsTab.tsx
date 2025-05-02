@@ -1,6 +1,9 @@
 import {
   forwardRef,
   useImperativeHandle,
+  useState, // Добавляем импорт useState для отслеживания скопированного пути
+  useCallback, // Добавляем импорт useCallback для оптимизации функций
+  useEffect, // Добавляем импорт useEffect для управления таймером анимации
 } from "react";
 import {
   TextField,
@@ -13,7 +16,13 @@ import {
   Tooltip,
 } from "@radix-ui/themes";
 import { useLocalization } from "@contexts/LocalizationContext";
-import { TrashIcon, StarIcon } from "@heroicons/react/24/outline";
+import {
+  TrashIcon,
+  StarIcon,
+  ClipboardIcon, // Импортируем иконку копирования
+  ClipboardDocumentCheckIcon, // Иконка успешного копирования
+  ExclamationCircleIcon, // Иконка ошибки копирования
+} from "@heroicons/react/24/outline";
 import { usePathsManagement } from "./hooks/usePathsManagement";
 import styles from "./PathsTab.module.css"; // Импортируем CSS модуль
 
@@ -73,6 +82,76 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
       resetChanges,
       getPathChanges,
     } = usePathsManagement({ onPathsChanged });
+
+    // Новое состояние для управления копированием путей
+    const [copiedPath, setCopiedPath] = useState<string | null>(null);
+    const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    // Состояние для принудительного открытия тултипа после копирования
+    const [alwaysShowTooltipPath, setAlwaysShowTooltipPath] = useState<string | null>(null);
+
+    // Очистка статуса копирования и принудительного открытия тултипа через заданное время
+    useEffect(() => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      // Запускаем таймер только если тултип нужно принудительно открыть
+      if (alwaysShowTooltipPath) {
+        timer = setTimeout(() => {
+          setCopiedPath(null); // Сбрасываем путь, который был скопирован
+          setCopyStatus('idle'); // Сбрасываем статус копирования
+          setAlwaysShowTooltipPath(null); // Сбрасываем принудительное открытие
+        }, 1500); // Сброс статуса через 1.5 секунды
+      }
+      // Функция очистки таймера при размонтировании или изменении зависимости
+      return () => clearTimeout(timer);
+    }, [alwaysShowTooltipPath]); // Зависимость только от alwaysShowTooltipPath
+
+    // Функция для копирования пути в буфер обмена
+    const handleCopyPath = useCallback(async (path: string) => {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) {
+        console.error('Clipboard API is not supported in this environment.');
+        setCopiedPath(path); // Устанавливаем путь, чтобы показать иконку ошибки
+        setCopyStatus('error');
+        setAlwaysShowTooltipPath(path); // Принудительно открываем тултип для этого пути
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(path);
+        setCopiedPath(path);
+        setCopyStatus('success');
+        setAlwaysShowTooltipPath(path); // Принудительно открываем тултип для этого пути
+      } catch (error) {
+        console.error('Failed to copy path:', error);
+        setCopiedPath(path); // Устанавливаем путь, чтобы показать иконку ошибки
+        setCopyStatus('error');
+        setAlwaysShowTooltipPath(path); // Принудительно открываем тултип для этого пути
+      }
+    }, [setCopiedPath, setCopyStatus, setAlwaysShowTooltipPath]); // Добавляем state setter функции в зависимости
+
+    // Получение текста тултипа для кнопки копирования в зависимости от состояния
+    const getCopyButtonTooltip = useCallback((path: string) => {
+      // Показываем статус копирования, если этот путь только что был скопирован (принудительно открыт)
+      if (alwaysShowTooltipPath === path) {
+        if (copyStatus === 'success') return t("settings.pathCopied");
+        if (copyStatus === 'error') return t("settings.copyPathError");
+      }
+      // В обычном состоянии (при наведении, когда тултип не открыт принудительно)
+      // всегда показываем стандартный текст "Копировать путь"
+      return t("settings.copyPath");
+    }, [copyStatus, alwaysShowTooltipPath, t]); // Зависимости: статус, принудительное открытие, функция перевода
+
+    // Функция для определения иконки кнопки копирования
+    const getCopyButtonIcon = useCallback((path: string) => {
+      // Если путь был скопирован
+      if (copiedPath === path) {
+        // Показываем соответствующую иконку в зависимости от статуса
+        if (copyStatus === 'success') {
+          return <ClipboardDocumentCheckIcon width={16} height={16} />;
+        }
+        return <ExclamationCircleIcon width={16} height={16} />;
+      }
+      // По умолчанию показываем стандартную иконку копирования
+      return <ClipboardIcon width={16} height={16} />;
+    }, [copiedPath, copyStatus]);
 
     // Expose methods and state via ref
     useImperativeHandle(
@@ -158,6 +237,25 @@ export const PathsTab = forwardRef<PathsTabRef, PathsTabProps>(
                             </Text>
                           </Tooltip>
                           <Flex gap="2">
+                            {/* Кнопка копирования пути с тултипом */}
+                            <Tooltip
+                              content={getCopyButtonTooltip(path)}
+                              {...(alwaysShowTooltipPath === path ? { open: true } : {})}
+                            >
+                              <IconButton
+                                size="1"
+                                variant="soft"
+                                // Цвет кнопки зависит от статуса копирования ТОЛЬКО если это скопированный путь
+                                color={copiedPath === path ? (copyStatus === 'success' ? 'green' : 'red') : 'gray'}
+                                onClick={() => handleCopyPath(path)}
+                                data-testid={`copy-button-${path}`}
+                                aria-label={t("settings.copyPath")}
+                              >
+                                {/* Используем функцию для выбора иконки */}
+                                {getCopyButtonIcon(path)}
+                              </IconButton>
+                            </Tooltip>
+
                             {path === defaultPath ? (
                               <Tooltip content={t("settings.isDefaultPath")}>
                                 <IconButton

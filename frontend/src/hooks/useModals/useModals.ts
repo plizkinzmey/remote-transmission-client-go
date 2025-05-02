@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   EventsOn,
   WindowUnminimise,
@@ -61,6 +61,9 @@ export const useModals = (): UseModalsReturn => {
   const [isFirstStart, setIsFirstStart] = useState(false);
   const [torrentFileData, setTorrentFileData] =
     useState<TorrentFileData | null>(null);
+
+  // Создаем useRef на верхнем уровне компонента
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
 
   // Проверяем, является ли запуск первым
   const checkFirstStart = useCallback(async (isReconnecting: boolean) => {
@@ -125,9 +128,6 @@ export const useModals = (): UseModalsReturn => {
 
   // Слушаем событие открытия торрент-файла
   useEffect(() => {
-    // Переменная для хранения ID таймера
-    let timeoutId: NodeJS.Timeout | null = null;
-
     // EventsOn returns a function to unsubscribe
     const unsubscribe = EventsOn(
       "torrent-opened",
@@ -145,12 +145,12 @@ export const useModals = (): UseModalsReturn => {
             await WindowSetAlwaysOnTop(true);
 
             // Очищаем предыдущий таймер, если он существует
-            if (timeoutId !== null) {
-              clearTimeout(timeoutId);
+            if (timeoutIdRef.current !== null) {
+              clearTimeout(timeoutIdRef.current);
             }
 
             // Устанавливаем новый таймер и сохраняем его ID
-            timeoutId = setTimeout(async () => {
+            timeoutIdRef.current = setTimeout(async () => {
               await WindowSetAlwaysOnTop(false);
             }, 1000);
           } catch (error) {
@@ -168,8 +168,8 @@ export const useModals = (): UseModalsReturn => {
     // Cleanup function to unsubscribe when the component unmounts
     return () => {
       // Очищаем таймер при размонтировании
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
+      if (timeoutIdRef.current !== null) {
+        clearTimeout(timeoutIdRef.current);
       }
 
       // Отписываемся от события

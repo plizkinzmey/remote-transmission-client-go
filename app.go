@@ -417,6 +417,19 @@ func (a *App) HandleFilesOpen(files []string) {
 
 	a.logger.Printf("Handling files open request, count: %d\n", len(files))
 
+	// Проверка на инициализированность контекста
+	if a.ctx == nil {
+		a.logger.Printf("Context is not initialized, caching file paths for later processing\n")
+		// Сохраняем пути к файлам для последующей обработки
+		for _, file := range files {
+			if a.isTorrentFile(file) {
+				a.pendingTorrentFile = file
+				a.logger.Printf("Cached torrent file path: %s\n", file)
+			}
+		}
+		return
+	}
+
 	for _, file := range files {
 		if a.isTorrentFile(file) {
 			a.logger.Printf("Processing torrent file: %s\n", file)

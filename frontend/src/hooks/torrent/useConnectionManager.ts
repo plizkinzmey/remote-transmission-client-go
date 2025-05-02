@@ -1,20 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Initialize, LoadConfig } from "@wailsjs/go/main/App";
 import { AppConfig } from "./types";
 import { useLocalization } from "@/contexts/LocalizationContext";
-import { useNotification } from "@/hooks/useNotification"; // Импортируем хук уведомлений
+import { useNotification } from "@/hooks/useNotification";
 
 /**
  * Хук для управления соединением с Transmission, инициализации и состояния переподключения.
  */
 export function useConnectionManager() {
   const { t } = useLocalization();
-  const { showSuccess, showError, showInfo } = useNotification(); // Получаем функции уведомлений
+  const { showSuccess, showError, showInfo } = useNotification();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Начальная загрузка конфига и первая попытка подключения
+  const [isLoading, setIsLoading] = useState(true);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialConfig, setInitialConfig] = useState<AppConfig | null>(null);
+
+  // Добавляем флаг для отслеживания, был ли уже запущен процесс инициализации
+  const isInitializationStartedRef = useRef(false);
 
   // Функция для инициализации или переподключения с заданным конфигом
   const connect = useCallback(
@@ -22,7 +25,9 @@ export function useConnectionManager() {
       setError(null);
       setIsReconnecting(false); // Сбрасываем флаг переподключения перед попыткой
       try {
+        console.log("[ConnectionManager] Starting Initialize...");
         await Initialize(JSON.stringify(configToUse));
+        console.log("[ConnectionManager] Initialize successful");
         setIsInitialized(true);
         // Показываем уведомление об успешном подключении с использованием нового API
         showSuccess(
@@ -45,7 +50,7 @@ export function useConnectionManager() {
         return false; // Ошибка подключения
       }
     },
-    [t, showSuccess, showError] // Добавляем зависимости
+    [t, showSuccess, showError]
   );
 
   // Функция для попытки переподключения с последним известным конфигом
@@ -70,11 +75,22 @@ export function useConnectionManager() {
     );
     console.log("Attempting to reconnect...");
     return await connect(initialConfig);
-  }, [initialConfig, connect, t, showInfo, showError]); // Добавляем зависимости
+  }, [initialConfig, connect, t, showInfo, showError]);
 
   // Первоначальная загрузка конфигурации и попытка подключения
   useEffect(() => {
     const initializeApp = async () => {
+      // Проверяем, не был ли уже запущен процесс инициализации
+      if (isInitializationStartedRef.current) {
+        console.log(
+          "[ConnectionManager] Initialization already started, skipping"
+        );
+        return;
+      }
+
+      // Устанавливаем флаг, что инициализация началась
+      isInitializationStartedRef.current = true;
+
       setIsLoading(true);
       setError(null);
       setIsReconnecting(false);
@@ -115,17 +131,17 @@ export function useConnectionManager() {
 
     initializeApp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, showError]); // Добавляем showError в зависимости useEffect
+  }, [t, showError, connect]); // Явно добавляем connect в зависимости
 
   return {
     isInitialized,
-    isLoading: isLoading, // Флаг начальной загрузки/попытки подключения
+    isLoading: isLoading,
     isReconnecting,
-    error, // Ошибка соединения или загрузки конфига
-    initialConfig, // Возвращаем загруженный конфиг
-    connect, // Функция для подключения с новым конфигом (из настроек)
-    reconnect, // Функция для попытки переподключения
-    setConnectionError: setError, // Позволяем другим хукам устанавливать ошибку соединения
-    setIsReconnectingState: setIsReconnecting, // Позволяем другим хукам управлять состоянием реконнекта (например, при таймауте)
+    error,
+    initialConfig,
+    connect,
+    reconnect,
+    setConnectionError: setError,
+    setIsReconnectingState: setIsReconnecting,
   };
 }

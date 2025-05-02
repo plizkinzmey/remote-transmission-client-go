@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { ShowNotification as GoShowNotification } from "@wailsjs/go/main/App";
 import { LogError } from "@wailsjs/runtime";
 import { useLocalization } from "@/contexts/LocalizationContext";
@@ -109,11 +109,30 @@ export interface UseNotificationResult {
 export function useNotification(): UseNotificationResult {
   const { t } = useLocalization();
 
+  // Добавляем механизм дедупликации
+  const notificationCache = useRef<{ [key: string]: number }>({});
+
   /**
    * Базовая функция для отправки уведомления
    */
   const showNotification = useCallback(
     async (title: string, message: string, level: NotificationLevel) => {
+      // Создаем уникальный ключ для этого уведомления
+      const key = `${title}:${message}:${level}`;
+      const now = Date.now();
+
+      // Проверяем, было ли такое уведомление недавно (в течение 5 секунд)
+      if (
+        notificationCache.current[key] &&
+        now - notificationCache.current[key] < 5000
+      ) {
+        console.log("Preventing duplicate notification:", title);
+        return;
+      }
+
+      // Запоминаем время отправки этого уведомления
+      notificationCache.current[key] = now;
+
       try {
         await GoShowNotification(title, message, level);
       } catch (error) {

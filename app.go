@@ -29,8 +29,8 @@ type App struct {
 	service             *application.TorrentService
 	configService       *infrastructure.ConfigService
 	localizationService *infrastructure.LocalizationService
-	pendingTorrentFile  string
-	logger              *log.Logger // добавлено для логирования
+	pendingTorrentFiles []string // Массив для хранения путей к торрент-файлам
+	logger              *log.Logger
 }
 
 // Error constants
@@ -59,13 +59,16 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	// Независимо от состояния сервиса, через 1 сек решил отправить событие, если pendingTorrentFile установлен.
+	// Отправляем события для всех отложенных торрент-файлов
 	go func() {
 		time.Sleep(1 * time.Second) // задержка 1 секунда
-		if a.pendingTorrentFile != "" {
-			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", a.pendingTorrentFile)
-			a.pendingTorrentFile = ""
+
+		// Обрабатываем массив путей к торрент-файлам
+		for _, file := range a.pendingTorrentFiles {
+			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", file)
 		}
+		// Очищаем массив после обработки
+		a.pendingTorrentFiles = nil
 	}()
 
 	// Try to initialize with saved settings
@@ -400,11 +403,12 @@ func (a *App) ValidateDownloadPath(path string) error {
 func (a *App) handleFileOpen(filePath string) {
 	if strings.HasSuffix(strings.ToLower(filePath), ".torrent") {
 		log.Print("Получен торрент файл: ", filePath)
-		// Устанавливаем pendingTorrentFile для обработки при запуске
-		a.pendingTorrentFile = filePath
-		// Генерируем событие torrent-opened, если приложение уже запущено
+
+		// Сохраняем путь к файлу или сразу отправляем событие
 		if a.ctx != nil {
 			wailsRuntime.EventsEmit(a.ctx, "torrent-opened", filePath)
+		} else {
+			a.pendingTorrentFiles = append(a.pendingTorrentFiles, filePath)
 		}
 	}
 }
@@ -423,7 +427,7 @@ func (a *App) HandleFilesOpen(files []string) {
 		// Сохраняем пути к файлам для последующей обработки
 		for _, file := range files {
 			if a.isTorrentFile(file) {
-				a.pendingTorrentFile = file
+				a.pendingTorrentFiles = append(a.pendingTorrentFiles, file)
 				a.logger.Printf("Cached torrent file path: %s\n", file)
 			}
 		}

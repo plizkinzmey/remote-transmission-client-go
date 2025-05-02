@@ -36,7 +36,7 @@ func (r *RealRuntime) EventsEmit(ctx context.Context, eventName string, data ...
 	// В реальном приложении здесь был бы вызов wailsRuntime.EventsEmit
 }
 
-// TestHandleFilesOpen тестирует функцию HandleFilesOpen
+// TestHandleFilesOpen проверяет обработку и кеширование торрент-файлов до инициализации контекста
 func TestHandleFilesOpen(t *testing.T) {
 	// Создаем контекст и мок для runtime
 	ctx := context.Background()
@@ -45,32 +45,50 @@ func TestHandleFilesOpen(t *testing.T) {
 	// Создаем логгер для тестирования
 	logger := log.New(log.Writer(), "[TEST] ", log.LstdFlags)
 
+	// Создаем экземпляр App с моками
+	app := &App{
+		ctx:    ctx,
+		logger: logger,
+	}
+
 	// Настраиваем ожидаемый вызов EventsEmit
 	mockRuntime.On("EventsEmit", ctx, "torrent-opened", "path/to/file.torrent").Return()
 
-	// Создаем функцию-тестируемую, которая делает то же, что и HandleFilesOpen
-	testFunction := func(files []string) {
-		if len(files) == 0 {
-			return
-		}
-
-		logger.Printf("Handling files open request, count: %d\n", len(files))
-
-		for _, file := range files {
-			if strings.HasSuffix(strings.ToLower(file), ".torrent") {
-				logger.Printf("Processing torrent file: %s\n", file)
-				// Используем мок вместо wailsRuntime
-				mockRuntime.EventsEmit(ctx, "torrent-opened", file)
-				logger.Printf("Emitted torrent-opened event: %s\n", file)
-			}
-		}
-	}
-
-	// Вызываем функцию с тестовыми данными
-	testFunction([]string{"path/to/file.torrent"})
+	// Вызываем тестируемую функцию
+	app.HandleFilesOpen([]string{"path/to/file.torrent"})
 
 	// Проверяем, что ожидаемые вызовы были сделаны
 	mockRuntime.AssertExpectations(t)
+}
+
+// TestHandleFilesOpen_ContextNotInitialized проверяет кеширование файлов без инициализированного контекста
+func TestHandleFilesOpen_ContextNotInitialized(t *testing.T) {
+	// Создаем экземпляр App без инициализированного контекста
+	app := &App{
+		ctx:    nil, // Контекст не инициализирован
+		logger: log.New(log.Writer(), "[TEST] ", log.LstdFlags),
+	}
+
+	// Вызываем тестируемую функцию с несколькими торрент-файлами
+	app.HandleFilesOpen([]string{
+		"path/to/file1.torrent",
+		"path/to/file2.torrent",
+		"path/to/file.txt", // Не торрент-файл, должен быть проигнорирован
+	})
+
+	// Проверяем, что pendingTorrentFiles содержит оба торрент-файла
+	expectedFiles := []string{"path/to/file1.torrent", "path/to/file2.torrent"}
+	if len(app.pendingTorrentFiles) != len(expectedFiles) {
+		t.Errorf("Expected pendingTorrentFiles to have %d items, got %d", len(expectedFiles), len(app.pendingTorrentFiles))
+	}
+
+	// Проверяем, что все ожидаемые файлы присутствуют в массиве
+	for i, expectedFile := range expectedFiles {
+		if i >= len(app.pendingTorrentFiles) || app.pendingTorrentFiles[i] != expectedFile {
+			t.Errorf("Expected pendingTorrentFiles[%d] to be '%s', got '%s'", i, expectedFile,
+				app.pendingTorrentFiles[i])
+		}
+	}
 }
 
 // TestHandleFilesOpen_NonTorrentFile тестирует, что не-торрент файлы игнорируются
